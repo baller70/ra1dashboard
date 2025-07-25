@@ -68,6 +68,21 @@ export async function getCurrentUserRole() {
 
 // API route helper for authentication
 export async function authenticateRequest() {
+  // Development mode bypass when Clerk keys are not configured
+  if (process.env.NODE_ENV === 'development' && !process.env.CLERK_SECRET_KEY) {
+    console.log('🔧 Development mode: Using mock authentication (Clerk not configured)')
+    return {
+      userId: 'dev-user-001',
+      user: {
+        id: 'dev-user-001',
+        email: 'dev@example.com',
+        firstName: 'Dev',
+        lastName: 'User',
+        role: 'admin'
+      }
+    }
+  }
+
   const { userId } = await auth()
   if (!userId) {
     throw new Error('Unauthorized: Authentication required')

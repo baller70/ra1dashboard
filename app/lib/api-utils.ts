@@ -86,8 +86,20 @@ export function validateRequest<T>(data: unknown, schema: z.ZodSchema<T>): T {
   return result.data
 }
 
-// Production authentication check using Clerk
+// Production authentication check using Clerk (with development bypass)
 export async function requireAuth() {
+  // Development mode bypass when Clerk keys are not configured
+  if (process.env.NODE_ENV === 'development' && !process.env.CLERK_SECRET_KEY) {
+    console.log('🔧 Development mode: Using mock authentication (Clerk not configured)')
+    return {
+      id: 'dev-user-001',
+      email: 'dev@example.com',
+      firstName: 'Dev',
+      lastName: 'User',
+      role: 'admin'
+    }
+  }
+
   try {
     const authData = await authenticateRequest()
     return authData.user

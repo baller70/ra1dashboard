@@ -2,15 +2,13 @@
 'use client'
 
 import { ThemeProvider } from "next-themes";
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { ClerkProvider, useAuth } from '@clerk/nextjs'
-import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { ConvexProvider } from "convex/react";
 import { convex } from "@/lib/convex";
 import { Toaster } from "./ui/toaster";
 import { Toaster as SonnerToaster } from "./ui/sonner";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Temporarily disable Clerk due to invalid API keys
+  // Temporarily using ConvexProvider without Clerk until valid keys are configured
   return (
     <ConvexProvider client={convex}>
       <ThemeProvider

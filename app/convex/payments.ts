@@ -527,7 +527,15 @@ export const getPaymentPlans = query({
 
     const enrichedPlans = await Promise.all(
       plans.map(async (plan) => {
-        const parent = await ctx.db.get(plan.parentId);
+        let parent = null;
+        // Only try to get parent if parentId is a valid Convex ID
+        if (plan.parentId && typeof plan.parentId === 'string' && plan.parentId.length !== 25) {
+          try {
+            parent = await ctx.db.get(plan.parentId);
+          } catch (error) {
+            console.warn(`Invalid parentId for payment plan ${plan._id}: ${plan.parentId}`);
+          }
+        }
         return {
           ...plan,
           parent,
