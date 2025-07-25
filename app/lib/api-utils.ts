@@ -2,6 +2,50 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { authenticateRequest, authenticateAdmin } from './auth'
 
+// API Error types
+export const ApiErrors = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  DATABASE_ERROR: 'DATABASE_ERROR',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+} as const
+
+// Create standardized error response
+export function createErrorResponse(message: string, status: number = 500, code?: string) {
+  return NextResponse.json(
+    { 
+      error: message,
+      code: code || 'INTERNAL_ERROR',
+      success: false 
+    },
+    { status }
+  )
+}
+
+// Create standardized success response
+export function createSuccessResponse(data: any, message?: string) {
+  return NextResponse.json({
+    success: true,
+    data,
+    message: message || 'Operation completed successfully'
+  })
+}
+
+// Check if error is database-related
+export function isDatabaseError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    return message.includes('database') || 
+           message.includes('convex') || 
+           message.includes('connection') ||
+           message.includes('timeout') ||
+           message.includes('constraint')
+  }
+  return false
+}
+
 // Enhanced error handling for API routes
 export function handleError(error: unknown, context?: string) {
   const message = error instanceof Error ? error.message : 'Unknown error'
@@ -11,37 +55,26 @@ export function handleError(error: unknown, context?: string) {
   
   // Return appropriate HTTP status based on error type
   if (message.includes('not found') || message.includes('Not found')) {
-    return NextResponse.json(
-      { error: `Resource not found${contextInfo}` },
-      { status: 404 }
-    )
+    return createErrorResponse(`Resource not found${contextInfo}`, 404, ApiErrors.NOT_FOUND)
   }
   
   if (message.includes('Unauthorized') || message.includes('Authentication required')) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    )
+    return createErrorResponse('Authentication required', 401, ApiErrors.UNAUTHORIZED)
   }
   
   if (message.includes('Forbidden') || message.includes('Admin access required')) {
-    return NextResponse.json(
-      { error: 'Access denied: Insufficient permissions' },
-      { status: 403 }
-    )
+    return createErrorResponse('Access denied: Insufficient permissions', 403, ApiErrors.FORBIDDEN)
   }
   
   if (message.includes('validation') || message.includes('Invalid')) {
-    return NextResponse.json(
-      { error: `Validation error${contextInfo}: ${message}` },
-      { status: 400 }
-    )
+    return createErrorResponse(`Validation error${contextInfo}: ${message}`, 400, ApiErrors.VALIDATION_ERROR)
+  }
+
+  if (isDatabaseError(error)) {
+    return createErrorResponse(`Database error${contextInfo}`, 500, ApiErrors.DATABASE_ERROR)
   }
   
-  return NextResponse.json(
-    { error: `Server error${contextInfo}` },
-    { status: 500 }
-  )
+  return createErrorResponse(`Server error${contextInfo}`, 500, ApiErrors.INTERNAL_ERROR)
 }
 
 // Validate request body against schema
