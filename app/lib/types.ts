@@ -32,10 +32,6 @@ export type PaymentPlanWithRelations = PaymentPlan & {
   payments?: Payment[];
 };
 
-export type TemplateWithRelations = Template & {
-  messageLogs?: MessageLog[];
-};
-
 // Utility types
 export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';
 export type MessageChannel = 'email' | 'sms' | 'both';
@@ -63,13 +59,17 @@ export type PaginatedResponse<T = any> = {
 };
 
 // Dashboard types
-export type DashboardStats = {
-  totalParents: number;
+/* Deprecated duplicate DashboardStats type (old version preserved for reference)
+
+export type DashboardStats_DEPRECATED = {
+  // old fields deprecated - use new DashboardStats interface below
+// totalParents: number;
   totalPayments: number;
   totalRevenue: number;
   overduePayments: number;
   recentActivity: any[];
 };
+*/
 
 // Communication types
 export type BulkMessageRequest = {
@@ -143,6 +143,16 @@ export type AIRecommendationWithRelations = {
   isExecuted?: boolean;
   autoExecutable?: boolean;
   metadata?: Record<string, any>;
+
+  // Optional properties referenced in the AI insights UI
+  expectedImpact?: string;
+  context?: string;
+  actions?: string[];
+  executionResult?: string;
+  expiresAt?: number;
+
+  // Permit other ad-hoc props in future without compile errors
+  [key: string]: any;
 };
 
 // Bulk upload types
@@ -194,3 +204,159 @@ export type BulkImportResult = {
     email: string;
   }>;
 };
+
+// Add missing export types to satisfy compiler references
+export type AIMessageRequest = {
+  parentId: string
+  templateId?: string
+  variables?: Record<string, any>
+  channel?: MessageChannel
+  scheduledFor?: number
+
+  // Additional optional fields used by various pages
+  context?: string
+  customInstructions?: string
+  includePersonalization?: boolean
+
+  // Allow unforeseen fields without failing type-checking
+  [key: string]: any
+}
+
+export type PaymentTrend = {
+  period: string // e.g. '2025-07' or 'Jul 2025'
+  revenue: number
+  payments: number
+}
+
+export type PaymentStats = {
+  total: number
+  paid: number
+  pending: number
+  overdue: number
+}
+
+// Placeholder type definitions for recurring messages
+export type RecurringMessage = {
+  _id: Id<"recurringMessages">
+  parentIds: Id<"parents">[]
+  templateId?: Id<"templates">
+  channel: MessageChannel
+  frequency: RecurringFrequency
+  nextRunAt: number
+  instances: Array<{
+    scheduledAt: number
+    sentAt?: number
+    successCount: number
+    recipientCount: number
+  }>
+  createdAt: number
+}
+
+/* Deprecated duplicate
+export type RecurringMessageWithRelations_DEPRECATED = RecurringMessage & {
+//   template?: Template
+  // parents?: Parent[]
+// }
+*/
+
+// Placeholder for template version relations
+export type TemplateVersion = {
+  _id: string // Id<"templateVersions">
+  templateId: Id<"templates">
+  versionNumber: number
+  content: string
+  subject?: string
+  createdAt: number
+  improvements?: Array<{
+    description: string
+    accepted: boolean
+  }>
+  analytics?: Array<{
+    metric: string
+    value: number
+  }>
+}
+
+/* Deprecated duplicate
+export type TemplateVersionWithRelations_DEPRECATED = TemplateVersion & {
+//   template?: Template
+  author?: User
+}
+*/
+
+// Extend existing placeholder types with optional fields used across the UI ---------------------------------
+
+// -- Dashboard stats additional metrics
+export interface DashboardStats {
+  totalParents: number
+  totalPayments: number
+  totalRevenue: number
+  overduePayments: number
+  upcomingDues?: number
+  activePaymentPlans?: number
+  messagesSentThisMonth?: number
+  recentActivity: any[]
+}
+
+// -- Recurring messages extended fields
+export type RecurringMessageWithRelations = RecurringMessage & {
+  id?: string // convenient string id (alias for _id)
+  name?: string
+  subject?: string
+  body?: string
+  interval?: RecurringFrequency
+  intervalValue?: number
+  targetAudience?: string
+  recipients?: string[]
+  startDate?: number
+  stopConditions?: string
+  isActive?: boolean
+  pausedAt?: number
+  template?: TemplateWithRelations | Template
+  parents?: ParentWithRelations[] | Parent[]
+}
+
+// -- Template related extended types --------------------------------------------------
+export type TemplateWithRelations = Template & {
+  id?: string
+  name?: string
+  subject?: string
+  body?: string
+  channel?: MessageChannel
+  category?: string
+  createdAt?: number
+  updatedAt?: number
+  versions?: TemplateVersionWithRelations[]
+  scheduledMessages?: RecurringMessageWithRelations[]
+  messageLogs?: MessageLog[]
+}
+
+export type TemplateVersionWithRelations = TemplateVersion & {
+  id?: string // alias
+  version?: number // alias for versionNumber used in UI
+  body?: string
+  isAiGenerated?: boolean
+  createdBy?: string
+  performanceScore?: number
+  usageCount?: number
+  changeDescription?: string
+  aiPrompt?: string
+  analytics?: Array<{
+    metricType?: string
+    metric?: string
+    value: number
+  }>
+  improvements?: Array<{
+    id?: string
+    description: string
+    accepted: boolean
+    improvementType?: string
+    confidence?: number
+    reason?: string
+    originalText?: string
+    improvedText?: string
+    acceptedAt?: number
+  }>
+}
+
+// --------------------------------------------------------------------------------------

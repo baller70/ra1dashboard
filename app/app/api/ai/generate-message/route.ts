@@ -16,24 +16,25 @@ export async function POST(request: Request) {
     // Temporarily disabled for testing: await requireAuth()
     
 
-    const body: AIMessageRequest = await request.json()
-    const { context, customInstructions, includePersonalization, templateId } = body
+    const body: AIMessageRequest = await request.json();
+    const { context: rawContext, customInstructions, includePersonalization, templateId } = body;
+    const context: any = rawContext ?? {}; // Ensure we always have an object
 
     // Fetch parent data if provided
     let parentData = null
-    if (context.parentId) {
+    if (context?.parentId) {
       parentData = await convex.query(api.parents.getParent, { id: context.parentId as any })
     }
 
     // Fetch payment data if provided
     let paymentData = null
-    if (context.paymentId) {
+    if (context?.paymentId) {
       paymentData = await convex.query(api.payments.getPayment, { id: context.paymentId as any })
     }
 
     // Fetch contract data if provided
     let contractData = null
-    if (context.contractId) {
+    if (context?.contractId) {
       contractData = await convex.query(api.contracts.getContract, { id: context.contractId as any })
     }
 
@@ -47,9 +48,9 @@ export async function POST(request: Request) {
         content: `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
 
 Guidelines:
-- Use a ${context.tone} tone
-- Message type: ${context.messageType}
-- Urgency level: ${context.urgencyLevel}/5
+- Use a ${context?.tone ?? 'friendly'} tone
+- Message type: ${context?.messageType ?? 'general'}
+- Urgency level: ${context?.urgencyLevel ?? 3}/5
 - ${includePersonalization ? 'Include personal details when relevant' : 'Keep message general'}
 - Always be respectful and supportive
 - Focus on the child's development and program benefits
@@ -59,9 +60,9 @@ Context: ${aiContext}`
       },
       {
         role: "user" as const,
-        content: `Generate a ${context.messageType} message with the following requirements:
-- Tone: ${context.tone}
-- Urgency: ${context.urgencyLevel}/5
+        content: `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
+- Tone: ${context?.tone ?? 'friendly'}
+- Urgency: ${context?.urgencyLevel ?? 3}/5
 ${customInstructions ? `- Additional instructions: ${customInstructions}` : ''}
 
 Please provide both subject line and message body in JSON format:
@@ -96,10 +97,10 @@ Please provide both subject line and message body in JSON format:
     // Use OpenAI through our AI library
     const aiResult = await generateMessage({
       context: {
-        parentId: context.parentId,
-        paymentId: context.paymentId,
-        messageType: mapMessageType(context.messageType),
-        tone: mapTone(context.tone),
+        parentId: context?.parentId,
+        paymentId: context?.paymentId,
+        messageType: mapMessageType(context?.messageType ?? 'general'),
+        tone: mapTone(context?.tone ?? 'friendly'),
         channel: 'email' // Default to email
       },
       parentData,

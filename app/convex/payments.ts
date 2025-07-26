@@ -4,7 +4,8 @@ import { Id } from "./_generated/dataModel";
 
 // Utility function to safely get parent data with ID validation
 async function safeGetParent(ctx: any, parentId: any) {
-  if (!parentId || typeof parentId !== 'string' || parentId.length === 25) {
+  // Accept Convex string IDs which are typically 32-characters long. Only reject obviously malformed values.
+  if (!parentId || typeof parentId !== 'string' || parentId.length < 25) {
     return null;
   }
   

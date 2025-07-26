@@ -438,39 +438,46 @@ export default function AIInsightsPage() {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium flex items-center">
                     <Lightbulb className="mr-2 h-4 w-4 text-yellow-600" />
-                    Recommended Actions ({recommendation.actions.length})
+                    Recommended Actions ({Array.isArray(recommendation.actions) ? recommendation.actions.length : 0})
                   </h4>
                   
                   <div className="space-y-2">
-                    {recommendation.actions.map((action, index) => (
-                      <div key={action.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h5 className="text-sm font-medium">{action.title}</h5>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="outline" className="text-xs">
-                                {action.actionType}
-                              </Badge>
-                              {action.isRequired && (
-                                <Badge className="bg-red-100 text-red-700 text-xs">Required</Badge>
-                              )}
-                              {action.isExecuted && (
-                                <Badge className="bg-green-100 text-green-700 text-xs">
-                                  <CheckCircle2 className="mr-1 h-2 w-2" />
-                                  Done
-                                </Badge>
-                              )}
-                            </div>
+                    {Array.isArray(recommendation.actions) && recommendation.actions.map((action: any, index: number) => {
+                      const act = typeof action === 'string' ? { title: action } : (action || {});
+                      return (
+                        <div key={act.id ?? index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {action.description}
-                          </p>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h5 className="text-sm font-medium">{act.title ?? `Action ${index + 1}`}</h5>
+                              <div className="flex items-center space-x-2">
+                                {act.actionType && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {act.actionType}
+                                  </Badge>
+                                )}
+                                {act.isRequired && (
+                                  <Badge className="bg-red-100 text-red-700 text-xs">Required</Badge>
+                                )}
+                                {act.isExecuted && (
+                                  <Badge className="bg-green-100 text-green-700 text-xs">
+                                    <CheckCircle2 className="mr-1 h-2 w-2" />
+                                    Done
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            {act.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {act.description}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

@@ -27,10 +27,10 @@ export async function GET(request: Request) {
     const result = await convexHttp.query(api.messageLogs.getMessageLogs, {
       page,
       limit,
-      parentId,
-      status,
-      type,
-      channel,
+      parentId: parentId ?? undefined,
+      status: status ?? undefined,
+      type: type ?? undefined,
+      channel: channel ?? undefined,
       dateFrom: dateFrom ? parseInt(dateFrom) : undefined,
       dateTo: dateTo ? parseInt(dateTo) : undefined,
     })

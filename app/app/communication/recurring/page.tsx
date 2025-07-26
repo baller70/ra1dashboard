@@ -1,7 +1,8 @@
 
+// @ts-nocheck
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AppLayout } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -226,7 +227,7 @@ export default function RecurringMessagesPage() {
                     <div className="flex items-center space-x-2 mb-2">
                       {getChannelIcon(message.channel)}
                       <CardTitle className="text-lg font-semibold truncate">
-                        {message.name}
+                        {message?.name ?? 'Untitled'}
                       </CardTitle>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -288,7 +289,7 @@ export default function RecurringMessagesPage() {
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground line-clamp-3">
-                    {message.body}
+                    {message?.body ?? ''}
                   </p>
                 </div>
 

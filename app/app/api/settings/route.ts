@@ -24,7 +24,7 @@ export async function GET() {
     }
 
     // Get user preferences with fallback
-    let userPreferences = {};
+    let userPreferences: any = {};
     if (userContext.userId) {
       try {
         userPreferences = await getUserPreferences(userContext.userId);
@@ -72,7 +72,7 @@ export async function GET() {
       },
       user: {
         id: userContext.userId || 'dev-user',
-        name: userContext.user?.name || 'Development User',
+        name: (userContext as any).user?.name || 'Development User',
         email: userContext.userEmail || 'dev@thebasketballfactoryinc.com',
         role: userContext.userRole || 'admin',
         phone: '',
@@ -107,15 +107,15 @@ export async function POST(request: Request) {
       }
     }
 
-    const body = await request.json()
-    const { userPreferences, systemSettings } = body;
+    const { userPreferences: incomingPrefs, systemSettings } = (await request.json()) as any;
+    const userPreferences: any = incomingPrefs;
 
     // Save user preferences
     if (userPreferences && userContext.userId) {
       try {
         await saveUserPreferences(userContext.userId, userPreferences);
-      } catch (error) {
-        console.log('🔧 Development mode: Could not save preferences:', error.message)
+      } catch (error: any) {
+        console.error('Settings save error:', error)
       }
     }
 

@@ -78,7 +78,7 @@ export async function GET(
         performedBy: 'System',
         performedAt: payment.updatedAt,
         amount: payment.amount,
-        status: payment.status
+        status: payment.status || 'unknown'
       })
     }
 

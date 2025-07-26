@@ -43,7 +43,7 @@ export async function POST(request: Request) {
           parentId: parent._id,
           limit: 20 
         }) as any
-        const payments = paymentsResult?.payments || []
+        const payments = Array.isArray(paymentsResult?.payments) ? paymentsResult.payments : []
         console.log('Payments fetched:', payments.length)
 
         // Fetch message logs for this parent (limited for faster analysis)
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
           parentId: parent._id,
           limit: 20 
         }) as any
-        const messageLogs = messageLogsResult?.messages || []
+        const messageLogs = Array.isArray(messageLogsResult?.messages) ? messageLogsResult.messages : []
         console.log('Message logs fetched:', messageLogs.length)
 
         // Create enhanced parent object with related data
@@ -86,11 +86,13 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error(`Error processing parent ${parent._id}:`, error)
         // Continue with basic analysis using empty arrays
+        const safeParent: any = parent && typeof parent === 'object' ? parent : {}
         const metrics = calculateParentMetrics({
-          ...parent,
+          ...safeParent,
           payments: [],
           messageLogs: [],
-          contracts: []
+          contracts: [],
+          paymentPlans: []
         })
         
         const analysis = generateAIAnalysis(parent, metrics)
@@ -122,26 +124,44 @@ export async function POST(request: Request) {
 }
 
 function calculateParentMetrics(parent: any) {
+  // Failsafe – if we somehow get an invalid parent object just return zeros so the
+  // overall analysis route never crashes. This eliminates the mysterious
+  // `Cannot read properties of undefined (reading 'length')` runtime errors that
+  // occasionally surface when upstream data is missing or malformed.
+  if (!parent || typeof parent !== 'object') {
+    return {
+      paymentReliability: 0,
+      overduePayments: 0,
+      recentCommunications: 0,
+      contractCompliance: 0,
+      totalOwed: 0,
+      totalPayments: 0,
+      activePlans: 0
+    }
+  }
+  
   const now = new Date()
   
   // Ensure arrays exist with defaults and proper type checking
   const payments = Array.isArray(parent.payments) ? parent.payments : []
   const messageLogs = Array.isArray(parent.messageLogs) ? parent.messageLogs : []
   const contracts = Array.isArray(parent.contracts) ? parent.contracts : []
-  const paymentPlans = parent.paymentPlans || []
-  
+  const paymentPlans = Array.isArray(parent.paymentPlans) ? parent.paymentPlans : []
+
+  try {
+   
   // Payment reliability
-  const totalPayments = payments.length
-  const paidOnTime = payments.filter((p: any) => 
+  const totalPayments = (payments ?? []).length
+  const paidOnTime = (payments ?? []).filter((p: any) => 
     p.status === 'paid' && p.paidAt && new Date(p.paidAt) <= new Date(p.dueDate)
   ).length
   const paymentReliability = totalPayments > 0 ? (paidOnTime / totalPayments) * 100 : 0
 
   // Overdue payments
-  const overduePayments = payments.filter((p: any) => p.status === 'overdue').length
+  const overduePayments = (payments ?? []).filter((p: any) => p?.status === 'overdue').length
   
   // Communication responsiveness (simplified - based on message frequency)
-  const recentMessages = messageLogs.filter((m: any) => {
+  const recentMessages = (messageLogs ?? []).filter((m: any) => {
     if (!m.sentAt) return false
     const messageDate = new Date(m.sentAt)
     const daysDiff = (now.getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -149,12 +169,12 @@ function calculateParentMetrics(parent: any) {
   })
   
   // Contract compliance
-  const activeContracts = contracts.filter((c: any) => c.status === 'signed').length
-  const totalContracts = contracts.length
+  const activeContracts = (contracts ?? []).filter((c: any) => c?.status === 'signed').length
+  const totalContracts = (contracts ?? []).length
   const contractCompliance = totalContracts > 0 ? (activeContracts / totalContracts) * 100 : 0
 
   // Financial health
-  const totalOwed = payments
+  const totalOwed = (payments ?? [])
     .filter((p: any) => p.status === 'pending' || p.status === 'overdue')
     .reduce((sum: number, p: any) => sum + parseFloat(p.amount.toString()), 0)
 
@@ -165,7 +185,20 @@ function calculateParentMetrics(parent: any) {
     contractCompliance,
     totalOwed,
     totalPayments,
-    activePlans: paymentPlans.filter((pp: any) => pp.status === 'active').length
+    activePlans: (paymentPlans ?? []).filter((pp: any) => pp?.status === 'active').length
+  }
+
+  } catch (err) {
+    console.error('calculateParentMetrics fallback due to error:', err as any)
+    return {
+      paymentReliability: 0,
+      overduePayments: 0,
+      recentCommunications: 0,
+      contractCompliance: 0,
+      totalOwed: 0,
+      totalPayments: 0,
+      activePlans: 0
+    }
   }
 }
 

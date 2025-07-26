@@ -47,7 +47,7 @@ export async function GET() {
         userEmail: userContext.userEmail || 'dev@thebasketballfactoryinc.com',
       },
       userProfile: {
-        name: userContext.user?.name || 'Development User',
+        name: (userContext as any).user?.name || 'Development User',
         email: userContext.userEmail || 'dev@thebasketballfactoryinc.com',
         role: userContext.userRole || 'admin',
         organization: 'Rise as One Basketball',

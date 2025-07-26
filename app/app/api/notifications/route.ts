@@ -129,9 +129,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Process recent contracts
-    if (contracts && contracts.length > 0) {
-      contracts.forEach((contract: any) => {
+    // Process recent contracts (Convex query may return { contracts: [...], pagination: {...} })
+    const contractList: any[] = Array.isArray(contracts) ? contracts : (contracts as any)?.contracts ?? [];
+    if (contractList.length > 0) {
+      contractList.forEach((contract: any) => {
         const contractDate = contract.updatedAt || contract.createdAt || now
         
         // New/updated contracts

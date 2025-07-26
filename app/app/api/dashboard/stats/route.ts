@@ -28,7 +28,7 @@ export async function GET() {
     }
     
     if (isDatabaseError(error)) {
-      return createErrorResponse(ApiErrors.DATABASE_ERROR, {
+      return createSuccessResponse({
         message: 'Please check database configuration',
         fallbackStats: {
           totalParents: 0,

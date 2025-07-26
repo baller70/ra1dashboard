@@ -4,7 +4,7 @@ import { Id } from "./_generated/dataModel";
 
 // Utility function to safely get parent data with ID validation
 async function safeGetParent(ctx: any, parentId: any) {
-  if (!parentId || typeof parentId !== 'string') {
+  if (!parentId || typeof parentId !== 'string' || parentId.length < 25) {
     return null;
   }
   

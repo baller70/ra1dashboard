@@ -84,8 +84,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     // For now, we'll update the existing template with improved content
     await convexHttp.mutation(api.templates.updateTemplate, {
       id: template._id,
-      body: improvedContent.trim(),
-      isAiGenerated: true
+      body: improvedContent.trim()
     });
 
     // Get the updated template
