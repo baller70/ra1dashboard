@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { AppLayout } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -26,6 +24,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { PaymentWithRelations } from '../../../lib/types'
+import { useToast } from '../../../hooks/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
 
 type OverduePayment = {
   _id: string
@@ -42,19 +42,62 @@ type OverduePayment = {
 }
 
 export default function OverduePaymentsPage() {
-  // Use Convex query instead of API call
-  const overduePaymentsData = useQuery(api.payments.getOverduePayments)
-  const loading = overduePaymentsData === undefined
-  
+  const [overduePayments, setOverduePayments] = useState<OverduePayment[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPayments, setSelectedPayments] = useState<string[]>([])
   const [sendingReminders, setSendingReminders] = useState(false)
-
-  const overduePayments = overduePaymentsData || []
+  const { toast } = useToast()
 
   useEffect(() => {
-    // No need to fetch here as data is now from Convex
+    fetchOverduePayments()
   }, [])
+
+  const fetchOverduePayments = async () => {
+    try {
+      setLoading(true)
+      console.log('🔍 OVERDUE PAGE: Fetching overdue payments...')
+      
+      const response = await fetch('/api/payments/overdue', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
+      
+      console.log('🔍 OVERDUE PAGE: Response status:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('🔍 OVERDUE PAGE: Data received:', data)
+        setOverduePayments(data || [])
+        
+        toast({
+          title: "✅ Overdue Payments Loaded",
+          description: `Found ${data?.length || 0} overdue payments`,
+          variant: "default",
+        })
+      } else {
+        console.error('Failed to fetch overdue payments:', response.status)
+        setOverduePayments([])
+        
+        toast({
+          title: "❌ Error Loading Overdue Payments",
+          description: "Failed to load overdue payments. Please try refreshing.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching overdue payments:', error)
+      setOverduePayments([])
+      
+      toast({
+        title: "❌ Network Error",
+        description: "Unable to connect to server. Please check your connection.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handlePaymentSelection = (paymentId: string, selected: boolean) => {
     if (selected) {
@@ -331,6 +374,7 @@ export default function OverduePaymentsPage() {
           </CardContent>
         </Card>
       </div>
+      <Toaster />
     </AppLayout>
   )
 } 

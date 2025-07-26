@@ -29,11 +29,14 @@ export async function GET(request: NextRequest) {
       limit: 100
     });
 
-    return NextResponse.json(teams);
+    return NextResponse.json({
+      success: true,
+      data: teams
+    });
   } catch (error) {
     console.error('Error fetching teams:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch teams' },
+      { success: false, error: 'Failed to fetch teams' },
       { status: 500 }
     );
   }

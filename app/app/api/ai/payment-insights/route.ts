@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 // Clerk auth
-import { generatePaymentInsights } from '../../../../../lib/ai'
+import { generatePaymentInsights } from '../../../../lib/ai'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
 

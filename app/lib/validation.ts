@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 // Common validation patterns
 const emailSchema = z.string().email('Invalid email format')
-const phoneSchema = z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, 'Invalid phone number format').optional()
+const phoneSchema = z.string().regex(/^[\+]?[(]?[\d\s\-\(\)]{7,20}$/, 'Invalid phone number format').optional()
 const nameSchema = z.string().min(1, 'Name is required').max(100, 'Name too long')
 
 // Parent validation schemas

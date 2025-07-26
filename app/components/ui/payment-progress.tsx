@@ -38,7 +38,7 @@ interface PaymentProgressData {
 }
 
 interface PaymentProgressProps {
-  progressData: PaymentProgressData
+  progressData?: PaymentProgressData
   onPayInstallment?: (installmentId: string) => void
   onModifySchedule?: () => void
   onAiReminder?: (installment: PaymentInstallment) => void
@@ -52,6 +52,28 @@ export function PaymentProgress({
   onAiReminder,
   isAdmin = false 
 }: PaymentProgressProps) {
+  // If no progressData is provided, return null or a placeholder
+  if (!progressData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Payment Progress
+          </CardTitle>
+          <CardDescription>
+            Payment progress information is not available
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground py-4">
+            No payment progress data available
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-green-500'
@@ -179,98 +201,100 @@ export function PaymentProgress({
       )}
 
       {/* Payment Schedule */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Payment Schedule
-          </CardTitle>
-          <CardDescription>
-            Complete payment history and upcoming installments
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {progressData.installments.map((installment) => (
-              <div 
-                key={installment._id}
-                className={`flex items-center justify-between p-4 border rounded-lg ${getInstallmentCardStyle(installment.status)}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full ${getStatusColor(installment.status)} flex items-center justify-center`}>
-                    {installment.status === 'paid' && (
-                      <CheckCircle className="w-3 h-3 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <div className={`font-medium ${installment.status === 'paid' ? 'text-green-800' : ''}`}>
-                      Payment #{installment.installmentNumber}
+      {progressData.installments && progressData.installments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Payment Schedule
+            </CardTitle>
+            <CardDescription>
+              Complete payment history and upcoming installments
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {progressData.installments.map((installment) => (
+                <div 
+                  key={installment._id}
+                  className={`flex items-center justify-between p-4 border rounded-lg ${getInstallmentCardStyle(installment.status)}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full ${getStatusColor(installment.status)} flex items-center justify-center`}>
                       {installment.status === 'paid' && (
-                        <span className="ml-2 text-green-600 font-semibold">✓ PAID</span>
+                        <CheckCircle className="w-3 h-3 text-white" />
                       )}
                     </div>
-                    <div className={`text-sm ${installment.status === 'paid' ? 'text-green-700' : 'text-muted-foreground'}`}>
-                      Due: {format(new Date(installment.dueDate), 'MMM dd, yyyy')}
-                      {installment.paidAt && (
-                        <span className="ml-2 text-green-600 font-medium">
-                          • Paid: {format(new Date(installment.paidAt), 'MMM dd, yyyy')}
-                        </span>
+                    <div>
+                      <div className={`font-medium ${installment.status === 'paid' ? 'text-green-800' : ''}`}>
+                        Payment #{installment.installmentNumber}
+                        {installment.status === 'paid' && (
+                          <span className="ml-2 text-green-600 font-semibold">✓ PAID</span>
+                        )}
+                      </div>
+                      <div className={`text-sm ${installment.status === 'paid' ? 'text-green-700' : 'text-muted-foreground'}`}>
+                        Due: {format(new Date(installment.dueDate), 'MMM dd, yyyy')}
+                        {installment.paidAt && (
+                          <span className="ml-2 text-green-600 font-medium">
+                            • Paid: {format(new Date(installment.paidAt), 'MMM dd, yyyy')}
+                          </span>
+                        )}
+                      </div>
+                      {installment.isInGracePeriod && installment.gracePeriodEnd && (
+                        <div className="text-xs text-orange-600">
+                          Grace period ends: {format(new Date(installment.gracePeriodEnd), 'MMM dd, yyyy')}
+                        </div>
                       )}
                     </div>
-                    {installment.isInGracePeriod && installment.gracePeriodEnd && (
-                      <div className="text-xs text-orange-600">
-                        Grace period ends: {format(new Date(installment.gracePeriodEnd), 'MMM dd, yyyy')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className={`font-semibold ${installment.status === 'paid' ? 'text-green-800' : ''}`}>
-                      ${(installment.amount / 100).toFixed(2)}
-                    </div>
-                    {installment.remindersSent > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        {installment.remindersSent} reminder{installment.remindersSent > 1 ? 's' : ''} sent
-                      </div>
-                    )}
                   </div>
                   
-                  <Badge variant={getStatusBadgeVariant(installment.status)}>
-                    {installment.status === 'paid' && <CheckCircle className="mr-1 h-3 w-3" />}
-                    {installment.status === 'overdue' && <AlertTriangle className="mr-1 h-3 w-3" />}
-                    {installment.status.charAt(0).toUpperCase() + installment.status.slice(1)}
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className={`font-semibold ${installment.status === 'paid' ? 'text-green-800' : ''}`}>
+                        ${(installment.amount / 100).toFixed(2)}
+                      </div>
+                      {installment.remindersSent > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          {installment.remindersSent} reminder{installment.remindersSent > 1 ? 's' : ''} sent
+                        </div>
+                      )}
+                    </div>
+                    
+                    <Badge variant={getStatusBadgeVariant(installment.status)}>
+                      {installment.status === 'paid' && <CheckCircle className="mr-1 h-3 w-3" />}
+                      {installment.status === 'overdue' && <AlertTriangle className="mr-1 h-3 w-3" />}
+                      {installment.status.charAt(0).toUpperCase() + installment.status.slice(1)}
+                    </Badge>
 
-                  <div className="flex gap-2">
-                    {installment.status === 'pending' && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => onPayInstallment?.(installment._id)}
-                      >
-                        Pay
-                      </Button>
-                    )}
-                    {(installment.status === 'pending' || installment.status === 'overdue') && onAiReminder && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => onAiReminder(installment)}
-                        className="flex items-center gap-1"
-                      >
-                        <Bot className="h-3 w-3" />
-                        AI Reminder
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      {installment.status === 'pending' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => onPayInstallment?.(installment._id)}
+                        >
+                          Pay
+                        </Button>
+                      )}
+                      {(installment.status === 'pending' || installment.status === 'overdue') && onAiReminder && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => onAiReminder(installment)}
+                          className="flex items-center gap-1"
+                        >
+                          <Bot className="h-3 w-3" />
+                          AI Reminder
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Overdue Alert */}
       {progressData.overdueInstallments > 0 && (

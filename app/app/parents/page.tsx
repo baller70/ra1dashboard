@@ -34,7 +34,7 @@ import {
   Loader2,
   RefreshCw,
   ChevronUp
-} from 'lucide-react'
+  } from 'lucide-react'
 import Link from 'next/link'
 import { ParentWithRelations } from '../../lib/types'
 import { ParentCreationModal } from '../../components/ui/parent-creation-modal'
@@ -73,11 +73,24 @@ export default function ParentsPage() {
   useEffect(() => {
     const fetchParents = async () => {
       try {
+        console.log('Fetching parents from /api/parents...')
         const response = await fetch('/api/parents')
+        console.log('Response status:', response.status, response.ok)
         if (response.ok) {
           const data = await response.json()
-          // API returns { parents: [...], pagination: {...} }
-          setParents(data.parents || [])
+          console.log('Parents API response:', data)
+          console.log('Data structure check:', {
+            hasData: !!data.data,
+            hasDirectParents: !!data.parents,
+            dataParentsLength: data.data?.parents?.length,
+            directParentsLength: data.parents?.length
+          })
+          // API returns { success: true, data: { parents: [...] } }
+          const parentsArray = data.data?.parents || data.parents || []
+          console.log('Setting parents array:', parentsArray.length, 'parents')
+          setParents(parentsArray)
+        } else {
+          console.error('Failed to fetch parents - HTTP', response.status)
         }
       } catch (error) {
         console.error('Failed to fetch parents:', error)
@@ -88,6 +101,14 @@ export default function ParentsPage() {
 
     fetchParents()
   }, [])
+
+  // Debug log when parents state changes
+  useEffect(() => {
+    console.log('Parents state updated:', parents.length, 'parents loaded')
+    if (parents.length > 0) {
+      console.log('First parent:', parents[0])
+    }
+  }, [parents])
 
   const filteredParents = (Array.isArray(parents) ? parents : []).filter(parent => {
     const matchesSearch = parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,6 +140,95 @@ export default function ParentsPage() {
         return 'destructive'
       default:
         return 'outline'
+    }
+  }
+
+  // Individual Parent AI Functions
+  const handleSingleParentRiskAssessment = async (parentId: string, parentName: string) => {
+    setAiLoading(true)
+    try {
+      const response = await fetch('/api/ai/bulk-operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'assess_parent_risks',
+          parentIds: [parentId],
+          parameters: {
+            analysisDepth: 'comprehensive',
+            includeRecommendations: true
+          }
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.results?.assessments) {
+          // Filter to only show the assessment for the clicked parent
+          const filteredAssessments = data.results.assessments.filter(
+            (assessment: any) => assessment.parentId === parentId
+          )
+          setRiskAssessmentResults(filteredAssessments)
+          setShowRiskAssessmentDialog(true)
+          toast({
+            title: 'Risk Assessment Complete',
+            description: `🔍 Risk assessment completed for ${parentName}!`
+          })
+        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to perform risk assessment',
+        variant: 'destructive'
+      })
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleSingleParentSmartMessages = async (parentId: string, parentName: string) => {
+    setAiLoading(true)
+    try {
+      // Clear any previous messages first
+      setGeneratedMessages([])
+      
+      const response = await fetch('/api/ai/bulk-operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'generate_personalized_messages',
+          parentIds: [parentId],
+          parameters: {
+            messageType: 'general',
+            tone: 'friendly',
+            includeDetails: true
+          }
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.results?.messages) {
+          // Filter to only show the message for the clicked parent
+          const filteredMessages = data.results.messages.filter(
+            (msg: any) => msg.parentId === parentId
+          )
+          setGeneratedMessages(filteredMessages)
+          setShowMessagingDialog(true)
+          toast({
+            title: 'Smart Message Generated',
+            description: `✅ Smart message generated for ${parentName}!`
+          })
+        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate smart message',
+        variant: 'destructive'
+      })
+    } finally {
+      setAiLoading(false)
     }
   }
 
@@ -448,7 +558,7 @@ export default function ParentsPage() {
   }
 
   const selectAllParents = () => {
-    setSelectedParents(filteredParents.map(p => p.id))
+    setSelectedParents(filteredParents.map(p => p._id))
   }
 
   const clearSelection = () => {
@@ -474,6 +584,8 @@ export default function ParentsPage() {
       )
     )
   }
+
+
 
   const handleSendMessages = async () => {
     setSendingMessages(true)
@@ -528,7 +640,7 @@ export default function ParentsPage() {
   }
 
   const getParentDetails = (parentId: string) => {
-    return parents.find(p => p.id === parentId)
+    return parents.find(p => p._id === parentId)
   }
 
   if (loading) {
@@ -780,6 +892,7 @@ export default function ParentsPage() {
         </Card>
 
         {/* AI Intelligence Center */}
+        {filteredParents.length > 0 && (
         <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center text-purple-800">
@@ -800,7 +913,13 @@ export default function ParentsPage() {
                         variant: 'destructive',
                       })
                     } else {
-                      performBulkAIAnalysis()
+                      // Use individual parent risk assessment for selected parents
+                      selectedParents.forEach(parentId => {
+                        const parent = parents.find(p => p._id === parentId)
+                        if (parent) {
+                          handleSingleParentRiskAssessment(parentId, parent.name)
+                        }
+                      })
                     }
                   }}
                 >
@@ -818,7 +937,13 @@ export default function ParentsPage() {
                         variant: 'destructive',
                       })
                     } else {
-                      generateBulkMessages()
+                      // Use individual parent smart messages for selected parents
+                      selectedParents.forEach(parentId => {
+                        const parent = parents.find(p => p._id === parentId)
+                        if (parent) {
+                          handleSingleParentSmartMessages(parentId, parent.name)
+                        }
+                      })
                     }
                   }}
                 >
@@ -942,15 +1067,15 @@ export default function ParentsPage() {
         <div className="grid gap-4">
           {filteredParents.length > 0 ? (
             filteredParents.map((parent) => (
-              <Card key={parent.id} className={`hover:shadow-md transition-shadow ${selectedParents.includes(parent.id) ? 'ring-2 ring-purple-200 bg-purple-50' : ''}`}>
+                              <Card key={parent._id} className={`hover:shadow-md transition-shadow ${selectedParents.includes(parent._id) ? 'ring-2 ring-purple-200 bg-purple-50' : ''}`}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          checked={selectedParents.includes(parent.id)}
-                          onChange={(e) => handleParentSelection(parent.id, e.target.checked)}
+                          checked={selectedParents.includes(parent._id)}
+                          onChange={(e) => handleParentSelection(parent._id, e.target.checked)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
                         <div className="relative">
@@ -959,10 +1084,10 @@ export default function ParentsPage() {
                               {parent.name.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
-                          {getRiskLevel(parent.id) && (
+                          {getRiskLevel(parent._id) && (
                             <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center ${
-                              getRiskLevel(parent.id) === 'high' ? 'bg-red-500' : 
-                              getRiskLevel(parent.id) === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                              getRiskLevel(parent._id) === 'high' ? 'bg-red-500' : 
+                              getRiskLevel(parent._id) === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
                             }`}>
                               <AlertTriangle className="h-2 w-2 text-white" />
                             </div>
@@ -972,25 +1097,25 @@ export default function ParentsPage() {
                       <div>
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold text-lg">{parent.name}</h3>
-                          {getRiskLevel(parent.id) && (
+                          {getRiskLevel(parent._id) && (
                             <Badge
                               variant={
-                                getRiskLevel(parent.id) === 'high' ? 'destructive' : 
-                                getRiskLevel(parent.id) === 'medium' ? 'secondary' : 'default'
+                                getRiskLevel(parent._id) === 'high' ? 'destructive' : 
+                                getRiskLevel(parent._id) === 'medium' ? 'secondary' : 'default'
                               }
                               className="text-xs"
                             >
-                              {getRiskLevel(parent.id)?.toUpperCase()} RISK
+                              {getRiskLevel(parent._id)?.toUpperCase()} RISK
                             </Badge>
                           )}
                         </div>
                         <p className="text-muted-foreground">{parent.email}</p>
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <span>{parent.phone}</span>
-                          {getRiskScore(parent.id) && (
+                          {getRiskScore(parent._id) && (
                             <span className="flex items-center space-x-1">
                               <Brain className="h-3 w-3" />
-                              <span>Risk: {getRiskScore(parent.id)}/100</span>
+                              <span>Risk: {getRiskScore(parent._id)}/100</span>
                             </span>
                           )}
                         </div>
@@ -1000,11 +1125,11 @@ export default function ParentsPage() {
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <div className="flex items-center space-x-2 mb-1">
-                          <Badge variant={getStatusVariant(parent.status)}>
-                            {parent.status}
+                          <Badge variant={getStatusVariant(parent.status || 'active')}>
+                            {parent.status || 'active'}
                           </Badge>
-                          <Badge variant={getContractStatusVariant(parent.contractStatus)}>
-                            Contract: {parent.contractStatus}
+                          <Badge variant={getContractStatusVariant(parent.contractStatus || 'pending')}>
+                            Contract: {parent.contractStatus || 'pending'}
                           </Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -1026,22 +1151,82 @@ export default function ParentsPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => {
-                            // Open messaging interface for this parent
-                            setSelectedParents([parent.id])
-                            generateBulkMessages()
+                          onClick={async () => {
+                            // Generate AI message for ONLY this specific parent
+                            setAiLoading(true)
+                            try {
+                              // Clear any previous messages first
+                              setGeneratedMessages([])
+                              
+                              const response = await fetch('/api/ai/bulk-operations', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  operation: 'generate_personalized_messages',
+                                  parentIds: [parent._id],
+                                  messageType: 'general',
+                                  parameters: { messageType: 'general' }
+                                })
+                              })
+                              
+                              if (response.ok) {
+                                const data = await response.json()
+                                if (data.success && data.results?.messages) {
+                                  // Filter to only show the message for the clicked parent
+                                  const filteredMessages = data.results.messages.filter(
+                                    (msg: any) => msg.parentId === parent._id
+                                  )
+                                  setGeneratedMessages(filteredMessages)
+                                  setShowMessagingDialog(true)
+                                  toast({
+                                    title: 'Message Generated',
+                                    description: `✅ AI message generated for ${parent.name}!`
+                                  })
+                                }
+                              }
+                            } catch (error) {
+                              toast({
+                                title: 'Error',
+                                description: 'Failed to generate AI message',
+                                variant: 'destructive'
+                              })
+                            } finally {
+                              setAiLoading(false)
+                            }
                           }}
-                          title="Send message to parent"
+                          title="Send AI message to this parent"
                         >
                           <MessageSquare className="h-4 w-4" />
                         </Button>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={parent.payments && parent.payments.length > 0 
-                            ? `/payments/${parent.payments[0].id}` 
-                            : `/payments?parentId=${parent.id}`
-                          }>
-                            <CreditCard className="h-4 w-4" />
-                          </Link>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={async () => {
+                            // Get parent's first payment and route to payment detail page
+                            try {
+                              const response = await fetch(`/api/payments?parentId=${parent._id}&limit=1`)
+                              const data = await response.json()
+                              if (data.success && data.data.payments && data.data.payments.length > 0) {
+                                const paymentId = data.data.payments[0]._id
+                                window.location.href = `/payments/${paymentId}`
+                              } else {
+                                toast({
+                                  title: 'No Payments Found',
+                                  description: 'This parent has no payment records.',
+                                  variant: 'destructive'
+                                })
+                              }
+                            } catch (error) {
+                              toast({
+                                title: 'Error',
+                                description: 'Failed to load payment information',
+                                variant: 'destructive'
+                              })
+                            }
+                          }}
+                          title="View payment details for this parent"
+                        >
+                          <CreditCard className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>

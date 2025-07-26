@@ -232,19 +232,28 @@ The Basketball Factory Inc.`)
     try {
       await onSendReminder(message, method)
       
-      // Close dialog and reset message after successful send
-      onOpenChange(false)
-      setMessage('')
-      setSelectedTemplate('')
+      // Show immediate success feedback
+      toast({
+        title: '✅ Email Sent Successfully!',
+        description: `Payment reminder sent via ${method.toUpperCase()} to ${paymentData.parentName}.`,
+        duration: 5000,
+      })
       
-      // Note: Success confirmation is handled by parent component
+      // Small delay to ensure toast is visible before closing dialog
+      setTimeout(() => {
+        onOpenChange(false)
+        setMessage('')
+        setSelectedTemplate('')
+      }, 500)
+      
     } catch (error) {
       console.error('Error sending reminder:', error)
       // Error is also handled by parent component, but show local error for immediate feedback
       toast({
-        title: 'Error',
+        title: '❌ Failed to Send Reminder',
         description: 'Failed to send payment reminder. Please try again.',
         variant: 'destructive',
+        duration: 7000,
       })
     } finally {
       setIsSending(false)

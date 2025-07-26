@@ -6,33 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 import { convexHttp } from '../../../../lib/db'
 import { api } from '../../../../convex/_generated/api'
-
-// Define types inline since they don't exist in lib/types
-interface BulkUploadParent {
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  notes?: string;
-}
-
-interface BulkImportResult {
-  success: boolean;
-  created: number;
-  failed: number;
-  errors: Array<{
-    row: number;
-    email: string;
-    message: string;
-  }>;
-  successfulParents: Array<{
-    id: string;
-    name: string;
-    email: string;
-  }>;
-}
+import { BulkUploadParent, BulkImportResult } from '../../../../lib/types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,8 +27,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all existing parents to check for duplicates
-    const existingParentsResponse = await convexHttp.query(api.parents.getParents, {});
-    const existingEmails = new Set(existingParentsResponse.parents.map((p: any) => p.email.toLowerCase()));
+    const existingParentsResponse = await convexHttp.query(api.parents.getParents, { limit: 1000 });
+    // Convex returns { parents: [...] } directly
+    const parentsList = existingParentsResponse.parents || [];
+    const existingEmails = new Set(parentsList.map((p: any) => p.email.toLowerCase()));
 
     // Process each parent individually since Convex doesn't have transactions
     for (let i = 0; i < parents.length; i++) {

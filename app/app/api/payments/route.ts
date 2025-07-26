@@ -38,11 +38,14 @@ export async function GET(request: NextRequest) {
       parentId: parentId as any || undefined,
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+      data: result
+    });
   } catch (error) {
     console.error('Error fetching payments:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch payments' },
+      { success: false, error: 'Failed to fetch payments' },
       { status: 500 }
     );
   }

@@ -2,8 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery } from "convex/react"
-import { api } from "../../convex/_generated/api"
+
 import { AppLayout } from '../../components/app-layout'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -33,18 +32,31 @@ export default function CommunicationPage() {
   const [aiPrompt, setAiPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
 
-  // Use Convex query instead of fetch
-  const templatesData = useQuery(api.templates.getTemplates, {
-    search: searchTerm,
-    category: categoryFilter === 'all' ? undefined : categoryFilter
-  })
-  
-  const templates = templatesData?.templates || []
-  const loading = templatesData === undefined
+  const [templates, setTemplates] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // No need to fetch templates manually - Convex handles this
-  }, [])
+    fetchTemplates()
+  }, [searchTerm, categoryFilter])
+
+  const fetchTemplates = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      if (categoryFilter !== 'all') params.append('category', categoryFilter)
+      
+      const response = await fetch(`/api/templates?${params}`)
+      const data = await response.json()
+      setTemplates(data || [])
+    } catch (error) {
+      console.error('Failed to fetch templates:', error)
+      toast.error('Failed to load templates')
+      setTemplates([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleGenerateTemplate = async () => {
     if (!aiPrompt.trim()) return
@@ -109,10 +121,10 @@ export default function CommunicationPage() {
     }
   }
 
-  const handleQuickDraft = async (template: TemplateWithRelations) => {
+  const handleQuickDraft = async (template: any) => {
     try {
       // For quick draft, we'll redirect to the send page with the template pre-selected
-      window.location.href = `/communication/send?templateId=${template.id}`
+      window.location.href = `/communication/send?templateId=${template._id || template.id}`
     } catch (error) {
       console.error('Failed to create quick draft:', error)
       toast.error('Failed to create draft')

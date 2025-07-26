@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
+import { writeFile } from 'fs/promises'
+import { join } from 'path'
 
 export async function POST(request: Request) {
   try {
@@ -31,40 +33,60 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File size too large. Maximum size is 10MB.' }, { status: 400 })
     }
 
-    // For now, just return success since contracts functionality isn't implemented
-    // TODO: Implement contracts table in Convex schema and file upload handling
+    // Save the file to the public/uploads/contracts directory
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+    const fileUrl = `/uploads/contracts/${fileName}`
+    const filePath = join(process.cwd(), 'public', 'uploads', 'contracts', fileName)
+    
     console.log('Contract upload requested:', {
       fileName: file.name,
       fileSize: file.size,
       parentId,
       templateType,
       notes,
-      expiresAt
+      expiresAt,
+      fileUrl,
+      filePath
     });
 
-    const mockContract = {
-      id: `contract_${Date.now()}`,
+    // Convert file to buffer and save it
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    await writeFile(filePath, buffer)
+
+    // Create the contract via the POST API
+    const contractData = {
       parentId,
       fileName: `uploaded_${file.name}`,
       originalName: file.name,
-      fileUrl: `/uploads/contracts/mock_${file.name}`,
+      fileUrl,
       fileSize: file.size,
       mimeType: file.type,
-      status: 'pending',
-      templateType: templateType || null,
-      notes: notes || null,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
-      uploadedAt: new Date(),
-      parent: {
-        name: 'Sample Parent',
-        email: 'parent@example.com'
-      }
-    };
+      templateType: templateType || undefined,
+      notes: notes || undefined,
+      expiresAt: expiresAt || undefined,
+    }
+
+    // Call the contracts API to create the contract
+    const createResponse = await fetch(`${request.url.replace('/upload', '')}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(contractData),
+    })
+
+    if (!createResponse.ok) {
+      const errorData = await createResponse.json()
+      throw new Error(errorData.error || 'Failed to create contract record')
+    }
+
+    const result = await createResponse.json()
 
     return NextResponse.json({
       success: true,
-      contract: mockContract,
-      message: 'Contract uploaded successfully (mock)'
+      contractId: result.contractId,
+      message: 'Contract uploaded successfully'
     })
   } catch (error) {
     console.error('Contract upload error:', error)

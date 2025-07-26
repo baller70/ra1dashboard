@@ -1,5 +1,20 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
+// Utility function to safely get parent data with ID validation
+async function safeGetParent(ctx: any, parentId: any) {
+  if (!parentId || typeof parentId !== 'string' || parentId.length === 25) {
+    return null;
+  }
+  
+  try {
+    return await ctx.db.get(parentId as Id<"parents">);
+  } catch (error) {
+    console.warn(`Failed to get parent with ID ${parentId}:`, error);
+    return null;
+  }
+}
 
 // SCHEDULED MESSAGES QUERIES
 
@@ -38,7 +53,7 @@ export const getScheduledMessages = query({
     // Get parent information for each message
     const messagesWithParents = await Promise.all(
       messages.map(async (message) => {
-        const parent = await ctx.db.get(message.parentId);
+        const parent = await safeGetParent(ctx, message.parentId);
         const template = message.templateId ? await ctx.db.get(message.templateId) : null;
         
         return {
@@ -70,7 +85,7 @@ export const getScheduledMessage = query({
     const message = await ctx.db.get(args.id);
     if (!message) return null;
 
-    const parent = await ctx.db.get(message.parentId);
+    const parent = await safeGetParent(ctx, message.parentId);
     const template = message.templateId ? await ctx.db.get(message.templateId) : null;
     
     return {
@@ -97,7 +112,7 @@ export const getDueMessages = query({
 
     const messagesWithParents = await Promise.all(
       messages.map(async (message) => {
-        const parent = await ctx.db.get(message.parentId);
+        const parent = await safeGetParent(ctx, message.parentId);
         return {
           ...message,
           parent,
@@ -312,7 +327,7 @@ export const getRecurringMessage = query({
 
     const recipientsWithParents = await Promise.all(
       recipients.map(async (recipient) => {
-        const parent = await ctx.db.get(recipient.parentId);
+        const parent = await safeGetParent(ctx, recipient.parentId);
         return {
           ...recipient,
           parent,
@@ -547,7 +562,7 @@ export const getRecurringRecipients = query({
 
     const recipientsWithParents = await Promise.all(
       recipients.map(async (recipient) => {
-        const parent = await ctx.db.get(recipient.parentId);
+        const parent = await safeGetParent(ctx, recipient.parentId);
         return {
           ...recipient,
           parent,

@@ -6,7 +6,7 @@ import { convexHttp } from '../../../../lib/db';
 import { api } from '../../../../convex/_generated/api';
 
 const assignParentsSchema = z.object({
-  teamId: z.string().nullable(),
+  teamId: z.string().nullable().optional(),
   parentIds: z.array(z.string()).min(1, 'At least one parent ID is required'),
 });
 

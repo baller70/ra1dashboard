@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     await requireAuth()
     
     const body = await request.json()
-    const { type, to, data } = body
+    const { type, to, data, parentId } = body
 
     if (!type || !to) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
             { status: 400 }
           )
         }
-        result = await emailService.sendPaymentReminder(to, parentName, studentName, amount, dueDate)
+        result = await emailService.sendPaymentReminder(to, parentName, studentName, amount, dueDate, parentId)
         break
 
       case 'overdue_notice':
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
             { status: 400 }
           )
         }
-        result = await emailService.sendOverdueNotice(to, parentNameOverdue, studentNameOverdue, amountOverdue, daysPastDue)
+        result = await emailService.sendOverdueNotice(to, parentNameOverdue, studentNameOverdue, amountOverdue, daysPastDue, parentId)
         break
 
       case 'payment_confirmation':
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
             { status: 400 }
           )
         }
-        result = await emailService.sendPaymentConfirmation(to, parentNameConfirm, studentNameConfirm, amountConfirm, paymentDate, paymentMethod)
+        result = await emailService.sendPaymentConfirmation(to, parentNameConfirm, studentNameConfirm, amountConfirm, paymentDate, paymentMethod, parentId)
         break
 
       case 'custom':
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
             { status: 400 }
           )
         }
-        result = await emailService.sendCustomEmail(to, subject, htmlContent, from)
+        result = await emailService.sendCustomEmail(to, subject, htmlContent, from, parentId)
         break
 
       default:

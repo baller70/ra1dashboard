@@ -7,7 +7,7 @@ import { Input } from './input'
 import { Label } from './label'
 import { Card, CardContent, CardHeader, CardTitle } from './card'
 import { Calendar, DollarSign, Save, X } from 'lucide-react'
-import { toast } from './use-toast'
+import { useToast } from '../../hooks/use-toast'
 
 interface PaymentInstallment {
   _id: string
@@ -49,6 +49,7 @@ export function ModifyScheduleDialog({
     status?: string
   }>>([])
   const [saving, setSaving] = useState(false)
+  const { toast } = useToast()
 
   // Initialize form data when dialog opens
   useEffect(() => {

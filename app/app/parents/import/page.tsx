@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '../../../hooks/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
 import { BulkUploadValidation, BulkImportResult, BulkUploadParent, ValidationError } from '../../../lib/types'
 
 interface EditableParent extends BulkUploadParent {
@@ -70,15 +71,43 @@ export default function BulkImportPage() {
   }, [])
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File input changed', e.target.files)
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0])
     }
   }
 
+  const triggerFileInput = () => {
+    console.log('Triggering file input...')
+    // Add visual feedback
+    toast({
+      title: "File input triggered",
+      description: "Opening file dialog...",
+    })
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement
+    if (fileInput) {
+      console.log('File input element found, clicking...')
+      fileInput.click()
+    } else {
+      console.error('File input element not found!')
+      toast({
+        title: "Error",
+        description: "File input not found",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleFile = (selectedFile: File) => {
+    console.log('File selected:', selectedFile.name, selectedFile.size, selectedFile.type)
+    toast({
+      title: "File selected",
+      description: `Selected: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`,
+    })
     const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase()
     
     if (!fileExtension || !['csv', 'xlsx', 'xls'].includes(fileExtension)) {
+      console.log('Invalid file extension:', fileExtension)
       toast({
         title: "Invalid file format",
         description: "Please upload a CSV or Excel file.",
@@ -87,28 +116,40 @@ export default function BulkImportPage() {
       return
     }
 
+    console.log('File accepted, setting file state')
     setFile(selectedFile)
+    toast({
+      title: "File ready",
+      description: "File is ready for processing. Click 'Process File' to continue.",
+    })
   }
 
   const processFile = async () => {
-    if (!file) return
+    if (!file) {
+      console.log('No file selected')
+      return
+    }
 
+    console.log('Starting file processing...')
     setLoading(true)
     try {
       const formData = new FormData()
       formData.append('file', file)
 
+      console.log('Sending request to /api/parents/bulk-upload')
       const response = await fetch('/api/parents/bulk-upload', {
         method: 'POST',
         body: formData,
       })
 
+      console.log('Response status:', response.status, response.ok)
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to process file')
       }
 
       const validation: BulkUploadValidation = await response.json()
+      console.log('Validation result:', validation)
       setValidationData(validation)
 
       // Create editable data with row numbers and error flags
@@ -274,6 +315,12 @@ export default function BulkImportPage() {
               </p>
             </div>
           </div>
+          {/* Debug Panel */}
+          <div className="text-sm bg-gray-100 p-2 rounded">
+            <div>Step: {currentStep}</div>
+            <div>File: {file ? file.name : 'None'}</div>
+            <div>Loading: {loading ? 'Yes' : 'No'}</div>
+          </div>
         </div>
 
         {/* Progress Steps */}
@@ -355,11 +402,12 @@ export default function BulkImportPage() {
                     className="hidden"
                     id="file-upload"
                   />
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <Button variant="outline" type="button">
-                      Choose File
-                    </Button>
-                  </Label>
+                  <div 
+                    onClick={triggerFileInput}
+                    className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                  >
+                    Choose File
+                  </div>
                 </div>
 
                 {file && (
@@ -718,6 +766,7 @@ export default function BulkImportPage() {
           </div>
         )}
       </div>
+      <Toaster />
     </AppLayout>
   )
 }

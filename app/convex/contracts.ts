@@ -1,5 +1,20 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
+// Utility function to safely get parent data with ID validation
+async function safeGetParent(ctx: any, parentId: any) {
+  if (!parentId || typeof parentId !== 'string') {
+    return null;
+  }
+  
+  try {
+    return await ctx.db.get(parentId as Id<"parents">);
+  } catch (error) {
+    console.warn(`Failed to get parent with ID ${parentId}:`, error);
+    return null;
+  }
+}
 
 // CONTRACTS QUERIES
 
@@ -33,7 +48,7 @@ export const getContracts = query({
     // Get parent information for each contract
     const contractsWithParents = await Promise.all(
       contracts.map(async (contract) => {
-        const parent = await ctx.db.get(contract.parentId);
+        const parent = await safeGetParent(ctx, contract.parentId);
         return {
           ...contract,
           parent,
@@ -62,7 +77,7 @@ export const getContract = query({
     const contract = await ctx.db.get(args.id);
     if (!contract) return null;
 
-    const parent = await ctx.db.get(contract.parentId);
+    const parent = await safeGetParent(ctx, contract.parentId);
     
     return {
       ...contract,
@@ -97,7 +112,7 @@ export const getOverdueContracts = query({
 
     const contractsWithParents = await Promise.all(
       contracts.map(async (contract) => {
-        const parent = await ctx.db.get(contract.parentId);
+        const parent = await safeGetParent(ctx, contract.parentId);
         return {
           ...contract,
           parent,

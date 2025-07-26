@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../../lib/api-utils'
 // Clerk auth
-import { completeText } from '../../../../../../lib/ai'
+import { completeText } from '../../../../../lib/ai'
 
 export async function POST(request: Request) {
   try {

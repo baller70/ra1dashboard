@@ -1,4 +1,7 @@
 import { Resend } from 'resend';
+import { convexHttp } from './db'
+import { api } from '../convex/_generated/api'
+import { Id } from '../convex/_generated/dataModel'
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('RESEND_API_KEY is required');
@@ -155,9 +158,31 @@ export const emailService = {
     parentName: string,
     studentName: string,
     amount: number,
-    dueDate: string
+    dueDate: string,
+    parentId?: string
   ) {
     try {
+      // Create message log entry first
+      let messageId = null;
+      if (parentId) {
+        messageId = await convexHttp.mutation(api.messageLogs.createMessageLog, {
+          parentId,
+          subject: emailTemplates.paymentReminder.subject,
+          body: `Payment reminder for ${studentName} - $${amount} due ${dueDate}`,
+          content: emailTemplates.paymentReminder.template(parentName, studentName, amount, dueDate),
+          channel: 'email',
+          type: 'payment_reminder',
+          status: 'sending',
+          sentAt: Date.now(),
+          metadata: {
+            amount,
+            dueDate,
+            studentName,
+            emailService: true
+          }
+        });
+      }
+
       const { data, error } = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <onboarding@resend.dev>',
         to: [to],
@@ -166,11 +191,37 @@ export const emailService = {
       });
 
       if (error) {
+        // Update message status to failed if logging was enabled
+        if (messageId && parentId) {
+          await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+            id: messageId,
+            status: 'failed',
+            failureReason: error.message || 'Email sending failed',
+            errorMessage: error
+          });
+        }
         console.error('Error sending payment reminder:', error);
         throw error;
       }
 
-      return { success: true, data };
+      // Update message status to sent if logging was enabled
+      if (messageId && parentId) {
+        await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+          id: messageId,
+          status: 'sent',
+          deliveredAt: Date.now(),
+        });
+
+        // Create analytics entry
+        await convexHttp.mutation(api.messageLogs.createMessageAnalytics, {
+          messageLogId: messageId,
+          parentId: parentId as Id<"parents">,
+          channel: 'email',
+          messageType: 'payment_reminder',
+        });
+      }
+
+      return { success: true, data, messageId };
     } catch (error) {
       console.error('Failed to send payment reminder:', error);
       throw error;
@@ -182,9 +233,31 @@ export const emailService = {
     parentName: string,
     studentName: string,
     amount: number,
-    daysPastDue: number
+    daysPastDue: number,
+    parentId?: string
   ) {
     try {
+      // Create message log entry first
+      let messageId = null;
+      if (parentId) {
+        messageId = await convexHttp.mutation(api.messageLogs.createMessageLog, {
+          parentId,
+          subject: emailTemplates.overduePayment.subject,
+          body: `Overdue payment notice for ${studentName} - $${amount} (${daysPastDue} days overdue)`,
+          content: emailTemplates.overduePayment.template(parentName, studentName, amount, daysPastDue),
+          channel: 'email',
+          type: 'overdue_notice',
+          status: 'sending',
+          sentAt: Date.now(),
+          metadata: {
+            amount,
+            daysPastDue,
+            studentName,
+            emailService: true
+          }
+        });
+      }
+
       const { data, error } = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <noreply@ra1basketball.com>',
         to: [to],
@@ -193,11 +266,37 @@ export const emailService = {
       });
 
       if (error) {
+        // Update message status to failed if logging was enabled
+        if (messageId && parentId) {
+          await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+            id: messageId,
+            status: 'failed',
+            failureReason: error.message || 'Email sending failed',
+            errorMessage: error
+          });
+        }
         console.error('Error sending overdue notice:', error);
         throw error;
       }
 
-      return { success: true, data };
+      // Update message status to sent if logging was enabled
+      if (messageId && parentId) {
+        await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+          id: messageId,
+          status: 'sent',
+          deliveredAt: Date.now(),
+        });
+
+        // Create analytics entry
+        await convexHttp.mutation(api.messageLogs.createMessageAnalytics, {
+          messageLogId: messageId,
+          parentId: parentId as Id<"parents">,
+          channel: 'email',
+          messageType: 'overdue_notice',
+        });
+      }
+
+      return { success: true, data, messageId };
     } catch (error) {
       console.error('Failed to send overdue notice:', error);
       throw error;
@@ -210,9 +309,32 @@ export const emailService = {
     studentName: string,
     amount: number,
     paymentDate: string,
-    paymentMethod: string = 'Credit Card'
+    paymentMethod: string = 'Credit Card',
+    parentId?: string
   ) {
     try {
+      // Create message log entry first
+      let messageId = null;
+      if (parentId) {
+        messageId = await convexHttp.mutation(api.messageLogs.createMessageLog, {
+          parentId,
+          subject: emailTemplates.paymentConfirmation.subject,
+          body: `Payment confirmation for ${studentName} - $${amount} paid via ${paymentMethod} on ${paymentDate}`,
+          content: emailTemplates.paymentConfirmation.template(parentName, studentName, amount, paymentDate, paymentMethod),
+          channel: 'email',
+          type: 'payment_confirmation',
+          status: 'sending',
+          sentAt: Date.now(),
+          metadata: {
+            amount,
+            paymentDate,
+            paymentMethod,
+            studentName,
+            emailService: true
+          }
+        });
+      }
+
       const { data, error } = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <onboarding@resend.dev>',
         to: [to],
@@ -221,11 +343,37 @@ export const emailService = {
       });
 
       if (error) {
+        // Update message status to failed if logging was enabled
+        if (messageId && parentId) {
+          await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+            id: messageId,
+            status: 'failed',
+            failureReason: error.message || 'Email sending failed',
+            errorMessage: error
+          });
+        }
         console.error('Error sending payment confirmation:', error);
         throw error;
       }
 
-      return { success: true, data };
+      // Update message status to sent if logging was enabled
+      if (messageId && parentId) {
+        await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+          id: messageId,
+          status: 'sent',
+          deliveredAt: Date.now(),
+        });
+
+        // Create analytics entry
+        await convexHttp.mutation(api.messageLogs.createMessageAnalytics, {
+          messageLogId: messageId,
+          parentId: parentId as Id<"parents">,
+          channel: 'email',
+          messageType: 'payment_confirmation',
+        });
+      }
+
+      return { success: true, data, messageId };
     } catch (error) {
       console.error('Failed to send payment confirmation:', error);
       throw error;
@@ -236,9 +384,29 @@ export const emailService = {
     to: string,
     subject: string,
     htmlContent: string,
-    from?: string
+    from?: string,
+    parentId?: string
   ) {
     try {
+      // Create message log entry first
+      let messageId = null;
+      if (parentId) {
+        messageId = await convexHttp.mutation(api.messageLogs.createMessageLog, {
+          parentId,
+          subject,
+          body: htmlContent.replace(/<[^>]*>/g, ''), // Strip HTML for body
+          content: htmlContent,
+          channel: 'email',
+          type: 'custom_email',
+          status: 'sending',
+          sentAt: Date.now(),
+          metadata: {
+            customFrom: from,
+            emailService: true
+          }
+        });
+      }
+
       const { data, error } = await resend.emails.send({
         from: from || process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <onboarding@resend.dev>',
         to: [to],
@@ -247,13 +415,39 @@ export const emailService = {
       });
 
       if (error) {
+        // Update message status to failed if logging was enabled
+        if (messageId && parentId) {
+          await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+            id: messageId,
+            status: 'failed',
+            failureReason: error.message || 'Email sending failed',
+            errorMessage: error
+          });
+        }
         console.error('Error sending custom email:', error);
         throw error;
       }
 
-      return { success: true, data };
+      // Update message status to sent if logging was enabled
+      if (messageId && parentId) {
+        await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+          id: messageId,
+          status: 'sent',
+          deliveredAt: Date.now(),
+        });
+
+        // Create analytics entry
+        await convexHttp.mutation(api.messageLogs.createMessageAnalytics, {
+          messageLogId: messageId,
+          parentId: parentId as Id<"parents">,
+          channel: 'email',
+          messageType: 'custom_email',
+        });
+      }
+
+      return { success: true, data, messageId };
     } catch (error) {
-      console.error('Failed to send custom email:', error);
+      console.error('Error sending custom email:', error);
       throw error;
     }
   }

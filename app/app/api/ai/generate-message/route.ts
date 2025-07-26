@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 // Clerk auth
 import { AIMessageRequest } from '../../../../lib/types'
-import { generateMessage } from '../../../../../lib/ai'
+import { generateMessage } from '../../../../lib/ai'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
 

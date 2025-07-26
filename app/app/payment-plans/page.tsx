@@ -19,11 +19,11 @@ import {
   AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { PaymentPlan, Parent } from '../../../lib/types'
+import { PaymentPlan, Parent } from '../../lib/types'
 
 type PaymentPlanWithRelations = PaymentPlan & {
-  parent: Parent
-  _count: {
+  parent?: Parent
+  _count?: {
     payments: number
   }
 }
@@ -60,7 +60,7 @@ export default function PaymentPlansPage() {
       })
 
       if (response.ok) {
-        setPaymentPlans(prev => prev.filter(plan => plan.id !== id))
+        setPaymentPlans(prev => prev.filter(plan => plan._id !== id))
       } else {
         alert('Failed to delete payment plan')
       }
@@ -71,8 +71,8 @@ export default function PaymentPlansPage() {
   }
 
   const filteredPlans = paymentPlans.filter(plan =>
-    plan.parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    plan.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plan.parent?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plan.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     plan.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -221,24 +221,24 @@ export default function PaymentPlansPage() {
             ) : (
               <div className="space-y-4">
                 {filteredPlans.map((plan) => (
-                  <div key={plan.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div key={plan._id} className="border rounded-lg p-4 hover:bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-medium text-gray-900">{plan.parent.name}</h3>
-                          <Badge className={getStatusColor(plan.status)}>
-                            {plan.status}
+                          <h3 className="font-medium text-gray-900">{plan.parent?.name || 'Unknown Parent'}</h3>
+                          <Badge className={getStatusColor(plan.status || 'unknown')}>
+                            {plan.status || 'Unknown'}
                           </Badge>
-                          <Badge className={getTypeColor(plan.type)}>
-                            {plan.type}
+                          <Badge className={getTypeColor(plan.type || 'unknown')}>
+                            {plan.type || 'Unknown'}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
                           <div>
-                            <span className="font-medium">Amount:</span> ${Number(plan.installmentAmount).toLocaleString()}
+                            <span className="font-medium">Amount:</span> ${Number(plan.installmentAmount || 0).toLocaleString()}
                           </div>
                           <div>
-                            <span className="font-medium">Type:</span> {plan.type}
+                            <span className="font-medium">Type:</span> {plan.type || 'N/A'}
                           </div>
                           <div>
                             <span className="font-medium">Next Due:</span>{' '}
@@ -254,14 +254,14 @@ export default function PaymentPlansPage() {
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/payment-plans/${plan.id}`}>
+                          <Link href={`/payment-plans/${plan._id}`}>
                             <Edit className="h-4 w-4" />
                           </Link>
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleDelete(plan.id)}
+                          onClick={() => handleDelete(plan._id)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />

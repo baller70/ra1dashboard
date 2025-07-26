@@ -18,9 +18,9 @@ export async function POST(request: Request) {
     await requireAuth()
     
     const body = await request.json()
-    const { type, recipients, delay = 1000 } = body // delay between emails to avoid rate limits
+    const { type, recipients, data } = body
 
-    if (!type || !recipients || !Array.isArray(recipients)) {
+    if (!type || !recipients || !Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json(
         { error: 'Email type and recipients array are required' },
         { status: 400 }
@@ -28,32 +28,31 @@ export async function POST(request: Request) {
     }
 
     const results = {
-      successful: [] as EmailResult[],
-      failed: [] as EmailResult[],
-      total: recipients.length
+      successful: [] as any[],
+      failed: [] as any[]
     }
 
-    for (let i = 0; i < recipients.length; i++) {
-      const recipient = recipients[i]
-      const { to, data } = recipient
-
+    // Process each recipient
+    for (const recipient of recipients) {
+      const { to, parentId } = typeof recipient === 'string' ? { to: recipient, parentId: undefined } : recipient
+      
       try {
         let result
 
         switch (type) {
           case 'payment_reminder':
             const { parentName, studentName, amount, dueDate } = data
-            result = await emailService.sendPaymentReminder(to, parentName, studentName, amount, dueDate)
+            result = await emailService.sendPaymentReminder(to, parentName, studentName, amount, dueDate, parentId)
             break
 
           case 'overdue_notice':
             const { parentName: parentNameOverdue, studentName: studentNameOverdue, amount: amountOverdue, daysPastDue } = data
-            result = await emailService.sendOverdueNotice(to, parentNameOverdue, studentNameOverdue, amountOverdue, daysPastDue)
+            result = await emailService.sendOverdueNotice(to, parentNameOverdue, studentNameOverdue, amountOverdue, daysPastDue, parentId)
             break
 
           case 'custom':
             const { subject, htmlContent, from } = data
-            result = await emailService.sendCustomEmail(to, subject, htmlContent, from)
+            result = await emailService.sendCustomEmail(to, subject, htmlContent, from, parentId)
             break
 
           default:
@@ -62,7 +61,9 @@ export async function POST(request: Request) {
 
         results.successful.push({
           to,
-          messageId: result.data?.id,
+          parentId,
+          messageId: result.messageId,
+          resendId: result.data?.id,
           status: 'sent'
         })
 
@@ -70,14 +71,9 @@ export async function POST(request: Request) {
         console.error(`Failed to send email to ${to}:`, error)
         results.failed.push({
           to,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          status: 'failed'
+          parentId,
+          error: error instanceof Error ? error.message : 'Unknown error'
         })
-      }
-
-      // Add delay between emails to avoid rate limiting
-      if (i < recipients.length - 1 && delay > 0) {
-        await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
 
@@ -91,7 +87,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Bulk email operation completed: ${results.successful.length}/${results.total} emails sent successfully`,
+      message: `Bulk email operation completed: ${results.successful.length}/${recipients.length} emails sent successfully`,
       results
     })
 

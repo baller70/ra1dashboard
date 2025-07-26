@@ -15,29 +15,32 @@ export async function GET() {
     const analytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});
 
     return NextResponse.json({
-      totalRevenue: analytics.totalRevenue,
-      totalPaid: analytics.collectedPayments,
-      totalPending: analytics.pendingPayments,
-      totalOverdue: analytics.overduePayments,
-      overdueCount: analytics.overdueCount,
-      paymentSuccessRate: analytics.totalRevenue > 0 ? 85 : 0, // Mock percentage
-      averagePaymentTime: analytics.avgPaymentTime,
-      monthlyTrends: [], // TODO: Implement monthly trends in Convex
-      paymentMethodBreakdown: {
-        card: 70,
-        bank_account: 25,
-        other: 5
-      },
-      overdueAnalysis: {
-        totalOverdue: analytics.overdueCount,
-        averageDaysOverdue: 15,
-        recoveryRate: 75
+      success: true,
+      data: {
+        totalRevenue: analytics.totalRevenue,
+        totalPaid: analytics.collectedPayments,
+        totalPending: analytics.pendingPayments,
+        totalOverdue: analytics.overduePayments,
+        overdueCount: analytics.overdueCount,
+        paymentSuccessRate: analytics.totalRevenue > 0 ? 85 : 0, // Mock percentage
+        averagePaymentTime: analytics.avgPaymentTime,
+        monthlyTrends: [], // TODO: Implement monthly trends in Convex
+        paymentMethodBreakdown: {
+          card: 70,
+          bank_account: 25,
+          other: 5
+        },
+        overdueAnalysis: {
+          totalOverdue: analytics.overdueCount,
+          averageDaysOverdue: 15,
+          recoveryRate: 75
+        }
       }
     })
   } catch (error) {
     console.error('Payment analytics error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch payment analytics' },
+      { success: false, error: 'Failed to fetch payment analytics' },
       { status: 500 }
     )
   }

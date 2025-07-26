@@ -1,1056 +1,2759 @@
-yarn run v1.22.22
-$ next dev
+
+> dev
+> NODE_OPTIONS="--max-old-space-size=4096" next dev
+
   ▲ Next.js 14.2.28
   - Local:        http://localhost:3000
-  - Environments: .env
+  - Environments: .env.local, .env
   - Experiments (use with caution):
     · outputFileTracingRoot
 
  ✓ Starting...
- ✓ Ready in 1493ms
- ✓ Compiled /middleware in 172ms (188 modules)
- ○ Compiling /_not-found ...
-(node:60276) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
-(Use `node --trace-warnings ...` to show where the warning was created)
- ✓ Compiled /_not-found in 3.3s (919 modules)
- GET /api/payments 404 in 3458ms
- ✓ Compiled in 670ms (896 modules)
- GET /api/payments 404 in 504ms
- ✓ Compiled in 1426ms (377 modules)
- GET /api/payments/overdue 404 in 41ms
- ✓ Compiled in 424ms (377 modules)
- ✓ Compiled in 1074ms (377 modules)
- ✓ Compiled in 387ms (377 modules)
- ✓ Compiled in 312ms (377 modules)
- GET /api/payments/overdue 404 in 50ms
- ○ Compiling /payments/overdue ...
- ✓ Compiled /payments/overdue in 2.2s (1177 modules)
- GET /payments/overdue 200 in 2466ms
- ○ Compiling /api/payments/overdue ...
- ✓ Compiled /api/payments/overdue in 596ms (703 modules)
- GET /api/payments/overdue 200 in 1555ms
- ○ Compiling / ...
- ✓ Compiled / in 15.2s (2576 modules)
- GET /api/payments/overdue 200 in 13053ms
- GET /api/test 404 in 152ms
- ○ Compiling /api/dashboard/recent-activity ...
- ✓ Compiled /api/dashboard/recent-activity in 776ms (1300 modules)
- ✓ Compiled (1304 modules)
- GET /api/dashboard/recent-activity 200 in 1381ms
- GET /api/dashboard/revenue-trends 200 in 1501ms
- GET /api/dashboard/stats 200 in 1581ms
- GET /api/dashboard/stats 200 in 248ms
- ○ Compiling /api/ai/dashboard-insights ...
- ✓ Compiled /api/ai/dashboard-insights in 624ms (1306 modules)
- GET /api/dashboard/recent-activity 200 in 1255ms
- GET /api/dashboard/revenue-trends 200 in 1288ms
- GET /api/ai/dashboard-insights 200 in 12505ms
- ✓ Compiled in 180ms (188 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (158kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ✓ Compiled /api/test in 376ms (1308 modules)
- GET /api/test 200 in 419ms
+ ✓ Ready in 3.5s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 950ms (117 modules)
  ○ Compiling /api/payments ...
- ✓ Compiled /api/payments in 1511ms (1311 modules)
- GET /api/payments 200 in 1563ms
- GET /api/ai/dashboard-insights 200 in 17998ms
- GET /api/payments/overdue 200 in 37ms
- ✓ Compiled in 1342ms (2415 modules)
- GET /payments/overdue 404 in 97ms
- GET /app/payments/overdue 404 in 23ms
- GET /parents 404 in 38ms
- GET / 200 in 112ms
- ✓ Compiled in 187ms (188 modules)
- GET /payments/overdue 200 in 103ms
- ○ Compiling /payment-plans ...
- ✓ Compiled /payment-plans in 1060ms (2401 modules)
- GET /payment-plans 200 in 1339ms
- ✓ Compiled /parents in 359ms (2423 modules)
- GET /parents 200 in 422ms
- ✓ Compiled in 300ms (188 modules)
- ✓ Compiled in 10.7s (2578 modules)
- ○ Compiling /payments ...
- ✓ Compiled /payments in 1973ms (2541 modules)
- ✓ Compiled /api/payments/analytics in 314ms (1367 modules)
- ✓ Compiled (1386 modules)
- GET /api/payments/analytics 200 in 5199ms
- GET /api/payments? 200 in 5247ms
- GET /api/payments/analytics 200 in 173ms
- GET /api/payments? 200 in 178ms
- ○ Compiling /api/payments/overdue ...
- ✓ Compiled /api/payments/overdue in 1029ms (1388 modules)
- GET /api/payments/overdue 200 in 1317ms
- GET /api/payments/overdue 200 in 64ms
- GET /payments/overdue 200 in 239ms
- GET /api/payments/overdue 200 in 44ms
- GET /api/payments/overdue 200 in 18ms
- GET /payments/overdue 200 in 82ms
- GET /api/payments/overdue 200 in 24ms
- GET /api/payments/overdue 200 in 35ms
- ✓ Compiled in 3.5s (2555 modules)
- ✓ Compiled in 4.3s (2555 modules)
- ✓ Compiled in 2000ms (2555 modules)
- ✓ Compiled in 1406ms (2555 modules)
- ○ Compiling /api/payments/analytics ...
- ✓ Compiled /api/payments/analytics in 2.2s (1367 modules)
- ✓ Compiled (1386 modules)
- GET /api/payments/analytics 200 in 2864ms
- GET /api/payments? 200 in 2920ms
- GET /api/payments/analytics 200 in 104ms
- GET /api/payments? 200 in 108ms
- ✓ Compiled in 2.1s (2581 modules)
- ○ Compiling /communication ...
- ✓ Compiled /communication in 2.4s (2583 modules)
- ○ Compiling /api/templates ...
- ✓ Compiled /api/templates in 886ms (1397 modules)
- GET /api/templates 200 in 982ms
- GET /api/templates 200 in 50ms
- ✓ Compiled in 1020ms (2599 modules)
- ○ Compiling /communication/templates/[id] ...
- ✓ Compiled /communication/templates/[id] in 850ms (2602 modules)
- ○ Compiling /api/templates/[id] ...
- ✓ Compiled /api/templates/[id] in 918ms (1409 modules)
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 1441ms
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 64ms
- ✓ Compiled in 3.4s (2618 modules)
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 1582ms (2607 modules)
- GET /payments/overdue 404 in 1815ms
- ○ Compiling /communication/templates/[id]/edit ...
- ✓ Compiled /communication/templates/[id]/edit in 651ms (2617 modules)
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 637ms
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 58ms
- ✓ Compiled in 188ms (188 modules)
- GET /payments/overdue 200 in 305ms
- ✓ Compiled in 1152ms (1215 modules)
- GET /api/templates 200 in 546ms
- GET /api/templates 200 in 125ms
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 39ms
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 40ms
- ✓ Compiled in 1400ms (2626 modules)
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 115ms
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 63ms
- ○ Compiling /api/payments/overdue ...
- ✓ Compiled /api/payments/overdue in 857ms (1413 modules)
- GET /api/payments/overdue 200 in 1075ms
- GET /api/templates 200 in 44ms
- GET /api/templates 200 in 21ms
- ○ Compiling /communication/send ...
- ✓ Compiled /communication/send in 672ms (2622 modules)
- ✓ Compiled /api/parents in 358ms (1422 modules)
- GET /api/templates 200 in 1198ms
- GET /api/parents 200 in 1354ms
- GET /api/templates 200 in 109ms
- GET /api/parents 200 in 48ms
- GET /api/templates 200 in 66ms
- GET /api/templates 200 in 30ms
- ○ Compiling /communication/history ...
- ✓ Compiled /communication/history in 5.1s (2639 modules)
- ○ Compiling /api/communication/history ...
- ✓ Compiled /api/communication/history in 890ms (1418 modules)
- GET /api/communication/history? 200 in 1022ms
- GET /api/communication/history? 200 in 39ms
- ○ Compiling /payments/overdue/test-page ...
- ✓ Compiled /payments/overdue/test-page in 2.1s (1420 modules)
- GET /payments/overdue/test-page 404 in 250ms
- ✓ Compiled /parents in 443ms (1427 modules)
- GET /api/parents 200 in 153ms
- GET /api/parents 200 in 60ms
- ✓ Compiled /api/payments/analytics in 472ms (1429 modules)
- ✓ Compiled (1431 modules)
- GET /api/payments/analytics 200 in 1200ms
- GET /api/payments? 200 in 1293ms
- GET /api/payments/analytics 200 in 267ms
- GET /api/payments? 200 in 272ms
- GET /api/templates 200 in 50ms
- GET /api/templates 200 in 28ms
- ○ Compiling /contracts ...
- ✓ Compiled /contracts in 778ms (2646 modules)
- ○ Compiling /api/contracts ...
- ✓ Compiled /api/contracts in 1125ms (1435 modules)
- GET /api/contracts? 200 in 1213ms
- GET /api/contracts? 200 in 37ms
- GET /api/parents 200 in 53ms
- GET /api/parents 200 in 25ms
- ○ Compiling / ...
- ✓ Compiled / in 725ms (1447 modules)
- ✓ Compiled /api/dashboard/recent-activity in 447ms (1449 modules)
- ✓ Compiled (1453 modules)
- GET /api/dashboard/revenue-trends 200 in 678ms
- GET /api/dashboard/recent-activity 200 in 679ms
- GET /api/dashboard/stats 200 in 730ms
- GET /api/dashboard/revenue-trends 200 in 43ms
- GET /api/dashboard/recent-activity 200 in 48ms
- GET /api/dashboard/stats 200 in 42ms
- ✓ Compiled /api/ai/dashboard-insights in 217ms (1455 modules)
- GET /api/ai/dashboard-insights 200 in 11005ms
- GET /api/ai/dashboard-insights 200 in 15390ms
- GET /api/parents 200 in 44ms
- GET /api/parents 200 in 22ms
- ○ Compiling /parents/[id]/edit ...
- ✓ Compiled /parents/[id]/edit in 665ms (2644 modules)
- ✓ Compiled /api/parents/[id] in 377ms (1428 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 657ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 37ms
- ○ Compiling /parents/[id] ...
- ✓ Compiled /parents/[id] in 762ms (2652 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 870ms
- ✓ Compiled /api/ai/analyze-parent in 432ms (1433 modules)
- ✓ Compiled (1431 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 732ms
- POST /api/ai/analyze-parent 200 in 6326ms
- POST /api/ai/analyze-parent 200 in 7624ms
- GET /api/parents 200 in 36ms
- GET /api/parents 200 in 18ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 22ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 38ms
- GET /api/parents 200 in 33ms
- GET /api/parents 200 in 19ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 29ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 18ms
- POST /api/ai/analyze-parent 200 in 7962ms
- POST /api/ai/analyze-parent 200 in 9459ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 28ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 42ms
- POST /api/ai/analyze-parent 200 in 6402ms
- GET /api/parents 200 in 37ms
- GET /api/parents 200 in 21ms
- POST /api/ai/analyze-parent 200 in 6815ms
- ○ Compiling /parents/new ...
- ✓ Compiled /parents/new in 2.9s (2547 modules)
- ✓ Compiled /api/dashboard/recent-activity in 368ms (1329 modules)
- ✓ Compiled (1333 modules)
- GET /api/dashboard/revenue-trends 200 in 955ms
- GET /api/dashboard/stats 200 in 996ms
- GET /api/dashboard/recent-activity 200 in 975ms
- GET /api/dashboard/revenue-trends 200 in 87ms
- ✓ Compiled /api/ai/dashboard-insights in 323ms (1335 modules)
- GET /api/dashboard/recent-activity 200 in 601ms
- GET /api/dashboard/stats 200 in 603ms
- GET /api/ai/dashboard-insights 200 in 11077ms
- GET /api/ai/dashboard-insights 200 in 16492ms
- ✓ Compiled /api/parents in 435ms (1339 modules)
- GET /api/parents 200 in 543ms
- GET /api/parents 200 in 30ms
- GET /api/dashboard/stats 200 in 57ms
- GET /api/dashboard/revenue-trends 200 in 63ms
- GET /api/dashboard/recent-activity 200 in 67ms
- GET /api/dashboard/stats 200 in 48ms
- GET /api/dashboard/revenue-trends 200 in 60ms
- GET /api/dashboard/recent-activity 200 in 63ms
- ✓ Compiled in 1292ms (2581 modules)
- GET /api/ai/dashboard-insights 200 in 18002ms
- GET /parents 200 in 174ms
- GET /api/ai/dashboard-insights 200 in 11346ms
- ○ Compiling /payments ...
- ✓ Compiled /payments in 778ms (1421 modules)
- ○ Compiling /api/payments/analytics ...
- ✓ Compiled /api/payments/analytics in 564ms (1423 modules)
- ✓ Compiled (1425 modules)
- GET /api/payments? 200 in 903ms
- GET /api/payments/analytics 200 in 912ms
- GET /api/payments/analytics 200 in 131ms
- GET /api/payments? 200 in 142ms
- GET /api/ai/dashboard-insights 200 in 15352ms
- GET /api/dashboard/stats 200 in 54ms
- GET /api/dashboard/revenue-trends 200 in 44ms
- GET /api/dashboard/recent-activity 200 in 46ms
- GET /api/dashboard/stats 200 in 51ms
- GET /api/dashboard/recent-activity 200 in 58ms
- GET /api/dashboard/revenue-trends 200 in 65ms
- GET /api/ai/dashboard-insights 200 in 12401ms
- ✓ Compiled /communication in 337ms (1425 modules)
- ✓ Compiled /api/templates in 218ms (1427 modules)
- GET /api/templates 200 in 297ms
- GET /api/templates 200 in 128ms
- GET /api/dashboard/stats 200 in 79ms
- GET /api/dashboard/revenue-trends 200 in 99ms
- GET /api/dashboard/recent-activity 200 in 101ms
- GET /api/dashboard/stats 200 in 54ms
- GET /api/dashboard/revenue-trends 200 in 53ms
- GET /api/dashboard/recent-activity 200 in 56ms
- GET /api/ai/dashboard-insights 200 in 14783ms
- GET /api/ai/dashboard-insights 200 in 18161ms
- ✓ Compiled /contracts in 391ms (1427 modules)
- ✓ Compiled /api/contracts in 207ms (1429 modules)
- GET /api/contracts? 200 in 252ms
- GET /api/contracts? 200 in 29ms
- GET /api/dashboard/stats 200 in 108ms
- GET /api/dashboard/recent-activity 200 in 128ms
- GET /api/dashboard/revenue-trends 200 in 134ms
- GET /api/dashboard/stats 200 in 53ms
- GET /api/dashboard/revenue-trends 200 in 39ms
- GET /api/dashboard/recent-activity 200 in 41ms
- GET /api/ai/dashboard-insights 200 in 11834ms
- GET /api/ai/dashboard-insights 200 in 11409ms
- ✓ Compiled /api/parents in 266ms (1428 modules)
- GET /api/parents 200 in 334ms
- GET /api/parents 200 in 30ms
- GET /api/dashboard/stats 200 in 99ms
- GET /api/dashboard/revenue-trends 200 in 114ms
- GET /api/dashboard/recent-activity 200 in 119ms
- GET /api/dashboard/stats 200 in 50ms
- GET /api/dashboard/recent-activity 200 in 49ms
- GET /api/dashboard/revenue-trends 200 in 65ms
- GET /api/ai/dashboard-insights 200 in 13825ms
- GET /api/ai/dashboard-insights 200 in 10680ms
- ✓ Compiled /api/payments/analytics in 242ms (1415 modules)
- ✓ Compiled (1417 modules)
- GET /api/payments/analytics 200 in 533ms
- GET /api/payments? 200 in 540ms
- GET /api/payments/analytics 200 in 111ms
- GET /api/payments? 200 in 136ms
- GET /api/ai/dashboard-insights 200 in 11250ms
- ✓ Compiled /api/templates in 234ms (1419 modules)
- GET /api/templates 200 in 288ms
- GET /api/templates 200 in 26ms
- ✓ Compiled /communication/templates/[id] in 300ms (1426 modules)
- ✓ Compiled /api/templates/[id] in 201ms (1428 modules)
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 248ms
- GET /api/templates/cmdarek84005gkpzoenmnnav7 200 in 36ms
- ✓ Compiled in 1536ms (1242 modules)
- ✓ Compiled in 438ms (1242 modules)
- ✓ Compiled in 197ms (188 modules)
- GET /api/parents 200 in 96ms
- GET /api/parents 200 in 31ms
- GET /parents 200 in 126ms
- GET /api/parents 200 in 81ms
- GET /api/parents 200 in 28ms
- GET /api/payments? 200 in 93ms
- GET /api/payments/analytics 200 in 96ms
- GET /api/payments? 200 in 62ms
- GET /api/payments/analytics 200 in 66ms
- ✓ Compiled /api/ai/payment-insights in 417ms (1403 modules)
- POST /api/ai/payment-insights 200 in 474ms
- POST /api/ai/payment-insights 200 in 42ms
- ✓ Compiled /api/payments/overdue in 470ms (1405 modules)
- POST /api/payments/overdue 200 in 549ms
- GET /api/payments? 200 in 393ms
- GET /api/payments/analytics 200 in 401ms
- ✓ Compiled / in 472ms (1387 modules)
- GET / 200 in 843ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 805ms (2618 modules)
- POST /api/ai/writing/compose 404 in 938ms
- POST /api/ai/writing/compose 404 in 31ms
- ✓ Compiled in 747ms (1244 modules)
- POST /api/ai/writing/compose 404 in 43ms
- ✓ Compiled /api/dashboard/stats in 424ms (1399 modules)
-Dashboard stats error: Error: Unauthorized
-    at requireAuth (webpack-internal:///(rsc)/./lib/api-utils.ts:76:15)
-    at async GET (webpack-internal:///(rsc)/./app/api/dashboard/stats/route.ts:13:9)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- GET /api/dashboard/stats 500 in 682ms
- ✓ Compiled in 705ms (188 modules)
- ✓ Compiled /api/ai/writing/compose in 252ms (1401 modules)
- POST /api/ai/writing/compose 200 in 1396ms
- ✓ Compiled /api/ai/writing/improve in 220ms (1402 modules)
-AI writing improve error: Error: Unauthorized
-    at requireAuth (webpack-internal:///(rsc)/./lib/api-utils.ts:76:15)
-    at async POST (webpack-internal:///(rsc)/./app/api/ai/writing/improve/route.ts:14:9)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- POST /api/ai/writing/improve 500 in 295ms
- ✓ Compiled in 5.6s (2644 modules)
- ✓ Compiled in 9.1s (1242 modules)
- POST /api/ai/writing/compose 200 in 1321ms
- POST /api/ai/writing/improve 200 in 542ms
- ✓ Compiled /api/ai/writing/complete in 482ms (1383 modules)
- POST /api/ai/writing/complete 200 in 1236ms
- ✓ Compiled /api/ai/writing/suggestions in 249ms (1385 modules)
- POST /api/ai/writing/suggestions 200 in 3947ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 991ms (2630 modules)
- GET /parents/new 404 in 1532ms
- ✓ Compiled in 295ms (188 modules)
- ○ Compiling /parents/new ...
- ✓ Compiled /parents/new in 605ms (1399 modules)
- GET /parents/new 200 in 776ms
- ○ Compiling /settings ...
- ✓ Compiled /settings in 880ms (2643 modules)
- GET /settings 200 in 1005ms
- ✓ Compiled in 1368ms (2829 modules)
- ✓ Compiled in 428ms (1250 modules)
- ✓ Compiled in 154ms (188 modules)
- ○ Compiling /test-ai-writing ...
- ✓ Compiled /test-ai-writing in 530ms (2636 modules)
- GET /test-ai-writing 200 in 729ms
- ✓ Compiled in 9.3s (2832 modules)
- ✓ Compiled in 308ms (188 modules)
- ✓ Compiled in 466ms (188 modules)
- ✓ Compiled in 928ms (1248 modules)
- ✓ Compiled in 852ms (1248 modules)
- ✓ Compiled in 625ms (1248 modules)
- ✓ Compiled in 1022ms (1248 modules)
- GET /payments 200 in 209ms
- ○ Compiling /api/payments/analytics ...
- ✓ Compiled /api/payments/analytics in 626ms (1382 modules)
- ✓ Compiled (1401 modules)
- GET /api/payments? 200 in 3381ms
- GET /api/payments/analytics 200 in 3381ms
- GET /api/payments/analytics 200 in 143ms
- GET /api/payments? 200 in 153ms
- ○ Compiling /api/ai/writing/suggestions ...
- ✓ Compiled /api/ai/writing/suggestions in 636ms (1403 modules)
- POST /api/ai/writing/suggestions 200 in 8534ms
- GET /payments 200 in 129ms
- GET /api/payments? 200 in 80ms
- GET /api/payments/analytics 200 in 83ms
- GET /api/payments? 200 in 52ms
- GET /api/payments/analytics 200 in 59ms
- ✓ Compiled /api/ai/writing/compose in 353ms (1403 modules)
- POST /api/ai/writing/compose 200 in 2050ms
- POST /api/ai/writing/compose 200 in 1671ms
- GET /payments 200 in 127ms
- GET /api/payments? 200 in 69ms
- GET /api/payments/analytics 200 in 70ms
- GET /api/payments? 200 in 55ms
- GET /api/payments/analytics 200 in 59ms
- POST /api/ai/writing/compose 200 in 1366ms
- ✓ Compiled /api/ai/writing/improve in 230ms (1405 modules)
- POST /api/ai/writing/improve 200 in 7615ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 865ms (2642 modules)
- GET /payments/cmdarek4q001qkpzojk92izcu 404 in 67ms
- GET /payments 200 in 152ms
- GET /api/payments? 200 in 453ms
- GET /api/payments/analytics 200 in 489ms
- GET /api/payments? 200 in 254ms
- GET /api/payments/analytics 200 in 144ms
- GET /payments/cmdarek4q001qkpzojk92izcu 404 in 56ms
- GET /payments 200 in 96ms
- GET /api/payments? 200 in 168ms
- GET /api/payments/analytics 200 in 168ms
- GET /api/payments? 200 in 124ms
- GET /api/payments/analytics 200 in 104ms
- GET /payments/cmdarek4q001qkpzojk92izcu 404 in 73ms
- GET /payments 200 in 101ms
- ✓ Compiled in 4.6s (2626 modules)
- GET /parents/1 404 in 660ms
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ✓ Compiled in 8.4s (2628 modules)
- GET /payments 200 in 3136ms
- ✓ Compiled in 8.5s (2628 modules)
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 710ms (2617 modules)
- GET /payments 404 in 2201ms
- ✓ Compiled in 1418ms (188 modules)
- GET /payments 200 in 166ms
- ✓ Compiled in 151ms (188 modules)
- GET /payments 200 in 70ms
- ○ Compiling /api/payments/analytics ...
- ✓ Compiled /api/payments/analytics in 718ms (1385 modules)
- ✓ Compiled (1404 modules)
- GET /api/payments/analytics 200 in 1851ms
- GET /api/payments? 200 in 1868ms
- GET /api/payments/analytics 200 in 98ms
- GET /api/payments? 200 in 102ms
- ✓ Compiled in 6.1s (2816 modules)
- ✓ Compiled in 515ms (1250 modules)
- ✓ Compiled in 7.9s (2628 modules)
- ✓ Compiled in 4.9s (2624 modules)
- ✓ Compiled in 4s (2623 modules)
- ✓ Compiled in 2.1s (2623 modules)
- ✓ Compiled in 3.7s (2623 modules)
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 1164ms (2626 modules)
- GET /payments/1 404 in 1361ms
- ✓ Compiled in 150ms (188 modules)
+ ✓ Compiled /api/payments in 522ms (165 modules)
+ GET /api/payments?parentId=j575pe13bk6q79y02vst3qa4zh7m5w0h&limit=1 200 in 1574ms
  ○ Compiling /payments/[id] ...
- ✓ Compiled /payments/[id] in 1529ms (2621 modules)
- GET /payments/1 200 in 2258ms
- ✓ Compiled in 126ms (188 modules)
- ○ Compiling /api/payments/[id] ...
- ✓ Compiled /api/payments/[id] in 1066ms (1404 modules)
- GET /api/payments/cmdarek4q001qkpzojk92izcu 200 in 2034ms
- GET /api/payments/cmdarek4q001qkpzojk92izcu 200 in 82ms
- ✓ Compiled /parents/[id] in 430ms (1403 modules)
- ✓ Compiled /api/parents/[id] in 329ms (1405 modules)
- GET /api/parents/cmdarek340009kpzo0bm5e6wp 200 in 431ms
- ✓ Compiled /api/ai/analyze-parent in 328ms (1407 modules)
- ✓ Compiled in 0ms (1407 modules)
- GET /api/parents/cmdarek340009kpzo0bm5e6wp 200 in 615ms
- ✓ Compiled in 0ms (1407 modules)
- ✓ Compiled in 0ms (1407 modules)
- ✓ Compiled in 0ms (1407 modules)
- POST /api/ai/analyze-parent 200 in 7033ms
- POST /api/ai/analyze-parent 200 in 6674ms
- GET /api/payments/cmdarek4q001qkpzojk92izcu 200 in 50ms
- GET /api/payments/cmdarek4q001qkpzojk92izcu 200 in 35ms
- ○ Compiling /api/payments/analytics ...
- ✓ Compiled /api/payments/analytics in 584ms (1400 modules)
- ✓ Compiled (1402 modules)
- GET /api/payments/analytics 200 in 855ms
- GET /api/payments? 200 in 918ms
- GET /api/payments/analytics 200 in 64ms
- GET /api/payments? 200 in 69ms
- ✓ Compiled /api/parents in 217ms (1405 modules)
- GET /api/parents 200 in 292ms
- GET /api/parents 200 in 44ms
- GET /api/payments? 200 in 75ms
- GET /api/payments/analytics 200 in 51ms
- GET /api/payments? 200 in 79ms
- GET /api/payments/analytics 200 in 58ms
- GET /api/parents 200 in 156ms
- GET /api/parents 200 in 41ms
- ✓ Compiled /api/ai/bulk-operations in 351ms (1401 modules)
- POST /api/ai/bulk-operations 200 in 4406ms
- POST /api/ai/bulk-operations 200 in 3836ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 671ms (2614 modules)
- POST /api/ai/bulk-operations 404 in 1044ms
- ✓ Compiled in 547ms (188 modules)
- ✓ Compiled /api/ai/bulk-operations in 384ms (1398 modules)
-Bulk operations error: Error: Unauthorized
-    at requireAuth (webpack-internal:///(rsc)/./lib/api-utils.ts:76:15)
-    at async POST (webpack-internal:///(rsc)/./app/api/ai/bulk-operations/route.ts:16:9)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- POST /api/ai/bulk-operations 500 in 745ms
- ✓ Compiled in 3.7s (2634 modules)
- ✓ Compiled in 2.8s (1253 modules)
- ✓ Compiled in 531ms (1253 modules)
- POST /api/ai/bulk-operations 200 in 64ms
- ✓ Compiled /api/ai/payment-insights in 405ms (1382 modules)
-Payment insights error: Error: Parent not found
-    at predictPaymentBehavior (webpack-internal:///(rsc)/./app/api/ai/payment-insights/route.ts:198:15)
-    at async POST (webpack-internal:///(rsc)/./app/api/ai/payment-insights/route.ts:22:28)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- POST /api/ai/payment-insights 500 in 504ms
- ✓ Compiled /api/ai/analyze-parent in 344ms (1384 modules)
- POST /api/ai/analyze-parent 400 in 427ms
- ✓ Compiled in 1059ms (2635 modules)
- ✓ Compiled in 2.7s (2635 modules)
- ✓ Compiled in 937ms (2625 modules)
- ✓ Compiled /api/ai/analyze-parent in 241ms (1380 modules)
- POST /api/ai/analyze-parent 404 in 412ms
- ○ Compiling /api/parents ...
- ✓ Compiled /api/parents in 1323ms (1401 modules)
-Parents fetch error: Error: Unauthorized
-    at requireAuth (webpack-internal:///(rsc)/./lib/api-utils.ts:76:15)
-    at async GET (webpack-internal:///(rsc)/./app/api/parents/route.ts:21:9)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- GET /api/parents 500 in 1578ms
- ✓ Compiled in 879ms (2652 modules)
- GET /api/parents 200 in 69ms
- POST /api/ai/analyze-parent 200 in 8148ms
- ✓ Compiled /api/ai/bulk-operations in 377ms (1403 modules)
- POST /api/ai/bulk-operations 200 in 431ms
- ✓ Compiled /api/ai/payment-insights in 256ms (1405 modules)
- POST /api/ai/payment-insights 200 in 328ms
- POST /api/ai/bulk-operations 200 in 2998ms
- ✓ Compiled in 1071ms (2656 modules)
- ✓ Compiled in 1245ms (2656 modules)
- ✓ Compiled in 792ms (2656 modules)
- ✓ Compiled in 1565ms (2652 modules)
- ✓ Compiled in 830ms (1251 modules)
- ✓ Compiled in 195ms (188 modules)
- ✓ Compiled in 986ms (188 modules)
- GET /parents 200 in 208ms
- ✓ Compiled /api/parents in 448ms (1399 modules)
- GET /api/parents 200 in 529ms
- GET /api/parents 200 in 58ms
- ✓ Compiled /api/ai/bulk-operations in 365ms (1401 modules)
- POST /api/ai/bulk-operations 200 in 2276ms
- POST /api/ai/bulk-operations 200 in 2666ms
- ✓ Compiled in 3.6s (2625 modules)
- ✓ Compiled in 638ms (188 modules)
- ✓ Compiled in 1487ms (1251 modules)
- ✓ Compiled in 3s (1251 modules)
- ✓ Compiled in 933ms (1251 modules)
- ✓ Compiled in 551ms (1251 modules)
- ✓ Compiled /api/ai/bulk-operations in 490ms (1380 modules)
- POST /api/ai/bulk-operations 200 in 775ms
- ✓ Compiled in 1166ms (2631 modules)
- ○ Compiling /api/parents ...
- ✓ Compiled /api/parents in 2.7s (2633 modules)
- ✓ Compiled in 1ms (1402 modules)
- GET /api/parents 200 in 9749ms
- GET /api/parents 200 in 142ms
- ✓ Compiled in 2.6s (2654 modules)
- ✓ Compiled in 4.8s (2654 modules)
- ✓ Compiled in 2.1s (2654 modules)
- ✓ Compiled in 4.5s (2629 modules)
- ✓ Compiled /api/ai/bulk-operations in 413ms (1382 modules)
- POST /api/ai/bulk-operations 200 in 554ms
- POST /api/ai/bulk-operations 200 in 2696ms
- ✓ Compiled in 6.2s (2629 modules)
- ✓ Compiled /api/parents in 4.7s (2629 modules)
- ✓ Compiled in 0ms (1401 modules)
- GET /api/parents 200 in 7972ms
- GET /api/parents 200 in 177ms
- ✓ Compiled in 6.7s (2654 modules)
- ✓ Compiled in 4.4s (2654 modules)
- ✓ Compiled in 3.6s (2659 modules)
- ✓ Compiled in 5.6s (2659 modules)
- ✓ Compiled in 5.6s (1255 modules)
- ✓ Compiled in 1113ms (1255 modules)
- ○ Compiling /api/ai/bulk-operations ...
- ✓ Compiled /api/ai/bulk-operations in 572ms (1385 modules)
- POST /api/ai/bulk-operations 200 in 2266ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 582ms (2629 modules)
- POST /api/messages 404 in 945ms
- ✓ Compiled in 1235ms (188 modules)
- ✓ Compiled /api/messages in 357ms (1405 modules)
- POST /api/messages 200 in 663ms
- POST /api/ai/bulk-operations 200 in 2392ms
- ✓ Compiled /api/ai/payment-insights in 325ms (1406 modules)
- POST /api/ai/payment-insights 200 in 419ms
- POST /api/ai/bulk-operations 200 in 3804ms
- ✓ Compiled /api/parents in 3.2s (2640 modules)
- ✓ Compiled in 1ms (1406 modules)
- GET /api/parents 200 in 2039ms
- GET /api/parents 200 in 326ms
- ○ Compiling /api/payments/analytics ...
- ✓ Compiled /api/payments/analytics in 648ms (1408 modules)
- ✓ Compiled (1410 modules)
- GET /api/payments? 200 in 1129ms
- GET /api/payments/analytics 200 in 1134ms
- GET /api/payments? 200 in 183ms
- GET /api/payments/analytics 200 in 184ms
- ○ Compiling / ...
- ✓ Compiled / in 700ms (1422 modules)
- ✓ Compiled /api/dashboard/recent-activity in 458ms (1424 modules)
- ✓ Compiled (1428 modules)
- GET /api/dashboard/revenue-trends 200 in 1176ms
- GET /api/dashboard/recent-activity 200 in 1180ms
- GET /api/dashboard/stats 200 in 1189ms
- GET /api/dashboard/recent-activity 200 in 172ms
- ✓ Compiled /api/ai/dashboard-insights in 393ms (1430 modules)
- ✓ Compiled in 3ms (1430 modules)
- GET /api/dashboard/revenue-trends 200 in 2249ms
- GET /api/dashboard/stats 200 in 2268ms
- ✓ Compiled in 1ms (1430 modules)
- ✓ Compiled in 0ms (1430 modules)
- GET /api/ai/dashboard-insights 200 in 21495ms
- ✓ Compiled in 11.5s (2685 modules)
- GET /api/ai/dashboard-insights 200 in 23688ms
- ✓ Compiled in 8.6s (2683 modules)
- ✓ Compiled in 7.1s (2657 modules)
- ✓ Compiled in 652ms (1255 modules)
- ✓ Compiled in 562ms (1255 modules)
- ✓ Compiled in 732ms (1255 modules)
- ✓ Compiled /api/ai/bulk-operations in 443ms (1385 modules)
-Bulk operations error: Error: Unknown bulk operation
-    at POST (webpack-internal:///(rsc)/./app/api/ai/bulk-operations/route.ts:34:23)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- POST /api/ai/bulk-operations 500 in 579ms
- POST /api/ai/bulk-operations 200 in 126ms
+(node:764) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Compiled /api/health in 7.5s (1006 modules)
+ GET /api/health 200 in 6508ms
+ ✓ Compiled in 265ms (435 modules)
+ GET /payments/jx707r0tejs506pmhhpg7rspgs7m8x6m 200 in 8180ms
+ ✓ Compiled /api/payments/[id]/history in 348ms (672 modules)
+ ✓ Compiled (676 modules)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/progress 200 in 869ms
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m 200 in 872ms
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/history 200 in 875ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/progress 200 in 26ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/history 200 in 37ms
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m 200 in 58ms
  ○ Compiling /parents ...
- ✓ Compiled /parents in 1086ms (1397 modules)
- ○ Compiling /api/parents ...
- ✓ Compiled /api/parents in 2.5s (2673 modules)
- GET /api/parents 200 in 2330ms
- GET /api/parents 200 in 610ms
- ✓ Compiled in 2.4s (2662 modules)
- ✓ Compiled in 1144ms (2662 modules)
- ○ Compiling /api/ai/payment-insights ...
- ✓ Compiled /api/ai/payment-insights in 629ms (1409 modules)
-Payment insights error: Error: Parent ID required for payment prediction
-    at predictPaymentBehavior (webpack-internal:///(rsc)/./app/api/ai/payment-insights/route.ts:174:15)
-    at POST (webpack-internal:///(rsc)/./app/api/ai/payment-insights/route.ts:22:34)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
-    at async eT.execute (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
-    at async eT.handle (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
-    at async doRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1366:42)
-    at async cacheEntry.responseCache.get.routeKind (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1588:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1496:28)
-    at async DevServer.renderPageComponent (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1924:24)
-    at async DevServer.renderToResponseImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:1962:32)
-    at async DevServer.pipeImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:922:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/next-server.js:272:17)
-    at async DevServer.handleRequestImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/base-server.js:818:17)
-    at async /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
-    at async Span.traceAsyncFn (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/trace/trace.js:154:20)
-    at async DevServer.handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
-    at async invokeRender (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:178:21)
-    at async handleRequest (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:355:24)
-    at async requestHandlerImpl (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/router-server.js:379:13)
-    at async Server.requestListener (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/lib/start-server.js:141:13)
- POST /api/ai/payment-insights 500 in 697ms
- ✓ Compiled in 1472ms (2662 modules)
- ✓ Compiled /api/ai/analyze-parent in 454ms (1388 modules)
- POST /api/ai/analyze-parent 200 in 7150ms
- POST /api/ai/payment-insights 200 in 4366ms
- POST /api/ai/payment-insights 200 in 3724ms
- POST /api/ai/payment-insights 200 in 4315ms
- POST /api/ai/analyze-parent 200 in 14223ms
- ○ Compiling /api/ai/bulk-operations ...
- ✓ Compiled /api/ai/bulk-operations in 521ms (1388 modules)
- POST /api/ai/bulk-operations 200 in 615ms
- ✓ Compiled in 10.3s (2637 modules)
- ✓ Compiled in 7.5s (2637 modules)
- ✓ Compiled in 5.9s (2637 modules)
- GET /parents 200 in 276ms
- ○ Compiling /api/parents ...
- ✓ Compiled /api/parents in 905ms (1406 modules)
- GET /api/parents 200 in 2935ms
- GET /api/parents 200 in 79ms
- ○ Compiling /api/ai/bulk-operations ...
- ✓ Compiled /api/ai/bulk-operations in 1166ms (1408 modules)
- POST /api/ai/bulk-operations 200 in 5342ms
- POST /api/ai/bulk-operations 200 in 2949ms
- POST /api/ai/bulk-operations 200 in 2386ms
- POST /api/ai/bulk-operations 200 in 2002ms
- GET /parents 200 in 362ms
- GET /api/parents 200 in 104ms
- GET /api/parents 200 in 65ms
- POST /api/ai/bulk-operations 200 in 1974ms
- GET /payments?parentId=cmdarek3i000ikpzoarfpps09 200 in 132ms
- ✓ Compiled /api/payments/analytics in 495ms (1410 modules)
- ✓ Compiled (1412 modules)
- GET /api/payments? 200 in 815ms
- GET /api/payments/analytics 200 in 816ms
- GET /api/payments? 200 in 187ms
- GET /api/payments/analytics 200 in 230ms
- GET /parents 200 in 254ms
- GET /api/parents 200 in 67ms
- GET /api/parents 200 in 67ms
- ✓ Compiled in 2.5s (2637 modules)
- ✓ Compiled /api/parents/[id] in 458ms (1404 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 1373ms
- ✓ Compiled /api/ai/analyze-parent in 443ms (1406 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 711ms
- POST /api/ai/analyze-parent 200 in 14885ms
- POST /api/ai/analyze-parent 200 in 17827ms
- POST /api/ai/analyze-parent 200 in 11719ms
- POST /api/ai/analyze-parent 200 in 6840ms
- ✓ Compiled /api/parents in 457ms (1410 modules)
- GET /api/parents 200 in 571ms
- GET /api/parents 200 in 71ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 92ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 154ms
- GET /api/parents 200 in 68ms
+ ✓ Compiled /parents in 949ms (1279 modules)
+ GET /parents 200 in 1177ms
+ ○ Compiling /payments ...
+ ✓ Compiled /payments in 2.4s (2609 modules)
+ GET /api/payments 200 in 216ms
+ ○ Compiling /api/teams ...
+ ✓ Compiled /api/teams in 1369ms (1436 modules)
+ ✓ Compiled (1441 modules)
+ GET /api/teams 200 in 1769ms
+ GET /api/payments/analytics 200 in 1805ms
+ GET /api/payments/analytics 200 in 8ms
+ GET /api/parents 200 in 1825ms
+ GET /api/payments 200 in 1684ms
+ GET /api/teams 200 in 59ms
+ GET /api/parents 200 in 43ms
+ ✓ Compiled /api/ai/bulk-operations in 200ms (1443 modules)
+ POST /api/ai/bulk-operations 200 in 259ms
+ GET /api/payments?parentId=j5745wfbz86ay20h9zyjhgya1s7m4tvx&limit=1 200 in 89ms
  GET /api/parents 200 in 47ms
- ✓ Compiled /api/payments/analytics in 377ms (1412 modules)
- ✓ Compiled (1414 modules)
- GET /api/payments? 200 in 758ms
- GET /api/payments/analytics 200 in 743ms
- GET /api/payments? 200 in 158ms
- GET /api/payments/analytics 200 in 157ms
- POST /api/ai/analyze-parent 200 in 8198ms
- POST /api/ai/analyze-parent 200 in 10021ms
- ○ Compiling /api/payments/[id] ...
- ✓ Compiled /api/payments/[id] in 582ms (1416 modules)
- GET /api/payments/cmdarek5d002ekpzoqiop7zha 200 in 686ms
- GET /api/payments/cmdarek5d002ekpzoqiop7zha 200 in 59ms
- GET /api/payments? 200 in 559ms
- GET /api/payments/analytics 200 in 568ms
- GET /api/payments/analytics 200 in 185ms
- GET /api/payments? 200 in 190ms
- ✓ Compiled in 3.5s (2663 modules)
- ✓ Compiled /api/parents in 264ms (1410 modules)
- GET /api/parents 200 in 337ms
- GET /api/parents 200 in 54ms
- GET /api/payments? 200 in 121ms
- GET /api/payments/analytics 200 in 101ms
- GET /api/payments? 200 in 143ms
- GET /api/payments/analytics 200 in 144ms
- GET /payments?parentId=cmdarek3i000ikpzoarfpps09 200 in 398ms
- GET /api/payments? 200 in 138ms
- GET /api/payments/analytics 200 in 138ms
- GET /api/payments? 200 in 126ms
- GET /api/payments/analytics 200 in 127ms
- GET /api/parents 200 in 70ms
- GET /api/parents 200 in 86ms
- ✓ Compiled /api/ai/bulk-operations in 324ms (1412 modules)
- POST /api/ai/bulk-operations 200 in 2121ms
- GET /api/payments? 200 in 199ms
- GET /api/payments/analytics 200 in 203ms
- GET /api/payments? 200 in 103ms
- GET /api/payments/analytics 200 in 105ms
- GET /api/parents 200 in 63ms
- GET /api/parents 200 in 47ms
- GET /api/payments? 200 in 102ms
- GET /api/payments/analytics 200 in 82ms
- GET /api/payments? 200 in 117ms
- GET /api/payments/analytics 200 in 119ms
- ✓ Compiled /api/payments/[id] in 283ms (1414 modules)
- GET /api/payments/cmdarek4q001qkpzojk92izcu 200 in 365ms
- GET /api/payments/cmdarek4q001qkpzojk92izcu 200 in 53ms
- GET /api/payments? 200 in 1469ms
- GET /api/payments/analytics 200 in 1459ms
- GET /api/payments? 200 in 138ms
- GET /api/payments/analytics 200 in 107ms
- GET /api/parents 200 in 85ms
- GET /api/parents 200 in 88ms
- ✓ Compiled in 2.6s (2666 modules)
- GET /api/payments? 200 in 278ms
- GET /api/payments/analytics 200 in 303ms
- GET /api/payments? 200 in 216ms
- GET /api/payments/analytics 200 in 227ms
- GET /api/parents 200 in 127ms
- GET /api/parents 200 in 98ms
- ○ Compiling /api/payments/[id] ...
- ✓ Compiled /api/payments/[id] in 704ms (1412 modules)
- GET /api/payments/cmdarek7r0056kpzodnhvqx75 200 in 839ms
- GET /api/payments/cmdarek7r0056kpzodnhvqx75 200 in 61ms
- GET /api/parents 200 in 69ms
- GET /api/parents 200 in 59ms
- ✓ Compiled /api/ai/bulk-operations in 258ms (1414 modules)
- POST /api/ai/bulk-operations 200 in 2076ms
- ○ Compiling /parents/[id]/edit ...
- ✓ Compiled /parents/[id]/edit in 1949ms (1422 modules)
- ○ Compiling /api/parents/[id] ...
- ✓ Compiled /api/parents/[id] in 3.6s (1424 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 3998ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 198ms
- GET /api/parents 200 in 95ms
- GET /api/parents 200 in 62ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 145ms
- ✓ Compiled /api/ai/analyze-parent in 491ms (1426 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 845ms
- POST /api/ai/analyze-parent 200 in 6172ms
- POST /api/ai/analyze-parent 200 in 6816ms
- ✓ Compiled in 4.4s (2560 modules)
- ✓ Compiled in 1252ms (2560 modules)
- ✓ Compiled in 4.5s (2560 modules)
- ✓ Compiled in 1183ms (2560 modules)
- ✓ Compiled in 1371ms (2560 modules)
- GET /parents/cmdarek3i000ikpzoarfpps09 200 in 768ms
- ○ Compiling /api/parents/[id] ...
- ✓ Compiled /api/parents/[id] in 918ms (1327 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 2381ms
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 72ms
- ✓ Compiled /api/ai/analyze-parent in 339ms (1329 modules)
- POST /api/ai/analyze-parent 200 in 8498ms
- POST /api/ai/analyze-parent 200 in 6856ms
- ✓ Compiled /api/ai/bulk-operations in 417ms (1310 modules)
- POST /api/ai/bulk-operations 200 in 510ms
- ✓ Compiled in 2.1s (2566 modules)
- ✓ Compiled in 2.3s (2566 modules)
- ✓ Compiled in 2.1s (2566 modules)
- ✓ Compiled in 15s (2559 modules)
- ✓ Compiled in 2s (2559 modules)
- ✓ Compiled in 1709ms (2559 modules)
- ✓ Compiled in 4.9s (2559 modules)
- ○ Compiling /api/ai/analyze-parent ...
- ✓ Compiled /api/ai/analyze-parent in 1127ms (1309 modules)
- POST /api/ai/analyze-parent 200 in 11213ms
- ✓ Compiled in 7.4s (2559 modules)
- ✓ Compiled /api/parents/[id] in 5.3s (2559 modules)
- ✓ Compiled in 3ms (1326 modules)
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 11555ms
- ○ Compiling /api/ai/analyze-parent ...
- GET /api/parents/cmdarek3i000ikpzoarfpps09 200 in 652ms
- ✓ Compiled /api/ai/analyze-parent in 23s (2585 modules)
- POST /api/ai/analyze-parent 200 in 24042ms
- POST /api/ai/analyze-parent 200 in 30734ms
- ✓ Compiled in 6.7s (2585 modules)
- ✓ Compiled in 4.1s (2560 modules)
- ○ Compiling /_not-found ...
- ⨯ Failed to generate static paths for /parents/[id]:
-Error: Cannot find module './vendor-chunks/@radix-ui.js'
-Require stack:
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/server/webpack-runtime.js
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/server/app/parents/[id]/page.js
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/require.js
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/load-components.js
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/build/utils.js
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/static-paths-worker.js
-- /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/jest-worker/processChild.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16) {
-  type: 'Error',
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/server/webpack-runtime.js',
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/server/app/parents/[id]/page.js',
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/require.js',
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/load-components.js',
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/build/utils.js',
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/server/dev/static-paths-worker.js',
-    '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/node_modules/next/dist/compiled/jest-worker/processChild.js'
+ GET /api/parents 200 in 31ms
+ GET /payments/jx749qdhpcnzvnr87ags4410ys7m95wc 200 in 136ms
+ POST /api/ai/bulk-operations 200 in 78ms
+ ✓ Compiled in 4.6s (2417 modules)
+ ✓ Compiled /api/health in 367ms (1316 modules)
+ GET /api/health 200 in 423ms
+ ✓ Compiled /api/ai/bulk-operations in 184ms (1318 modules)
+ POST /api/ai/bulk-operations 200 in 386ms
+ POST /api/ai/bulk-operations 200 in 61ms
+ GET /parents 200 in 123ms
+ GET /parents 200 in 44ms
+ ✓ Compiled /api/parents in 323ms (1431 modules)
+ GET /api/parents 200 in 494ms
+ GET /api/parents 200 in 34ms
+ POST /api/ai/bulk-operations 200 in 50ms
+ ✓ Compiled in 1959ms (2417 modules)
+ ✓ Compiled /api/health in 200ms (1316 modules)
+ GET /api/health 200 in 316ms
+ ✓ Compiled /api/ai/bulk-operations in 140ms (1318 modules)
+ POST /api/ai/bulk-operations 200 in 259ms
+ POST /api/ai/bulk-operations 200 in 101ms
+ POST /api/ai/bulk-operations 200 in 42ms
+ POST /api/ai/bulk-operations 200 in 71ms
+ ✓ Compiled in 747ms (2507 modules)
+ GET /api/health 200 in 28ms
+ GET /parents 200 in 154ms
+ POST /api/ai/bulk-operations 200 in 83ms
+ POST /api/ai/bulk-operations 200 in 129ms
+ GET /parents 200 in 46ms
+ ○ Compiling /api/parents ...
+ ✓ Compiled /api/parents in 738ms (1431 modules)
+ GET /api/parents 200 in 915ms
+ GET /api/parents 200 in 37ms
+ POST /api/ai/bulk-operations 200 in 66ms
+ POST /api/ai/bulk-operations 200 in 156ms
+ POST /api/ai/bulk-operations 200 in 100ms
+ POST /api/ai/bulk-operations 200 in 110ms
+ ✓ Compiled /api/ai/payment-insights in 298ms (1431 modules)
+ POST /api/ai/payment-insights 200 in 485ms
+ POST /api/ai/payment-insights 200 in 40ms
+ ✓ Compiled /api/ai/analyze-parent in 404ms (1533 modules)
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+ POST /api/ai/bulk-operations 200 in 46ms
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 85,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+    recommendations: [
+      'Continue sending friendly reminders about upcoming payments, ensuring they highlight the zero-dollar installments clearly.',
+      'Personalize communication by including specific updates about the basketball program and events that may interest Sarah.'
+    ],
+    nextActions: [
+      'Schedule regular check-ins to maintain engagement and ensure satisfaction with the program.',
+      'Monitor payment patterns and continue to offer support as needed, especially for any future installments.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 85,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+  recommendations: [
+    'Continue sending friendly reminders about upcoming payments, ensuring they highlight the zero-dollar installments clearly.',
+    'Personalize communication by including specific updates about the basketball program and events that may interest Sarah.'
+  ],
+  nextActions: [
+    'Schedule regular check-ins to maintain engagement and ensure satisfaction with the program.',
+    'Monitor payment patterns and continue to offer support as needed, especially for any future installments.'
   ]
 }
- ✓ Compiled /_not-found in 1678ms (2549 modules)
- GET /_next/static/css/app/layout.css?v=1752975733175 404 in 1858ms
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 85,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+    recommendations: [
+      "Send personalized messages focusing on Sarah's specific interests in basketball and the progress of her child.",
+      "Consider offering exclusive content or events related to basketball that align with her child's development."
+    ],
+    nextActions: [
+      'Monitor upcoming payment reminders for accuracy and ensure they are sent in a timely manner.',
+      'Engage Sarah through follow-up emails that emphasize community involvement and upcoming events.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 85,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+  recommendations: [
+    "Send personalized messages focusing on Sarah's specific interests in basketball and the progress of her child.",
+    "Consider offering exclusive content or events related to basketball that align with her child's development."
+  ],
+  nextActions: [
+    'Monitor upcoming payment reminders for accuracy and ensure they are sent in a timely manner.',
+    'Engage Sarah through follow-up emails that emphasize community involvement and upcoming events.'
+  ]
+}
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'medium',
+    engagementScore: 7,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'professional yet friendly'
+    },
+    recommendations: [
+      'Send a reminder email for the upcoming payment due on the pending invoices to ensure timely payment.',
+      'Offer personalized updates about the program or team activities to enhance engagement.'
+    ],
+    nextActions: [
+      'Follow up via email regarding the pending payments and provide a clear breakdown of what is due.',
+      'Invite Marcus Johnson to a parent meeting to foster community and involvement in the program.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'medium',
+  engagementScore: 7,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'professional yet friendly'
+  },
+  recommendations: [
+    'Send a reminder email for the upcoming payment due on the pending invoices to ensure timely payment.',
+    'Offer personalized updates about the program or team activities to enhance engagement.'
+  ],
+  nextActions: [
+    'Follow up via email regarding the pending payments and provide a clear breakdown of what is due.',
+    'Invite Marcus Johnson to a parent meeting to foster community and involvement in the program.'
+  ]
+}
+Processing parent: j571jaamzc3r52ksnbb0bekcms7m5qn9 Jennifer Williams
+Payments fetched: 4
+Message logs fetched: 3
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 4,
+  hasMessageLogs: true,
+  messageLogsLength: 3,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'medium',
+    engagementScore: 6,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a friendly reminder via email for the pending payments to ensure timely processing.',
+      'Offer a payment plan option if multiple payments are expected in the future to enhance convenience.'
+    ],
+    nextActions: [
+      'Follow up with Marcus Johnson via email regarding the two pending payments to encourage prompt payment.',
+      'Engage Marcus by providing updates on the team and encouraging participation in upcoming events or meetings.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'medium',
+  engagementScore: 6,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a friendly reminder via email for the pending payments to ensure timely processing.',
+    'Offer a payment plan option if multiple payments are expected in the future to enhance convenience.'
+  ],
+  nextActions: [
+    'Follow up with Marcus Johnson via email regarding the two pending payments to encourage prompt payment.',
+    'Engage Marcus by providing updates on the team and encouraging participation in upcoming events or meetings.'
+  ]
+}
+Processing parent: j571jaamzc3r52ksnbb0bekcms7m5qn9 Jennifer Williams
+Payments fetched: 4
+Message logs fetched: 3
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 4,
+  hasMessageLogs: true,
+  messageLogsLength: 3,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'professional and informative' },
+    recommendations: [
+      'Continue sending payment reminders via email, ensuring they are clear and provide all necessary details.',
+      'Consider periodically checking in with Jennifer to gather feedback on the program and enhance her engagement.'
+    ],
+    nextActions: [
+      'Schedule regular email updates regarding upcoming events or changes in the program.',
+      'Review payment history to confirm timely communication for future payments and potential discounts for early payments or referrals.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'professional and informative' },
+  recommendations: [
+    'Continue sending payment reminders via email, ensuring they are clear and provide all necessary details.',
+    'Consider periodically checking in with Jennifer to gather feedback on the program and enhance her engagement.'
+  ],
+  nextActions: [
+    'Schedule regular email updates regarding upcoming events or changes in the program.',
+    'Review payment history to confirm timely communication for future payments and potential discounts for early payments or referrals.'
+  ]
+}
+Processing parent: j57ez6tgzd1b724y7bapca1tns7m5sec Carlos Rodriguez
+Payments fetched: 2
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 85,
+    paymentBehavior: 'excellent',
+    communicationStyle: 'Email is the preferred channel; use a friendly and supportive tone.',
+    recommendations: [
+      'Send personalized payment reminders ahead of due dates to maintain engagement.',
+      'Provide updates on program activities and achievements to foster a sense of community.'
+    ],
+    nextActions: [
+      'Set up automated payment reminders via email for upcoming due dates.',
+      'Reach out with a personalized email thanking Jennifer for her continued support and offering any assistance.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 85,
+  paymentBehavior: 'excellent',
+  communicationStyle: 'Email is the preferred channel; use a friendly and supportive tone.',
+  recommendations: [
+    'Send personalized payment reminders ahead of due dates to maintain engagement.',
+    'Provide updates on program activities and achievements to foster a sense of community.'
+  ],
+  nextActions: [
+    'Set up automated payment reminders via email for upcoming due dates.',
+    'Reach out with a personalized email thanking Jennifer for her continued support and offering any assistance.'
+  ]
+}
+Processing parent: j57ez6tgzd1b724y7bapca1tns7m5sec Carlos Rodriguez
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 7,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a friendly reminder a week before the due date of the next payment.',
+      'Provide updates on program activities and performance of the participant.'
+    ],
+    nextActions: [
+      'Set up an automated reminder system for upcoming payments.',
+      'Follow up with Carlos after the first payment is processed to ensure satisfaction and address any questions.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 7,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a friendly reminder a week before the due date of the next payment.',
+    'Provide updates on program activities and performance of the participant.'
+  ],
+  nextActions: [
+    'Set up an automated reminder system for upcoming payments.',
+    'Follow up with Carlos after the first payment is processed to ensure satisfaction and address any questions.'
+  ]
+}
+Processing parent: j57487s3r9dh8y973mm74q38e97m5d5w Priya Patel
+Payments fetched: 2
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 70,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a reminder email a week before the due date for payments.',
+      'Provide updates on program activities and events to maintain engagement.'
+    ],
+    nextActions: [
+      'Follow up with a friendly email regarding the pending payments.',
+      'Encourage participation in upcoming events to enhance community engagement.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 70,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a reminder email a week before the due date for payments.',
+    'Provide updates on program activities and events to maintain engagement.'
+  ],
+  nextActions: [
+    'Follow up with a friendly email regarding the pending payments.',
+    'Encourage participation in upcoming events to enhance community engagement.'
+  ]
+}
+Processing parent: j57487s3r9dh8y973mm74q38e97m5d5w Priya Patel
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'medium',
+    engagementScore: 45,
+    paymentBehavior: 'concerning',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send reminders for pending payments to encourage timely action.',
+      "Engage Priya with personalized updates related to her child's progress in the program."
+    ],
+    nextActions: [
+      'Follow up with an email reminder about the pending payments.',
+      'Create a personalized communication plan that includes updates and opportunities for engagement.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'medium',
+  engagementScore: 45,
+  paymentBehavior: 'concerning',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send reminders for pending payments to encourage timely action.',
+    "Engage Priya with personalized updates related to her child's progress in the program."
+  ],
+  nextActions: [
+    'Follow up with an email reminder about the pending payments.',
+    'Create a personalized communication plan that includes updates and opportunities for engagement.'
+  ]
+}
+Processing parent: j57d6j904qwefk1stx0ds969a97m4syc Dorothy Wilson
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a personalized email reminder about the upcoming payment due date with payment options available.',
+      'Provide regular updates on program activities and encourage feedback to enhance engagement.'
+    ],
+    nextActions: [
+      'Follow up with Priya to ensure she received the payment reminders and address any concerns.',
+      'Invite Priya to participate in a parent meeting or event to foster community and program involvement.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a personalized email reminder about the upcoming payment due date with payment options available.',
+    'Provide regular updates on program activities and encourage feedback to enhance engagement.'
+  ],
+  nextActions: [
+    'Follow up with Priya to ensure she received the payment reminders and address any concerns.',
+    'Invite Priya to participate in a parent meeting or event to foster community and program involvement.'
+  ]
+}
+Processing parent: j57d6j904qwefk1stx0ds969a97m4syc Dorothy Wilson
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send reminders for upcoming payments to ensure they are aware of due dates.',
+      'Provide engagement opportunities such as updates on the program and ways to get involved.'
+    ],
+    nextActions: [
+      'Send a friendly reminder email about the pending payments with due dates.',
+      'Follow up with a welcome message highlighting program features and upcoming events.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send reminders for upcoming payments to ensure they are aware of due dates.',
+    'Provide engagement opportunities such as updates on the program and ways to get involved.'
+  ],
+  nextActions: [
+    'Send a friendly reminder email about the pending payments with due dates.',
+    'Follow up with a welcome message highlighting program features and upcoming events.'
+  ]
+}
+Processing parent: j57c9hdytsqrd87x9v1fje9jwn7m4y4g James Thompson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 80,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a reminder email regarding the pending payments with a friendly tone.',
+      "Offer personalized updates on the program's progress and upcoming events."
+    ],
+    nextActions: [
+      'Follow up with a personalized email regarding the payment status and encourage prompt payment.',
+      'Engage with Dorothy by inviting her to participate in program-related discussions or feedback surveys.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 80,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a reminder email regarding the pending payments with a friendly tone.',
+    "Offer personalized updates on the program's progress and upcoming events."
+  ],
+  nextActions: [
+    'Follow up with a personalized email regarding the payment status and encourage prompt payment.',
+    'Engage with Dorothy by inviting her to participate in program-related discussions or feedback surveys.'
+  ]
+}
+Processing parent: j57c9hdytsqrd87x9v1fje9jwn7m4y4g James Thompson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 8,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a reminder email regarding the pending payment with additional payment options.',
+      'Share success stories or testimonials from other parents to strengthen engagement.'
+    ],
+    nextActions: [
+      'Follow up with an email reminder about the pending payment due soon.',
+      'Engage James with a personalized update about upcoming events or activities in the program.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 8,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a reminder email regarding the pending payment with additional payment options.',
+    'Share success stories or testimonials from other parents to strengthen engagement.'
+  ],
+  nextActions: [
+    'Follow up with an email reminder about the pending payment due soon.',
+    'Engage James with a personalized update about upcoming events or activities in the program.'
+  ]
+}
+Processing parent: j57bf8910ksvyh58sa08vpb1vd7m4xxt Michelle Davis
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send reminders for upcoming payments to ensure timely payments.',
+      'Provide updates on program activities and events to keep James engaged.'
+    ],
+    nextActions: [
+      'Follow up with James via email to confirm receipt of payment and provide details on the next steps.',
+      'Send a personalized welcome message detailing the benefits of the program and upcoming events.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send reminders for upcoming payments to ensure timely payments.',
+    'Provide updates on program activities and events to keep James engaged.'
+  ],
+  nextActions: [
+    'Follow up with James via email to confirm receipt of payment and provide details on the next steps.',
+    'Send a personalized welcome message detailing the benefits of the program and upcoming events.'
+  ]
+}
+Processing parent: j57bf8910ksvyh58sa08vpb1vd7m4xxt Michelle Davis
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send regular updates and reminders about upcoming payments to maintain engagement.',
+      "Offer personalized insights on the child's progress in the program to foster a stronger connection."
+    ],
+    nextActions: [
+      'Send an email reminder about the pending payments that are due soon.',
+      "Follow up with a personalized message regarding the child's performance and experiences in the program."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send regular updates and reminders about upcoming payments to maintain engagement.',
+    "Offer personalized insights on the child's progress in the program to foster a stronger connection."
+  ],
+  nextActions: [
+    'Send an email reminder about the pending payments that are due soon.',
+    "Follow up with a personalized message regarding the child's performance and experiences in the program."
+  ]
+}
+Processing parent: j5799crwm4q4k11zechwmd598x7m4ch2 Roberto Gonzalez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send a friendly reminder about pending payments a few days before the due date.',
+      "Provide updates on the program's progress and how Michelle's support contributes to the team's success."
+    ],
+    nextActions: [
+      'Send an email reminder regarding the pending payments with a friendly tone.',
+      'Schedule a follow-up call to discuss any questions or concerns about the program.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send a friendly reminder about pending payments a few days before the due date.',
+    "Provide updates on the program's progress and how Michelle's support contributes to the team's success."
+  ],
+  nextActions: [
+    'Send an email reminder regarding the pending payments with a friendly tone.',
+    'Schedule a follow-up call to discuss any questions or concerns about the program.'
+  ]
+}
+Processing parent: j5799crwm4q4k11zechwmd598x7m4ch2 Roberto Gonzalez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'high',
+    engagementScore: 2,
+    paymentBehavior: 'poor',
+    communicationStyle: { preferredChannel: 'email', tone: 'supportive and informative' },
+    recommendations: [
+      'Send a gentle reminder email regarding outstanding payments.',
+      'Engage Roberto with personalized content about the benefits of continued participation in the program.'
+    ],
+    nextActions: [
+      'Reach out via email to discuss the pending payments and offer a flexible payment plan.',
+      'Schedule a follow-up call to understand any concerns that may have led to inactivity.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'high',
+  engagementScore: 2,
+  paymentBehavior: 'poor',
+  communicationStyle: { preferredChannel: 'email', tone: 'supportive and informative' },
+  recommendations: [
+    'Send a gentle reminder email regarding outstanding payments.',
+    'Engage Roberto with personalized content about the benefits of continued participation in the program.'
+  ],
+  nextActions: [
+    'Reach out via email to discuss the pending payments and offer a flexible payment plan.',
+    'Schedule a follow-up call to understand any concerns that may have led to inactivity.'
+  ]
+}
+Processing parent: j573rv86mhe6eg624zvxv29fnn7m5t5h Amy Foster
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'high',
+    engagementScore: 2,
+    paymentBehavior: 'concerning',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'professional yet friendly'
+    },
+    recommendations: [
+      'Send a personalized email reminder about the pending payments, highlighting the consequences of not completing them.',
+      'Offer a flexible payment plan option to encourage re-engagement.'
+    ],
+    nextActions: [
+      'Follow up with a phone call to discuss any concerns or obstacles regarding payment.',
+      'Provide resources or incentives for returning to the program, such as discounts or trial sessions.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'high',
+  engagementScore: 2,
+  paymentBehavior: 'concerning',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'professional yet friendly'
+  },
+  recommendations: [
+    'Send a personalized email reminder about the pending payments, highlighting the consequences of not completing them.',
+    'Offer a flexible payment plan option to encourage re-engagement.'
+  ],
+  nextActions: [
+    'Follow up with a phone call to discuss any concerns or obstacles regarding payment.',
+    'Provide resources or incentives for returning to the program, such as discounts or trial sessions.'
+  ]
+}
+Processing parent: j573rv86mhe6eg624zvxv29fnn7m5t5h Amy Foster
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 7,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send payment reminders a week before due dates to ensure timely payments.',
+      "Engage with personalized updates about the team's progress and upcoming events."
+    ],
+    nextActions: [
+      'Follow up via email regarding the pending payments to confirm receipt and understanding.',
+      'Provide additional information about the program and how Amy can get more involved.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 7,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send payment reminders a week before due dates to ensure timely payments.',
+    "Engage with personalized updates about the team's progress and upcoming events."
+  ],
+  nextActions: [
+    'Follow up via email regarding the pending payments to confirm receipt and understanding.',
+    'Provide additional information about the program and how Amy can get more involved.'
+  ]
+}
+ POST /api/ai/analyze-parent 200 in 35412ms
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send a reminder email for the pending payments to ensure timely processing.',
+      "Offer personalized updates about the team's performance and upcoming events to enhance engagement."
+    ],
+    nextActions: [
+      'Follow up with Amy regarding the pending payments and provide assistance if needed.',
+      'Engage Amy with regular newsletters or updates on the sports program to maintain interest and connection.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send a reminder email for the pending payments to ensure timely processing.',
+    "Offer personalized updates about the team's performance and upcoming events to enhance engagement."
+  ],
+  nextActions: [
+    'Follow up with Amy regarding the pending payments and provide assistance if needed.',
+    'Engage Amy with regular newsletters or updates on the sports program to maintain interest and connection.'
+  ]
+}
+ POST /api/ai/analyze-parent 200 in 33616ms
+ POST /api/ai/bulk-operations 200 in 213ms
+ ✓ Compiled in 1705ms (2417 modules)
+ ✓ Compiled in 722ms (2417 modules)
+ ✓ Compiled in 1544ms (2417 modules)
+ GET /parents 200 in 312ms
+ ✓ Compiled /api/parents in 345ms (1427 modules)
+ GET /api/parents 200 in 761ms
+ ⨯ ./app/parents/page.tsx
+Error: 
+  [31mx[0m Unexpected token `AppLayout`. Expected jsx identifier
+     ,-[[36;1;4m/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/app/parents/page.tsx[0m:654:1]
+ [2m654[0m |   }
+ [2m655[0m | 
+ [2m656[0m |   return (
+ [2m657[0m |     <AppLayout>
+     : [31;1m     ^^^^^^^^^[0m
+ [2m658[0m |       <div className="space-y-6">
+ [2m659[0m |         {/* Header */}
+ [2m660[0m |         <div className="flex items-center justify-between">
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/parents/page.tsx
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 7.8s (2842 modules)
+ GET /api/parents 500 in 13151ms
+ GET /parents 200 in 172ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/.next/cache/webpack/client-development-fallback/0.pack.gz_' -> '/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/.next/cache/webpack/client-development-fallback/0.pack.gz'
+ GET /api/parents 200 in 179ms
+ GET /api/parents 200 in 51ms
+ ✓ Compiled in 4.5s (2842 modules)
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 617ms (1469 modules)
+ GET /api/health 200 in 657ms
+ ✓ Compiled in 1794ms (2844 modules)
+ GET /parents 200 in 183ms
+ ✓ Compiled /api/ai/bulk-operations in 219ms (1470 modules)
+ POST /api/ai/bulk-operations 200 in 357ms
+ POST /api/ai/bulk-operations 200 in 102ms
+ POST /api/ai/bulk-operations 200 in 111ms
+ POST /api/ai/bulk-operations 200 in 99ms
+ POST /api/ai/bulk-operations 200 in 49ms
+ ✓ Compiled /api/payments in 342ms (1359 modules)
+ GET /api/payments?parentId=j575pe13bk6q79y02vst3qa4zh7m5w0h&limit=1 200 in 448ms
+ GET /payments/jx707r0tejs506pmhhpg7rspgs7m8x6m 200 in 97ms
+ ✓ Compiled /api/payments/[id]/progress in 208ms (1469 modules)
+ ✓ Compiled (1473 modules)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/history 200 in 404ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/progress 200 in 409ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m 200 in 447ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/history 200 in 25ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m/progress 200 in 29ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/payments/jx707r0tejs506pmhhpg7rspgs7m8x6m 200 in 66ms
+ GET /parents 200 in 115ms
+ ✓ Compiled /api/parents in 227ms (1476 modules)
+ GET /api/parents 200 in 320ms
+ GET /api/parents 200 in 42ms
+ POST /api/ai/bulk-operations 200 in 61ms
+ POST /api/ai/bulk-operations 200 in 95ms
+ POST /api/ai/bulk-operations 200 in 90ms
+ POST /api/ai/bulk-operations 200 in 85ms
+ ✓ Compiled /api/ai/payment-insights in 388ms (1478 modules)
+ POST /api/ai/payment-insights 200 in 584ms
+ POST /api/ai/payment-insights 200 in 34ms
+ POST /api/ai/bulk-operations 200 in 124ms
+ POST /api/ai/bulk-operations 200 in 111ms
+ POST /api/ai/bulk-operations 200 in 56ms
+ ✓ Compiled /api/ai/analyze-parent in 268ms (1572 modules)
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 85,
+    paymentBehavior: 'excellent',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and supportive'
+    },
+    recommendations: [
+      'Send personalized follow-ups on upcoming payments, emphasizing community support.',
+      'Highlight success stories from the basketball program to increase emotional connection.'
+    ],
+    nextActions: [
+      'Schedule a personalized email reminder for the next payment due on August 25, 2025.',
+      'Invite Sarah to an upcoming basketball event to enhance community engagement.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 85,
+  paymentBehavior: 'excellent',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and supportive'
+  },
+  recommendations: [
+    'Send personalized follow-ups on upcoming payments, emphasizing community support.',
+    'Highlight success stories from the basketball program to increase emotional connection.'
+  ],
+  nextActions: [
+    'Schedule a personalized email reminder for the next payment due on August 25, 2025.',
+    'Invite Sarah to an upcoming basketball event to enhance community engagement.'
+  ]
+}
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send a friendly reminder for the pending payments to ensure timely payment.',
+      'Provide updates on the team’s progress and events to enhance engagement.'
+    ],
+    nextActions: [
+      'Send an email reminder about the upcoming payment due dates.',
+      "Engage with Marcus by sharing personalized content related to his child's team activities."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send a friendly reminder for the pending payments to ensure timely payment.',
+    'Provide updates on the team’s progress and events to enhance engagement.'
+  ],
+  nextActions: [
+    'Send an email reminder about the upcoming payment due dates.',
+    "Engage with Marcus by sharing personalized content related to his child's team activities."
+  ]
+}
+Processing parent: j571jaamzc3r52ksnbb0bekcms7m5qn9 Jennifer Williams
+Payments fetched: 4
+Message logs fetched: 3
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 4,
+  hasMessageLogs: true,
+  messageLogsLength: 3,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send personalized payment reminders a week before due dates to ensure timely payments.',
+      'Engage through updates about the program and special events to maintain interest.'
+    ],
+    nextActions: [
+      'Schedule an email reminder for the next payment due in advance.',
+      "Follow up with a personalized message to check in on Jennifer's experience with the program."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send personalized payment reminders a week before due dates to ensure timely payments.',
+    'Engage through updates about the program and special events to maintain interest.'
+  ],
+  nextActions: [
+    'Schedule an email reminder for the next payment due in advance.',
+    "Follow up with a personalized message to check in on Jennifer's experience with the program."
+  ]
+}
+Processing parent: j57ez6tgzd1b724y7bapca1tns7m5sec Carlos Rodriguez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'professional yet friendly' },
+    recommendations: [
+      'Send reminders for upcoming payments a week in advance via email.',
+      'Provide personalized updates about the program and upcoming events that may interest Carlos.'
+    ],
+    nextActions: [
+      'Follow up on pending payments to ensure they are processed.',
+      'Engage Carlos through an email newsletter that highlights program benefits and upcoming activities.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'professional yet friendly' },
+  recommendations: [
+    'Send reminders for upcoming payments a week in advance via email.',
+    'Provide personalized updates about the program and upcoming events that may interest Carlos.'
+  ],
+  nextActions: [
+    'Follow up on pending payments to ensure they are processed.',
+    'Engage Carlos through an email newsletter that highlights program benefits and upcoming activities.'
+  ]
+}
+Processing parent: j57487s3r9dh8y973mm74q38e97m5d5w Priya Patel
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 7,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a reminder email about the pending payments in a friendly tone to encourage timely payment.',
+      'Provide information on upcoming events or activities to keep Priya engaged with the program.'
+    ],
+    nextActions: [
+      'Follow up with an email reminder regarding the pending payment before the due date.',
+      'Schedule a check-in call or email to inquire about her experience with the program and any feedback she may have.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 7,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a reminder email about the pending payments in a friendly tone to encourage timely payment.',
+    'Provide information on upcoming events or activities to keep Priya engaged with the program.'
+  ],
+  nextActions: [
+    'Follow up with an email reminder regarding the pending payment before the due date.',
+    'Schedule a check-in call or email to inquire about her experience with the program and any feedback she may have.'
+  ]
+}
+Processing parent: j57d6j904qwefk1stx0ds969a97m4syc Dorothy Wilson
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a reminder email for the pending payments with clear instructions on how to complete them.',
+      'Provide updates on program activities and events to maintain interest and encourage participation.'
+    ],
+    nextActions: [
+      'Follow up with a friendly email reminder regarding the pending payments.',
+      'Engage Dorothy with updates about upcoming events or changes in the program.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a reminder email for the pending payments with clear instructions on how to complete them.',
+    'Provide updates on program activities and events to maintain interest and encourage participation.'
+  ],
+  nextActions: [
+    'Follow up with a friendly email reminder regarding the pending payments.',
+    'Engage Dorothy with updates about upcoming events or changes in the program.'
+  ]
+}
+Processing parent: j57c9hdytsqrd87x9v1fje9jwn7m4y4g James Thompson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a friendly reminder for the upcoming payment due on the subscription.',
+      'Provide information about additional programs and activities that might interest James and his child.'
+    ],
+    nextActions: [
+      'Send a follow-up email to confirm receipt of the initial payment and outline what to expect next.',
+      'Monitor upcoming payment dates and prepare reminders to ensure timely payments.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a friendly reminder for the upcoming payment due on the subscription.',
+    'Provide information about additional programs and activities that might interest James and his child.'
+  ],
+  nextActions: [
+    'Send a follow-up email to confirm receipt of the initial payment and outline what to expect next.',
+    'Monitor upcoming payment dates and prepare reminders to ensure timely payments.'
+  ]
+}
+Processing parent: j57bf8910ksvyh58sa08vpb1vd7m4xxt Michelle Davis
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send payment reminders a week before due dates to ensure timely payments.',
+      'Provide updates on team progress and events to enhance engagement.'
+    ],
+    nextActions: [
+      'Follow up on pending payments to confirm understanding and address any concerns.',
+      'Send a welcome email with program highlights and contact information for support.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send payment reminders a week before due dates to ensure timely payments.',
+    'Provide updates on team progress and events to enhance engagement.'
+  ],
+  nextActions: [
+    'Follow up on pending payments to confirm understanding and address any concerns.',
+    'Send a welcome email with program highlights and contact information for support.'
+  ]
+}
+Processing parent: j5799crwm4q4k11zechwmd598x7m4ch2 Roberto Gonzalez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+ GET /parents 200 in 73ms
+ POST /api/ai/analyze-parent 200 in 25614ms
+ GET /api/parents 200 in 43ms
+ GET /api/parents 200 in 34ms
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'high',
+    engagementScore: 2,
+    paymentBehavior: 'concerning',
+    communicationStyle: { preferredChannel: 'email', tone: 'supportive and encouraging' },
+    recommendations: [
+      'Send a personalized email reminder about the pending payments with clear instructions on how to complete them.',
+      'Offer a one-on-one consultation to discuss any issues or concerns about the program.'
+    ],
+    nextActions: [
+      'Follow up with Roberto via email to address the inactivity status and possible reasons for disengagement.',
+      "Implement a payment plan option or flexible payment schedule to accommodate Roberto's financial situation."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'high',
+  engagementScore: 2,
+  paymentBehavior: 'concerning',
+  communicationStyle: { preferredChannel: 'email', tone: 'supportive and encouraging' },
+  recommendations: [
+    'Send a personalized email reminder about the pending payments with clear instructions on how to complete them.',
+    'Offer a one-on-one consultation to discuss any issues or concerns about the program.'
+  ],
+  nextActions: [
+    'Follow up with Roberto via email to address the inactivity status and possible reasons for disengagement.',
+    "Implement a payment plan option or flexible payment schedule to accommodate Roberto's financial situation."
+  ]
+}
+Processing parent: j573rv86mhe6eg624zvxv29fnn7m5t5h Amy Foster
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send timely reminders about upcoming payments to ensure they don’t miss any deadlines.',
+      'Engage with personalized content such as updates on team performance or upcoming events.'
+    ],
+    nextActions: [
+      'Follow up with a friendly email reminder about the pending payments.',
+      'Invite Amy to participate in a parent meeting to discuss program enhancements and gather feedback.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send timely reminders about upcoming payments to ensure they don’t miss any deadlines.',
+    'Engage with personalized content such as updates on team performance or upcoming events.'
+  ],
+  nextActions: [
+    'Follow up with a friendly email reminder about the pending payments.',
+    'Invite Amy to participate in a parent meeting to discuss program enhancements and gather feedback.'
+  ]
+}
+ ✓ Compiled in 1602ms (2840 modules)
+ ✓ Compiled /api/ai/bulk-operations in 152ms (1355 modules)
+ POST /api/ai/bulk-operations 200 in 389ms
+ ✓ Compiled /api/ai/payment-insights in 212ms (1357 modules)
+ POST /api/ai/payment-insights 200 in 315ms
+ ✓ Compiled /api/ai/analyze-parent in 248ms (1457 modules)
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+ ✓ Compiled in 1849ms (2831 modules)
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 85,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+    recommendations: [
+      'Continue sending friendly reminders about upcoming payments, ensuring to highlight that the current payment is $0 to avoid confusion.',
+      "Incorporate personalized messages that acknowledge Sarah's involvement in basketball and appreciation for her continued support."
+    ],
+    nextActions: [
+      'Monitor upcoming payment due dates and send timely reminders.',
+      "Engage with Sarah through community events or updates about her child's basketball development to strengthen the relationship."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 85,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+  recommendations: [
+    'Continue sending friendly reminders about upcoming payments, ensuring to highlight that the current payment is $0 to avoid confusion.',
+    "Incorporate personalized messages that acknowledge Sarah's involvement in basketball and appreciation for her continued support."
+  ],
+  nextActions: [
+    'Monitor upcoming payment due dates and send timely reminders.',
+    "Engage with Sarah through community events or updates about her child's basketball development to strengthen the relationship."
+  ]
+}
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 80,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'professional and friendly' },
+    recommendations: [
+      'Send a friendly reminder about the pending payments, highlighting the due dates.',
+      'Provide information on the benefits of timely payments and incentives for early payment.'
+    ],
+    nextActions: [
+      'Follow up with a personalized email to confirm the payment status and offer assistance if needed.',
+      'Engage in a proactive communication strategy to keep the parent informed about program updates and events.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 80,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'professional and friendly' },
+  recommendations: [
+    'Send a friendly reminder about the pending payments, highlighting the due dates.',
+    'Provide information on the benefits of timely payments and incentives for early payment.'
+  ],
+  nextActions: [
+    'Follow up with a personalized email to confirm the payment status and offer assistance if needed.',
+    'Engage in a proactive communication strategy to keep the parent informed about program updates and events.'
+  ]
+}
+Processing parent: j571jaamzc3r52ksnbb0bekcms7m5qn9 Jennifer Williams
+Payments fetched: 4
+Message logs fetched: 3
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 4,
+  hasMessageLogs: true,
+  messageLogsLength: 3,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send personalized reminders for upcoming payments to ensure awareness.',
+      'Engage with updates about program activities and events via email.'
+    ],
+    nextActions: [
+      'Send a follow-up email to confirm the status of the pending payments.',
+      'Schedule a check-in call to discuss any questions or feedback regarding the program.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send personalized reminders for upcoming payments to ensure awareness.',
+    'Engage with updates about program activities and events via email.'
+  ],
+  nextActions: [
+    'Send a follow-up email to confirm the status of the pending payments.',
+    'Schedule a check-in call to discuss any questions or feedback regarding the program.'
+  ]
+}
+Processing parent: j57ez6tgzd1b724y7bapca1tns7m5sec Carlos Rodriguez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 70,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a friendly reminder email about the upcoming payment due dates.',
+      'Engage with Carlos by highlighting the benefits of the program and any upcoming events he may be interested in.'
+    ],
+    nextActions: [
+      'Monitor payment status and send reminders as due dates approach.',
+      'Follow up with personalized communication to ensure continued engagement and satisfaction.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 70,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a friendly reminder email about the upcoming payment due dates.',
+    'Engage with Carlos by highlighting the benefits of the program and any upcoming events he may be interested in.'
+  ],
+  nextActions: [
+    'Monitor payment status and send reminders as due dates approach.',
+    'Follow up with personalized communication to ensure continued engagement and satisfaction.'
+  ]
+}
+Processing parent: j57487s3r9dh8y973mm74q38e97m5d5w Priya Patel
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'medium',
+    engagementScore: 5,
+    paymentBehavior: 'concerning',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send a reminder email about pending payments and offer assistance if needed.',
+      'Provide information on payment plans or options to ease the financial burden.'
+    ],
+    nextActions: [
+      'Reach out via email to confirm receipt of payment and check if they have any questions.',
+      'Follow up in a week if no payment has been received to discuss options.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'medium',
+  engagementScore: 5,
+  paymentBehavior: 'concerning',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send a reminder email about pending payments and offer assistance if needed.',
+    'Provide information on payment plans or options to ease the financial burden.'
+  ],
+  nextActions: [
+    'Reach out via email to confirm receipt of payment and check if they have any questions.',
+    'Follow up in a week if no payment has been received to discuss options.'
+  ]
+}
+Processing parent: j57d6j904qwefk1stx0ds969a97m4syc Dorothy Wilson
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 85,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+    recommendations: [
+      "Send regular updates on the basketball program's schedule and events to keep Sarah informed and engaged.",
+      "Provide personalized messages that acknowledge her child's performance and improvements in basketball to strengthen the relationship."
+    ],
+    nextActions: [
+      'Follow up with a personalized email thanking Sarah for her timely payments and encouraging her to reach out with any questions regarding upcoming sessions.',
+      'Implement a feedback survey to gather insights on her experience with the program and any suggestions for improvement.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 85,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and supportive' },
+  recommendations: [
+    "Send regular updates on the basketball program's schedule and events to keep Sarah informed and engaged.",
+    "Provide personalized messages that acknowledge her child's performance and improvements in basketball to strengthen the relationship."
+  ],
+  nextActions: [
+    'Follow up with a personalized email thanking Sarah for her timely payments and encouraging her to reach out with any questions regarding upcoming sessions.',
+    'Implement a feedback survey to gather insights on her experience with the program and any suggestions for improvement.'
+  ]
+}
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a friendly reminder email about the upcoming payments with clear due dates.',
+      'Provide updates on program activities and achievements to maintain interest.'
+    ],
+    nextActions: [
+      'Follow up with a personalized email regarding the payment status to ensure clarity.',
+      'Engage with Dorothy by inviting her to a parent meeting or event to strengthen community ties.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a friendly reminder email about the upcoming payments with clear due dates.',
+    'Provide updates on program activities and achievements to maintain interest.'
+  ],
+  nextActions: [
+    'Follow up with a personalized email regarding the payment status to ensure clarity.',
+    'Engage with Dorothy by inviting her to a parent meeting or event to strengthen community ties.'
+  ]
+}
+Processing parent: j57c9hdytsqrd87x9v1fje9jwn7m4y4g James Thompson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      tone: 'professional yet approachable'
+    },
+    recommendations: [
+      'Send payment reminders ahead of due dates to maintain timely payments.',
+      'Engage Marcus by providing updates on team activities and events through newsletters.'
+    ],
+    nextActions: [
+      'Send a friendly reminder email about the upcoming pending payments.',
+      'Invite Marcus to participate in parent meetings or feedback sessions to increase involvement.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'professional yet approachable' },
+  recommendations: [
+    'Send payment reminders ahead of due dates to maintain timely payments.',
+    'Engage Marcus by providing updates on team activities and events through newsletters.'
+  ],
+  nextActions: [
+    'Send a friendly reminder email about the upcoming pending payments.',
+    'Invite Marcus to participate in parent meetings or feedback sessions to increase involvement.'
+  ]
+}
+Processing parent: j571jaamzc3r52ksnbb0bekcms7m5qn9 Jennifer Williams
+Payments fetched: 4
+Message logs fetched: 3
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 4,
+  hasMessageLogs: true,
+  messageLogsLength: 3,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send personalized payment reminders a week in advance of due dates.',
+      'Provide updates on program activities and successes to enhance connection.'
+    ],
+    nextActions: [
+      'Schedule a follow-up email to confirm payment status and address any concerns.',
+      "Engage Jennifer with a personalized message highlighting her child's progress in the program."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send personalized payment reminders a week in advance of due dates.',
+    'Provide updates on program activities and successes to enhance connection.'
+  ],
+  nextActions: [
+    'Schedule a follow-up email to confirm payment status and address any concerns.',
+    "Engage Jennifer with a personalized message highlighting her child's progress in the program."
+  ]
+}
+Processing parent: j57ez6tgzd1b724y7bapca1tns7m5sec Carlos Rodriguez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 8,
+    paymentBehavior: 'excellent',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a personalized thank-you email for the initial payment and encourage engagement with the program.',
+      'Provide updates and highlights from the program via email to keep James informed and involved.'
+    ],
+    nextActions: [
+      'Monitor the status of the pending payment to ensure timely processing.',
+      'Reach out via email to confirm receipt of payment and remind about upcoming events or activities.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 8,
+  paymentBehavior: 'excellent',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a personalized thank-you email for the initial payment and encourage engagement with the program.',
+    'Provide updates and highlights from the program via email to keep James informed and involved.'
+  ],
+  nextActions: [
+    'Monitor the status of the pending payment to ensure timely processing.',
+    'Reach out via email to confirm receipt of payment and remind about upcoming events or activities.'
+  ]
+}
+Processing parent: j57bf8910ksvyh58sa08vpb1vd7m4xxt Michelle Davis
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 7,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send a friendly reminder before the next payment due date to ensure timely payment.',
+      'Engage Carlos with updates about the program and upcoming events via email.'
+    ],
+    nextActions: [
+      'Set up an automated email reminder for the pending payments.',
+      'Monitor payment status closely and reach out if payment delays occur.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 7,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send a friendly reminder before the next payment due date to ensure timely payment.',
+    'Engage Carlos with updates about the program and upcoming events via email.'
+  ],
+  nextActions: [
+    'Set up an automated email reminder for the pending payments.',
+    'Monitor payment status closely and reach out if payment delays occur.'
+  ]
+}
+Processing parent: j57487s3r9dh8y973mm74q38e97m5d5w Priya Patel
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send reminders for upcoming payments to ensure they stay on track.',
+      'Provide updates on team activities and events to maintain engagement.'
+    ],
+    nextActions: [
+      'Follow up with a friendly email reminder about the pending payments.',
+      'Send a personalized message highlighting the benefits of the program and upcoming events.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send reminders for upcoming payments to ensure they stay on track.',
+    'Provide updates on team activities and events to maintain engagement.'
+  ],
+  nextActions: [
+    'Follow up with a friendly email reminder about the pending payments.',
+    'Send a personalized message highlighting the benefits of the program and upcoming events.'
+  ]
+}
+Processing parent: j5799crwm4q4k11zechwmd598x7m4ch2 Roberto Gonzalez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and professional' },
+    recommendations: [
+      'Send a friendly reminder email about the pending payments, including due dates and payment options.',
+      'Offer a personalized follow-up message to ask if they have any questions or concerns regarding the program.'
+    ],
+    nextActions: [
+      'Set up a reminder system for payment due dates to ensure timely communication.',
+      'Schedule a personal check-in call to discuss the program experience and gather feedback.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and professional' },
+  recommendations: [
+    'Send a friendly reminder email about the pending payments, including due dates and payment options.',
+    'Offer a personalized follow-up message to ask if they have any questions or concerns regarding the program.'
+  ],
+  nextActions: [
+    'Set up a reminder system for payment due dates to ensure timely communication.',
+    'Schedule a personal check-in call to discuss the program experience and gather feedback.'
+  ]
+}
+Processing parent: j57d6j904qwefk1stx0ds969a97m4syc Dorothy Wilson
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'high',
+    engagementScore: 2,
+    paymentBehavior: 'poor',
+    communicationStyle: { preferredChannel: 'email', tone: 'professional yet empathetic' },
+    recommendations: [
+      'Send a personalized follow-up email addressing the inactivity status and encouraging participation.',
+      'Offer a payment plan option to alleviate any financial concerns.'
+    ],
+    nextActions: [
+      'Reach out via email to discuss the pending payments and potential barriers to engagement.',
+      "Schedule a call to understand Roberto's experience and any concerns he may have."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'high',
+  engagementScore: 2,
+  paymentBehavior: 'poor',
+  communicationStyle: { preferredChannel: 'email', tone: 'professional yet empathetic' },
+  recommendations: [
+    'Send a personalized follow-up email addressing the inactivity status and encouraging participation.',
+    'Offer a payment plan option to alleviate any financial concerns.'
+  ],
+  nextActions: [
+    'Reach out via email to discuss the pending payments and potential barriers to engagement.',
+    "Schedule a call to understand Roberto's experience and any concerns he may have."
+  ]
+}
+Processing parent: j573rv86mhe6eg624zvxv29fnn7m5t5h Amy Foster
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 7,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send a friendly reminder email about upcoming payments with payment details and due dates.',
+      'Engage Dorothy with updates about program activities and events to maintain interest.'
+    ],
+    nextActions: [
+      'Schedule an email reminder for the pending payments before the due dates.',
+      'Reach out to Dorothy to gather feedback on her experience with the program.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 7,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send a friendly reminder email about upcoming payments with payment details and due dates.',
+    'Engage Dorothy with updates about program activities and events to maintain interest.'
+  ],
+  nextActions: [
+    'Schedule an email reminder for the pending payments before the due dates.',
+    'Reach out to Dorothy to gather feedback on her experience with the program.'
+  ]
+}
+Processing parent: j57c9hdytsqrd87x9v1fje9jwn7m4y4g James Thompson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 80,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send a friendly reminder email about the pending payments with detailed instructions.',
+      'Provide updates on team activities and events to maintain engagement.'
+    ],
+    nextActions: [
+      'Follow up with an email reminder about the payment due date.',
+      "Engage Amy Foster through newsletters or updates on the team's progress and achievements."
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 80,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send a friendly reminder email about the pending payments with detailed instructions.',
+    'Provide updates on team activities and events to maintain engagement.'
+  ],
+  nextActions: [
+    'Follow up with an email reminder about the payment due date.',
+    "Engage Amy Foster through newsletters or updates on the team's progress and achievements."
+  ]
+}
+ POST /api/ai/analyze-parent 200 in 27148ms
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'informative and supportive' },
+    recommendations: [
+      'Send a personalized follow-up email about the pending payment reminding them of the due date and offering assistance.',
+      'Provide updates on the program and upcoming events to maintain engagement.'
+    ],
+    nextActions: [
+      'Schedule a reminder for the pending payment due date.',
+      'Send a welcome email detailing program benefits and how to maximize their experience.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'informative and supportive' },
+  recommendations: [
+    'Send a personalized follow-up email about the pending payment reminding them of the due date and offering assistance.',
+    'Provide updates on the program and upcoming events to maintain engagement.'
+  ],
+  nextActions: [
+    'Schedule a reminder for the pending payment due date.',
+    'Send a welcome email detailing program benefits and how to maximize their experience.'
+  ]
+}
+Processing parent: j57bf8910ksvyh58sa08vpb1vd7m4xxt Michelle Davis
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+ ✓ Compiled in 1831ms (2831 modules)
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'friendly and informative'
+    },
+    recommendations: [
+      'Send timely reminders for upcoming payments to enhance payment punctuality.',
+      'Provide updates about the program and team activities to maintain engagement.'
+    ],
+    nextActions: [
+      'Follow up with a reminder email regarding the pending payments.',
+      'Engage Michelle with a personalized message about upcoming events or successes of the team.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'friendly and informative'
+  },
+  recommendations: [
+    'Send timely reminders for upcoming payments to enhance payment punctuality.',
+    'Provide updates about the program and team activities to maintain engagement.'
+  ],
+  nextActions: [
+    'Follow up with a reminder email regarding the pending payments.',
+    'Engage Michelle with a personalized message about upcoming events or successes of the team.'
+  ]
+}
+Processing parent: j5799crwm4q4k11zechwmd598x7m4ch2 Roberto Gonzalez
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+ ○ Compiling /api/health ...
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'high',
+    engagementScore: 2,
+    paymentBehavior: 'concerning',
+    communicationStyle: {
+      preferredChannel: 'email',
+      toneRecommendations: 'professional, informative, and encouraging'
+    },
+    recommendations: [
+      'Send a personalized follow-up email to address the status of their payments and encourage re-engagement.',
+      'Offer a payment plan or flexible payment options to ease financial concerns.'
+    ],
+    nextActions: [
+      'Reach out via email to discuss the pending payments and the inactive status.',
+      'Schedule a call to understand any specific challenges the parent may be facing.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'high',
+  engagementScore: 2,
+  paymentBehavior: 'concerning',
+  communicationStyle: {
+    preferredChannel: 'email',
+    toneRecommendations: 'professional, informative, and encouraging'
+  },
+  recommendations: [
+    'Send a personalized follow-up email to address the status of their payments and encourage re-engagement.',
+    'Offer a payment plan or flexible payment options to ease financial concerns.'
+  ],
+  nextActions: [
+    'Reach out via email to discuss the pending payments and the inactive status.',
+    'Schedule a call to understand any specific challenges the parent may be facing.'
+  ]
+}
+Processing parent: j573rv86mhe6eg624zvxv29fnn7m5t5h Amy Foster
+Payments fetched: 2
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 2,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Calling analyzeParent with parent data
+ ✓ Compiled /api/health in 2.1s (1459 modules)
+ GET /api/health 200 in 2182ms
+AI Result: {
+  success: true,
+  analysis: {
+    riskLevel: 'low',
+    engagementScore: 75,
+    paymentBehavior: 'good',
+    communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+    recommendations: [
+      'Send payment reminders via email a week before due dates to maintain clarity and structure.',
+      'Engage with Amy by highlighting team achievements and upcoming events to deepen her connection with the program.'
+    ],
+    nextActions: [
+      'Follow up with an email reminder for the pending payments to ensure timely completion.',
+      'Check in with Amy to gather feedback on her experience with the program, which can enhance her engagement level.'
+    ]
+  }
+}
+AI Analysis successful: {
+  riskLevel: 'low',
+  engagementScore: 75,
+  paymentBehavior: 'good',
+  communicationStyle: { preferredChannel: 'email', tone: 'friendly and informative' },
+  recommendations: [
+    'Send payment reminders via email a week before due dates to maintain clarity and structure.',
+    'Engage with Amy by highlighting team achievements and upcoming events to deepen her connection with the program.'
+  ],
+  nextActions: [
+    'Follow up with an email reminder for the pending payments to ensure timely completion.',
+    'Check in with Amy to gather feedback on her experience with the program, which can enhance her engagement level.'
+  ]
+}
+ POST /api/ai/analyze-parent 200 in 28653ms
+ ✓ Compiled /api/ai/bulk-operations in 199ms (1461 modules)
+ POST /api/ai/bulk-operations 200 in 321ms
+ GET /parents 200 in 196ms
+ POST /api/ai/bulk-operations 200 in 234ms
+ POST /api/ai/bulk-operations 200 in 103ms
+ GET /parents 200 in 42ms
+ ○ Compiling /api/parents ...
+ ✓ Compiled /api/parents in 1268ms (1470 modules)
+ GET /api/parents 200 in 1887ms
+ GET /api/parents 200 in 87ms
+ POST /api/ai/bulk-operations 200 in 108ms
+ POST /api/ai/bulk-operations 200 in 54ms
+ POST /api/ai/bulk-operations 200 in 44ms
+ POST /api/ai/bulk-operations 200 in 54ms
+ POST /api/ai/bulk-operations 200 in 34ms
+ ✓ Compiled in 764ms (1374 modules)
+ ✓ Compiled in 433ms (1374 modules)
+ ✓ Compiled in 425ms (1374 modules)
+ ✓ Compiled in 395ms (1374 modules)
+ ✓ Compiled in 486ms (1374 modules)
+ GET /parents 200 in 268ms
+ GET /api/parents 200 in 165ms
+ GET /api/parents 200 in 55ms
+ ✓ Compiled in 574ms (1374 modules)
+ POST /api/ai/bulk-operations 200 in 121ms
  ○ Compiling /api/ai/analyze-parent ...
- ✓ Compiled /api/ai/analyze-parent in 1191ms (1311 modules)
- POST /api/ai/analyze-parent 200 in 7999ms
- ✓ Compiled in 13.5s (2560 modules)
- ✓ Compiled in 6.9s (2560 modules)
- ✓ Compiled in 19.9s (2560 modules)
- ✓ Compiled in 11.4s (2560 modules)
- ✓ Compiled in 9.3s (2560 modules)
- ✓ Compiled in 5.2s (2560 modules)
- ✓ Compiled in 6.9s (1256 modules)
- ✓ Compiled in 12.1s (2560 modules)
- ✓ Compiled in 15.3s (2560 modules)
- ✓ Compiled in 2.7s (2560 modules)
- ✓ Compiled in 20.5s (2560 modules)
- ✓ Compiled in 20.5s (2560 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/cache/webpack/client-development/0.pack.gz_' -> '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/cache/webpack/client-development/0.pack.gz'
- ✓ Compiled in 18.1s (2560 modules)
- ✓ Compiled in 13s (1256 modules)
- ✓ Compiled in 43.3s (2560 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: incorrect data check
- ✓ Compiled in 7.8s (1256 modules)
- ✓ Compiled in 6.7s (1260 modules)
- ✓ Compiled in 2.2s (1260 modules)
- ✓ Compiled in 3.9s (1261 modules)
- ✓ Compiled in 9s (1256 modules)
- ✓ Compiled in 8.4s (1260 modules)
- ✓ Compiled in 8.9s (1260 modules)
- ✓ Compiled in 9.3s (1256 modules)
- ✓ Compiled in 9.1s (1256 modules)
- ✓ Compiled in 12.4s (1256 modules)
- ✓ Compiled in 7.7s (1256 modules)
- ✓ Compiled in 3.9s (1256 modules)
- ✓ Compiled in 5.5s (1256 modules)
- ✓ Compiled in 13.6s (1256 modules)
- ✓ Compiled in 10.9s (1256 modules)
- ✓ Compiled in 5.5s (1256 modules)
- ✓ Compiled in 26.4s (2660 modules)
- ✓ Compiled in 16.8s (1182 modules)
- ✓ Compiled in 4.8s (1182 modules)
- ✓ Compiled in 16.8s (1182 modules)
- ✓ Compiled in 34.7s (1182 modules)
- ✓ Compiled in 21s (1182 modules)
- ✓ Compiled in 15.7s (1182 modules)
- ✓ Compiled in 11.6s (1182 modules)
- ✓ Compiled in 5.2s (1182 modules)
- ✓ Compiled in 7.8s (1182 modules)
- ✓ Compiled in 36.1s (2486 modules)
- ✓ Compiled in 17.8s (2486 modules)
- ✓ Compiled in 23s (2486 modules)
- ✓ Compiled in 24.3s (1182 modules)
- ✓ Compiled in 13s (2486 modules)
- ✓ Compiled in 7.1s (2486 modules)
- ✓ Compiled in 12.9s (2486 modules)
- ✓ Compiled in 7.3s (2486 modules)
- ✓ Compiled in 6.1s (2486 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/cache/webpack/client-development/0.pack.gz_' -> '/Volumes/Softwaare Program/RA1 Yearly V2*/ra1programv1/app/.next/cache/webpack/client-development/0.pack.gz'
- ✓ Compiled in 5.3s (2486 modules)
- ✓ Compiled in 1813ms (1182 modules)
- ✓ Compiled in 9s (1182 modules)
- ✓ Compiled in 3s (1182 modules)
- ✓ Compiled in 5.5s (2486 modules)
- ✓ Compiled in 6.5s (1182 modules)
- ✓ Compiled in 1414ms (1182 modules)
- ✓ Compiled in 23.1s (1182 modules)
- ✓ Compiled in 17.6s (1182 modules)
- ✓ Compiled in 11s (1182 modules)
- ✓ Compiled in 20.8s (1182 modules)
- ✓ Compiled in 4.4s (1182 modules)
- ✓ Compiled in 18.5s (2674 modules)
- ✓ Compiled in 5.9s (1182 modules)
- ✓ Compiled in 12.2s (1182 modules)
- ✓ Compiled in 2.9s (1182 modules)
- ✓ Compiled in 5.6s (2486 modules)
- ✓ Compiled in 14s (2660 modules)
- ✓ Compiled in 11.4s (1182 modules)
- ✓ Compiled in 18.6s (2660 modules)
- ✓ Compiled in 5.8s (1182 modules)
- ✓ Compiled in 8.6s (1182 modules)
- ✓ Compiled in 16.1s (1182 modules)
+ ✓ Compiled /api/ai/analyze-parent in 584ms (1470 modules)
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 7
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+ POST /api/ai/analyze-parent 200 in 192ms
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+ POST /api/ai/analyze-parent 200 in 1036ms
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+ POST /api/ai/analyze-parent 200 in 159ms
+ ○ Compiling /api/ai/payment-insights ...
+ ✓ Compiled /api/ai/payment-insights in 705ms (1472 modules)
+ POST /api/ai/payment-insights 200 in 814ms
+ POST /api/ai/bulk-operations 200 in 113ms
+ POST /api/ai/bulk-operations 200 in 108ms
+ ✓ Compiled in 1597ms (2846 modules)
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Generating analysis for: Marcus Johnson Risk score: 46.260837 Engagement: 25
+ POST /api/ai/analyze-parent 200 in 242ms
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Generating analysis for: Marcus Johnson Risk score: 46.260837 Engagement: 25
+ POST /api/ai/analyze-parent 200 in 183ms
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Generating analysis for: Marcus Johnson Risk score: 46.260837 Engagement: 25
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Generating analysis for: Sarah Chen (Status Updated) Risk score: 40.260837 Engagement: 100
+ POST /api/ai/analyze-parent 200 in 208ms
+ GET /parents 200 in 97ms
+ GET /parents 200 in 43ms
+ ○ Compiling /communication ...
+ ✓ Compiled /communication in 1510ms (2741 modules)
+ ✓ Compiled /api/templates in 490ms (1474 modules)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/templates? 200 in 723ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/templates? 200 in 64ms
+ ✓ Compiled /communication/templates/[id] in 457ms (2852 modules)
+ ○ Compiling /api/templates/[id] ...
+ ✓ Compiled /api/templates/[id] in 580ms (1482 modules)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/templates/jn7dyfbhmm5mhhg76t236s2ndd7m5nsr 200 in 1701ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/templates/jn7dyfbhmm5mhhg76t236s2ndd7m5nsr 200 in 98ms
+ ✓ Compiled /communication/send in 496ms (2858 modules)
+ ✓ Compiled /api/parents in 169ms (1489 modules)
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/templates 200 in 507ms
+ GET /api/parents 200 in 564ms
+🔧 Development mode: Using mock authentication (Clerk not configured)
+ GET /api/templates 200 in 41ms
+ GET /api/parents 200 in 51ms
+ ✓ Compiled in 497ms (1387 modules)
+ ✓ Compiled /api/ai/bulk-operations in 227ms (1477 modules)
+ ✓ Compiled /api/ai/analyze-parent in 194ms (1479 modules)
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Generating analysis for: Marcus Johnson Risk score: 46.260837 Engagement: 25
+ POST /api/ai/analyze-parent 200 in 374ms
+ POST /api/ai/bulk-operations 200 in 691ms
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Generating analysis for: Marcus Johnson Risk score: 46.260837 Engagement: 25
+ POST /api/ai/analyze-parent 200 in 170ms
+ POST /api/ai/bulk-operations 200 in 227ms
+Processing parent: j5745wfbz86ay20h9zyjhgya1s7m4tvx Marcus Johnson
+Payments fetched: 3
+Message logs fetched: 0
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 3,
+  hasMessageLogs: true,
+  messageLogsLength: 0,
+  hasContracts: true
+}
+Generating analysis for: Marcus Johnson Risk score: 46.260837 Engagement: 25
+ POST /api/ai/analyze-parent 200 in 162ms
+ POST /api/ai/bulk-operations 200 in 183ms
+ GET /parents 200 in 203ms
+ GET /api/parents 200 in 183ms
+ GET /api/parents 200 in 45ms
+Processing parent: j575pe13bk6q79y02vst3qa4zh7m5w0h Sarah Chen (Status Updated)
+Payments fetched: 7
+Message logs fetched: 16
+Enhanced parent data structure: {
+  hasPayments: true,
+  paymentsLength: 7,
+  hasMessageLogs: true,
+  messageLogsLength: 16,
+  hasContracts: true
+}
+Generating analysis for: Sarah Chen (Status Updated) Risk score: 40.260837 Engagement: 100
+ POST /api/ai/analyze-parent 200 in 156ms
+ POST /api/ai/bulk-operations 200 in 196ms
+ ✓ Compiled /api/payments/analytics in 239ms (1479 modules)
+ ✓ Compiled (1483 modules)
+ GET /api/payments/analytics 200 in 454ms
+ GET /api/payments/analytics 200 in 15ms
+ GET /api/parents 200 in 495ms
+ GET /api/payments 200 in 509ms
+ GET /api/teams 200 in 510ms
+ GET /api/parents 200 in 44ms
+ GET /api/payments 200 in 48ms
+ GET /api/teams 200 in 51ms
+ ✓ Compiled /api/ai/payment-insights in 150ms (1483 modules)
+ POST /api/ai/payment-insights 200 in 200ms
+ POST /api/ai/payment-insights 200 in 29ms
+ ✓ Compiled in 5s (2659 modules)
+ ✓ Compiled in 1411ms (2659 modules)
+ ✓ Compiled /api/teams in 254ms (1362 modules)
+ ✓ Compiled (1477 modules)
+ GET /api/payments/analytics 200 in 669ms
+ GET /api/payments/analytics 200 in 26ms
+ GET /api/payments 200 in 838ms
+ GET /api/parents 200 in 838ms
+ GET /api/teams 200 in 845ms
+ GET /api/payments 200 in 256ms
+ GET /api/parents 200 in 287ms
+ GET /api/teams 200 in 299ms
+ ✓ Compiled in 830ms (2864 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /payments 200 in 501ms
+ GET /api/payments/analytics 200 in 163ms
+ GET /api/payments/analytics 200 in 26ms
+ GET /api/teams 200 in 239ms
+ GET /api/payments 200 in 245ms
+ GET /api/parents 200 in 247ms
+ GET /api/teams 200 in 177ms
+ GET /api/parents 200 in 180ms
+ GET /api/payments 200 in 183ms
+ ✓ Compiled in 1626ms (2864 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /payments 200 in 174ms
+ GET /api/payments/analytics 200 in 4065ms
+ GET /api/payments 200 in 4204ms
+ GET /api/teams 200 in 4212ms
+ GET /api/parents 200 in 4225ms
+ GET /api/payments/analytics 200 in 571ms
+ GET /api/payments 200 in 264ms
+ GET /api/teams 200 in 250ms
+ GET /api/parents 200 in 262ms
+ ✓ Compiled in 4.8s (2864 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /payments 200 in 150ms
+ GET /api/payments/analytics 200 in 139ms
+ GET /api/payments/analytics 200 in 28ms
+ GET /api/payments 200 in 193ms
+ GET /api/parents 200 in 203ms
+ GET /api/teams 200 in 211ms
+ GET /api/payments 200 in 169ms
+ GET /api/teams 200 in 145ms
+ GET /api/parents 200 in 152ms
+ GET /payments 200 in 1565ms
+ ✓ Compiled in 1748ms (2659 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /payments 200 in 243ms
+ ○ Compiling /api/teams ...
+ ✓ Compiled /api/teams in 1902ms (1362 modules)
+ ✓ Compiled (1477 modules)
+ GET /api/payments/analytics 200 in 4026ms
+ GET /api/teams 200 in 5159ms
+ GET /api/parents 200 in 5366ms
+ GET /api/payments 200 in 5410ms
+ GET /api/payments/analytics 200 in 266ms
+ GET /payments 200 in 292ms
+ GET /api/teams 200 in 298ms
+ GET /api/payments 200 in 306ms
+ GET /api/parents 200 in 316ms
+ ✓ Compiled in 3.8s (2659 modules)
+ ○ Compiling /api/parents ...
+ ✓ Compiled /api/parents in 656ms (1471 modules)
+ GET /api/parents?limit=1000 200 in 2374ms
+ ✓ Compiled /api/teams in 285ms (1473 modules)
+ GET /api/teams 200 in 444ms
+ GET /api/teams 200 in 87ms
+ GET /api/parents?limit=1000 200 in 118ms
+ GET /payments 200 in 174ms
+ GET /api/parents?limit=1000 200 in 84ms
+ GET /api/parents?limit=1000 200 in 93ms
+ GET /api/parents?limit=1000 200 in 87ms
+ GET /api/parents?limit=1000 200 in 193ms
+ GET /api/parents?limit=1000 200 in 95ms
+ ✓ Compiled in 1592ms (2858 modules)
+ ○ Compiling /api/teams ...
+ ✓ Compiled /api/teams in 5s (1473 modules)
+ ✓ Compiled (1477 modules)
+ GET /api/payments/analytics 200 in 5395ms
+ GET /api/payments/analytics 200 in 21ms
+ GET /api/parents?limit=1000 200 in 5443ms
+ GET /api/teams 200 in 5456ms
+ GET /api/payments 200 in 5468ms
+ GET /api/parents?limit=1000 200 in 122ms
+ GET /api/teams 200 in 121ms
+ GET /api/payments 200 in 113ms
+ ✓ Compiled in 1260ms (2864 modules)
+ ⨯ ./app/payments/page.tsx
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/app/payments/page.tsx[0m:269:1]
+ [2m269[0m |         title: "Success",
+ [2m270[0m |         description: "Team updated successfully"
+ [2m271[0m |       })
+ [2m272[0m |     } catch (error) {
+     : [31;1m      ^^^^^[0m
+ [2m273[0m |       console.error('Error updating team:', error)
+ [2m274[0m |       toast({
+ [2m275[0m |         title: "Error",
+     `----
+
+  [31mx[0m Expression expected
+     ,-[[36;1;4m/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/app/payments/page.tsx[0m:277:1]
+ [2m277[0m |         variant: "destructive"
+ [2m278[0m |       })
+ [2m279[0m |     }
+ [2m280[0m |   }
+     : [31;1m  ^[0m
+ [2m281[0m | 
+ [2m282[0m |   const handleDeleteTeam = async (teamId: string) => {
+ [2m283[0m |     if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) {
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/payments/page.tsx
+ ⨯ ./app/payments/page.tsx
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/app/payments/page.tsx[0m:269:1]
+ [2m269[0m |         title: "Success",
+ [2m270[0m |         description: "Team updated successfully"
+ [2m271[0m |       })
+ [2m272[0m |     } catch (error) {
+     : [31;1m      ^^^^^[0m
+ [2m273[0m |       console.error('Error updating team:', error)
+ [2m274[0m |       toast({
+ [2m275[0m |         title: "Error",
+     `----
+
+  [31mx[0m Expression expected
+     ,-[[36;1;4m/Volumes/Softwaare Program/New Repo RA1 Dashboard/ra1programv1/app/app/payments/page.tsx[0m:277:1]
+ [2m277[0m |         variant: "destructive"
+ [2m278[0m |       })
+ [2m279[0m |     }
+ [2m280[0m |   }
+     : [31;1m  ^[0m
+ [2m281[0m | 
+ [2m282[0m |   const handleDeleteTeam = async (teamId: string) => {
+ [2m283[0m |     if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) {
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/payments/page.tsx
+ ○ Compiling /_error ...
+ GET /payments 500 in 175ms
+ ✓ Compiled /_not-found in 10.1s (2853 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /payments 200 in 392ms
+ GET /payments 200 in 4003ms
+ GET /_next/static/webpack/d9be6c0419188037.webpack.hot-update.json 404 in 9059ms
+ GET /payments 200 in 39ms
+ ✓ Compiled /api/payments/analytics in 280ms (1479 modules)
+ GET /api/payments/analytics 200 in 626ms
+ GET /api/payments/analytics 200 in 47ms
+ GET /api/teams 200 in 734ms
+ GET /api/payments 200 in 738ms
+ GET /api/parents?limit=1000 200 in 740ms
+ GET /api/teams 200 in 75ms
+ GET /api/payments 200 in 80ms
+ GET /api/parents?limit=1000 200 in 78ms
+ ✓ Compiled /api/teams/assign in 459ms (1481 modules)
+ POST /api/teams/assign 200 in 654ms
+ GET /api/parents?limit=1000 200 in 161ms
+ GET /payments 200 in 153ms
+ GET /api/payments/analytics 200 in 73ms
+ GET /api/payments/analytics 200 in 19ms
+ GET /api/teams 200 in 141ms
+ GET /api/parents?limit=1000 200 in 145ms
+ GET /api/payments 200 in 177ms
+ GET /api/teams 200 in 63ms
+ GET /api/parents?limit=1000 200 in 69ms
+ GET /api/payments 200 in 51ms
+[?25h

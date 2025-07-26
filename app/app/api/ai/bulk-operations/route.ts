@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 // Clerk auth
-import { generateBulkOperationPlan } from '../../../../../lib/ai'
+import { generateBulkOperationPlan } from '../../../../lib/ai'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
 
@@ -81,22 +81,58 @@ async function generatePersonalizedMessages(parentIds: string[], parameters: any
 }
 
 async function assessParentRisks(parentIds: string[]) {
-  const parentsResult = await convex.query(api.parents.getParents, {})
-  const parents = parentsResult.parents || []
-
-  const riskAssessments = []
-  for (const parent of parents) {
-    // Simplified risk assessment
-    riskAssessments.push({
-      parentId: parent._id,
-      parentName: parent.name,
-      riskLevel: 'low', // Simplified
-      riskFactors: [],
-      recommendations: []
+  try {
+    // Call the optimized AI analysis API for risk assessment
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai/analyze-parent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        parentIds: parentIds,
+        analysisType: 'risk_assessment'
+      })
     })
-  }
 
-  return riskAssessments
+    if (!response.ok) {
+      throw new Error('Failed to get risk assessment')
+    }
+
+    const data = await response.json()
+    
+    if (data.success && data.results) {
+      // Transform the results to match the expected format
+      const assessments = data.results.map((result: any) => ({
+        parentId: result.parentId,
+        parentName: result.parentName,
+        riskLevel: result.analysis.riskLevel,
+        riskScore: result.analysis.riskScore,
+        engagementScore: result.analysis.engagementScore,
+        paymentBehavior: result.analysis.paymentBehavior,
+        riskFactors: result.analysis.recommendations || [],
+        recommendations: result.analysis.nextActions || [],
+        communicationStyle: result.analysis.communicationStyle
+      }))
+      
+      return { assessments }
+    }
+    
+    throw new Error('No results returned from analysis')
+  } catch (error) {
+    console.error('Risk assessment error:', error)
+    // Return fallback data
+    const fallbackAssessments = parentIds.map(parentId => ({
+      parentId,
+      parentName: 'Unknown',
+      riskLevel: 'medium',
+      riskScore: 50,
+      engagementScore: 50,
+      paymentBehavior: 'unknown',
+      riskFactors: ['Unable to complete full analysis'],
+      recommendations: ['Please try again later'],
+      communicationStyle: { preferredChannel: 'email', preferredTone: 'friendly' }
+    }))
+    
+    return { assessments: fallbackAssessments }
+  }
 }
 
 function buildParentContext(parent: any, includeDetails: boolean) {

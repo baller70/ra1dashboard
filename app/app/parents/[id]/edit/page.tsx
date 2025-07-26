@@ -31,6 +31,7 @@ export default function EditParentPage() {
     address: '',
     status: 'active',
     emergencyContact: '',
+    emergencyPhone: '',
     notes: ''
   })
 
@@ -53,6 +54,7 @@ export default function EditParentPage() {
           address: data.address || '',
           status: data.status || 'active',
           emergencyContact: data.emergencyContact || '',
+          emergencyPhone: data.emergencyPhone || '',
           notes: data.notes || ''
         })
       } else {
@@ -79,7 +81,9 @@ export default function EditParentPage() {
       })
 
       if (response.ok) {
-        router.push(`/parents/${params.id}`)
+        // Add cache-busting timestamp to ensure fresh data is loaded
+        const timestamp = Date.now()
+        router.push(`/parents/${params.id}?updated=${timestamp}`)
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to update parent')
@@ -239,6 +243,18 @@ export default function EditParentPage() {
                   value={formData.emergencyContact}
                   onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
                   placeholder="Emergency contact information"
+                />
+              </div>
+
+              {/* Emergency Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="emergencyPhone">Emergency Phone</Label>
+                <Input
+                  id="emergencyPhone"
+                  type="tel"
+                  value={formData.emergencyPhone}
+                  onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
+                  placeholder="Emergency phone number"
                 />
               </div>
 

@@ -6,41 +6,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 import { convexHttp } from '../../../../lib/db'
 import { api } from '../../../../convex/_generated/api'
+import { BulkUploadParent, ValidationError, BulkUploadValidation } from '../../../../lib/types'
 import * as XLSX from 'xlsx'
-
-// Define types inline
-interface BulkUploadParent {
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  notes?: string;
-}
-
-interface ValidationError {
-  row: number;
-  field: string;
-  message: string;
-  value: string;
-}
-
-interface BulkUploadValidation {
-  data: BulkUploadParent[];
-  errors: ValidationError[];
-  duplicates: Array<{
-    email: string;
-    rows: number[];
-    existsInDb: boolean;
-  }>;
-  stats: {
-    totalRows: number;
-    validRows: number;
-    errorRows: number;
-    duplicateRows: number;
-  };
-}
 
 function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -156,7 +123,7 @@ export async function POST(request: NextRequest) {
     const errors: ValidationError[] = []
     
     // Get existing emails from Convex for duplicate checking
-    const existingParentsResponse = await convexHttp.query(api.parents.getParents, {});
+    const existingParentsResponse = await convexHttp.query(api.parents.getParents, { limit: 1000 });
     const existingEmails = new Set(existingParentsResponse.parents.map((p: any) => p.email.toLowerCase()));
 
     // Track email duplicates within the file

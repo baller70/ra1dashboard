@@ -3,13 +3,13 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { AppLayout } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Textarea } from '../../../components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
+import { useToast } from '../../../hooks/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
 import { 
   ArrowLeft,
   Upload,
@@ -19,7 +19,6 @@ import {
   CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
 
 interface Parent {
   _id: string
@@ -31,22 +30,43 @@ function ContractUploadPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const parentId = searchParams.get('parentId')
+  const { toast } = useToast()
   
-  // Use Convex query to fetch parents
-  const parentsData = useQuery(api.parents.getParents, {
-    limit: 100 // Get all parents
-  })
-  
-  const parents = parentsData?.parents || []
+  const [parents, setParents] = useState<Parent[]>([])
   const [selectedParentId, setSelectedParentId] = useState(parentId || '')
   const [file, setFile] = useState<File | null>(null)
   const [templateType, setTemplateType] = useState('')
   const [notes, setNotes] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [uploading, setUploading] = useState(false)
-  const loading = parentsData === undefined
+  const [loading, setLoading] = useState(true)
 
-  // No need for useEffect to fetch parents as they are fetched by the Convex query
+  useEffect(() => {
+    fetchParents()
+  }, [])
+
+  const fetchParents = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/parents?limit=1000')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setParents(data.data?.parents || [])
+      } else {
+        throw new Error(data.error || 'Failed to fetch parents')
+      }
+    } catch (error) {
+      console.error('Failed to fetch parents:', error)
+      toast({
+        title: "❌ Error Loading Parents",
+        description: error instanceof Error ? error.message : 'Failed to load parents',
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -54,14 +74,22 @@ function ContractUploadPageContent() {
       // Validate file type
       const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
       if (!allowedTypes.includes(selectedFile.type)) {
-        toast.error('Invalid file type. Only PDF and Word documents are allowed.')
+        toast({
+          title: "❌ Invalid File Type",
+          description: "Only PDF and Word documents are allowed.",
+          variant: "destructive",
+        })
         return
       }
 
       // Validate file size (10MB limit)
       const maxSize = 10 * 1024 * 1024 // 10MB
       if (selectedFile.size > maxSize) {
-        toast.error('File size too large. Maximum size is 10MB.')
+        toast({
+          title: "❌ File Too Large",
+          description: "Maximum file size is 10MB.",
+          variant: "destructive",
+        })
         return
       }
 
@@ -71,7 +99,11 @@ function ContractUploadPageContent() {
 
   const handleUpload = async () => {
     if (!file || !selectedParentId) {
-      toast.error('Please select a file and parent')
+      toast({
+        title: "❌ Missing Information",
+        description: "Please select a file and parent",
+        variant: "destructive",
+      })
       return
     }
 
@@ -91,15 +123,26 @@ function ContractUploadPageContent() {
 
       if (response.ok) {
         const result = await response.json()
-        toast.success('Contract uploaded successfully')
+        toast({
+          title: "✅ Contract Uploaded",
+          description: "Contract uploaded successfully",
+        })
         router.push('/contracts')
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to upload contract')
+        toast({
+          title: "❌ Upload Failed",
+          description: error.error || 'Failed to upload contract',
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Upload error:', error)
-      toast.error('Failed to upload contract')
+      toast({
+        title: "❌ Upload Error",
+        description: "Failed to upload contract",
+        variant: "destructive",
+      })
     } finally {
       setUploading(false)
     }
@@ -287,6 +330,7 @@ function ContractUploadPageContent() {
           </Card>
         </div>
       </div>
+      <Toaster />
     </AppLayout>
   )
 }
@@ -298,6 +342,7 @@ export default function ContractUploadPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
         </div>
+        <Toaster />
       </AppLayout>
     }>
       <ContractUploadPageContent />

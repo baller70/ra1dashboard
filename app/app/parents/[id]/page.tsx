@@ -36,17 +36,15 @@ import {
   TrendingUp,
   Shield,
   Target,
-  Send
+  Send,
+  ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
+import { useToast } from '../../../hooks/use-toast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
-import { Id } from '../../../convex/_generated/dataModel'
 
 interface ParentData {
-  _id: Id<"parents">
+  _id: string
   name: string
   email: string
   phone?: string
@@ -83,30 +81,141 @@ export default function ParentDetailPage() {
   const params = useParams()
   const router = useRouter()
   const parentId = params.id as string
+  const { toast } = useToast()
+
+  // Add debugging
+  console.log('=== PARENT PROFILE PAGE DEBUG ===');
+  console.log('parentId from params:', parentId);
+  console.log('parentId type:', typeof parentId);
+  console.log('parentId length:', parentId?.length);
 
   // Validate that we have a proper parent ID before making queries
   const isValidId = parentId && parentId !== 'undefined' && parentId.length > 20
 
-  // Use Convex queries only if we have a valid ID
-  const parent = useQuery(
-    api.parents.getParent, 
-    isValidId ? { id: parentId as Id<"parents"> } : "skip"
-  )
-  const paymentsData = useQuery(
-    api.payments.getPayments, 
-    isValidId ? { 
-      parentId: parentId as Id<"parents">,
-      limit: 10 
-    } : "skip"
-  )
-  const paymentPlansData = useQuery(
-    api.payments.getPaymentPlans, 
-    isValidId ? { 
-      parentId: parentId as Id<"parents">
-    } : "skip"
-  )
+  console.log('isValidId:', isValidId);
 
-  const [loading, setLoading] = useState(false)
+  // Use traditional fetch-based data loading instead of Convex queries
+  const [parent, setParent] = useState<ParentData | null>(null)
+  const [payments, setPayments] = useState<PaymentData[]>([])
+  const [paymentPlans, setPaymentPlans] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dataError, setDataError] = useState<string | null>(null)
+
+  // Fetch parent data
+  useEffect(() => {
+    const fetchParentData = async () => {
+      if (!isValidId) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        console.log('Fetching parent data for ID:', parentId)
+
+        // Check if we're returning from an edit (look for updated parameter)
+        const urlParams = new URLSearchParams(window.location.search)
+        const isUpdated = urlParams.get('updated')
+        if (isUpdated) {
+          console.log('Detected return from edit, forcing fresh data fetch')
+          // Clear the URL parameter to clean up the URL
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }
+
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = Date.now()
+        console.log('Using cache-busting timestamp:', timestamp)
+
+        // Fetch parent details with cache-busting
+        const parentResponse = await fetch(`/api/parents/${parentId}?t=${timestamp}`)
+        if (parentResponse.ok) {
+          const parentData = await parentResponse.json()
+          console.log('Parent data received:', parentData)
+          setParent(parentData)
+        } else {
+          console.error('Failed to fetch parent:', parentResponse.status)
+          setDataError(`Failed to load parent data (${parentResponse.status})`)
+        }
+
+        // Fetch payments for this parent with cache-busting
+        const paymentsResponse = await fetch(`/api/payments?parentId=${parentId}&limit=10&t=${timestamp}`)
+        if (paymentsResponse.ok) {
+          const paymentsData = await paymentsResponse.json()
+          console.log('Payments data received:', paymentsData)
+          setPayments(paymentsData.data?.payments || [])
+        } else {
+          console.warn('Failed to fetch payments:', paymentsResponse.status)
+        }
+
+        // Fetch payment plans for this parent with cache-busting
+        const plansResponse = await fetch(`/api/payment-plans?parentId=${parentId}&t=${timestamp}`)
+        if (plansResponse.ok) {
+          const plansData = await plansResponse.json()
+          console.log('Payment plans data received:', plansData)
+          setPaymentPlans(plansData.data || [])
+        } else {
+          console.warn('Failed to fetch payment plans:', plansResponse.status)
+        }
+
+      } catch (error) {
+        console.error('Error fetching parent data:', error)
+        setDataError('Failed to load parent data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchParentData()
+  }, [parentId, isValidId])
+
+  // Function to refresh parent data (can be called after payments are updated)
+  const refreshParentData = async () => {
+    if (!isValidId) return
+
+    try {
+      console.log('Refreshing parent data for ID:', parentId)
+
+      // Refresh payments data
+      const paymentsResponse = await fetch(`/api/payments?parentId=${parentId}&limit=10`)
+      if (paymentsResponse.ok) {
+        const paymentsData = await paymentsResponse.json()
+        console.log('Refreshed payments data:', paymentsData)
+        setPayments(paymentsData.data?.payments || [])
+      }
+
+      // Refresh payment plans data
+      const plansResponse = await fetch(`/api/payment-plans?parentId=${parentId}`)
+      if (plansResponse.ok) {
+        const plansData = await plansResponse.json()
+        console.log('Refreshed payment plans data:', plansData)
+        setPaymentPlans(plansData.data || [])
+      }
+
+      toast({
+        title: 'Data refreshed',
+        description: 'Payment information has been updated.',
+      })
+
+    } catch (error) {
+      console.error('Error refreshing parent data:', error)
+      toast({
+        title: 'Refresh failed',
+        description: 'Failed to refresh payment data.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  // Make refreshParentData available globally for other components to call
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).refreshParentData = refreshParentData
+    }
+  }, [parentId, isValidId])
+
+  console.log('Current state:', { parent, payments, loading, dataError });
+  console.log('=== END PARENT PROFILE DEBUG ===');
+
   const [editing, setEditing] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [sendingMessage, setSendingMessage] = useState(false)
@@ -118,8 +227,8 @@ export default function ParentDetailPage() {
   const [formData, setFormData] = useState<Partial<ParentData>>({})
 
   // Extract data from queries
-  const payments = paymentsData?.payments || []
-  const paymentPlans = paymentPlansData || []
+  // const payments = paymentsData?.payments || []
+  // const paymentPlans = paymentPlansData || []
 
   useEffect(() => {
     if (parent && !editing) {
@@ -183,7 +292,10 @@ export default function ParentDetailPage() {
       })
 
       if (response.ok) {
-        toast.success(`Message sent to ${parent?.name}`)
+        toast({
+          title: 'Message sent',
+          description: `Message sent to ${parent?.name}`,
+        })
         setMessageContent('')
         setShowMessageDialog(false)
       } else {
@@ -191,7 +303,11 @@ export default function ParentDetailPage() {
       }
     } catch (error) {
       console.error('Failed to send message:', error)
-      toast.error('There was an error sending the message. Please try again.')
+      toast({
+        title: 'Error sending message',
+        description: 'There was an error sending the message. Please try again.',
+        variant: 'destructive',
+      })
     } finally {
       setSendingMessage(false)
     }
@@ -432,22 +548,59 @@ export default function ParentDetailPage() {
     )
   }
 
-  if (loading || parent === undefined) {
+  // Helper functions for badge variants
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return 'default' // Green
+      case 'suspended':
+        return 'destructive' // Red
+      case 'pending':
+        return 'secondary' // Gray
+      case 'inactive':
+        return 'outline' // Outline
+      default:
+        return 'secondary'
+    }
+  }
+
+  const getContractStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status?.toLowerCase()) {
+      case 'signed':
+        return 'default' // Green
+      case 'pending':
+        return 'secondary' // Gray
+      case 'expired':
+        return 'destructive' // Red
+      case 'draft':
+        return 'outline' // Outline
+      default:
+        return 'secondary'
+    }
+  }
+
+  // Show loading only when data is being fetched
+  if (loading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          <p className="ml-4 text-muted-foreground">Loading parent profile...</p>
         </div>
       </AppLayout>
     )
   }
 
-  if (!parent) {
+  // Show error state if there was an error or no parent found
+  if (dataError || !parent) {
     return (
       <AppLayout>
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold mb-4">Parent Not Found</h1>
-          <p className="text-muted-foreground mb-4">The parent you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">
+            {dataError || 'The parent you are looking for could not be loaded.'}
+          </p>
+          <p className="text-sm text-muted-foreground mb-4">Parent ID: {parentId}</p>
           <Button asChild>
             <Link href="/parents">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -457,24 +610,6 @@ export default function ParentDetailPage() {
         </div>
       </AppLayout>
     )
-  }
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'active': return 'default'
-      case 'inactive': return 'secondary'
-      case 'suspended': return 'destructive'
-      default: return 'outline'
-    }
-  }
-
-  const getContractStatusVariant = (status: string) => {
-    switch (status) {
-      case 'signed': return 'default'
-      case 'pending': return 'secondary'
-      case 'expired': return 'destructive'
-      default: return 'outline'
-    }
   }
 
   return (
@@ -507,11 +642,11 @@ export default function ParentDetailPage() {
                 <h1 className="text-3xl font-bold tracking-tight">{parent.name}</h1>
                 <p className="text-muted-foreground">AI-Enhanced Parent Profile</p>
                 <div className="flex items-center space-x-2 mt-1">
-                  <Badge variant={getStatusVariant(parent.status)}>
-                    {parent.status}
+                  <Badge variant={getStatusVariant(parent.status || 'inactive')}>
+                    {parent.status || 'inactive'}
                   </Badge>
-                  <Badge variant={getContractStatusVariant(parent.contractStatus)}>
-                    Contract: {parent.contractStatus}
+                  <Badge variant={getContractStatusVariant(parent.contractStatus || 'draft')}>
+                    Contract: {parent.contractStatus || 'draft'}
                   </Badge>
                 </div>
               </div>
@@ -616,8 +751,8 @@ export default function ParentDetailPage() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Status</p>
-                  <Badge variant={getContractStatusVariant(parent.contractStatus)}>
-                    {parent.contractStatus}
+                  <Badge variant={getContractStatusVariant(parent.contractStatus || 'draft')}>
+                    {parent.contractStatus || 'draft'}
                   </Badge>
                 </div>
               </div>
@@ -835,30 +970,78 @@ export default function ParentDetailPage() {
         {/* Payment Plans */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Payment Plans
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Plans
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshParentData}
+                disabled={loading}
+                className="flex items-center gap-1"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {paymentPlans && paymentPlans.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {paymentPlans.map((plan) => (
-                  <div key={plan.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{plan.type} Payment Plan</p>
-                        <p className="text-sm text-muted-foreground">{plan.description}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">${Number(plan.totalAmount).toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">
-                          ${Number(plan.installmentAmount).toLocaleString()} x {plan.installments}
-                        </p>
+                  <Link 
+                    key={plan.id} 
+                    href={`/payments/${plan.id}`}
+                    className="block"
+                  >
+                    <div className="p-4 border rounded-lg hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-medium group-hover:text-orange-600 transition-colors">
+                              {plan.type} Payment Plan
+                            </p>
+                            <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ExternalLink className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="text-right">
+                              <p className="font-semibold text-lg">${Number(plan.totalAmount).toLocaleString()}</p>
+                              <p className="text-sm text-muted-foreground">
+                                ${Number(plan.installmentAmount).toLocaleString()} x {plan.installments} installments
+                              </p>
+                            </div>
+                            {plan.status && (
+                              <Badge variant={plan.status === 'active' ? 'default' : plan.status === 'completed' ? 'secondary' : 'outline'}>
+                                {plan.status}
+                              </Badge>
+                            )}
+                          </div>
+                          {plan.nextPaymentDue && (
+                            <p className="text-xs text-orange-600 mt-1">
+                              Next payment due: {new Date(plan.nextPaymentDue).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
+                
+                {paymentPlans.length > 3 && (
+                  <div className="pt-3 border-t">
+                    <Link href={`/payment-plans?parentId=${parentId}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        View All Payment Plans ({paymentPlans.length})
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -872,27 +1055,68 @@ export default function ParentDetailPage() {
         {/* Recent Payments */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Recent Payments
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Recent Payments
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshParentData}
+                disabled={loading}
+                className="flex items-center gap-1"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {payments && payments.length > 0 ? (
               <div className="space-y-3">
                 {payments.slice(0, 5).map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-3 border rounded">
-                    <div>
-                      <p className="font-medium">${Number(payment.amount).toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Due: {new Date(payment.dueDate).toLocaleDateString()}
-                      </p>
+                  <Link 
+                    key={payment.id} 
+                    href={`/payments/${payment.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium group-hover:text-orange-600 transition-colors">
+                            ${Number(payment.amount).toLocaleString()}
+                          </p>
+                          <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'overdue' ? 'destructive' : 'secondary'}>
+                            {payment.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Due: {new Date(payment.dueDate).toLocaleDateString()}
+                        </p>
+                        {payment.paidAt && (
+                          <p className="text-xs text-green-600">
+                            Paid: {new Date(payment.paidAt).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                      </div>
                     </div>
-                    <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'overdue' ? 'destructive' : 'secondary'}>
-                      {payment.status}
-                    </Badge>
-                  </div>
+                  </Link>
                 ))}
+                
+                {payments.length > 5 && (
+                  <div className="pt-3 border-t">
+                    <Link href={`/payments?parentId=${parentId}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        View All Payments ({payments.length})
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

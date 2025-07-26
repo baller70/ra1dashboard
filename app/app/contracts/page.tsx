@@ -2,8 +2,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery } from "convex/react"
-import { api } from "../../convex/_generated/api"
 import { AppLayout } from '../../components/app-layout'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -11,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge'
 import { Checkbox } from '../../components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
+import { useToast } from '../../hooks/use-toast'
+import { Toaster } from '../../components/ui/toaster'
 import { 
   Plus, 
   Search, 
@@ -30,7 +30,6 @@ import {
   XCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
 
 interface ContractData {
   id: string
@@ -53,29 +52,60 @@ interface ContractData {
 }
 
 export default function ContractsPage() {
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [templateFilter, setTemplateFilter] = useState('all')
   const [selectedContracts, setSelectedContracts] = useState<string[]>([])
   const [bulkOperating, setBulkOperating] = useState(false)
 
-  // Use Convex query instead of fetch
-  const contractsData = useQuery(api.contracts.getContracts, {
-    status: statusFilter === 'all' ? undefined : statusFilter,
-    templateType: templateFilter === 'all' ? undefined : templateFilter
-  })
-  
-  const contracts = contractsData?.contracts || []
-  const loading = contractsData === undefined
+  const [contracts, setContracts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // No need to fetch manually - Convex handles this
-  }, [])
+    fetchContracts()
+  }, [statusFilter, templateFilter])
+
+  const fetchContracts = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') params.append('status', statusFilter)
+      if (templateFilter !== 'all') params.append('templateType', templateFilter)
+      
+      const response = await fetch(`/api/contracts?${params}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setContracts(data?.contracts || [])
+        toast({
+          title: "✅ Contracts Loaded",
+          description: `Found ${data?.contracts?.length || 0} contracts`,
+        })
+      } else {
+        throw new Error(data.error || 'Failed to fetch contracts')
+      }
+    } catch (error) {
+      console.error('Failed to fetch contracts:', error)
+      toast({
+        title: "❌ Error Loading Contracts",
+        description: error instanceof Error ? error.message : 'Failed to load contracts',
+        variant: "destructive",
+      })
+      setContracts([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredContracts = contracts.filter((contract: any) => {
-    const matchesSearch = contract.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contract.parentEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (contract.originalName && contract.originalName.toLowerCase().includes(searchTerm.toLowerCase()))
+    const parentName = contract.parentName || contract.parent?.name || ''
+    const parentEmail = contract.parentEmail || contract.parent?.email || ''
+    const originalName = contract.originalName || ''
+    
+    const matchesSearch = parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         parentEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         originalName.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesSearch
   })
 
@@ -112,13 +142,24 @@ export default function ContractsPage() {
       })
 
       if (response.ok) {
-        // Convex will automatically refetch data
+        // Refresh contracts data
+        await fetchContracts()
         setSelectedContracts([])
-        toast.success(`Successfully ${action === 'delete' ? 'deleted' : 'updated'} ${selectedContracts.length} contracts`)
+        toast({
+          title: "✅ Bulk Operation Complete",
+          description: `Successfully ${action === 'delete' ? 'deleted' : 'updated'} ${selectedContracts.length} contracts`,
+        })
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Bulk operation failed')
       }
     } catch (error) {
       console.error('Bulk operation failed:', error)
-      toast.error('Bulk operation failed')
+      toast({
+        title: "❌ Bulk Operation Failed",
+        description: error instanceof Error ? error.message : 'Bulk operation failed',
+        variant: "destructive",
+      })
     } finally {
       setBulkOperating(false)
     }
@@ -376,8 +417,8 @@ export default function ContractsPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium">{contract.parentName}</p>
-                        <p className="text-sm text-muted-foreground">{contract.parentEmail}</p>
+                        <p className="font-medium">{contract.parentName || contract.parent?.name || 'Unknown Parent'}</p>
+                        <p className="text-sm text-muted-foreground">{contract.parentEmail || contract.parent?.email || 'No email'}</p>
                         {contract.originalName && (
                           <p className="text-xs text-muted-foreground">{contract.originalName}</p>
                         )}
@@ -409,13 +450,17 @@ export default function ContractsPage() {
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/contracts/${contract._id}`}>
                           <Eye className="mr-2 h-4 w-4" />
-                          View
+                          Details
                         </Link>
                       </Button>
                       {contract.fileUrl && (
-                        <Button variant="outline" size="sm">
-                          <Eye className="mr-2 h-4 w-4" />
-                          View
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(contract.fileUrl, '_blank')}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Open File
                         </Button>
                       )}
                       {!contract.fileUrl && (
@@ -451,6 +496,7 @@ export default function ContractsPage() {
           </CardContent>
         </Card>
       </div>
+      <Toaster />
     </AppLayout>
   )
 }

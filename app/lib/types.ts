@@ -128,3 +128,69 @@ export type AIMessageGeneration = {
   tone: 'formal' | 'friendly' | 'urgent';
   personalization: Record<string, any>;
 };
+
+export type AIRecommendationWithRelations = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: RecommendationStatus;
+  confidence: number;
+  estimatedImpact: string;
+  createdAt: string;
+  implementedAt?: string;
+  isExecuted?: boolean;
+  autoExecutable?: boolean;
+  metadata?: Record<string, any>;
+};
+
+// Bulk upload types
+export type BulkUploadParent = {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  notes?: string;
+};
+
+export type ValidationError = {
+  row: number;
+  field: string;
+  message: string;
+  value: string;
+};
+
+export type BulkUploadValidation = {
+  data: BulkUploadParent[];
+  errors: ValidationError[];
+  duplicates: Array<{
+    email: string;
+    rows: number[];
+    existsInDb: boolean;
+  }>;
+  stats: {
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    duplicateRows: number;
+  };
+};
+
+export type BulkImportResult = {
+  success: boolean;
+  created: number;
+  failed: number;
+  errors: Array<{
+    row: number;
+    email: string;
+    message: string;
+  }>;
+  successfulParents: Array<{
+    id: string;
+    name: string;
+    email: string;
+  }>;
+};

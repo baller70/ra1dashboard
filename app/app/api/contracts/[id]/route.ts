@@ -3,6 +3,11 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
+import { ConvexHttpClient } from 'convex/browser'
+import { api } from '../../../../convex/_generated/api'
+import { Id } from '../../../../convex/_generated/dataModel'
+
+const convexHttp = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function GET(
   request: Request,
@@ -11,25 +16,21 @@ export async function GET(
   try {
     await requireAuth()
     
-    // For now, return mock data since contracts table isn't implemented in Convex yet
-    // TODO: Implement contracts table in Convex schema and create queries
-    const mockContract = {
-      id: params.id,
-      status: 'pending',
-      templateType: 'standard',
-      originalName: 'Sample Contract',
-      fileName: 'contract.pdf',
-      fileUrl: '/contracts/sample.pdf',
-      uploadedAt: new Date(),
-      parent: {
-        id: 'parent1',
-        name: 'Sample Parent',
-        email: 'parent@example.com',
-        phone: '555-0123'
-      }
-    };
+    const contractId = params.id as Id<"contracts">
+    
+    // Fetch contract from Convex
+    const contract = await convexHttp.query(api.contracts.getContract, { 
+      id: contractId 
+    })
+    
+    if (!contract) {
+      return NextResponse.json(
+        { error: 'Contract not found' },
+        { status: 404 }
+      )
+    }
 
-    return NextResponse.json(mockContract)
+    return NextResponse.json(contract)
   } catch (error) {
     console.error('Contract fetch error:', error)
     return NextResponse.json(
@@ -47,16 +48,21 @@ export async function PUT(
     await requireAuth()
     
     const body = await request.json()
+    const contractId = params.id as Id<"contracts">
     
-    // For now, just return success since contracts functionality isn't implemented
-    // TODO: Implement contract updates in Convex
     console.log('Contract update requested:', params.id, body);
 
-    return NextResponse.json({
-      id: params.id,
+    // Update contract in Convex
+    const updatedContract = await convexHttp.mutation(api.contracts.updateContract, {
+      id: contractId,
       ...body,
-      updatedAt: new Date(),
-      message: 'Contracts functionality not yet implemented'
+      expiresAt: body.expiresAt ? new Date(body.expiresAt).getTime() : undefined
+    })
+
+    return NextResponse.json({
+      success: true,
+      contract: updatedContract,
+      message: 'Contract updated successfully'
     })
   } catch (error) {
     console.error('Contract update error:', error)
@@ -74,13 +80,17 @@ export async function DELETE(
   try {
     await requireAuth()
     
-    // For now, just return success since contracts functionality isn't implemented
-    // TODO: Implement contract deletion in Convex
+    const contractId = params.id as Id<"contracts">
     console.log('Contract deletion requested:', params.id);
+
+    // Delete contract from Convex
+    await convexHttp.mutation(api.contracts.deleteContract, {
+      id: contractId
+    })
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Contract deleted successfully (mock)' 
+      message: 'Contract deleted successfully' 
     })
   } catch (error) {
     console.error('Contract deletion error:', error)

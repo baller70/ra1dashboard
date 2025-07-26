@@ -1,168 +1,212 @@
-import { redirect } from 'next/navigation'
-// import { currentUser } from '@clerk/nextjs/server'
-// import { SignInButton, SignUpButton } from '@clerk/nextjs'
-import { Shield, Users, DollarSign, MessageSquare, FileText, Settings } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+'use client'
 
-export default async function LandingPage() {
-  // Temporarily disable Clerk authentication
-  const user = null // await currentUser()
-  
-  // Check if user is authenticated and has admin role
-  if (user) {
-    const userRole = user.publicMetadata?.role || user.privateMetadata?.role
-    if (userRole === 'admin') {
-      // Redirect to dashboard if user is admin
-      redirect('/dashboard')
-    } else {
-      // Show unauthorized message for non-admin users
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50">
-          <div className="container mx-auto px-4 py-16">
-            <div className="max-w-md mx-auto text-center">
-              <div className="mb-8">
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center mx-auto mb-4">
-                  <Shield className="h-8 w-8 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-                <p className="text-gray-600">
-                  You don't have permission to access this application. Please contact an administrator.
-                </p>
-              </div>
-              <Button onClick={() => window.location.href = '/sign-out'} variant="outline">
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      )
+import { AppLayout } from '@/components/app-layout'
+import { StatsCards } from '@/components/dashboard/stats-cards'
+import { RevenueChart } from '@/components/dashboard/revenue-chart'
+import { RecentActivity } from '@/components/dashboard/recent-activity'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { RefreshCw, TrendingUp, Users, DollarSign, BarChart3, MessageSquare } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useToast } from '@/hooks/use-toast'
+import { Toaster } from '@/components/ui/toaster'
+
+interface DashboardStatsExtended {
+  totalParents: number
+  totalPayments: number
+  totalRevenue: number
+  overduePayments: number
+  upcomingDues: number
+  activePaymentPlans: number
+  messagesSentThisMonth: number
+  recentActivity: any[]
+}
+
+interface PaymentTrend {
+  month: string
+  revenue: number
+  payments: number
+}
+
+interface ActivityNotification {
+  id: string
+  type: 'payment' | 'reminder' | 'system' | 'contract' | 'parent_update'
+  title: string
+  message: string
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  timestamp: number
+  isRead: boolean
+  actionUrl?: string
+  actionText?: string
+  parentName?: string
+  amount?: number
+  icon?: string
+}
+
+export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStatsExtended>({
+    totalParents: 0,
+    totalPayments: 0,
+    totalRevenue: 0,
+    overduePayments: 0,
+    upcomingDues: 0,
+    activePaymentPlans: 0,
+    messagesSentThisMonth: 0,
+    recentActivity: []
+  })
+  const [revenueTrends, setRevenueTrends] = useState<PaymentTrend[]>([])
+  const [recentActivity, setRecentActivity] = useState<ActivityNotification[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Fetch all dashboard data in parallel
+      const [statsRes, trendsRes, activityRes] = await Promise.all([
+        fetch('/api/dashboard/stats', { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        }),
+        fetch('/api/dashboard/revenue-trends', { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        }),
+        fetch('/api/dashboard/recent-activity', { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+      ])
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json()
+        const rawStats = statsData.data || statsData
+        // Map the API response to our extended interface
+        setStats({
+          totalParents: rawStats.totalParents || 0,
+          totalPayments: rawStats.totalPayments || 0,
+          totalRevenue: rawStats.totalRevenue || 0,
+          overduePayments: rawStats.overduePayments || 0,
+          upcomingDues: rawStats.upcomingDues || 0,
+          activePaymentPlans: rawStats.activePaymentPlans || 0,
+          messagesSentThisMonth: rawStats.messagesSentThisMonth || 0,
+          recentActivity: []
+        })
+      }
+
+      if (trendsRes.ok) {
+        const trendsData = await trendsRes.json()
+        setRevenueTrends(trendsData || [])
+      }
+
+      if (activityRes.ok) {
+        const activityData = await activityRes.json()
+        setRecentActivity(activityData.data?.activities || activityData.activities || [])
+      }
+
+    } catch (error) {
+      console.error('Dashboard data fetch error:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load dashboard data. Please refresh the page.",
+        duration: 5000,
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // Show landing page for unauthenticated users
+  const handleRefresh = async () => {
+    toast({
+      title: "Refreshing Dashboard",
+      description: "Updating all dashboard data...",
+      duration: 2000,
+    })
+    await fetchDashboardData()
+    toast({
+      title: "Dashboard Updated",
+      description: "All data has been refreshed successfully.",
+      duration: 3000,
+    })
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+    
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(fetchDashboardData, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <div className="flex items-center justify-center mb-6">
-              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center mr-4">
-                <span className="text-white font-bold text-2xl">R1</span>
-              </div>
-              <h1 className="text-4xl font-bold text-gray-900">Rise as One</h1>
-            </div>
-            <p className="text-xl text-gray-600 mb-8">
-              Professional Basketball Program Management System
-            </p>
-            <p className="text-gray-500 max-w-2xl mx-auto">
-              Streamline parent communications, payment tracking, and program administration 
-              with our comprehensive AI-powered management platform.
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            <Card>
-              <CardHeader>
-                <Users className="h-8 w-8 text-orange-600 mb-2" />
-                <CardTitle>Parent Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Comprehensive parent profiles, contact management, and program enrollment tracking.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <DollarSign className="h-8 w-8 text-green-600 mb-2" />
-                <CardTitle>Payment Processing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Automated payment tracking, installment plans, and overdue payment management.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <MessageSquare className="h-8 w-8 text-blue-600 mb-2" />
-                <CardTitle>Smart Communications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  AI-powered messaging, bulk communications, and automated reminder systems.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <FileText className="h-8 w-8 text-purple-600 mb-2" />
-                <CardTitle>Contract Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Digital contract storage, e-signatures, and automated compliance tracking.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Shield className="h-8 w-8 text-red-600 mb-2" />
-                <CardTitle>Secure & Compliant</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Enterprise-grade security, data encryption, and compliance with privacy regulations.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Settings className="h-8 w-8 text-gray-600 mb-2" />
-                <CardTitle>Admin Controls</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Comprehensive administrative dashboard with analytics and system management tools.
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Admin Access Section */}
-          <div className="text-center">
-            <Card className="max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-center">
-                  <Shield className="h-5 w-5 mr-2 text-orange-600" />
-                  Admin Access Required
-                </CardTitle>
-                <CardDescription>
-                  This application is restricted to authorized administrators only.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* <SignInButton mode="modal"> */}
-                  <Button className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
-                    Sign In as Administrator (Clerk Disabled)
-                  </Button>
-                {/* </SignInButton> */}
-                <p className="text-sm text-gray-500">
-                  Don't have an account? Contact your system administrator.
-                </p>
-              </CardContent>
-            </Card>
+    <AppLayout>
+      <div className="flex-1 space-y-4 p-4 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Loading...' : 'Refresh'}
+            </Button>
           </div>
         </div>
+        
+        {/* Stats Cards */}
+        <StatsCards stats={stats} />
+        
+        {/* Charts and Activity */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <RevenueChart data={revenueTrends} />
+          <RecentActivity activities={recentActivity} />
+        </div>
+        
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>
+              Frequently used actions and shortcuts
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <Link href="/parents">
+                <Button variant="outline" className="h-20 flex flex-col w-full hover:bg-accent">
+                  <Users className="h-6 w-6 mb-2" />
+                  Add Parent
+                </Button>
+              </Link>
+              <Link href="/payments">
+                <Button variant="outline" className="h-20 flex flex-col w-full hover:bg-accent">
+                  <DollarSign className="h-6 w-6 mb-2" />
+                  Record Payment
+                </Button>
+              </Link>
+              <Link href="/analytics">
+                <Button variant="outline" className="h-20 flex flex-col w-full hover:bg-accent">
+                  <BarChart3 className="h-6 w-6 mb-2" />
+                  View Analytics
+                </Button>
+              </Link>
+              <Link href="/communication/send">
+                <Button variant="outline" className="h-20 flex flex-col w-full hover:bg-accent">
+                  <MessageSquare className="h-6 w-6 mb-2" />
+                  Send Reminders
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+      <Toaster />
+    </AppLayout>
   )
 }

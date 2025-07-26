@@ -534,4 +534,21 @@ export const getEngagementStats = query({
 
     return stats;
   },
+});
+
+// Get recent messages for notifications
+export const getRecentMessages = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 10;
+    
+    const messages = await ctx.db
+      .query("messageLogs")
+      .order("desc")
+      .take(limit);
+
+    return messages;
+  },
 }); 

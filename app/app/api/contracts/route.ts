@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       mimeType: mimeType || 'application/pdf',
       templateType,
       notes,
-      expiresAt,
+      expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
     })
 
     return NextResponse.json({

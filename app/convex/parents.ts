@@ -49,6 +49,37 @@ export const getParent = query({
   },
 });
 
+export const getParentFresh = query({
+  args: { 
+    id: v.id("parents"),
+    timestamp: v.optional(v.number()) // Force fresh query with timestamp
+  },
+  handler: async (ctx, args) => {
+    // The timestamp parameter forces Convex to treat this as a new query
+    console.log('getParentFresh called with timestamp:', args.timestamp);
+    const parent = await ctx.db.get(args.id);
+    console.log('getParentFresh returning:', parent);
+    return parent;
+  },
+});
+
+// Delete parent function
+export const deleteParent = mutation({
+  args: { id: v.id("parents") },
+  handler: async (ctx, args) => {
+    // Check if parent exists
+    const parent = await ctx.db.get(args.id);
+    if (!parent) {
+      throw new Error("Parent not found");
+    }
+    
+    // Delete the parent
+    await ctx.db.delete(args.id);
+    
+    return { success: true, deletedId: args.id };
+  },
+});
+
 export const createParent = mutation({
   args: {
     name: v.string(),
@@ -93,13 +124,27 @@ export const updateParent = mutation({
     name: v.optional(v.string()),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    emergencyContact: v.optional(v.string()),
+    emergencyPhone: v.optional(v.string()),
     status: v.optional(v.string()),
+    contractStatus: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    teamId: v.optional(v.string()),
+    notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
     
-    await ctx.db.patch(id, updates);
-    return id;
+    // Add updatedAt timestamp
+    const updateData = {
+      ...updates,
+      updatedAt: Date.now(),
+    };
+    
+    await ctx.db.patch(id, updateData);
+    
+    // Return the updated parent record
+    return await ctx.db.get(id);
   },
 });

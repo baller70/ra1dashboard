@@ -8,8 +8,6 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Textarea } from '../../components/ui/textarea'
-import { AIInput } from '../../components/ui/ai-input'
-import { AITextarea } from '../../components/ui/ai-textarea'
 import { Switch } from '../../components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
@@ -40,6 +38,7 @@ import {
   Info
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
+import { Toaster } from '../../components/ui/toaster'
 
 interface SystemSettings {
   programName: string
@@ -151,14 +150,51 @@ export default function SettingsPage() {
         if (response.ok) {
           const data = await response.json()
           
-          // Set system settings
-          if (data.systemSettings) {
-            setSettings(data.systemSettings)
+          // Set system settings from array format
+          if (data.systemSettings && Array.isArray(data.systemSettings)) {
+            const systemSettingsObj: SystemSettings = {
+              programName: data.systemSettings.find((s: any) => s.key === 'program_name')?.value || '',
+              programFee: data.systemSettings.find((s: any) => s.key === 'program_fee')?.value || '',
+              emailFromAddress: data.systemSettings.find((s: any) => s.key === 'email_from_address')?.value || '',
+              smsFromNumber: data.systemSettings.find((s: any) => s.key === 'sms_from_number')?.value || '',
+              reminderDays: data.systemSettings.find((s: any) => s.key === 'reminder_days')?.value || '',
+              lateFeeAmount: data.systemSettings.find((s: any) => s.key === 'late_fee_amount')?.value || '',
+              gracePeriodDays: data.systemSettings.find((s: any) => s.key === 'grace_period_days')?.value || ''
+            }
+            setSettings(systemSettingsObj)
           }
           
-          // Set user preferences
+          // Set user preferences with proper mapping
           if (data.userPreferences) {
-            setUserPreferences(prev => ({ ...prev, ...data.userPreferences }))
+            setUserPreferences(prev => ({
+              ...prev,
+              theme: data.userPreferences.theme || 'system',
+              language: data.userPreferences.language || 'en',
+              timezone: data.userPreferences.timezone || 'America/New_York',
+              dateFormat: data.userPreferences.dateFormat || 'MM/dd/yyyy',
+              currency: data.userPreferences.currency || 'USD',
+              notifications: {
+                email: data.userPreferences.emailNotifications !== false,
+                sms: data.userPreferences.smsNotifications !== false,
+                push: data.userPreferences.pushNotifications !== false,
+                paymentReminders: data.userPreferences.paymentReminders !== false,
+                overdueAlerts: data.userPreferences.overdueAlerts !== false,
+                systemUpdates: data.userPreferences.systemUpdates !== false,
+                marketingEmails: data.userPreferences.marketingEmails || false,
+              },
+              dashboard: {
+                defaultView: data.userPreferences.defaultView || 'overview',
+                showWelcomeMessage: data.userPreferences.showWelcomeMessage !== false,
+                compactMode: data.userPreferences.compactMode || false,
+                autoRefresh: data.userPreferences.autoRefresh !== false,
+                refreshInterval: data.userPreferences.refreshInterval || 30,
+              },
+              privacy: {
+                shareUsageData: data.userPreferences.shareUsageData || false,
+                allowAnalytics: data.userPreferences.allowAnalytics !== false,
+                twoFactorAuth: data.userPreferences.twoFactorAuth || false,
+              }
+            }))
           }
           
           // Set user profile
@@ -191,14 +227,49 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Convert system settings to API format
+      const systemSettingsArray = [
+        { key: 'program_name', value: settings.programName },
+        { key: 'program_fee', value: settings.programFee },
+        { key: 'email_from_address', value: settings.emailFromAddress },
+        { key: 'sms_from_number', value: settings.smsFromNumber },
+        { key: 'reminder_days', value: settings.reminderDays },
+        { key: 'late_fee_amount', value: settings.lateFeeAmount },
+        { key: 'grace_period_days', value: settings.gracePeriodDays }
+      ]
+
+      // Convert user preferences to API format
+      const userPreferencesForAPI = {
+        theme: userPreferences.theme,
+        language: userPreferences.language,
+        timezone: userPreferences.timezone,
+        dateFormat: userPreferences.dateFormat,
+        currency: userPreferences.currency,
+        emailNotifications: userPreferences.notifications.email,
+        smsNotifications: userPreferences.notifications.sms,
+        pushNotifications: userPreferences.notifications.push,
+        paymentReminders: userPreferences.notifications.paymentReminders,
+        overdueAlerts: userPreferences.notifications.overdueAlerts,
+        systemUpdates: userPreferences.notifications.systemUpdates,
+        marketingEmails: userPreferences.notifications.marketingEmails,
+        defaultView: userPreferences.dashboard.defaultView,
+        showWelcomeMessage: userPreferences.dashboard.showWelcomeMessage,
+        compactMode: userPreferences.dashboard.compactMode,
+        autoRefresh: userPreferences.dashboard.autoRefresh,
+        refreshInterval: userPreferences.dashboard.refreshInterval,
+        shareUsageData: userPreferences.privacy.shareUsageData,
+        allowAnalytics: userPreferences.privacy.allowAnalytics,
+        twoFactorAuth: userPreferences.privacy.twoFactorAuth,
+      }
+
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          systemSettings: settings,
-          userPreferences,
+          systemSettings: systemSettingsArray,
+          userPreferences: userPreferencesForAPI,
           userProfile
         }),
       })
@@ -345,15 +416,11 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="programName">Program Name</Label>
-                    <AIInput
+                    <Input
                       id="programName"
                       value={settings.programName}
                       onChange={(e) => setSettings(prev => ({ ...prev, programName: e.target.value }))}
                       placeholder="Rise as One Yearly Program"
-                      fieldType="settings_description"
-                      context="Name of the basketball program for youth development"
-                      tone="professional"
-                      onAIGeneration={(text) => setSettings(prev => ({ ...prev, programName: text }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1062,6 +1129,7 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+      <Toaster />
     </AppLayout>
   )
 }

@@ -7,26 +7,30 @@ import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Label } from '../../../components/ui/label'
+import { useToast } from '../../../hooks/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
 import { 
   ArrowLeft,
   Calendar,
   DollarSign,
   Save,
-  Users
+  Users,
+  Plus
 } from 'lucide-react'
 import Link from 'next/link'
 import { Parent } from '../../../lib/types'
 
 export default function NewPaymentPlanPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [parents, setParents] = useState<Parent[]>([])
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     parentId: '',
-    type: 'monthly',
-    totalAmount: '',
-    installmentAmount: '',
-    installments: '12',
+    type: 'pay-in-full',
+    totalAmount: '1650',
+    installmentAmount: '1650',
+    installments: '1',
     startDate: new Date().toISOString().split('T')[0],
     description: ''
   })
@@ -37,14 +41,30 @@ export default function NewPaymentPlanPage() {
 
   const fetchParents = async () => {
     try {
-      const response = await fetch('/api/parents')
+      const response = await fetch('/api/parents?limit=1000', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
       if (response.ok) {
         const data = await response.json()
-        const parentsData = Array.isArray(data) ? data : data.parents || []
+        const parentsData = data.data?.parents || data.parents || []
         setParents(parentsData)
+        console.log('📋 Fetched parents for payment plan:', parentsData.length)
+      } else {
+        console.error('Failed to fetch parents:', response.status)
+        toast({
+          title: "⚠️ Warning",
+          description: "Failed to load parents list",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error fetching parents:', error)
+      toast({
+        title: "❌ Error",
+        description: "Error loading parents. Please refresh the page.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -52,7 +72,11 @@ export default function NewPaymentPlanPage() {
     e.preventDefault()
     
     if (!formData.parentId || !formData.totalAmount || !formData.installmentAmount) {
-      alert('Please fill in all required fields')
+      toast({
+        title: "❌ Missing Required Fields",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
       return
     }
 
@@ -70,14 +94,32 @@ export default function NewPaymentPlanPage() {
       })
 
       if (response.ok) {
-        router.push('/payment-plans')
+        const result = await response.json()
+        toast({
+          title: "✅ Payment Plan Created",
+          description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}`,
+          variant: "default",
+        })
+        
+        // Wait a moment for the toast to show, then navigate
+        setTimeout(() => {
+          router.push('/payment-plans')
+        }, 1000)
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to create payment plan')
+        toast({
+          title: "❌ Creation Failed",
+          description: error.error || 'Failed to create payment plan',
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error creating payment plan:', error)
-      alert('Error creating payment plan')
+      toast({
+        title: "❌ Error",
+        description: 'Error creating payment plan. Please try again.',
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -86,29 +128,53 @@ export default function NewPaymentPlanPage() {
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
-    // Auto-calculate installment amount for certain types
-    if (field === 'totalAmount' || field === 'installments') {
-      const total = parseFloat(field === 'totalAmount' ? value : formData.totalAmount)
-      const installments = parseInt(field === 'installments' ? value : formData.installments)
-      
-      if (total && installments && formData.type !== 'full') {
-        const installmentAmount = (total / installments).toFixed(2)
-        setFormData(prev => ({ ...prev, installmentAmount }))
-      }
-    }
-    
+    // Handle plan type changes with predefined amounts
     if (field === 'type') {
-      if (value === 'full') {
+      if (value === 'pay-in-full') {
         setFormData(prev => ({ 
           ...prev, 
           type: value,
+          totalAmount: '1650',
           installments: '1',
-          installmentAmount: formData.totalAmount 
+          installmentAmount: '1650'
+        }))
+      } else if (value === 'quarterly') {
+        setFormData(prev => ({ 
+          ...prev, 
+          type: value,
+          totalAmount: '1650',
+          installments: '3',
+          installmentAmount: '550'
         }))
       } else if (value === 'monthly') {
-        setFormData(prev => ({ ...prev, type: value, installments: '12' }))
-      } else if (value === 'seasonal') {
-        setFormData(prev => ({ ...prev, type: value, installments: '4' }))
+        setFormData(prev => ({ 
+          ...prev, 
+          type: value,
+          totalAmount: '1650',
+          installments: '9',
+          installmentAmount: '183.33'
+        }))
+      } else if (value === 'custom') {
+        setFormData(prev => ({ 
+          ...prev, 
+          type: value,
+          totalAmount: '',
+          installments: '',
+          installmentAmount: ''
+        }))
+      }
+    }
+    
+    // Auto-calculate installment amount for custom type
+    if (field === 'totalAmount' || field === 'installments') {
+      if (formData.type === 'custom') {
+        const total = parseFloat(field === 'totalAmount' ? value : formData.totalAmount)
+        const installments = parseInt(field === 'installments' ? value : formData.installments)
+        
+        if (total && installments) {
+          const installmentAmount = (total / installments).toFixed(2)
+          setFormData(prev => ({ ...prev, installmentAmount }))
+        }
       }
     }
   }
@@ -142,7 +208,20 @@ export default function NewPaymentPlanPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Parent Selection */}
               <div className="space-y-2">
-                <Label htmlFor="parentId">Parent *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="parentId">Parents *</Label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    asChild
+                  >
+                    <Link href="/parents/new">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create a Parent
+                    </Link>
+                  </Button>
+                </div>
                 <select
                   id="parentId"
                   value={formData.parentId}
@@ -152,7 +231,7 @@ export default function NewPaymentPlanPage() {
                 >
                   <option value="">Select a parent</option>
                   {parents.map((parent) => (
-                    <option key={parent.id} value={parent.id}>
+                    <option key={parent._id} value={parent._id}>
                       {parent.name} ({parent.email})
                     </option>
                   ))}
@@ -169,69 +248,96 @@ export default function NewPaymentPlanPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="monthly">Monthly (12 payments)</option>
-                  <option value="seasonal">Seasonal (4 payments)</option>
-                  <option value="full">Full Payment (1 payment)</option>
+                  <option value="pay-in-full">Pay in Full $1650</option>
+                  <option value="quarterly">Quarterly $550</option>
+                  <option value="monthly">Monthly $183.33</option>
                   <option value="custom">Custom</option>
                 </select>
               </div>
 
-              {/* Total Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="totalAmount">Total Amount *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="totalAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.totalAmount}
-                    onChange={(e) => handleInputChange('totalAmount', e.target.value)}
-                    className="pl-10"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
+              {/* Custom Plan Fields - Only show for custom type */}
+              {formData.type === 'custom' && (
+                <>
+                  {/* Total Amount */}
+                  <div className="space-y-2">
+                    <Label htmlFor="totalAmount">Total Amount *</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        id="totalAmount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.totalAmount}
+                        onChange={(e) => handleInputChange('totalAmount', e.target.value)}
+                        className="pl-10"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              {/* Installments */}
-              <div className="space-y-2">
-                <Label htmlFor="installments">Number of Installments *</Label>
-                <Input
-                  id="installments"
-                  type="number"
-                  min="1"
-                  value={formData.installments}
-                  onChange={(e) => handleInputChange('installments', e.target.value)}
-                  disabled={formData.type === 'full'}
-                  required
-                />
-              </div>
+                  {/* Number of Installments */}
+                  <div className="space-y-2">
+                    <Label htmlFor="installments">Number of Installments *</Label>
+                    <Input
+                      id="installments"
+                      type="number"
+                      min="1"
+                      value={formData.installments}
+                      onChange={(e) => handleInputChange('installments', e.target.value)}
+                      required
+                    />
+                  </div>
 
-              {/* Installment Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="installmentAmount">Installment Amount *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="installmentAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.installmentAmount}
-                    onChange={(e) => handleInputChange('installmentAmount', e.target.value)}
-                    className="pl-10"
-                    placeholder="0.00"
-                    required
-                  />
+                  {/* Installment Amount */}
+                  <div className="space-y-2">
+                    <Label htmlFor="installmentAmount">Installment Amount *</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        id="installmentAmount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.installmentAmount}
+                        onChange={(e) => handleInputChange('installmentAmount', e.target.value)}
+                        className="pl-10"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Auto-calculated based on total amount and installments
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Predefined Plan Summary - Show for non-custom types */}
+              {formData.type !== 'custom' && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <h4 className="font-medium text-blue-900 mb-2">Plan Summary</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div>
+                      <span className="font-medium">Total Amount:</span> ${formData.totalAmount}
+                    </div>
+                    <div>
+                      <span className="font-medium">Per Payment:</span> ${formData.installmentAmount}
+                    </div>
+                    <div>
+                      <span className="font-medium">Number of Payments:</span> {formData.installments}
+                    </div>
+                    <div>
+                      <span className="font-medium">Plan Type:</span> {
+                        formData.type === 'pay-in-full' ? 'Pay in Full' :
+                        formData.type === 'quarterly' ? 'Quarterly' :
+                        formData.type === 'monthly' ? 'Monthly' : formData.type
+                      }
+                    </div>
+                  </div>
                 </div>
-                {formData.type !== 'custom' && (
-                  <p className="text-sm text-gray-600">
-                    Auto-calculated based on total amount and installments
-                  </p>
-                )}
-              </div>
+              )}
 
               {/* Start Date */}
               <div className="space-y-2">
@@ -305,6 +411,7 @@ export default function NewPaymentPlanPage() {
           </Card>
         )}
       </div>
+      <Toaster />
     </AppLayout>
   )
 } 

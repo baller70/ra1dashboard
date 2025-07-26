@@ -1,7 +1,20 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+
+// Utility function to safely get parent data with ID validation
+async function safeGetParent(ctx: any, parentId: any) {
+  if (!parentId || typeof parentId !== 'string' || parentId.length === 25) {
+    return null;
+  }
+  
+  try {
+    return await ctx.db.get(parentId as Id<"parents">);
+  } catch (error) {
+    console.warn(`Failed to get parent with ID ${parentId}:`, error);
+    return null;
+  }
+}
 
 // Dashboard stats function (replaces /api/dashboard/stats)
 export const getDashboardStats = query({
@@ -109,14 +122,7 @@ export const getRecentActivity = query({
     
     for (const payment of recentPayments) {
       if (payment.paidAt) {
-        let parent = null;
-        try {
-          if (payment.parentId && typeof payment.parentId === 'string' && payment.parentId.length >= 25) {
-            parent = await ctx.db.get(payment.parentId as Id<"parents">);
-          }
-        } catch (error) {
-          console.log('Could not fetch parent for recent activity:', payment._id);
-        }
+        const parent = await safeGetParent(ctx, payment.parentId);
         
         activities.push({
           id: `payment-${payment._id}`,
@@ -152,14 +158,7 @@ export const getRecentActivity = query({
     
     for (const message of recentMessages) {
       if (message.sentAt) {
-        let parent = null;
-        try {
-          if (message.parentId && typeof message.parentId === 'string' && message.parentId.length >= 25) {
-            parent = await ctx.db.get(message.parentId as Id<"parents">);
-          }
-        } catch (error) {
-          console.log('Could not fetch parent for message activity:', message._id);
-        }
+        const parent = await safeGetParent(ctx, message.parentId);
         
         activities.push({
           id: `message-${message._id}`,

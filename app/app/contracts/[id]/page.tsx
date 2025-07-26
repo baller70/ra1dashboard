@@ -25,24 +25,24 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
+import { useToast } from '../../../hooks/use-toast'
+import { Toaster } from '../../../components/ui/toaster'
 
 interface Contract {
-  id: string
+  _id: string
   fileName: string
   originalName: string
   fileUrl: string
   fileSize: number
   mimeType: string
   status: string
-  uploadedAt: string
-  signedAt?: string
-  expiresAt?: string
+  uploadedAt: number
+  signedAt?: number
+  expiresAt?: number
   templateType?: string
-  version: string
   notes?: string
   parent: {
-    id: string
+    _id: string
     name: string
     email: string
     phone?: string
@@ -53,6 +53,7 @@ export default function ContractViewPage() {
   const params = useParams()
   const router = useRouter()
   const contractId = params.id as string
+  const { toast } = useToast()
   
   const [contract, setContract] = useState<Contract | null>(null)
   const [editing, setEditing] = useState(false)
@@ -78,12 +79,20 @@ export default function ContractViewPage() {
         setNotes(data.notes || '')
         setExpiresAt(data.expiresAt ? new Date(data.expiresAt).toISOString().split('T')[0] : '')
       } else {
-        toast.error('Contract not found')
+        toast({
+          title: "❌ Contract Not Found",
+          description: "The contract you're looking for doesn't exist",
+          variant: "destructive",
+        })
         router.push('/contracts')
       }
     } catch (error) {
       console.error('Failed to fetch contract:', error)
-      toast.error('Failed to load contract')
+      toast({
+        title: "❌ Error Loading Contract",
+        description: "Failed to load contract details",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -109,16 +118,27 @@ export default function ContractViewPage() {
 
       if (response.ok) {
         const updatedContract = await response.json()
-        setContract(updatedContract)
+        setContract(updatedContract.contract || updatedContract)
         setEditing(false)
-        toast.success('Contract updated successfully')
+        toast({
+          title: "✅ Contract Updated",
+          description: "Contract details have been updated successfully",
+        })
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to update contract')
+        toast({
+          title: "❌ Update Failed",
+          description: error.error || 'Failed to update contract',
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Update error:', error)
-      toast.error('Failed to update contract')
+      toast({
+        title: "❌ Update Error",
+        description: "Failed to update contract",
+        variant: "destructive",
+      })
     } finally {
       setSaving(false)
     }
@@ -154,13 +174,14 @@ export default function ContractViewPage() {
 
   if (loading) {
     return (
-      <AppLayout>
+            <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
         </div>
+        <Toaster />
       </AppLayout>
-    )
-  }
+  )
+}
 
   if (!contract) {
     return (
@@ -251,8 +272,8 @@ export default function ContractViewPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Version</label>
-                    <p className="text-sm text-muted-foreground mt-1">{contract.version}</p>
+                    <label className="text-sm font-medium">Contract ID</label>
+                    <p className="text-sm text-muted-foreground mt-1 font-mono text-xs">{contract._id}</p>
                   </div>
                 </div>
 
@@ -403,7 +424,7 @@ export default function ContractViewPage() {
 
                 <div className="pt-4 border-t">
                   <Button asChild variant="outline" className="w-full">
-                    <Link href={`/parents/${contract.parent.id}`}>
+                    <Link href={`/parents/${contract.parent._id}`}>
                       <User className="mr-2 h-4 w-4" />
                       View Parent Profile
                     </Link>

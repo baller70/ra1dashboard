@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -80,31 +80,133 @@ const Recharts = dynamic(() => import('recharts'), { ssr: false, loading: () => 
 
 export default function PaymentsPage() {
   const [activeProgram, setActiveProgram] = useState('yearly-program')
-  
-  const paymentsData = useQuery(api.payments.getPayments, { 
-    program: activeProgram, 
-    latestOnly: false,
-    limit: 100
-  })
-  const analytics = useQuery(api.payments.getPaymentAnalytics, {
-    program: activeProgram,
-    latestOnly: false
-  })
-  const teamsData = useQuery(api.teams.getTeams, { includeParents: true })
-  
-  // Fetch all parents using Convex to mirror the parents page
-  const allParentsData = useQuery(api.parents.getParents, {
-    limit: 100 // Get all parents
-  })
+  const [loading, setLoading] = useState(true)
+  const [paymentsData, setPaymentsData] = useState<any>(null)
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [teamsData, setTeamsData] = useState<any>(null)
+  const [allParentsData, setAllParentsData] = useState<any>(null)
+
+  // Fetch data using API routes instead of direct Convex queries
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        
+        // Ultra-aggressive cache busting
+        const timestamp = Date.now() + Math.random() * 10000
+        const cacheKey = `cache-bust-${timestamp}`
+        
+        // Clear any existing cache entries
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('payments-cache')
+          sessionStorage.removeItem('payments-cache')
+        }
+        
+        const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
+          fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          }),
+          fetch(`/api/payments/analytics?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          }),
+          fetch(`/api/teams?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          }),
+          fetch(`/api/parents?limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          })
+        ])
+        
+        const paymentsResult = await paymentsRes.json()
+        const analyticsResult = await analyticsRes.json()
+        const teamsResult = await teamsRes.json()
+        const parentsResult = await parentsRes.json()
+        
+        if (paymentsResult.success) setPaymentsData(paymentsResult.data)
+        if (analyticsResult.success) setAnalytics(analyticsResult.data)
+        if (teamsResult.success) setTeamsData(teamsResult.data)
+        if (parentsResult.success) {
+          setAllParentsData(parentsResult.data)
+          
+          // Debug logging
+          const parentCount = parentsResult.data?.parents?.length || 0
+          const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+          console.log('🔍 PAYMENTS PAGE DEBUG:', {
+            totalParents: parentCount,
+            unassignedParents: unassignedCount,
+            parentsWithTeams: parentCount - unassignedCount
+          })
+          
+          // Show success notification with team counts
+          toast({
+            title: "✅ Data Refreshed Successfully",
+            description: `Loaded ${parentCount} parents (${unassignedCount} unassigned) with fresh team assignments`,
+            variant: "default",
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error)
+        toast({
+          title: "❌ Error Loading Data",
+          description: "Failed to load payment data. Please try refreshing the page.",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [activeProgram])
+
+  const forceRefresh = async () => {
+    try {
+      // Clear all possible caches
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Clear browser cache if supported
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(name => caches.delete(name)))
+      }
+      
+      // Clear any IndexedDB data
+      if ('indexedDB' in window) {
+        try {
+          const databases = await indexedDB.databases()
+          await Promise.all(databases.map(db => {
+            if (db.name) {
+              const deleteReq = indexedDB.deleteDatabase(db.name)
+              return new Promise((resolve) => {
+                deleteReq.onsuccess = () => resolve(true)
+                deleteReq.onerror = () => resolve(false)
+              })
+            }
+          }))
+        } catch (e) {
+          console.log('IndexedDB clear failed:', e)
+        }
+      }
+      
+      // Force hard reload with cache bypass
+      window.location.href = window.location.href + '?forceRefresh=' + Date.now()
+    } catch (error) {
+      console.error('Error clearing caches:', error)
+      window.location.href = window.location.href + '?forceRefresh=' + Date.now()
+    }
+  }
   
   const [selectedTeam, setSelectedTeam] = useState<string>('all')
-  const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedPayments, setSelectedPayments] = useState<string[]>([])
   const [bulkOperating, setBulkOperating] = useState(false)
-  const [aiInsights, setAiInsights] = useState<any>(null)
-  const [aiLoading, setAiLoading] = useState(false)
+
   const [showAiActions, setShowAiActions] = useState(false)
   const [groupByTeam, setGroupByTeam] = useState(true)
   const [showTeamDialog, setShowTeamDialog] = useState(false)
@@ -119,18 +221,19 @@ export default function PaymentsPage() {
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
   const allParents = allParentsData?.parents || []
-
-  useEffect(() => {
-    if (paymentsData === undefined || analytics === undefined || teamsData === undefined || allParentsData === undefined) {
-      setLoading(true)
-    } else {
-      setLoading(false)
+  
+  // Debug logging for allParents
+  React.useEffect(() => {
+    if (allParents.length > 0) {
+      const unassignedCount = allParents.filter(p => !p.teamId).length
+      console.log('🔍 ALL PARENTS DEBUG:', {
+        totalParents: allParents.length,
+        unassignedParents: unassignedCount,
+        sampleParent: allParents[0],
+        unassignedSample: allParents.filter(p => !p.teamId).slice(0, 3).map(p => ({ name: p.name, teamId: p.teamId }))
+      })
     }
-  }, [paymentsData, analytics, teamsData, allParentsData, statusFilter, activeProgram, selectedTeam])
-
-  const assignParentsToTeam = useMutation(api.teams.assignParentsToTeam)
-  const createTeam = useMutation(api.teams.createTeam)
-  const updateTeam = useMutation(api.teams.updateTeam)
+  }, [allParents])
 
   const handleAssignParents = async () => {
     if (!assignToTeamId || selectedParents.length === 0) {
@@ -139,18 +242,28 @@ export default function PaymentsPage() {
     }
 
     try {
-      const result = await assignParentsToTeam({
-        teamId: assignToTeamId === 'unassigned' ? undefined : assignToTeamId as any,
-        parentIds: selectedParents as any[]
+      const response = await fetch('/api/teams/assign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teamId: assignToTeamId === 'unassigned' ? null : assignToTeamId,
+          parentIds: selectedParents
+        })
       })
+
+      const result = await response.json()
 
       if (result.success) {
         setShowParentAssignDialog(false)
         setSelectedParents([])
         setAssignToTeamId('')
-        alert(`Successfully assigned ${result.assignedCount} parent(s) to team`)
+        alert(result.message)
+        // Refresh the data to show updated assignments
+        window.location.reload()
       } else {
-        alert('Failed to assign parents to team')
+        alert('Failed to assign parents to team: ' + (result.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error assigning parents:', error)
@@ -177,25 +290,32 @@ export default function PaymentsPage() {
 
   const handleCreateTeam = async () => {
     try {
-      await createTeam({
-        name: teamForm.name,
-        description: teamForm.description,
-        color: teamForm.color
+      const response = await fetch('/api/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: teamForm.name,
+          description: teamForm.description,
+          color: teamForm.color
+        })
       })
-      
-      setShowTeamDialog(false)
-      setTeamForm({ name: '', description: '', color: '#f97316' })
-      toast({
-        title: "Success",
-        description: "Team created successfully"
-      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setShowTeamDialog(false)
+        setTeamForm({ name: '', description: '', color: '#f97316' })
+        alert("Team created successfully")
+        // Refresh the page to show the new team
+        window.location.reload()
+      } else {
+        alert('Failed to create team: ' + (result.error || 'Unknown error'))
+      }
     } catch (error) {
       console.error('Error creating team:', error)
-      toast({
-        title: "Error",
-        description: "Failed to create team",
-        variant: "destructive"
-      })
+      alert('Error creating team')
     }
   }
 
@@ -211,27 +331,34 @@ export default function PaymentsPage() {
 
   const handleUpdateTeam = async () => {
     try {
-      await updateTeam({
-        teamId: editingTeam._id,
-        name: teamForm.name,
-        description: teamForm.description,
-        color: teamForm.color
+      const response = await fetch('/api/teams', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingTeam._id,
+          name: teamForm.name,
+          description: teamForm.description,
+          color: teamForm.color
+        })
       })
-      
-      setShowTeamDialog(false)
-      setEditingTeam(null)
-      setTeamForm({ name: '', description: '', color: '#f97316' })
-      toast({
-        title: "Success",
-        description: "Team updated successfully"
-      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setShowTeamDialog(false)
+        setEditingTeam(null)
+        setTeamForm({ name: '', description: '', color: '#f97316' })
+        alert("Team updated successfully")
+        // Refresh the page to show the updated team
+        window.location.reload()
+      } else {
+        alert('Failed to update team: ' + (result.error || 'Unknown error'))
+      }
     } catch (error) {
       console.error('Error updating team:', error)
-      toast({
-        title: "Error",
-        description: "Failed to update team",
-        variant: "destructive"
-      })
+      alert('Error updating team')
     }
   }
 
@@ -487,35 +614,6 @@ export default function PaymentsPage() {
   }
 
   // AI Functions
-  const fetchAIPaymentInsights = async () => {
-    setAiLoading(true)
-    try {
-      const response = await fetch('/api/ai/payment-insights', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          paymentData: {
-            totalPayments: deduplicatedPayments.length,
-            overdueCount: getOverdueCount(),
-            pendingCount: deduplicatedPayments.filter(p => p.status === 'pending').length,
-            totalAmount: summary.total,
-            overdueAmount: summary.overdue
-          }
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setAiInsights(data.insights)
-      }
-    } catch (error) {
-      console.error('Failed to fetch AI payment insights:', error)
-    } finally {
-      setAiLoading(false)
-    }
-  }
 
   const generateAIReminders = async () => {
     if (selectedPayments.length === 0) {
@@ -523,7 +621,7 @@ export default function PaymentsPage() {
       return
     }
 
-    setAiLoading(true)
+    setBulkOperating(true)
     try {
       const response = await fetch('/api/ai/bulk-operations', {
         method: 'POST',
@@ -548,7 +646,7 @@ export default function PaymentsPage() {
       console.error('AI reminder generation error:', error)
       alert('Failed to generate AI reminders')
     } finally {
-      setAiLoading(false)
+      setBulkOperating(false)
     }
   }
 
@@ -568,32 +666,16 @@ export default function PaymentsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">AI-Enhanced Payments Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Payments Dashboard</h1>
             <p className="text-muted-foreground">
-              Smart payment management with predictive insights and automation
+              Manage payments, track progress, and handle overdue accounts
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1">
-              <Brain className="mr-1 h-3 w-3" />
-              AI Powered
-            </Badge>
-            <Button 
-              onClick={fetchAIPaymentInsights}
-              disabled={aiLoading}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
-            >
-              {aiLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              ) : (
-                <Brain className="mr-2 h-4 w-4" />
-              )}
-              {aiLoading ? 'AI Analyzing...' : 'AI Payment Insights'}
-            </Button>
             {selectedPayments.length > 0 && (
               <Button 
                 onClick={generateAIReminders}
-                disabled={aiLoading}
+                disabled={bulkOperating}
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
               >
                 <Wand2 className="mr-2 h-4 w-4" />
@@ -724,114 +806,7 @@ export default function PaymentsPage() {
                   </Card>
                 </div>
 
-                {/* AI Payment Insights Section */}
-                <div className="relative">
-                  <div className="absolute -top-2 left-4 z-10">
-                    <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 shadow-md">
-                      <Brain className="mr-1 h-3 w-3" />
-                      AI Insights
-                    </Badge>
-                  </div>
-                  <Card className="border-purple-200 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 shadow-lg">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-xl font-bold flex items-center text-purple-800">
-                            <Brain className="mr-2 h-6 w-6 text-purple-600" />
-                            AI Payment Intelligence
-                          </CardTitle>
-                          <p className="text-sm text-purple-600 mt-1">Predictive insights and smart recommendations</p>
-                        </div>
-                        <Button
-                          onClick={fetchAIPaymentInsights}
-                          disabled={aiLoading}
-                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                          size="sm"
-                        >
-                          {aiLoading ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          ) : (
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                          )}
-                          {aiLoading ? 'Analyzing...' : 'Generate AI Insights'}
-                        </Button>
-                      </div>
-                    </CardHeader>
-            <CardContent>
-                      {aiLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-                          <span className="ml-2 text-sm text-muted-foreground">AI analyzing payment patterns...</span>
-                        </div>
-                      ) : aiInsights ? (
-                        <div className="grid gap-4 md:grid-cols-3">
-                          <div className="space-y-3">
-                            <h4 className="font-semibold flex items-center text-blue-700">
-                              <TrendingUp className="mr-1 h-4 w-4" />
-                              Payment Predictions
-                            </h4>
-                            {aiInsights.predictions?.slice(0, 3).map((prediction: string, index: number) => (
-                              <div key={index} className="flex items-start space-x-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span className="text-sm">{prediction}</span>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <h4 className="font-semibold flex items-center text-orange-700">
-                              <AlertTriangle className="mr-1 h-4 w-4" />
-                              Risk Alerts
-                            </h4>
-                            {aiInsights.risks?.slice(0, 3).map((risk: string, index: number) => (
-                              <div key={index} className="flex items-start space-x-2">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span className="text-sm">{risk}</span>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <h4 className="font-semibold flex items-center text-green-700">
-                              <Target className="mr-1 h-4 w-4" />
-                              Optimization Tips
-                            </h4>
-                            {aiInsights.optimizations?.slice(0, 3).map((tip: string, index: number) => (
-                              <div key={index} className="flex items-start space-x-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <span className="text-sm">{tip}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <Brain className="mx-auto h-12 w-12 text-muted-foreground" />
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            Click "Generate AI Insights" to get payment intelligence
-                          </p>
-                          <div className="grid grid-cols-3 gap-4 mt-6">
-                    <div className="text-center p-4 border border-purple-200 rounded-lg bg-white/50">
-                      <TrendingUp className="h-8 w-8 mb-2 mx-auto text-purple-600" />
-                      <h4 className="font-medium text-sm mb-1">Payment Predictions</h4>
-                      <p className="text-xs text-muted-foreground">Forecast payment behavior and timing</p>
-                    </div>
-                    <div className="text-center p-4 border border-purple-200 rounded-lg bg-white/50">
-                      <Shield className="h-8 w-8 mb-2 mx-auto text-purple-600" />
-                      <h4 className="font-medium text-sm mb-1">Risk Assessment</h4>
-                      <p className="text-xs text-muted-foreground">Identify high-risk payment scenarios</p>
-                    </div>
-                    <div className="text-center p-4 border border-purple-200 rounded-lg bg-white/50">
-                      <Target className="h-8 w-8 mb-2 mx-auto text-purple-600" />
-                      <h4 className="font-medium text-sm mb-1">Smart Optimization</h4>
-                      <p className="text-xs text-muted-foreground">Improve collection strategies</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
 
         {/* Revenue Trend Chart */}
         {false && (

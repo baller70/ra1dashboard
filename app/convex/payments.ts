@@ -2,6 +2,20 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
+// Utility function to safely get parent data with ID validation
+async function safeGetParent(ctx: any, parentId: any) {
+  if (!parentId || typeof parentId !== 'string' || parentId.length === 25) {
+    return null;
+  }
+  
+  try {
+    return await ctx.db.get(parentId as Id<"parents">);
+  } catch (error) {
+    console.warn(`Failed to get parent with ID ${parentId}:`, error);
+    return null;
+  }
+}
+
 export const getPayments = query({
   args: {
     page: v.optional(v.number()),
@@ -38,16 +52,8 @@ export const getPayments = query({
 
     const enrichedPayments = await Promise.all(
       payments.map(async (payment) => {
-        // Only try to get parent if parentId is a valid Convex ID
-        let parent = null;
-        try {
-          if (payment.parentId && typeof payment.parentId === 'string' && payment.parentId.length >= 25) {
-            parent = await ctx.db.get(payment.parentId as Id<"parents">);
-          }
-        } catch (error) {
-          // Invalid ID, keep parent as null
-          console.log('Could not fetch parent for payment:', payment._id, 'parentId:', payment.parentId);
-        }
+        // Use safeGetParent to handle ID validation
+        const parent = await safeGetParent(ctx, payment.parentId);
 
         // Only try to get payment plan if paymentPlanId is a valid Convex ID  
         let paymentPlan = null;
@@ -109,37 +115,15 @@ export const getPayments = query({
 });
 
 export const getPayment = query({
-  args: { id: v.string() }, // Changed to accept any string ID
+  args: { id: v.id("payments") },
   handler: async (ctx, args) => {
-    let payment = null;
+    const payment = await ctx.db.get(args.id);
     
-    // First try to get by Convex ID if it looks like one
-    if (args.id.length >= 25 && !args.id.startsWith('cmd')) {
-      try {
-        payment = await ctx.db.get(args.id as Id<"payments">);
-      } catch (error) {
-        // Not a valid Convex ID, continue to search
-      }
-    }
-    
-    // If not found or it's a Prisma ID (starts with "cmd"), search by old ID system
     if (!payment) {
-      const allPayments = await ctx.db.query("payments").collect();
-      // Look for a payment that might have this ID stored somewhere
-      // Since we migrated from Prisma, the old IDs might be in a different field
-      // For now, we'll just return null for old IDs since they should be cleaned up
-      console.warn('Payment not found with ID:', args.id);
       return null;
     }
 
-    let parent = null;
-    try {
-      if (payment.parentId && typeof payment.parentId === 'string' && payment.parentId.length > 25) {
-        parent = await ctx.db.get(payment.parentId as Id<"parents">);
-      }
-    } catch (error) {
-      console.warn('Invalid parent ID:', payment.parentId);
-    }
+    const parent = await safeGetParent(ctx, payment.parentId);
 
     let paymentPlan = null;
     try {
@@ -285,10 +269,13 @@ export const getPaymentHistory = query({
   args: { paymentId: v.id("payments") },
   handler: async (ctx, args) => {
     const payment = await ctx.db.get(args.paymentId);
-    if (!payment) return { history: [] };
+    
+    if (!payment) {
+      return { history: [] };
+    }
 
     // Get parent information for context
-    const parent = payment.parentId ? await ctx.db.get(payment.parentId) : null;
+            const parent = await safeGetParent(ctx, payment.parentId);
     
     // Get payment plan information if available
     const paymentPlan = payment.paymentPlanId ? 
@@ -527,15 +514,7 @@ export const getPaymentPlans = query({
 
     const enrichedPlans = await Promise.all(
       plans.map(async (plan) => {
-        let parent = null;
-        // Only try to get parent if parentId is a valid Convex ID
-        if (plan.parentId && typeof plan.parentId === 'string' && plan.parentId.length !== 25) {
-          try {
-            parent = await ctx.db.get(plan.parentId);
-          } catch (error) {
-            console.warn(`Invalid parentId for payment plan ${plan._id}: ${plan.parentId}`);
-          }
-        }
+        const parent = await safeGetParent(ctx, plan.parentId);
         return {
           ...plan,
           parent,
@@ -595,14 +574,7 @@ export const getOverduePayments = query({
     // Enrich with parent data
     const enrichedOverduePayments = await Promise.all(
       overduePayments.map(async (payment) => {
-        let parent = null;
-        try {
-          if (payment.parentId && typeof payment.parentId === 'string' && payment.parentId.length >= 25) {
-            parent = await ctx.db.get(payment.parentId as Id<"parents">);
-          }
-        } catch (error) {
-          console.log('Could not fetch parent for overdue payment:', payment._id);
-        }
+        const parent = await safeGetParent(ctx, payment.parentId);
 
         // Calculate days past due
         const daysPastDue = payment.dueDate 
@@ -722,7 +694,7 @@ export const getPaymentPlan = query({
     if (!paymentPlan) return null;
 
     // Get parent
-    const parent = paymentPlan.parentId ? await ctx.db.get(paymentPlan.parentId) : null;
+    const parent = await safeGetParent(ctx, paymentPlan.parentId);
 
     // Get related payments
     const payments = await ctx.db.query("payments")
