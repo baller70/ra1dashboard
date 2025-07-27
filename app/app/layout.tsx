@@ -1,5 +1,6 @@
 import { Saira } from 'next/font/google'
 import { Providers } from '../components/providers'
+import { ErrorBoundary } from '../components/error-boundary'
 import './globals.css'
 
 const saira = Saira({ 
@@ -22,9 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${saira.variable} font-saira`} suppressHydrationWarning>
-        <Providers>
-          {children}
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            {children}
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   )
