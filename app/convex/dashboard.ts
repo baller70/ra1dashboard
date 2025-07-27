@@ -232,9 +232,11 @@ export const getAnalyticsDashboard = query({
       const month = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1);
       const nextMonth = new Date(nowDate.getFullYear(), nowDate.getMonth() - i + 1, 1);
       
-      const monthPayments = paidPayments.filter(p => 
-        p.paidAt && p.paidAt >= month.getTime() && p.paidAt < nextMonth.getTime()
-      );
+      const monthPayments = paidPayments.filter(p => {
+        if (!p.paidAt) return false;
+        const paidAtTime = typeof p.paidAt === 'number' ? p.paidAt : new Date(p.paidAt).getTime();
+        return paidAtTime >= month.getTime() && paidAtTime < nextMonth.getTime();
+      });
       
       const revenue = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
       
@@ -249,7 +251,11 @@ export const getAnalyticsDashboard = query({
     const recentActivity = [];
     const recentPaidPayments = paidPayments
       .filter(p => p.paidAt)
-      .sort((a, b) => (b.paidAt || 0) - (a.paidAt || 0))
+      .sort((a, b) => {
+        const aTime = typeof a.paidAt === 'number' ? a.paidAt : new Date(a.paidAt || 0).getTime();
+        const bTime = typeof b.paidAt === 'number' ? b.paidAt : new Date(b.paidAt || 0).getTime();
+        return bTime - aTime;
+      })
       .slice(0, 5);
     
     for (const payment of recentPaidPayments) {
@@ -262,11 +268,21 @@ export const getAnalyticsDashboard = query({
         console.log('Could not fetch parent for recent activity:', payment._id);
       }
       
+      // Ensure timestamp is always a number for Convex compatibility
+      let timestamp: number;
+      if (typeof payment.paidAt === 'number') {
+        timestamp = payment.paidAt;
+      } else if (typeof payment.paidAt === 'string') {
+        timestamp = new Date(payment.paidAt).getTime();
+      } else {
+        timestamp = Date.now();
+      }
+      
       recentActivity.push({
         id: payment._id,
         type: 'payment',
         description: `Payment of $${payment.amount || 0} received`,
-        timestamp: typeof payment.paidAt === 'number' ? payment.paidAt : Date.now(),
+        timestamp,
         parentName: parent?.name || 'Unknown Parent'
       });
     }
