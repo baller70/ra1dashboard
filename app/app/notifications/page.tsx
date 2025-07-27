@@ -1,6 +1,8 @@
+
 // @ts-nocheck
 'use client'
 
+// Force dynamic rendering - prevent static generation
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'

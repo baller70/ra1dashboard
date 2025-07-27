@@ -1,38 +1,28 @@
 
 'use client'
 
-import { Header } from './header'
-
 interface AppLayoutProps {
   children: React.ReactNode
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  // Temporarily disabled for development - uncomment when Clerk is properly configured
-  // const { isLoaded, isSignedIn } = useUser()
-
-  // if (!isLoaded) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-  //     </div>
-  //   )
-  // }
-
-  // if (!isSignedIn) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="text-center">
-  //         <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
-  //         <p className="text-muted-foreground">You need to be signed in to access this page.</p>
-  //       </div>
-  //     </div>
-  //   )
-  // }
-
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <header className="border-b bg-white">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">RA1 Dashboard</h1>
+            <nav className="hidden md:flex space-x-6">
+              <a href="/" className="text-gray-600 hover:text-gray-900">Dashboard</a>
+              <a href="/parents" className="text-gray-600 hover:text-gray-900">Parents</a>
+              <a href="/payments" className="text-gray-600 hover:text-gray-900">Payments</a>
+              <a href="/communication" className="text-gray-600 hover:text-gray-900">Communication</a>
+              <a href="/contracts" className="text-gray-600 hover:text-gray-900">Contracts</a>
+              <a href="/settings" className="text-gray-600 hover:text-gray-900">Settings</a>
+            </nav>
+          </div>
+        </div>
+      </header>
       <main className="container mx-auto py-6">
         {children}
       </main>

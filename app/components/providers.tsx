@@ -3,7 +3,7 @@
 
 import { ThemeProvider } from "next-themes";
 import { ConvexProvider } from "convex/react";
-import { convex } from "@/lib/convex";
+import { convex } from "../lib/convex";
 import { Toaster } from "./ui/toaster";
 import { Toaster as SonnerToaster } from "./ui/sonner";
 

@@ -1,6 +1,6 @@
-
 'use client'
 
+// Force dynamic rendering - prevent static generation
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '../../../../components/app-layout'

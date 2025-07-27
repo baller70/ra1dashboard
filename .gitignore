@@ -25,3 +25,6 @@ app/.env.backup
 app/.env
 
 .env.local
+
+# Local Netlify folder
+.netlify

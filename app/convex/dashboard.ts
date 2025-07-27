@@ -266,7 +266,7 @@ export const getAnalyticsDashboard = query({
         id: payment._id,
         type: 'payment',
         description: `Payment of $${payment.amount || 0} received`,
-        timestamp: new Date(payment.paidAt!),
+        timestamp: payment.paidAt!,
         parentName: parent?.name || 'Unknown Parent'
       });
     }

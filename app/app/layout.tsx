@@ -1,4 +1,3 @@
-
 import { Saira } from 'next/font/google'
 import { Providers } from '../components/providers'
 import './globals.css'

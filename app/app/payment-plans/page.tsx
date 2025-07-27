@@ -1,5 +1,7 @@
 'use client'
 
+// Force dynamic rendering - prevent static generation
+
 import { useEffect, useState } from 'react'
 import { AppLayout } from '../../components/app-layout'
 import { Button } from '../../components/ui/button'

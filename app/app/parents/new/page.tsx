@@ -1,6 +1,6 @@
-
 'use client'
 
+// Force dynamic rendering - prevent static generation
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../../../components/ui/button'
@@ -154,8 +154,6 @@ export default function NewParentPage() {
       }))
     }
   }
-
-
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-6">

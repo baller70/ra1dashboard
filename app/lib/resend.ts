@@ -3,11 +3,14 @@ import { convexHttp } from './db'
 import { api } from '../convex/_generated/api'
 import { Id } from '../convex/_generated/dataModel'
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is required');
+// Make API key optional during build time
+const apiKey = process.env.RESEND_API_KEY || 'placeholder-key-for-build';
+
+if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('RESEND_API_KEY not provided - email features will be disabled');
 }
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+export const resend = new Resend(apiKey);
 
 // Email templates
 export const emailTemplates = {

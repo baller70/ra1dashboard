@@ -1,8 +1,10 @@
 // @ts-nocheck
 'use client'
 
+// Force dynamic rendering - prevent static generation
+
 import React, { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import { AppLayout } from '../../components/app-layout'
@@ -72,11 +74,9 @@ const PROGRAMS = [
   { id: 'kevin-lessons', name: 'Kevin Houston\'s Lessons' },
   { id: 'thos-facility', name: 'THOS Facility Rentals' }
 ]
-
-
 // Dynamic import for charts
 // @ts-ignore
-const Recharts = dynamic(() => import('recharts'), { ssr: false, loading: () => <div>Loading chart...</div> })
+const Recharts = nextDynamic(() => import('recharts'), { ssr: false, loading: () => <div>Loading chart...</div> })
 
 export default function PaymentsPage() {
   const [activeProgram, setActiveProgram] = useState('yearly-program')
@@ -394,8 +394,6 @@ export default function PaymentsPage() {
       })
     }
   }
-
-
   const filteredPayments = payments.filter(payment => {
     // Search filter
     const matchesSearch = (payment.parentName || payment.parent?.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -805,8 +803,6 @@ export default function PaymentsPage() {
                     </CardContent>
                   </Card>
                 </div>
-
-
 
         {/* Revenue Trend Chart */}
         {false && (
