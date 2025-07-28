@@ -99,13 +99,15 @@ export default function NewPaymentPlanPage() {
         const result = await response.json()
         toast({
           title: "✅ Payment Plan Created",
-          description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}`,
+          description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. Redirecting to payments page...`,
           variant: "default",
         })
         
-        // Wait a moment for the toast to show, then navigate
+        // Wait a moment for the toast to show, then navigate back to payments
         setTimeout(() => {
-          router.push('/payment-plans')
+          // Trigger a refresh event for the payments page
+          window.dispatchEvent(new Event('payment-plan-created'))
+          router.push('/payments')
         }, 1000)
       } else {
         const error = await response.json()

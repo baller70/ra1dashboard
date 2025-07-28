@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
+import { convexHttp } from '../../../lib/convex'
 import { api } from '../../../convex/_generated/api'
 
 export async function GET() {

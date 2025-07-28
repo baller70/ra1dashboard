@@ -99,6 +99,28 @@ export default function PaymentsPage() {
     return () => window.removeEventListener('parent-deleted', handleParentDeleted)
   }, [])
 
+  // Listen for payment plan creation events
+  useEffect(() => {
+    const handlePaymentPlanCreated = () => {
+      console.log('Payment plan created event received, refreshing data...')
+      fetchData()
+    }
+    
+    window.addEventListener('payment-plan-created', handlePaymentPlanCreated)
+    return () => window.removeEventListener('payment-plan-created', handlePaymentPlanCreated)
+  }, [])
+
+  // Listen for page focus to refresh data when returning from other pages
+  useEffect(() => {
+    const handlePageFocus = () => {
+      console.log('Page focused, refreshing payment data...')
+      fetchData()
+    }
+    
+    window.addEventListener('focus', handlePageFocus)
+    return () => window.removeEventListener('focus', handlePageFocus)
+  }, [])
+
   // Fetch data using API routes instead of direct Convex queries
   useEffect(() => {
     const fetchData = async () => {
