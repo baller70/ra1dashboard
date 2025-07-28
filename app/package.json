@@ -7,13 +7,19 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev",
-    "build": "NODE_OPTIONS=\"--max-old-space-size=4096\" next build",
+    "dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" next dev --turbo",
+    "dev:optimized": "tsx scripts/startup-optimization.ts && npm run dev",
+    "dev:fast": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev --fast-refresh",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=8192\" next build",
+    "build:analyze": "ANALYZE=true NODE_OPTIONS=\"--max-old-space-size=8192\" next build",
     "start": "next start",
     "lint": "next lint --fix",
     "lint:check": "next lint",
     "type-check": "tsc --noEmit",
-    "build:analyze": "ANALYZE=true npm run build"
+    "perf": "NODE_OPTIONS=\"--inspect\" next dev",
+    "perf:stats": "tsx scripts/performance-monitor.ts stats",
+    "perf:export": "tsx scripts/performance-monitor.ts export",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache"
   },
   "devDependencies": {
     "@next/swc-wasm-nodejs": "13.5.1",

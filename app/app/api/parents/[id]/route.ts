@@ -3,65 +3,68 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { cachedConvex, batchQueries } from '../../../../lib/db-cache'
 import { api } from '../../../../convex/_generated/api'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     // Temporarily disabled for testing: await requireAuth()
     
-    console.log('GET request for parent ID:', params.id)
+    const parentId = params.id
+    console.log('GET request for parent ID:', parentId)
     
-    // Force a fresh query by adding a timestamp - this bypasses Convex query caching
-    const timestamp = Date.now()
-    console.log('Forcing fresh query at timestamp:', timestamp)
+    // Use cached query for better performance
+    const cacheKey = `parent_detail_${parentId}`
     
-    // Get parent from Convex with forced refresh using new query
-    const parent = await convexHttp.query(api.parents.getParentFresh, {
-      id: params.id as any,
-      timestamp: timestamp
-    });
-
-    console.log('Parent data from Convex query:', parent)
+    // Get parent from Convex with caching (30s TTL for parent data)
+    const parent = await cachedConvex.query(
+      api.parents.getParent, 
+      { id: parentId as any },
+      `parent_${parentId}`,
+      30000 // 30 second cache
+    );
 
     if (!parent) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 })
     }
 
-    // Get related data
-    const [paymentPlans, payments, messageLogs] = await Promise.all([
-      // Get payment plans for this parent
-      convexHttp.query(api.payments.getPayments, {
-        parentId: params.id as any,
-        page: 1,
-        limit: 100
-      }),
-      // Get payments for this parent
-      convexHttp.query(api.payments.getPayments, {
-        parentId: params.id as any,
-        page: 1,
-        limit: 100
-      }),
-      // Get message logs - we'll need to create this query if it doesn't exist
-      Promise.resolve([]) // Placeholder for now
-    ]);
+    // Use batch queries for better performance - avoid duplicate payment queries
+    const queries = [
+      {
+        query: api.payments.getPayments,
+        args: { parentId: parentId as any, page: 1, limit: 50 }, // Reduced limit for faster response
+        key: `payments_${parentId}`
+      },
+      {
+        query: api.messageLogs.getMessageLogs,
+        args: { parentId: parentId as any, limit: 20 }, // Limited for performance
+        key: `messages_${parentId}`
+      }
+    ];
 
-    // Combine the data
+    const [paymentsResult, messageLogsResult] = await batchQueries(
+      cachedConvex.convex,
+      queries,
+      { concurrency: 2, timeout: 5000 } // 5 second timeout
+    );
+
+    // Combine the data efficiently
     const parentWithRelations = {
       ...parent,
-      paymentPlans: [], // Will need to implement payment plans queries
-      payments: payments.payments || [],
-      messageLogs: messageLogs || [],
-      _fetchedAt: timestamp // Add timestamp to verify fresh data
+      payments: (paymentsResult as any)?.payments || [],
+      messageLogs: (messageLogsResult as any)?.messages || [],
+      paymentPlans: [], // TODO: Implement payment plans if needed
+      _fetchedAt: Date.now(),
+      _cached: true
     };
 
-    console.log('Returning parent data with timestamp:', parentWithRelations._fetchedAt)
+    console.log(`✅ Parent data loaded for ${parentId} with ${parentWithRelations.payments.length} payments`)
 
     return NextResponse.json(parentWithRelations)
   } catch (error) {
-    console.error('Parent fetch error:', error)
+    console.error('Error fetching parent:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch parent' },
+      { error: 'Failed to fetch parent data', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -71,49 +74,28 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   try {
     // Temporarily disabled for testing: await requireAuth()
     
-    const body = await request.json()
-    console.log('PUT request body:', body)
-    console.log('Updating parent ID:', params.id)
-    console.log('Parent ID type:', typeof params.id)
-    console.log('Parent ID length:', params.id.length)
+    const parentId = params.id
+    const updates = await request.json()
+    
+    console.log('PUT request for parent ID:', parentId, 'with updates:', updates)
 
-    // First, check if the parent exists
-    const existingParent = await convexHttp.query(api.parents.getParent, {
-      id: params.id as any
+    // Update parent using cached client (this will clear cache)
+    const updatedParent = await cachedConvex.mutation(api.parents.updateParent, {
+      id: parentId as any,
+      ...updates
     });
 
-    if (!existingParent) {
-      console.log('Parent not found for ID:', params.id)
+    if (!updatedParent) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 })
     }
 
-    console.log('Existing parent found:', existingParent)
+    console.log('✅ Parent updated successfully:', parentId)
 
-    // Update parent in Convex
-    const updatedParent = await convexHttp.mutation(api.parents.updateParent, {
-      id: params.id as any,
-      ...body
-    });
-
-    console.log('Parent updated successfully:', updatedParent)
-
-    return NextResponse.json({
-      success: true,
-      parent: updatedParent,
-      message: 'Parent profile updated successfully'
-    })
+    return NextResponse.json(updatedParent)
   } catch (error) {
-    console.error('Parent update error details:', error)
-    const err = error as Error
-    console.error('Error name:', err?.name)
-    console.error('Error message:', err?.message)
-    console.error('Error stack:', err?.stack)
-    
+    console.error('Error updating parent:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to update parent profile',
-        details: err?.message || 'Unknown error'
-      },
+      { error: 'Failed to update parent', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -123,28 +105,21 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   try {
     // Temporarily disabled for testing: await requireAuth()
     
-    console.log('DELETE request for parent ID:', params.id)
+    const parentId = params.id
+    console.log('DELETE request for parent ID:', parentId)
 
-    // Delete parent from Convex
-    const result = await convexHttp.mutation(api.parents.deleteParent, {
-      id: params.id as any
+    // Delete parent using cached client (this will clear cache)
+    await cachedConvex.mutation(api.parents.deleteParent, {
+      id: parentId as any
     });
 
-    console.log('Parent deleted successfully:', result)
+    console.log('✅ Parent deleted successfully:', parentId)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Parent deleted successfully',
-      deletedId: result.deletedId
-    })
+    return NextResponse.json({ success: true, message: 'Parent deleted successfully' })
   } catch (error) {
-    console.error('Parent delete error:', error)
-    const err = error as Error
+    console.error('Error deleting parent:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to delete parent',
-        details: err?.message || 'Unknown error'
-      },
+      { error: 'Failed to delete parent', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

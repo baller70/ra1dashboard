@@ -23,7 +23,10 @@ export const createInstallments = mutation({
       const dueDate = new Date(args.startDate);
       dueDate.setMonth(dueDate.getMonth() + (i * args.frequency));
 
-      const installmentId = await ctx.db.insert("paymentInstallments", {
+      // Always mark the first installment as paid when creating a payment plan
+      const isFirstInstallment = i === 0;
+
+      const installmentData: any = {
         parentPaymentId: args.parentPaymentId,
         parentId: args.parentId,
         paymentPlanId: args.paymentPlanId,
@@ -31,16 +34,60 @@ export const createInstallments = mutation({
         totalInstallments: args.totalInstallments,
         amount: args.installmentAmount,
         dueDate: dueDate.getTime(),
-        status: i === 0 ? "pending" : "pending", // First installment is immediately pending
+        status: isFirstInstallment ? "paid" : "pending",
         remindersSent: 0,
         createdAt: now,
         updatedAt: now,
-      });
+      };
+
+      // Add paidAt field only for the first installment
+      if (isFirstInstallment) {
+        installmentData.paidAt = now;
+      }
+
+      const installmentId = await ctx.db.insert("paymentInstallments", installmentData);
 
       installments.push(installmentId);
     }
 
     return installments;
+  },
+});
+
+// Create a single payment installment
+export const createPaymentInstallment = mutation({
+  args: {
+    parentPaymentId: v.id("payments"),
+    installmentNumber: v.number(),
+    amount: v.number(),
+    dueDate: v.string(),
+    status: v.string(),
+    paidAt: v.optional(v.string()),
+    description: v.string(),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    
+    const installmentData: any = {
+      parentPaymentId: args.parentPaymentId,
+      installmentNumber: args.installmentNumber,
+      amount: args.amount,
+      dueDate: new Date(args.dueDate).getTime(),
+      status: args.status,
+      description: args.description,
+      remindersSent: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Add paidAt field if provided
+    if (args.paidAt) {
+      installmentData.paidAt = new Date(args.paidAt).getTime();
+    }
+
+    const installmentId = await ctx.db.insert("paymentInstallments", installmentData);
+    return installmentId;
   },
 });
 
@@ -304,5 +351,53 @@ export const modifyPaymentSchedule = mutation({
     }
 
     return { success: true };
+  },
+}); 
+
+// Mark the first installment as paid
+export const markFirstInstallmentPaid = mutation({
+  args: {
+    parentPaymentId: v.id("payments"),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    
+    // Find the first installment for this payment
+    const firstInstallment = await ctx.db
+      .query("paymentInstallments")
+      .withIndex("by_parent_payment", (q) => 
+        q.eq("parentPaymentId", args.parentPaymentId)
+      )
+      .filter((q) => q.eq(q.field("installmentNumber"), 1))
+      .first();
+
+    if (firstInstallment) {
+      await ctx.db.patch(firstInstallment._id, {
+        status: "paid",
+        paidAt: now,
+        updatedAt: now,
+      });
+      return firstInstallment._id;
+    }
+    
+    return null;
+  },
+}); 
+
+// Update installment status to paid (for testing first payment processing)
+export const updateInstallmentToPaid = mutation({
+  args: {
+    installmentId: v.id("paymentInstallments"),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    
+    await ctx.db.patch(args.installmentId, {
+      status: "paid",
+      paidAt: now,
+      updatedAt: now,
+    });
+    
+    return args.installmentId;
   },
 }); 

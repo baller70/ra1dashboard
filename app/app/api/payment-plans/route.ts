@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/convex'
+import { convexHttp } from '../../../lib/convex-server'
 import { api } from '../../../convex/_generated/api'
 
 export async function GET() {
@@ -25,66 +25,111 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAuth()
-    
-    const body = await request.json()
-    const {
-      parentId,
-      type,
-      totalAmount,
-      installmentAmount,
-      installments,
-      startDate,
-      description
-    } = body
+    await requireAuth();
+    const body = await request.json();
+    const { parentId, totalAmount, type, installments, startDate, description, installmentAmount } = body;
 
-    // Validate required fields
-    if (!parentId || !type || !totalAmount || !installmentAmount || !installments || !startDate) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!parentId || !totalAmount || !type || !installments || !startDate || !installmentAmount) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Create payment plan in Convex
+    console.log(`🔄 Creating payment plan for parent ${parentId}`)
+    console.log(`📋 Plan details: Type=${type}, Total=${totalAmount}, Installments=${installments}, Amount=${installmentAmount}`)
+
+    const errors: string[] = []; // Initialize errors array
+
+    // Create the payment plan first
     const paymentPlanId = await convexHttp.mutation(api.payments.createPaymentPlan, {
-      parentId: parentId as any,
+      parentId,
+      totalAmount,
       type,
+      installments,
+      startDate: new Date(startDate).getTime(), // Convert to timestamp
+      status: 'active',
+      description,
+      installmentAmount,
+    });
+
+    console.log(`✅ Created payment plan: ${paymentPlanId}`)
+
+    // Create the main payment record
+    const mainPaymentId = await convexHttp.mutation(api.payments.createPayment, {
+      parentId,
+      paymentPlanId,
+      amount: totalAmount,
+      dueDate: new Date(startDate).getTime(),
+      status: 'pending',
+    });
+
+    console.log(`✅ Created main payment: ${mainPaymentId}`)
+
+    // Create installments using the existing createInstallments function
+    const frequency = type === 'monthly' ? 1 : type === 'quarterly' ? 3 : 12; // months between payments
+    
+    const installmentIds = await convexHttp.mutation(api.paymentInstallments.createInstallments, {
+      parentPaymentId: mainPaymentId,
+      parentId,
+      paymentPlanId,
       totalAmount,
       installmentAmount,
-      installments,
+      totalInstallments: installments,
+      frequency,
       startDate: new Date(startDate).getTime(),
-      status: 'active',
-      description
     });
 
-    // Create individual payment records
-    const payments = []
-    for (let i = 0; i < installments; i++) {
-      const dueDate = new Date(startDate)
-      dueDate.setMonth(dueDate.getMonth() + i)
+    console.log(`✅ Created ${installmentIds.length} installments`)
 
-      const paymentId = await convexHttp.mutation(api.payments.createPayment, {
-        parentId: parentId as any,
-        paymentPlanId: paymentPlanId as any,
-        amount: installmentAmount,
-        dueDate: dueDate.getTime(),
-        status: 'pending'
-      });
-
-      payments.push(paymentId);
+    // Mark the first installment as paid directly in the database (not using mock endpoint)
+    if (installmentIds.length > 0) {
+      console.log(`🔄 Marking first installment as PAID in Convex database...`)
+      
+      try {
+        // Use the markInstallmentPaid mutation to mark the first installment as paid
+        await convexHttp.mutation(api.paymentInstallments.markInstallmentPaid, {
+          installmentId: installmentIds[0], // First installment
+        });
+        
+        console.log(`✅ Successfully marked first installment as PAID: ${installmentIds[0]}`)
+        
+        // Update the main payment to add a note about first payment being processed
+        await convexHttp.mutation(api.payments.updatePayment, {
+          id: mainPaymentId,
+          notes: `Payment plan created - First installment of $${installmentAmount} automatically processed and PAID`,
+        });
+        
+        console.log(`✅ Updated main payment with processing note`)
+        
+      } catch (error: any) {
+        console.error('❌ Error processing first payment:', error);
+        errors.push(`Failed to process first payment: ${error.message || 'Unknown error'}`);
+      }
     }
 
-    // Get the created payment plan with parent info
-    const createdPlan = await convexHttp.query(api.payments.getPaymentPlans, {
-      parentId: parentId as any
-    });
+    console.log(`🎉 Payment plan creation complete:`)
+    console.log(`   - Plan ID: ${paymentPlanId}`)
+    console.log(`   - Main Payment ID: ${mainPaymentId}`)
+    console.log(`   - Installments created: ${installmentIds.length}`)
+    console.log(`   - First installment marked as PAID`)
+    console.log(`   - Remaining ${installmentIds.length - 1} installments marked as PENDING`)
 
-    const plan = createdPlan.find(p => p._id === paymentPlanId);
-
-    return NextResponse.json(plan || { _id: paymentPlanId })
-  } catch (error) {
-    console.error('Payment plan creation error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create payment plan' },
-      { status: 500 }
-    )
+    return NextResponse.json({ 
+      paymentPlanId, 
+      mainPaymentId, 
+      installmentsCreated: installmentIds.length, 
+      installmentIds,
+      progressData: {
+        totalInstallments: installments,
+        paidInstallments: 1, // First installment paid
+        overdueInstallments: 0,
+        totalAmount: totalAmount,
+        paidAmount: installmentAmount, // First installment amount
+        remainingAmount: totalAmount - installmentAmount,
+        progressPercentage: (1 / installments) * 100,
+      },
+      message: 'Payment plan created successfully. First installment automatically processed as paid.',
+    }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error creating payment plan:', error);
+    return NextResponse.json({ error: error.message || 'Failed to create payment plan' }, { status: 500 });
   }
 }

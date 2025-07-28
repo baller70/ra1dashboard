@@ -333,11 +333,15 @@ export const getAnalyticsDashboard = query({
           timestampNumber = Date.now();
         }
         
+        // FINAL SAFETY CHECK - ABSOLUTELY ENSURE NUMBER
+        const safeTimestamp = Number(timestampNumber);
+        const finalSafeTimestamp = isNaN(safeTimestamp) ? Date.now() : safeTimestamp;
+        
         recentActivity.push({
           id: payment._id,
           type: 'payment',
           description: `Payment of $${(payment.amount || 0).toFixed(2)} received`,
-          timestamp: timestampNumber, // GUARANTEED TO BE A NUMBER
+          timestamp: finalSafeTimestamp, // ABSOLUTELY GUARANTEED TO BE A NUMBER
           parentName: (parent as any)?.name || 'Unknown Parent'
         });
       }

@@ -1,10 +1,8 @@
 'use client'
 
 // Force dynamic rendering - prevent static generation
-// Cache bust: 1753715500000
-export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
@@ -142,27 +140,6 @@ export default function NewPaymentPlanPage() {
     paymentMethod: 'stripe_card'
   })
 
-  // Force no cache and dynamic content
-  useEffect(() => {
-    // Set headers to prevent caching
-    if (typeof window !== 'undefined') {
-      const meta = document.createElement('meta')
-      meta.httpEquiv = 'Cache-Control'
-      meta.content = 'no-cache, no-store, must-revalidate'
-      document.head.appendChild(meta)
-      
-      const meta2 = document.createElement('meta')
-      meta2.httpEquiv = 'Pragma'
-      meta2.content = 'no-cache'
-      document.head.appendChild(meta2)
-      
-      const meta3 = document.createElement('meta')
-      meta3.httpEquiv = 'Expires'
-      meta3.content = '0'
-      document.head.appendChild(meta3)
-    }
-  }, [])
-
   // Debug log to check if component is rendering
   console.log('🔍 NewPaymentPlanPage rendering, showPaymentOptions:', showPaymentOptions)
 
@@ -241,41 +218,23 @@ export default function NewPaymentPlanPage() {
         const result = await response.json()
         console.log('✅ Payment plan created:', result)
         
-        // Get the first payment ID from the created payments
-        const firstPaymentId = result.paymentIds && result.paymentIds[0]
-        
         toast({
           title: "✅ Payment Plan Created",
-          description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. Redirecting to payment detail page to confirm...`,
+          description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. Redirecting to payment details...`,
           variant: "default",
         })
         
-        // Wait a moment for the toast to show, then dispatch event and redirect
+        // Wait a moment for the toast to show, then redirect to the first payment detail page
         setTimeout(() => {
-          console.log('🔄 Triggering refresh event and redirecting...')
-          // Trigger a refresh event for the payments page with additional data
-          const event = new CustomEvent('payment-plan-created', {
-            detail: {
-              parentId: formData.parentId,
-              parentName: parents.find(p => p._id === formData.parentId)?.name,
-              planType: formData.type,
-              amount: formData.totalAmount,
-              timestamp: Date.now(),
-              firstPaymentId: firstPaymentId
-            }
-          })
-          window.dispatchEvent(event)
+          console.log('🔄 Redirecting to payment detail page...')
           
-          // Redirect to the first payment detail page to confirm tracking system works
-          setTimeout(() => {
-            if (firstPaymentId) {
-              console.log(`🎯 Redirecting to payment detail page: /payments/${firstPaymentId}`)
-              router.push(`/payments/${firstPaymentId}`)
-            } else {
-              console.log('⚠️ No payment ID found, redirecting to payments list')
-              router.push('/payments')
-            }
-          }, 200)
+          // Redirect to the first payment detail page to show the tracking system
+          if (result.firstPaymentId) {
+            router.push(`/payments/${result.firstPaymentId}`)
+          } else {
+            // Fallback to payments list if no payment ID
+            router.push('/payments')
+          }
         }, 1500)
       } else {
         const error = await response.json()
@@ -419,7 +378,7 @@ export default function NewPaymentPlanPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="mr-2 h-5 w-5" />
-              Payment Plan Setup
+              Payment Plan Details
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -427,7 +386,7 @@ export default function NewPaymentPlanPage() {
               {/* Parent Selection */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="parentId">Select Parent *</Label>
+                  <Label htmlFor="parentId">Parents *</Label>
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -1007,5 +966,3 @@ export default function NewPaymentPlanPage() {
     </AppLayout>
   )
 } 
-
-// Component is already exported as default at line 104 

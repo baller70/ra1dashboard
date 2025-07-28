@@ -20,55 +20,73 @@ const nextConfig = {
   // Completely disable static generation
   trailingSlash: false,
   
-  // Force all pages to be server-side rendered  
+  // Updated experimental features for better performance
   experimental: {
-    serverComponentsExternalPackages: ['convex'],
-    // Improve hydration error handling
-    optimizePackageImports: ['lucide-react'],
+    // Optimize package imports for faster builds
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'date-fns'],
+    // Enable SWC minification for faster builds
+    swcMinify: true,
+    // Enable faster refresh
+    optimizeServerReact: true,
   },
-
-  // Improve hydration and client-side rendering
-  reactStrictMode: true,
   
   // Better error handling in production
   onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 2,
+    // Reduce memory usage
+    maxInactiveAge: 15 * 1000, // Reduced from 25s to 15s
+    pagesBufferLength: 1, // Reduced from 2 to 1
   },
   
-  // Webpack optimizations
+  // Enhanced webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    // Performance optimizations for development
+    if (dev) {
+      // Faster builds in development
+      config.optimization.removeAvailableModules = false;
+      config.optimization.removeEmptyChunks = false;
+      config.optimization.splitChunks = false;
+      
+      // Reduce memory usage
+      config.cache = {
+        type: 'memory',
+        maxGenerations: 1,
+      };
+    }
+
     if (!dev && !isServer) {
       // Optimize for production
       config.optimization.splitChunks = {
         chunks: 'all',
+        minSize: 20000,
+        maxSize: 244000,
         cacheGroups: {
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+            reuseExistingChunk: true,
           },
         },
       }
     }
 
-    // Handle potential module resolution issues
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
+    // Handle external packages
+    config.externals = config.externals || [];
+    if (isServer) {
+      config.externals.push('convex');
     }
 
-    return config
+    return config;
   },
 
-  // Environment variable validation
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
-
-  // Headers for better caching and security
+  // Add performance headers
   async headers() {
     return [
       {
@@ -86,10 +104,34 @@ const nextConfig = {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
           },
+          // Add cache control for static assets
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // API routes should not be cached
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
         ],
       },
     ]
   },
+
+  // Add compression
+  compress: true,
+  
+  // Reduce server-side rendering overhead
+  reactStrictMode: false, // Disable in development for better performance
+  
+  // Add performance monitoring
+  poweredByHeader: false,
 }
 
 module.exports = nextConfig

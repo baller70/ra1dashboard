@@ -791,3 +791,19 @@ export const debugAllPaymentData = query({
     };
   },
 });
+
+// Get payments by payment plan ID
+export const getPaymentsByPlanId = query({
+  args: {
+    paymentPlanId: v.id("paymentPlans"),
+  },
+  handler: async (ctx, args) => {
+    const payments = await ctx.db.query("payments")
+      .filter(q => q.eq(q.field("paymentPlanId"), args.paymentPlanId))
+      .collect();
+
+    return payments.sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
+  },
+});
+
+// Get payments with parent and payment plan info

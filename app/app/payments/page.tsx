@@ -106,7 +106,7 @@ export default function PaymentsPage() {
       }
 
       const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
-        fetch(`/api/payments?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/payments?program=${activeProgram}&limit=1000&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
         }),
@@ -185,13 +185,21 @@ export default function PaymentsPage() {
 
   // Listen for payment plan creation events
   useEffect(() => {
-    const handlePaymentPlanCreated = () => {
-      console.log('🔄 Payment plan created event received, refreshing data...')
-      // Add a small delay to ensure the data is available
+    const handlePaymentPlanCreated = (event: any) => {
+      const eventData = event.detail || {}
+      console.log('🔄 Payment plan created event received:', eventData)
+      console.log('🔄 Refreshing data for parent:', eventData.parentName || 'Unknown')
+      
+      // Add a longer delay to ensure the payment plan and payments are fully created
       setTimeout(() => {
-        console.log('🔄 Fetching updated data...')
+        console.log('🔄 Fetching updated data after payment plan creation...')
+        // Force aggressive cache busting for payment plan updates
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('payments-cache')
+          sessionStorage.removeItem('payments-cache')
+        }
         fetchData()
-      }, 500)
+      }, 1000) // Increased delay to 1 second
     }
     
     window.addEventListener('payment-plan-created', handlePaymentPlanCreated)
@@ -575,11 +583,12 @@ export default function PaymentsPage() {
       const unassignedGroup = paymentGroups['Unassigned'] || []
       
       unassignedParents.forEach(parent => {
-        // Check if this parent already has a payment in the group
-        const hasPayment = unassignedGroup.some(payment => payment.parentId === parent._id)
+        // IMPROVED: Check if this parent already has ANY payment in the system (not just in this group)
+        // This includes payments from payment plans that might not be in the current group yet
+        const hasAnyPayment = deduplicatedPayments.some(payment => payment.parentId === parent._id)
         
-        if (!hasPayment) {
-          // Create a mock payment entry for display purposes
+        if (!hasAnyPayment) {
+          // Create a mock payment entry for display purposes only if parent has NO payments at all
           unassignedGroup.push({
             _id: `mock-${parent._id}`,
             parentId: parent._id,
@@ -1524,7 +1533,7 @@ export default function PaymentsPage() {
             }
             
             const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
-              fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+              fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}&limit=1000`, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
               }),

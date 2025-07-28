@@ -1,4 +1,4 @@
-import { ConvexReactClient } from "convex/react";
+import { ConvexHttpClient } from "convex/browser";
 
 // Safely get the Convex URL with fallback
 const getConvexUrl = () => {
@@ -12,15 +12,15 @@ const getConvexUrl = () => {
 
 const convexUrl = getConvexUrl();
 
-// Create React client for client-side operations only
-let convex: ConvexReactClient;
+// Create HTTP client for server-side operations only
+let convexHttp: ConvexHttpClient;
 
 try {
-  convex = new ConvexReactClient(convexUrl);
+  convexHttp = new ConvexHttpClient(convexUrl);
 } catch (error) {
-  console.error('Failed to initialize Convex React client:', error);
+  console.error('Failed to initialize Convex HTTP client:', error);
   // Create a dummy client to prevent crashes
-  convex = new ConvexReactClient('https://dummy-convex-url.convex.cloud');
+  convexHttp = new ConvexHttpClient('https://dummy-convex-url.convex.cloud');
 }
 
-export { convex }; 
+export { convexHttp }; 
