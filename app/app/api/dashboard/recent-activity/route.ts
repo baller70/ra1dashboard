@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           title: 'Payment Received',
           message: `Payment of $${payment.amount || 0} received`,
           priority: 'medium',
-          timestamp: payment.paidAt,
+          timestamp: typeof payment.paidAt === 'string' ? new Date(payment.paidAt).getTime() : (payment.paidAt || Date.now()),
           isRead: false,
           parentName: parent?.name || 'Unknown Parent',
           amount: payment.amount,

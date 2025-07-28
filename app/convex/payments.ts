@@ -414,7 +414,7 @@ export const getPaymentHistory = query({
           completedInstallments: installments.filter(i => i.status === 'paid').length,
           totalInstallments: installments.length
         },
-        timestamp: payment.paidAt,
+        timestamp: typeof payment.paidAt === 'string' ? new Date(payment.paidAt).getTime() : (payment.paidAt || Date.now()),
         performedBy: "Parent/System",
         icon: "check-circle"
       });
@@ -760,5 +760,34 @@ export const deletePaymentPlan = mutation({
     await ctx.db.delete(args.id);
 
     return { success: true };
+  },
+});
+
+export const debugAllPaymentData = query({
+  args: {},
+  handler: async (ctx) => {
+    const payments = await ctx.db.query("payments").collect();
+    
+    return {
+      totalPayments: payments.length,
+      paymentsWithPaidAt: payments.filter(p => p.paidAt !== undefined).length,
+      paidPayments: payments.filter(p => p.status === 'paid'),
+      samplePaidPayments: payments
+        .filter(p => p.status === 'paid')
+        .slice(0, 3)
+        .map(p => ({
+          id: p._id,
+          status: p.status,
+          paidAt: p.paidAt,
+          paidAtType: typeof p.paidAt,
+          amount: p.amount,
+          parentId: p.parentId
+        })),
+      allPaymentStatuses: payments.reduce((acc, p) => {
+        const status = p.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    };
   },
 });

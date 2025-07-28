@@ -2,6 +2,7 @@
 'use client'
 
 // Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic'
 
 import React, { useEffect, useState } from 'react'
 import nextDynamic from 'next/dynamic'
@@ -55,7 +56,8 @@ import {
   Trash2,
   UserPlus,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import { PaymentWithRelations, PaymentStats, PaymentAnalytics } from '../../lib/types'
@@ -85,6 +87,17 @@ export default function PaymentsPage() {
   const [analytics, setAnalytics] = useState<any>(null)
   const [teamsData, setTeamsData] = useState<any>(null)
   const [allParentsData, setAllParentsData] = useState<any>(null)
+
+  // Listen for parent deletions from other pages
+  useEffect(() => {
+    const handleParentDeleted = () => {
+      console.log('Parent deleted event received, refreshing data...')
+      fetchData()
+    }
+    
+    window.addEventListener('parent-deleted', handleParentDeleted)
+    return () => window.removeEventListener('parent-deleted', handleParentDeleted)
+  }, [])
 
   // Fetch data using API routes instead of direct Convex queries
   useEffect(() => {
@@ -217,6 +230,46 @@ export default function PaymentsPage() {
   const [assignToTeamId, setAssignToTeamId] = useState<string>('')
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+
+  // Delete parent function
+  const handleDeleteParent = async (parentId: string, parentName: string) => {
+    if (!confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone and will remove all associated payments and data.`)) {
+      return
+    }
+
+    setDeleteLoading(parentId)
+    try {
+      const response = await fetch(`/api/parents/${parentId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh all data to ensure consistency across both pages
+        await fetchData()
+        toast({
+          title: 'Parent Deleted',
+          description: `${parentName} has been successfully deleted from both parent and payment pages.`,
+        })
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: 'Delete Failed',
+          description: errorData.details || 'Failed to delete parent',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting parent:', error)
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while deleting the parent',
+        variant: 'destructive'
+      })
+    } finally {
+      setDeleteLoading(null)
+    }
+  }
   
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
@@ -456,20 +509,53 @@ export default function PaymentsPage() {
     return unique
   }, [])
 
-  // Group payments by team if enabled
+  // Group payments by team if enabled, but also include all unassigned parents
   const groupedPayments = groupByTeam ? 
-    deduplicatedPayments.reduce((groups: Record<string, any[]>, payment) => {
-      // Find the parent's team from allParents data
-      const parent = allParents.find(p => p._id === payment.parentId)
-      const team = teams.find(t => t._id === parent?.teamId)
-      const teamKey = team ? team.name : 'Unassigned'
+    (() => {
+      // First group payments by team as before
+      const paymentGroups = deduplicatedPayments.reduce((groups: Record<string, any[]>, payment) => {
+        // Find the parent's team from allParents data
+        const parent = allParents.find(p => p._id === payment.parentId)
+        const team = teams.find(t => t._id === parent?.teamId)
+        const teamKey = team ? team.name : 'Unassigned'
+        
+        if (!groups[teamKey]) {
+          groups[teamKey] = []
+        }
+        groups[teamKey].push(payment)
+        return groups
+      }, {})
+
+      // Now add ALL unassigned parents (even those without payments) to the Unassigned group
+      const unassignedParents = allParents.filter(p => !p.teamId)
       
-      if (!groups[teamKey]) {
-        groups[teamKey] = []
-      }
-      groups[teamKey].push(payment)
-      return groups
-    }, {}) : 
+      // Create mock payment entries for parents without payments
+      const unassignedGroup = paymentGroups['Unassigned'] || []
+      
+      unassignedParents.forEach(parent => {
+        // Check if this parent already has a payment in the group
+        const hasPayment = unassignedGroup.some(payment => payment.parentId === parent._id)
+        
+        if (!hasPayment) {
+          // Create a mock payment entry for display purposes
+          unassignedGroup.push({
+            _id: `mock-${parent._id}`,
+            parentId: parent._id,
+            parentName: parent.name,
+            parentEmail: parent.email,
+            amount: 0,
+            status: 'no_payment',
+            dueDate: new Date().toISOString(),
+            createdAt: parent.createdAt || Date.now(),
+            remindersSent: 0,
+            isMockEntry: true // Flag to identify mock entries
+          })
+        }
+      })
+      
+      paymentGroups['Unassigned'] = unassignedGroup
+      return paymentGroups
+    })() : 
     { 'All Payments': deduplicatedPayments }
 
   const handlePaymentSelection = (paymentId: string, selected: boolean) => {
@@ -1076,7 +1162,7 @@ export default function PaymentsPage() {
                               }}
                             />
                             <h3 className="text-lg font-semibold text-orange-600">
-                              {groupName} ({groupPayments.length} {groupPayments.length === 1 ? 'parent' : 'parents'})
+                              {groupName} ({isUnassigned ? allParents.filter(p => !p.teamId).length : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? allParents.filter(p => !p.teamId).length : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
                             </h3>
                             {isCollapsed ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -1114,15 +1200,24 @@ export default function PaymentsPage() {
                             {groupPayments.map((payment) => (
                           <div key={payment._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                             <div className="flex items-center space-x-4">
-                              <Checkbox
-                                checked={selectedPayments.includes(payment._id)}
-                                onCheckedChange={(checked) => handlePaymentSelection(payment._id, checked as boolean)}
-                              />
+                              {!payment.isMockEntry && (
+                                <Checkbox
+                                  checked={selectedPayments.includes(payment._id)}
+                                  onCheckedChange={(checked) => handlePaymentSelection(payment._id, checked as boolean)}
+                                />
+                              )}
                               <div className="flex items-center space-x-2">
-                                <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1">
-                                  {getStatusIcon(payment.status)}
-                                  <span>{payment.status}</span>
-                                </Badge>
+                                {payment.isMockEntry ? (
+                                  <Badge variant="outline" className="flex items-center space-x-1">
+                                    <Users className="h-3 w-3" />
+                                    <span>No Payment Plan</span>
+                                  </Badge>
+                                ) : (
+                                  <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1">
+                                    {getStatusIcon(payment.status)}
+                                    <span>{payment.status}</span>
+                                  </Badge>
+                                )}
                                 {payment.paymentPlan && (
                                   <Badge variant="outline" className="capitalize">
                                     {payment.paymentPlan.type}
@@ -1132,7 +1227,7 @@ export default function PaymentsPage() {
                               <div>
                                 <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                  {isParentOverdue(payment) && (
+                                  {!payment.isMockEntry && isParentOverdue(payment) && (
                                     <Badge variant="destructive" className="text-xs font-bold">
                                       OVERDUE
                                     </Badge>
@@ -1140,48 +1235,90 @@ export default function PaymentsPage() {
                                 </div>
                                 <p className="text-sm text-muted-foreground">{payment.parentEmail || payment.parent?.email || 'No email'}</p>
                                 <div className="flex items-center space-x-2 mt-1">
-                                  <Badge variant="secondary" className="text-xs">
-                                    Latest Payment
-                                  </Badge>
-                                  {payment.remindersSent > 0 && (
-                                    <p className="text-xs text-orange-600">
-                                      {payment.remindersSent} reminder{payment.remindersSent !== 1 ? 's' : ''} sent
-                                    </p>
+                                  {payment.isMockEntry ? (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Ready for Payment Plan
+                                    </Badge>
+                                  ) : (
+                                    <>
+                                      <Badge variant="secondary" className="text-xs">
+                                        Latest Payment
+                                      </Badge>
+                                      {payment.remindersSent > 0 && (
+                                        <p className="text-xs text-orange-600">
+                                          {payment.remindersSent} reminder{payment.remindersSent !== 1 ? 's' : ''} sent
+                                        </p>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               </div>
                             </div>
                             
                             <div className="text-right">
-                              <p className="text-xl font-semibold">${Number(payment.amount).toLocaleString()}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Due: {new Date(payment.dueDate).toLocaleDateString()}
-                              </p>
-                              {payment.paidAt && (
-                                <p className="text-sm text-green-600">
-                                  Paid: {new Date(payment.paidAt).toLocaleDateString()}
-                                </p>
-                              )}
-                              {payment.status === 'overdue' && (
-                                <p className="text-sm text-red-600">
-                                  {Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
-                                </p>
+                              {payment.isMockEntry ? (
+                                <div className="text-center">
+                                  <p className="text-lg font-semibold text-muted-foreground">No Payment Plan</p>
+                                  <p className="text-sm text-muted-foreground">Create a payment plan to get started</p>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-xl font-semibold">${Number(payment.amount).toLocaleString()}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Due: {new Date(payment.dueDate).toLocaleDateString()}
+                                  </p>
+                                  {payment.paidAt && (
+                                    <p className="text-sm text-green-600">
+                                      Paid: {new Date(payment.paidAt).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                  {payment.status === 'overdue' && (
+                                    <p className="text-sm text-red-600">
+                                      {Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
+                                    </p>
+                                  )}
+                                </>
                               )}
                             </div>
                             
                             <div className="flex items-center space-x-2">
-                              <Button asChild variant="outline" size="sm">
-                                <Link href={`/payments/${payment._id}`}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details & History
-                                </Link>
-                              </Button>
-                              {payment.status === 'pending' && (
-                                <Button size="sm">
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Mark Paid
+                              {payment.isMockEntry ? (
+                                <Button asChild variant="default" size="sm">
+                                  <Link href="/payment-plans/new">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Payment Plan
+                                  </Link>
                                 </Button>
+                              ) : (
+                                <>
+                                  <Button asChild variant="outline" size="sm">
+                                    <Link href={`/payments/${payment._id}`}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details & History
+                                    </Link>
+                                  </Button>
+                                  {payment.status === 'pending' && (
+                                    <Button size="sm">
+                                      <CheckCircle className="mr-2 h-4 w-4" />
+                                      Mark Paid
+                                    </Button>
+                                  )}
+                                </>
                               )}
+                              {/* Delete button for all entries (both mock and real) */}
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
+                                disabled={deleteLoading === payment.parentId}
+                                title="Delete this parent"
+                              >
+                                {deleteLoading === payment.parentId ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -1318,12 +1455,93 @@ export default function PaymentsPage() {
       <ParentCreationModal
         open={showParentCreationModal}
         onOpenChange={setShowParentCreationModal}
-        onParentCreated={(newParent) => {
-          // Add the new parent to the current list immediately
-          // setAllParentsFromDB(prev => [...prev, newParent]) // This line is no longer needed
-          // No need to reload the page - the enhanced payments will automatically show the new parent data
+        onParentCreated={async (newParent) => {
+          console.log('🎉 New parent created:', newParent)
+          
+          // Show immediate success notification
+          toast({
+            title: "✅ Parent Created Successfully!",
+            description: `${newParent.name} has been created and will appear in UNASSIGNED section`,
+            variant: "default",
+          })
+          
+          // Close the modal first
+          setShowParentCreationModal(false)
+          
+          // Refresh data with aggressive cache busting
+          try {
+            setLoading(true)
+            
+            const timestamp = Date.now() + Math.random() * 10000
+            const cacheKey = `parent-created-${timestamp}`
+            
+            // Clear any existing cache entries
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('payments-cache')
+              sessionStorage.removeItem('payments-cache')
+            }
+            
+            const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
+              fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+              }),
+              fetch(`/api/payments/analytics?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+              }),
+              fetch(`/api/teams?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+              }),
+              fetch(`/api/parents?limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+              })
+            ])
+            
+            const paymentsResult = await paymentsRes.json()
+            const analyticsResult = await analyticsRes.json()
+            const teamsResult = await teamsRes.json()
+            const parentsResult = await parentsRes.json()
+            
+            if (paymentsResult.success) setPaymentsData(paymentsResult.data)
+            if (analyticsResult.success) setAnalytics(analyticsResult.data)
+            if (teamsResult.success) setTeamsData(teamsResult.data)
+            if (parentsResult.success) {
+              setAllParentsData(parentsResult.data)
+              
+              const parentCount = parentsResult.data?.parents?.length || 0
+              const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+              
+              console.log('🔄 Data refreshed after parent creation:', {
+                totalParents: parentCount,
+                unassignedParents: unassignedCount,
+                newParentFound: parentsResult.data?.parents?.find((p: any) => p.name === newParent.name)
+              })
+              
+              // Show confirmation that parent appears in UNASSIGNED
+              toast({
+                title: "🎯 Parent Now Visible!",
+                description: `${newParent.name} is now in UNASSIGNED section (${unassignedCount} total unassigned)`,
+                variant: "default",
+              })
+            }
+            
+            setLoading(false)
+          } catch (error) {
+            console.error('Error refreshing data after parent creation:', error)
+            toast({
+              title: "⚠️ Refresh Error",
+              description: "Parent was created but page refresh failed. Please refresh manually.",
+              variant: "destructive",
+            })
+            setLoading(false)
+          }
         }}
       />
+
+
     </div>
   </AppLayout>
   )

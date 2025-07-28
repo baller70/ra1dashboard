@@ -35,7 +35,8 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
-  ChevronUp
+  ChevronUp,
+  Trash2
   } from 'lucide-react'
 import Link from 'next/link'
 import { ParentWithRelations } from '../../lib/types'
@@ -71,36 +72,93 @@ export default function ParentsPage() {
   const [showGeneralMessagesDialog, setShowGeneralMessagesDialog] = useState(false)
   const [generalMessagesResults, setGeneralMessagesResults] = useState<any[]>([])
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchParents = async () => {
-      try {
-        console.log('Fetching parents from /api/parents...')
-        const response = await fetch('/api/parents')
-        console.log('Response status:', response.status, response.ok)
-        if (response.ok) {
-          const data = await response.json()
-          console.log('Parents API response:', data)
-          console.log('Data structure check:', {
-            hasData: !!data.data,
-            hasDirectParents: !!data.parents,
-            dataParentsLength: data.data?.parents?.length,
-            directParentsLength: data.parents?.length
-          })
-          // API returns { success: true, data: { parents: [...] } }
-          const parentsArray = data.data?.parents || data.parents || []
-          console.log('Setting parents array:', parentsArray.length, 'parents')
-          setParents(parentsArray)
-        } else {
-          console.error('Failed to fetch parents - HTTP', response.status)
-        }
-      } catch (error) {
-        console.error('Failed to fetch parents:', error)
-      } finally {
-        setLoading(false)
-      }
+  // Delete parent function
+  const handleDeleteParent = async (parentId: string, parentName: string) => {
+    if (!confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone.`)) {
+      return
     }
 
+    setDeleteLoading(parentId)
+    try {
+      const response = await fetch(`/api/parents/${parentId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Remove the parent from the local state
+        setParents(prevParents => prevParents.filter(p => p._id !== parentId))
+        
+        // Also trigger a page refresh to ensure data consistency across all pages
+        setTimeout(() => {
+          window.dispatchEvent(new Event('parent-deleted'))
+        }, 500)
+        
+        toast({
+          title: 'Parent Deleted',
+          description: `${parentName} has been successfully deleted from both parent and payment pages.`,
+        })
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: 'Delete Failed',
+          description: errorData.details || 'Failed to delete parent',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting parent:', error)
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while deleting the parent',
+        variant: 'destructive'
+      })
+    } finally {
+      setDeleteLoading(null)
+    }
+  }
+
+  // Listen for parent deletions from other pages
+  useEffect(() => {
+    const handleParentDeleted = () => {
+      console.log('Parent deleted event received, refreshing data...')
+      fetchParents()
+    }
+    
+    window.addEventListener('parent-deleted', handleParentDeleted)
+    return () => window.removeEventListener('parent-deleted', handleParentDeleted)
+  }, [])
+
+  const fetchParents = async () => {
+    try {
+      console.log('Fetching parents from /api/parents...')
+      const response = await fetch('/api/parents')
+      console.log('Response status:', response.status, response.ok)
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Parents API response:', data)
+        console.log('Data structure check:', {
+          hasData: !!data.data,
+          hasDirectParents: !!data.parents,
+          dataParentsLength: data.data?.parents?.length,
+          directParentsLength: data.parents?.length
+        })
+        // API returns { success: true, data: { parents: [...] } }
+        const parentsArray = data.data?.parents || data.parents || []
+        console.log('Setting parents array:', parentsArray.length, 'parents')
+        setParents(parentsArray)
+      } else {
+        console.error('Failed to fetch parents - HTTP', response.status)
+      }
+    } catch (error) {
+      console.error('Failed to fetch parents:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchParents()
   }, [])
 
@@ -1233,6 +1291,19 @@ export default function ParentsPage() {
                           title="View payment details for this parent"
                         >
                           <CreditCard className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteParent(parent._id, parent.name)}
+                          disabled={deleteLoading === parent._id}
+                          title="Delete this parent"
+                        >
+                          {deleteLoading === parent._id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>

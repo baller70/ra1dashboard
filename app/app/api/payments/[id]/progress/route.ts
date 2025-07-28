@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../../lib/db'
+import { convexHttp } from '../../../../../lib/convex'
 import { api } from '../../../../../convex/_generated/api'
 import { requireAuth } from '../../../../../lib/api-utils'
 

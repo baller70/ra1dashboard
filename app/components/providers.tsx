@@ -8,7 +8,6 @@ import { Toaster } from "./ui/toaster";
 import { Toaster as SonnerToaster } from "./ui/sonner";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Temporarily using ConvexProvider without Clerk until valid keys are configured
   return (
     <ConvexProvider client={convex}>
       <ThemeProvider

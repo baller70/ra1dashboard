@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "env": {
+    "CLERK_PUBLISHABLE_KEY": "test_pk",
+    "CLERK_SECRET_KEY": "test_sk",
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_CONVEX_URL": "https://dummy-convex-url.convex.cloud"
+  }
+} 

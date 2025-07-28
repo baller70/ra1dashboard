@@ -1,14 +1,9 @@
 // @ts-nocheck
 'use client'
 
-// Force dynamic rendering - prevent static generation
-export const dynamic = 'force-dynamic'
-
 import { useState, useEffect } from 'react'
 import { AppLayout } from '../components/app-layout'
 import { StatsCards } from '../components/dashboard/stats-cards'
-// Temporarily disable RevenueChart to fix build issues
-// import { RevenueChart } from '../components/dashboard/revenue-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -181,12 +176,12 @@ export default function DashboardPage() {
                         </span>
                         <div className="w-32 bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-blue-500 h-2 rounded-full" 
                             style={{width: `${Math.min((item.revenue / Math.max(...revenueData.map(d => d.revenue))) * 100, 100)}%`}}
                           ></div>
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {item.payments} payments
+                          {item.count} payments
                         </span>
                       </div>
                     </div>

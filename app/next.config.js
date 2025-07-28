@@ -6,23 +6,40 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
   
-  // Temporarily disable for production build
+  // Temporarily disable linting during builds for deployment
   eslint: {
-    ignoreDuringBuilds: true, // Temporarily disable for build
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true, // Temporarily disable for build
+    ignoreBuildErrors: false,
   },
   
-  // Experimental features for better performance
+  // Force dynamic rendering - no static generation  
+  output: 'standalone',
+  
+  // Completely disable static generation
+  trailingSlash: false,
+  
+  // Force all pages to be server-side rendered  
   experimental: {
     serverComponentsExternalPackages: ['convex'],
+    // Improve hydration error handling
+    optimizePackageImports: ['lucide-react'],
+  },
+
+  // Improve hydration and client-side rendering
+  reactStrictMode: true,
+  
+  // Better error handling in production
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
   
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
-      // Production optimizations
+      // Optimize for production
       config.optimization.splitChunks = {
         chunks: 'all',
         cacheGroups: {
@@ -32,12 +49,26 @@ const nextConfig = {
             chunks: 'all',
           },
         },
-      };
+      }
     }
-    return config;
+
+    // Handle potential module resolution issues
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    }
+
+    return config
   },
-  
-  // Headers for better security and caching
+
+  // Environment variable validation
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+
+  // Headers for better caching and security
   async headers() {
     return [
       {
@@ -57,18 +88,7 @@ const nextConfig = {
           },
         ],
       },
-    ];
-  },
-  
-  // Redirects for better SEO
-  async redirects() {
-    return [
-      {
-        source: '/dashboard',
-        destination: '/',
-        permanent: true,
-      },
-    ];
+    ]
   },
 }
 

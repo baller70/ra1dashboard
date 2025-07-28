@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useCallback } from 'react'
 import { AppLayout } from '../../components/app-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
@@ -27,7 +30,6 @@ import {
   PieChart as PieChartIcon,
   Filter,
   Zap,
-  TrendingUpIcon,
   AlertCircle,
   ArrowUpRight,
   ArrowDownRight
@@ -514,7 +516,7 @@ export default function AnalyticsPage() {
               <Card className="col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUpIcon className="h-5 w-5" />
+                    <TrendingUp className="h-5 w-5" />
                     Weekly Revenue Trends
                   </CardTitle>
                 </CardHeader>

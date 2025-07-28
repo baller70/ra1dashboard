@@ -57,40 +57,19 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
       }
 
       toast({
-        title: "Parent added successfully",
-        description: `${formData.name} has been added to the program.`,
+        title: "Parent created successfully!",
+        description: `Parent ${result.data.name} has been added.`,
       })
-
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        emergencyContact: '',
-        emergencyPhone: '',
-        notes: ''
-      })
-
-      // Call callback with the created parent data
-      if (onParentCreated) {
-        onParentCreated({ 
-          _id: result.data._id, 
-          ...formData,
-          status: 'active',
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        })
-      }
-
+      
+      onParentCreated?.(result.data) // Pass the newly created parent data
       onOpenChange(false)
-    } catch (error) {
-      console.error('Failed to create parent:', error)
+    } catch (error: any) {
       toast({
-        title: "Failed to add parent",
-        description: error instanceof Error ? error.message : "There was an error adding the parent. Please try again.",
+        title: "Error creating parent",
+        description: error.message || 'An unexpected error occurred.',
         variant: "destructive",
       })
+      console.error('Error creating parent:', error)
     } finally {
       setLoading(false)
     }

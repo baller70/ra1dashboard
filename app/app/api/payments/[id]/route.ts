@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { convexHttp } from '../../../../lib/convex'
 import { api } from '../../../../convex/_generated/api'
 import { requireAuth } from '../../../../lib/api-utils'
 
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     await requireAuth()
-
+    
     // Get payment from Convex
     const payment = await convexHttp.query(api.payments.getPayment, {
       id: params.id as any

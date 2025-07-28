@@ -1,0 +1,35 @@
+# Copy this file to .env.local and fill in your actual values
+
+# Convex Database
+NEXT_PUBLIC_CONVEX_URL=https://your-convex-deployment.convex.cloud
+
+# Authentication (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Email Service (Resend)
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+RESEND_REPLY_TO_EMAIL=support@yourdomain.com
+
+# AI Services
+OPENAI_API_KEY=sk-...
+ABACUSAI_API_KEY=your-abacus-key
+
+# Payment Processing (Stripe)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_DEFAULT_PRICE_ID=price_...
+
+# SMS Service (Twilio)
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
+TWILIO_FROM_NUMBER=+1234567890
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
+NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app
+NEXTAUTH_URL=https://your-domain.vercel.app
+
+# Node Environment
+NODE_ENV=production 
