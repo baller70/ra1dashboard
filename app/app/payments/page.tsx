@@ -4,7 +4,7 @@
 // Force dynamic rendering - prevent static generation
 export const dynamic = 'force-dynamic'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import nextDynamic from 'next/dynamic'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -88,6 +88,90 @@ export default function PaymentsPage() {
   const [teamsData, setTeamsData] = useState<any>(null)
   const [allParentsData, setAllParentsData] = useState<any>(null)
 
+  // Define fetchData as a standalone function
+  const fetchData = useCallback(async () => {
+    try {
+      console.log('🔄 Starting data fetch...')
+      setLoading(true)
+      
+      // Ultra-aggressive cache busting
+      const timestamp = Date.now() + Math.random() * 10000
+      const cacheKey = `cache-bust-${timestamp}`
+      console.log('🔄 Fetching with cache key:', cacheKey)
+      
+      // Clear any existing cache entries
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('payments-cache')
+        sessionStorage.removeItem('payments-cache')
+      }
+
+      const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
+        fetch(`/api/payments?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
+          cache: 'no-cache',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        }),
+        fetch(`/api/payments/analytics?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
+          cache: 'no-cache',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        }),
+        fetch(`/api/teams?_cache=${cacheKey}&_t=${timestamp}`, {
+          cache: 'no-cache',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        }),
+        fetch(`/api/parents?_cache=${cacheKey}&_t=${timestamp}`, {
+          cache: 'no-cache',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        })
+      ])
+
+      const [paymentsResult, analyticsResult, teamsResult, parentsResult] = await Promise.all([
+        paymentsRes.json(),
+        analyticsRes.json(), 
+        teamsRes.json(),
+        parentsRes.json()
+      ])
+      
+      console.log('📊 Data fetched:', {
+        payments: paymentsResult.success,
+        analytics: analyticsResult.success,
+        teams: teamsResult.success,
+        parents: parentsResult.success
+      })
+      
+      if (paymentsResult.success) setPaymentsData(paymentsResult.data)
+      if (analyticsResult.success) setAnalytics(analyticsResult.data)
+      if (teamsResult.success) setTeamsData(teamsResult.data)
+      if (parentsResult.success) {
+        setAllParentsData(parentsResult.data)
+        
+        // Debug logging
+        const parentCount = parentsResult.data?.parents?.length || 0
+        const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+        console.log('🔍 PAYMENTS PAGE DEBUG:', {
+          totalParents: parentCount,
+          unassignedParents: unassignedCount,
+          parentsWithTeams: parentCount - unassignedCount
+        })
+        
+        // Show success notification with team counts
+        toast({
+          title: "✅ Data Refreshed Successfully",
+          description: `Loaded ${parentCount} parents (${unassignedCount} unassigned) with fresh team assignments`,
+          duration: 3000,
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error fetching data:', error)
+      toast({
+        title: "❌ Error Loading Data",
+        description: "Failed to load payment data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [activeProgram])
+
   // Listen for parent deletions from other pages
   useEffect(() => {
     const handleParentDeleted = () => {
@@ -97,18 +181,26 @@ export default function PaymentsPage() {
     
     window.addEventListener('parent-deleted', handleParentDeleted)
     return () => window.removeEventListener('parent-deleted', handleParentDeleted)
-  }, [])
+  }, [fetchData])
 
   // Listen for payment plan creation events
   useEffect(() => {
     const handlePaymentPlanCreated = () => {
-      console.log('Payment plan created event received, refreshing data...')
-      fetchData()
+      console.log('🔄 Payment plan created event received, refreshing data...')
+      // Add a small delay to ensure the data is available
+      setTimeout(() => {
+        console.log('🔄 Fetching updated data...')
+        fetchData()
+      }, 500)
     }
     
     window.addEventListener('payment-plan-created', handlePaymentPlanCreated)
-    return () => window.removeEventListener('payment-plan-created', handlePaymentPlanCreated)
-  }, [])
+    console.log('👂 Payment plan event listener added')
+    return () => {
+      window.removeEventListener('payment-plan-created', handlePaymentPlanCreated)
+      console.log('👂 Payment plan event listener removed')
+    }
+  }, [fetchData])
 
   // Listen for page focus to refresh data when returning from other pages
   useEffect(() => {
@@ -119,84 +211,12 @@ export default function PaymentsPage() {
     
     window.addEventListener('focus', handlePageFocus)
     return () => window.removeEventListener('focus', handlePageFocus)
-  }, [])
+  }, [fetchData])
 
   // Fetch data using API routes instead of direct Convex queries
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        
-        // Ultra-aggressive cache busting
-        const timestamp = Date.now() + Math.random() * 10000
-        const cacheKey = `cache-bust-${timestamp}`
-        
-        // Clear any existing cache entries
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('payments-cache')
-          sessionStorage.removeItem('payments-cache')
-        }
-        
-        const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
-          fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-          }),
-          fetch(`/api/payments/analytics?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-          }),
-          fetch(`/api/teams?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-          }),
-          fetch(`/api/parents?limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-          })
-        ])
-        
-        const paymentsResult = await paymentsRes.json()
-        const analyticsResult = await analyticsRes.json()
-        const teamsResult = await teamsRes.json()
-        const parentsResult = await parentsRes.json()
-        
-        if (paymentsResult.success) setPaymentsData(paymentsResult.data)
-        if (analyticsResult.success) setAnalytics(analyticsResult.data)
-        if (teamsResult.success) setTeamsData(teamsResult.data)
-        if (parentsResult.success) {
-          setAllParentsData(parentsResult.data)
-          
-          // Debug logging
-          const parentCount = parentsResult.data?.parents?.length || 0
-          const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
-          console.log('🔍 PAYMENTS PAGE DEBUG:', {
-            totalParents: parentCount,
-            unassignedParents: unassignedCount,
-            parentsWithTeams: parentCount - unassignedCount
-          })
-          
-          // Show success notification with team counts
-          toast({
-            title: "✅ Data Refreshed Successfully",
-            description: `Loaded ${parentCount} parents (${unassignedCount} unassigned) with fresh team assignments`,
-            variant: "default",
-          })
-        }
-      } catch (error) {
-        console.error('Failed to fetch data:', error)
-        toast({
-          title: "❌ Error Loading Data",
-          description: "Failed to load payment data. Please try refreshing the page.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-    
     fetchData()
-  }, [activeProgram])
+  }, [fetchData])
 
   const forceRefresh = async () => {
     try {

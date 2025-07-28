@@ -73,7 +73,14 @@ export default function NewPaymentPlanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('🔥 Form submitted with data:', formData)
+    
     if (!formData.parentId || !formData.totalAmount || !formData.installmentAmount) {
+      console.error('❌ Validation failed:', { 
+        parentId: formData.parentId, 
+        totalAmount: formData.totalAmount, 
+        installmentAmount: formData.installmentAmount 
+      })
       toast({
         title: "❌ Missing Required Fields",
         description: "Please fill in all required fields",
@@ -84,19 +91,27 @@ export default function NewPaymentPlanPage() {
 
     setLoading(true)
     try {
+      const requestBody = {
+        ...formData,
+        totalAmount: parseFloat(formData.totalAmount),
+        installmentAmount: parseFloat(formData.installmentAmount),
+        installments: parseInt(formData.installments)
+      }
+      
+      console.log('🚀 Sending request:', requestBody)
+      
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          totalAmount: parseFloat(formData.totalAmount),
-          installmentAmount: parseFloat(formData.installmentAmount),
-          installments: parseInt(formData.installments)
-        })
+        body: JSON.stringify(requestBody)
       })
 
+      console.log('📡 Response status:', response.status)
+      
       if (response.ok) {
         const result = await response.json()
+        console.log('✅ Payment plan created:', result)
+        
         toast({
           title: "✅ Payment Plan Created",
           description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. Redirecting to payments page...`,
@@ -105,12 +120,14 @@ export default function NewPaymentPlanPage() {
         
         // Wait a moment for the toast to show, then navigate back to payments
         setTimeout(() => {
+          console.log('🔄 Triggering refresh event and redirecting...')
           // Trigger a refresh event for the payments page
           window.dispatchEvent(new Event('payment-plan-created'))
           router.push('/payments')
-        }, 1000)
+        }, 1500)
       } else {
         const error = await response.json()
+        console.error('❌ API Error:', error)
         toast({
           title: "❌ Creation Failed",
           description: error.error || 'Failed to create payment plan',
@@ -118,7 +135,7 @@ export default function NewPaymentPlanPage() {
         })
       }
     } catch (error) {
-      console.error('Error creating payment plan:', error)
+      console.error('❌ Network Error:', error)
       toast({
         title: "❌ Error",
         description: 'Error creating payment plan. Please try again.',
