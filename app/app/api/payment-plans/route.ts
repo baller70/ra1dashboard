@@ -114,7 +114,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       paymentPlanId, 
-      mainPaymentId, 
+      mainPaymentId,
+      paymentIds: [mainPaymentId], // Add this for frontend compatibility
       installmentsCreated: installmentIds.length, 
       installmentIds,
       progressData: {

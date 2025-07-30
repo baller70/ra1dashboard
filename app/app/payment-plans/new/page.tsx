@@ -240,43 +240,49 @@ export default function NewPaymentPlanPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Payment plan created:', result)
+        console.log('🔍 Full result object:', JSON.stringify(result, null, 2))
+        
+        // Show success toast
+        toast({
+          title: "✅ Payment Plan Created Successfully!",
+          description: `Payment plan created for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. First payment automatically processed.`,
+          variant: "default",
+          duration: 2000,
+        })
+        
+        // ALSO show a browser alert to make sure user sees it
+        alert('✅ SUCCESS! Payment Plan Created Successfully! First payment is already marked as PAID. Redirecting to tracking page...')
         
         // Get the first payment ID from the created payments
         const firstPaymentId = result.paymentIds && result.paymentIds[0]
+        const mainPaymentId = result.mainPaymentId
         
-        toast({
-          title: "✅ Payment Plan Created",
-          description: `Successfully created payment plan for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. Redirecting to payment detail page to confirm...`,
-          variant: "default",
-        })
+        console.log('🎯 First payment ID from paymentIds:', firstPaymentId)
+        console.log('🎯 Main payment ID:', mainPaymentId)
         
-        // Wait a moment for the toast to show, then dispatch event and redirect
-        setTimeout(() => {
-          console.log('🔄 Triggering refresh event and redirecting...')
-          // Trigger a refresh event for the payments page with additional data
-          const event = new CustomEvent('payment-plan-created', {
-            detail: {
-              parentId: formData.parentId,
-              parentName: parents.find(p => p._id === formData.parentId)?.name,
-              planType: formData.type,
-              amount: formData.totalAmount,
-              timestamp: Date.now(),
-              firstPaymentId: firstPaymentId
-            }
-          })
-          window.dispatchEvent(event)
+        // Use whichever ID is available
+        const redirectPaymentId = firstPaymentId || mainPaymentId
+        
+        if (redirectPaymentId) {
+          console.log(`🚀 IMMEDIATE REDIRECT TO /payments/${redirectPaymentId}`)
           
-          // Redirect to the first payment detail page to confirm tracking system works
-          setTimeout(() => {
-            if (firstPaymentId) {
-              console.log(`🎯 Redirecting to payment detail page: /payments/${firstPaymentId}`)
-              router.push(`/payments/${firstPaymentId}`)
-            } else {
-              console.log('⚠️ No payment ID found, redirecting to payments list')
-              router.push('/payments')
-            }
-          }, 200)
-        }, 1500)
+          // Show alert to confirm redirect is happening
+          alert(`✅ SUCCESS! Payment Plan Created! Redirecting to payment tracking page for payment ID: ${redirectPaymentId}`)
+          
+          // Immediate redirect - no setTimeout
+          try {
+            window.location.href = `/payments/${redirectPaymentId}`
+          } catch (redirectError) {
+            console.error('❌ Redirect failed, trying alternative method:', redirectError)
+            window.location.assign(`/payments/${redirectPaymentId}`)
+          }
+        } else {
+          console.log('⚠️ No payment ID found in result, redirecting to payments list')
+          console.log('🔍 Available result keys:', Object.keys(result))
+          alert('⚠️ Payment plan created but no payment ID found. Redirecting to payments list.')
+          window.location.href = '/payments'
+        }
+        
       } else {
         const error = await response.json()
         console.error('❌ API Error:', error)
