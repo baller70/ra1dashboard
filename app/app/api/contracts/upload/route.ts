@@ -3,8 +3,6 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
 
 export async function POST(request: Request) {
   try {
@@ -46,10 +44,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File size too large. Maximum size is 10MB.' }, { status: 400 })
     }
 
-    // Save the file to the public/uploads/contracts directory
+    // Convert file to base64 for storage (Vercel serverless doesn't support file system writes)
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const base64Data = buffer.toString('base64')
+    
+    // Create a data URL for the file
+    const dataUrl = `data:${file.type};base64,${base64Data}`
     const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-    const fileUrl = `/uploads/contracts/${fileName}`
-    const filePath = join(process.cwd(), 'public', 'uploads', 'contracts', fileName)
     
     console.log('Contract upload requested:', {
       fileName: file.name,
@@ -58,21 +60,15 @@ export async function POST(request: Request) {
       templateType,
       notes,
       expiresAt,
-      fileUrl,
-      filePath
+      storedAsBase64: true
     });
-
-    // Convert file to buffer and save it
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
 
     // Create the contract via the POST API
     const contractData = {
       parentId,
       fileName: `uploaded_${file.name}`,
       originalName: file.name,
-      fileUrl,
+      fileUrl: dataUrl, // Store as base64 data URL
       fileSize: file.size,
       mimeType: file.type,
       templateType: templateType || undefined,
