@@ -235,14 +235,21 @@ export default function NewPaymentPlanPage() {
       
       console.log('🚀 Sending API request with body:', requestBody)
       
+      alert('🔥 ABOUT TO MAKE API CALL!')
+      
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       })
 
+      alert(`🔥 API RESPONSE STATUS: ${response.status}`)
+
       if (response.ok) {
+        alert('🔥 RESPONSE IS OK - PARSING JSON!')
         const result = await response.json()
+        alert(`🔥 GOT RESULT: ${JSON.stringify(result, null, 2)}`)
+        
         console.log('✅ Payment plan created:', result)
         console.log('🔍 Full result object:', JSON.stringify(result, null, 2))
         
@@ -259,6 +266,7 @@ export default function NewPaymentPlanPage() {
         
         const paymentId = result.paymentIds?.[0] || result.mainPaymentId
         console.log('🔍 EXTRACTED PAYMENT ID:', paymentId)
+        alert(`🔍 EXTRACTED PAYMENT ID: ${paymentId}`)
         
         if (paymentId) {
           console.log(`🚀 Redirecting to payment detail page: /payments/${paymentId}`)
@@ -278,7 +286,9 @@ export default function NewPaymentPlanPage() {
         }
         
       } else {
+        alert(`🔥 API CALL FAILED - STATUS: ${response.status}`)
         const error = await response.json()
+        alert(`🔥 ERROR RESPONSE: ${JSON.stringify(error)}`)
         console.error('❌ API Error:', error)
         toast({
           title: "❌ Creation Failed",
@@ -287,6 +297,7 @@ export default function NewPaymentPlanPage() {
         })
       }
     } catch (error) {
+      alert(`🔥 CAUGHT EXCEPTION: ${error}`)
       console.error('❌ Error creating payment plan:', error)
       toast({
         title: "❌ Error",
@@ -645,7 +656,14 @@ export default function NewPaymentPlanPage() {
                 <Button type="button" variant="outline" asChild>
                   <Link href="/payment-plans">Cancel</Link>
                 </Button>
-                <Button type="submit" disabled={loading}>
+                <Button 
+                  type="button" 
+                  disabled={loading}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleSubmit(e as any)
+                  }}
+                >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
