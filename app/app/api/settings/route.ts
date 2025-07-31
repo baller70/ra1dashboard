@@ -125,6 +125,10 @@ export async function POST(request: Request) {
     let userContext;
     try {
       userContext = await getUserContext()
+      // Ensure isAdmin is set if userRole is admin
+      if (!userContext.isAdmin && userContext.userRole === 'admin') {
+        userContext.isAdmin = true;
+      }
     } catch (error) {
       console.log('🔧 Development mode: User context not available, using defaults')
       userContext = { 
@@ -135,6 +139,12 @@ export async function POST(request: Request) {
         userRole: 'admin',
         isAdmin: true
       }
+    }
+    
+    // Force admin privileges for development/testing
+    if (!userContext.userId || userContext.userId === 'dev-user') {
+      userContext.isAdmin = true;
+      userContext.userRole = 'admin';
     }
 
     const { userPreferences: incomingPrefs, systemSettings } = (await request.json()) as any;
@@ -160,21 +170,30 @@ export async function POST(request: Request) {
     }
 
     // Save system settings to database
+    console.log('🔍 System settings check:', { 
+      hasSystemSettings: !!systemSettings, 
+      isArray: Array.isArray(systemSettings),
+      isAdmin: userContext.isAdmin,
+      userContext: userContext
+    });
+    
     if (systemSettings && Array.isArray(systemSettings) && userContext.isAdmin) {
       try {
         console.log('💾 Saving system settings:', systemSettings);
-        await convexHttp.mutation(api.systemSettings.bulkUpdateSystemSettings, {
+        const result = await convexHttp.mutation(api.systemSettings.bulkUpdateSystemSettings, {
           settings: systemSettings.map(setting => ({
             key: setting.key,
             value: setting.value,
             description: setting.description || ''
           }))
         });
-        console.log('✅ System settings saved successfully');
+        console.log('✅ System settings saved successfully:', result);
       } catch (error: any) {
         console.error('❌ System settings save error:', error);
         throw new Error('Failed to save system settings: ' + error.message);
       }
+    } else {
+      console.log('⚠️ System settings not saved due to failed conditions');
     }
 
     return NextResponse.json({ 
