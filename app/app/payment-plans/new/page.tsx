@@ -255,16 +255,21 @@ export default function NewPaymentPlanPage() {
         })
         
         // Get the payment ID for redirect
+        console.log('🔍 DEBUGGING API RESPONSE:', JSON.stringify(result, null, 2))
+        
         const paymentId = result.paymentIds?.[0] || result.mainPaymentId
+        console.log('🔍 EXTRACTED PAYMENT ID:', paymentId)
         
         if (paymentId) {
           console.log(`🚀 Redirecting to payment detail page: /payments/${paymentId}`)
+          alert(`🚀 ABOUT TO REDIRECT TO: /payments/${paymentId}`)
           
           // IMMEDIATE REDIRECT - NO BULLSHIT
           window.location.href = `/payments/${paymentId}`
           
         } else {
           console.log('⚠️ No payment ID found in result')
+          alert('❌ NO PAYMENT ID FOUND - REDIRECT FAILED!')
           toast({
             title: "⚠️ Payment Plan Created",
             description: "Payment plan created but redirect failed. Check payments page.",
