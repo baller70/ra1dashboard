@@ -38,9 +38,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    console.log('🔧 Contract creation route called')
     await requireAuth()
     
     const body = await request.json()
+    console.log('📋 Contract creation data:', body)
+    
     const {
       parentId,
       fileName,
@@ -55,11 +58,24 @@ export async function POST(request: Request) {
 
     // Basic validation
     if (!parentId || !fileName || !fileUrl) {
+      console.log('❌ Missing required fields:', { parentId, fileName, fileUrl })
       return NextResponse.json(
         { error: 'Parent ID, file name, and file URL are required' },
         { status: 400 }
       )
     }
+
+    console.log('🔄 Calling Convex mutation with:', {
+      parentId,
+      fileName,
+      originalName: originalName || fileName,
+      fileUrl,
+      fileSize: fileSize || 0,
+      mimeType: mimeType || 'application/pdf',
+      templateType,
+      notes,
+      expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
+    })
 
     const contractId = await convexHttp.mutation(api.contracts.createContract, {
       parentId: parentId as Id<"parents">,
@@ -73,15 +89,17 @@ export async function POST(request: Request) {
       expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
     })
 
+    console.log('✅ Contract created with ID:', contractId)
+
     return NextResponse.json({
       success: true,
       contractId,
       message: 'Contract created successfully'
     })
   } catch (error) {
-    console.error('Contract creation error:', error)
+    console.error('❌ Contract creation error:', error)
     return NextResponse.json(
-      { error: 'Failed to create contract' },
+      { error: error instanceof Error ? error.message : 'Failed to create contract' },
       { status: 500 }
     )
   }

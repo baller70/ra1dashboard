@@ -8,6 +8,7 @@ import { join } from 'path'
 
 export async function POST(request: Request) {
   try {
+    console.log('🔧 Contract upload route called')
     await requireAuth()
     
     const formData = await request.formData()
@@ -17,7 +18,19 @@ export async function POST(request: Request) {
     const notes = formData.get('notes') as string
     const expiresAt = formData.get('expiresAt') as string
 
+    console.log('📋 Upload form data:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      parentId,
+      templateType,
+      notes,
+      expiresAt
+    })
+
     if (!file || !parentId) {
+      console.log('❌ Missing file or parent ID')
       return NextResponse.json({ error: 'Missing file or parent ID' }, { status: 400 })
     }
 
@@ -68,6 +81,7 @@ export async function POST(request: Request) {
     }
 
     // Call the contracts API to create the contract
+    console.log('📝 Creating contract record with data:', contractData)
     const createResponse = await fetch(`${request.url.replace('/upload', '')}`, {
       method: 'POST',
       headers: {
@@ -76,12 +90,16 @@ export async function POST(request: Request) {
       body: JSON.stringify(contractData),
     })
 
+    console.log('📊 Create contract response status:', createResponse.status)
+
     if (!createResponse.ok) {
       const errorData = await createResponse.json()
+      console.log('❌ Contract creation failed:', errorData)
       throw new Error(errorData.error || 'Failed to create contract record')
     }
 
     const result = await createResponse.json()
+    console.log('✅ Contract created successfully:', result)
 
     return NextResponse.json({
       success: true,
@@ -89,9 +107,9 @@ export async function POST(request: Request) {
       message: 'Contract uploaded successfully'
     })
   } catch (error) {
-    console.error('Contract upload error:', error)
+    console.error('❌ Contract upload error:', error)
     return NextResponse.json(
-      { error: 'Failed to upload contract' },
+      { error: error instanceof Error ? error.message : 'Failed to upload contract' },
       { status: 500 }
     )
   }
