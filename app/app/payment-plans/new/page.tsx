@@ -696,10 +696,11 @@ export default function NewPaymentPlanPage() {
                           duration: 2000,
                         })
                         
-                        // DIRECT REDIRECT - NO BULLSHIT
+                        // REDIRECT TO STRIPE CHECKOUT
                         const paymentId = result.mainPaymentId || result.paymentIds?.[0]
-                        alert(`🚨 REDIRECTING TO: /payments/${paymentId}`)
-                        window.location.href = `/payments/${paymentId}`
+                        const checkoutUrl = `/payments/${paymentId}/checkout?amount=183.33&name=${encodeURIComponent(parents.find(p => p._id === formData.parentId)?.name || 'Test Parent')}&email=${encodeURIComponent(parents.find(p => p._id === formData.parentId)?.email || 'test@example.com')}&parentId=${formData.parentId}&plan=monthly&installments=9`
+                        alert(`🚨 REDIRECTING TO STRIPE CHECKOUT: ${checkoutUrl}`)
+                        window.location.href = checkoutUrl
                         
                       } else {
                         alert('🚨 API FAILED')
