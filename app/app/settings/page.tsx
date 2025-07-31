@@ -268,6 +268,7 @@ export default function SettingsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
         },
         body: JSON.stringify({
           systemSettings: systemSettingsArray,
@@ -277,12 +278,16 @@ export default function SettingsPage() {
       })
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Settings saved successfully:', result);
         toast({
           title: "Settings saved",
           description: "Your settings have been updated successfully.",
         })
       } else {
-        throw new Error('Failed to save settings')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Settings save failed:', errorData);
+        throw new Error(errorData.error || 'Failed to save settings')
       }
     } catch (error) {
       toast({
