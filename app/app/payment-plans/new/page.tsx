@@ -522,7 +522,7 @@ export default function NewPaymentPlanPage() {
                   <p className="text-gray-600 mb-6">Select payment method and schedule to create your payment plan</p>
                   <Button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       if (!formData.parentId) {
                         toast({
                           title: "⚠️ Parent Required",
@@ -531,91 +531,7 @@ export default function NewPaymentPlanPage() {
                         })
                         return
                       }
-                      
-                      // Create payment plan immediately with default settings
-                      setLoading(true)
-                      try {
-                        const requestBody = {
-                          ...formData,
-                          totalAmount: parseFloat(formData.totalAmount || '1650'),
-                          installmentAmount: parseFloat(formData.installmentAmount || '183.33'),
-                          installments: parseInt(formData.installments || '9'),
-                          type: formData.type || 'monthly',
-                          paymentMethod: formData.paymentMethod || 'stripe_card'
-                        }
-                        
-                        console.log('🚀 Creating payment plan via Choose Payment Options:', requestBody)
-                        
-                        const response = await fetch('/api/payment-plans', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(requestBody)
-                        })
-
-                        if (response.ok) {
-                          const result = await response.json()
-                          console.log('✅ Payment plan created via Choose Payment Options:', result)
-                          
-                          // Show success toast
-                          toast({
-                            title: "✅ Payment Plan Created Successfully!",
-                            description: `Payment plan created for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. First payment automatically processed.`,
-                            variant: "default",
-                            duration: 2000,
-                          })
-                          
-                          // ALSO show a browser alert to make sure user sees it
-                          alert('✅ SUCCESS! Payment Plan Created Successfully! First payment is already marked as PAID. Redirecting to tracking page...')
-                          
-                          // Get the first payment ID from the created payments
-                          const firstPaymentId = result.paymentIds && result.paymentIds[0]
-                          const mainPaymentId = result.mainPaymentId
-                          
-                          console.log('🎯 First payment ID from paymentIds:', firstPaymentId)
-                          console.log('🎯 Main payment ID:', mainPaymentId)
-                          
-                          // Use whichever ID is available
-                          const redirectPaymentId = firstPaymentId || mainPaymentId
-                          
-                          if (redirectPaymentId) {
-                            console.log(`🚀 IMMEDIATE REDIRECT TO /payments/${redirectPaymentId}`)
-                            
-                            // Show alert to confirm redirect is happening
-                            alert(`✅ SUCCESS! Payment Plan Created! Redirecting to payment tracking page for payment ID: ${redirectPaymentId}`)
-                            
-                            // Immediate redirect - no setTimeout
-                            try {
-                              window.location.href = `/payments/${redirectPaymentId}`
-                            } catch (redirectError) {
-                              console.error('❌ Redirect failed, trying alternative method:', redirectError)
-                              window.location.assign(`/payments/${redirectPaymentId}`)
-                            }
-                          } else {
-                            console.log('⚠️ No payment ID found in result, redirecting to payments list')
-                            console.log('🔍 Available result keys:', Object.keys(result))
-                            alert('⚠️ Payment plan created but no payment ID found. Redirecting to payments list.')
-                            window.location.href = '/payments'
-                          }
-                          
-                        } else {
-                          const error = await response.json()
-                          console.error('❌ API Error:', error)
-                          toast({
-                            title: "❌ Creation Failed",
-                            description: error.error || 'Failed to create payment plan',
-                            variant: "destructive",
-                          })
-                        }
-                      } catch (error) {
-                        console.error('❌ Error creating payment plan:', error)
-                        toast({
-                          title: "❌ Error",
-                          description: 'Error creating payment plan. Please try again.',
-                          variant: "destructive",
-                        })
-                      } finally {
-                        setLoading(false)
-                      }
+                      setShowPaymentOptions(true)
                     }}
                     className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white text-lg"
                     size="lg"
@@ -707,7 +623,6 @@ export default function NewPaymentPlanPage() {
                   type="button" 
                   disabled={loading}
                   onClick={() => {
-                    alert('🚨 BUTTON CLICKED - OPENING MODAL')
                     if (!formData.parentId) {
                       toast({
                         title: "⚠️ Parent Required",
@@ -716,7 +631,6 @@ export default function NewPaymentPlanPage() {
                       })
                       return
                     }
-                    alert('🚨 OPENING PAYMENT OPTIONS MODAL')
                     setShowPaymentOptions(true)
                   }}
                 >
@@ -728,7 +642,7 @@ export default function NewPaymentPlanPage() {
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Create Payment Plan
+                      Choose Payment Options
                     </>
                   )}
                 </Button>
