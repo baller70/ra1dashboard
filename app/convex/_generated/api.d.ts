@@ -25,6 +25,7 @@ import type * as parents from "../parents.js";
 import type * as paymentInstallments from "../paymentInstallments.js";
 import type * as payments from "../payments.js";
 import type * as scheduledMessages from "../scheduledMessages.js";
+import type * as systemSettings from "../systemSettings.js";
 import type * as teams from "../teams.js";
 import type * as templates from "../templates.js";
 import type * as users from "../users.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   paymentInstallments: typeof paymentInstallments;
   payments: typeof payments;
   scheduledMessages: typeof scheduledMessages;
+  systemSettings: typeof systemSettings;
   teams: typeof teams;
   templates: typeof templates;
   users: typeof users;

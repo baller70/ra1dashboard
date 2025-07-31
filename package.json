@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "convex": "^1.25.4",
     "openai": "^5.10.2"
   }
 }

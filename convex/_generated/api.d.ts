@@ -13,6 +13,22 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as aiRecommendations from "../aiRecommendations.js";
+import type * as backgroundJobs from "../backgroundJobs.js";
+import type * as contracts from "../contracts.js";
+import type * as dashboard from "../dashboard.js";
+import type * as emailReminders from "../emailReminders.js";
+import type * as messageLogs from "../messageLogs.js";
+import type * as migrations from "../migrations.js";
+import type * as notifications from "../notifications.js";
+import type * as parents from "../parents.js";
+import type * as paymentInstallments from "../paymentInstallments.js";
+import type * as payments from "../payments.js";
+import type * as scheduledMessages from "../scheduledMessages.js";
+import type * as systemSettings from "../systemSettings.js";
+import type * as teams from "../teams.js";
+import type * as templates from "../templates.js";
+import type * as users from "../users.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -22,7 +38,24 @@ import type {
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  aiRecommendations: typeof aiRecommendations;
+  backgroundJobs: typeof backgroundJobs;
+  contracts: typeof contracts;
+  dashboard: typeof dashboard;
+  emailReminders: typeof emailReminders;
+  messageLogs: typeof messageLogs;
+  migrations: typeof migrations;
+  notifications: typeof notifications;
+  parents: typeof parents;
+  paymentInstallments: typeof paymentInstallments;
+  payments: typeof payments;
+  scheduledMessages: typeof scheduledMessages;
+  systemSettings: typeof systemSettings;
+  teams: typeof teams;
+  templates: typeof templates;
+  users: typeof users;
+}>;
 export declare const api: FilterApi<
   typeof fullApi,
   FunctionReference<any, "public">
