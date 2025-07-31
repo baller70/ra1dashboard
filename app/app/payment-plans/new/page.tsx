@@ -393,19 +393,66 @@ export default function NewPaymentPlanPage() {
     }
   }
 
-  // Apply payment options from dialog
-  const handleApplyPaymentOptions = () => {
-    setFormData(prev => ({
-      ...prev,
-      paymentMethod: selectedPaymentOption
-    }))
+  // Apply payment options from dialog - CREATE PAYMENT PLAN AND REDIRECT TO CHECKOUT
+  const handleApplyPaymentOptions = async () => {
+    setLoading(true)
     setShowPaymentOptions(false)
     
-    toast({
-      title: "✅ Payment Options Applied",
-      description: `Payment method: ${paymentOptions.find(p => p.id === selectedPaymentOption)?.name}, Schedule: ${paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.label}`,
-      duration: 3000,
-    })
+    try {
+      // Get selected schedule details
+      const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule)
+      const installmentAmount = selectedScheduleDetails?.value === 'pay-in-full' ? 1650 : 183.33
+      const installments = selectedScheduleDetails?.value === 'pay-in-full' ? 1 : 9
+      
+      // Create payment plan
+      const response = await fetch('/api/payment-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentId: formData.parentId,
+          totalAmount: 1650,
+          installmentAmount: installmentAmount,
+          installments: installments,
+          startDate: new Date().toISOString().split('T')[0],
+          description: `Payment plan - ${selectedScheduleDetails?.label}`,
+          paymentMethod: selectedPaymentOption,
+          type: selectedPaymentSchedule
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        
+        toast({
+          title: "✅ Payment Plan Created!",
+          description: "Redirecting to checkout...",
+          duration: 2000,
+        })
+        
+        // REDIRECT TO STRIPE CHECKOUT
+        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
+        const parent = parents.find(p => p._id === formData.parentId)
+        const checkoutUrl = `/payments/${paymentId}/checkout?amount=${installmentAmount}&name=${encodeURIComponent(parent?.name || 'Parent')}&email=${encodeURIComponent(parent?.email || 'parent@example.com')}&parentId=${formData.parentId}&plan=${selectedPaymentSchedule}&installments=${installments}`
+        
+        window.location.href = checkoutUrl
+        
+      } else {
+        const error = await response.json()
+        toast({
+          title: "❌ Creation Failed",
+          description: error.error || 'Failed to create payment plan',
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Error",
+        description: 'Error creating payment plan. Please try again.',
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -663,55 +710,16 @@ export default function NewPaymentPlanPage() {
                 <Button 
                   type="button" 
                   disabled={loading}
-                  onClick={async () => {
-                    alert('🚨 BUTTON CLICKED - STARTING PAYMENT PLAN CREATION')
-                    setLoading(true)
-                    
-                    try {
-                      // Create payment plan with hardcoded values for testing
-                      const response = await fetch('/api/payment-plans', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          parentId: formData.parentId || 'jx7c9vhsz6tn2t8qjx7c9vhsz6tn2t8q',
-                          totalAmount: 1650,
-                          installmentAmount: 183.33,
-                          installments: 9,
-                          startDate: new Date().toISOString().split('T')[0],
-                          description: 'Test payment plan',
-                          paymentMethod: 'stripe_card',
-                          type: 'monthly'
-                        })
+                  onClick={() => {
+                    if (!formData.parentId) {
+                      toast({
+                        title: "⚠️ Parent Required",
+                        description: "Please select a parent first before choosing payment options.",
+                        variant: "destructive",
                       })
-                      
-                      alert(`🚨 API RESPONSE STATUS: ${response.status}`)
-                      
-                      if (response.ok) {
-                        const result = await response.json()
-                        alert(`🚨 API SUCCESS - GOT PAYMENT ID: ${result.mainPaymentId}`)
-                        
-                        toast({
-                          title: "✅ Payment Plan Created!",
-                          description: "Redirecting to payment page...",
-                          duration: 2000,
-                        })
-                        
-                        // REDIRECT TO STRIPE CHECKOUT
-                        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
-                        const checkoutUrl = `/payments/${paymentId}/checkout?amount=183.33&name=${encodeURIComponent(parents.find(p => p._id === formData.parentId)?.name || 'Test Parent')}&email=${encodeURIComponent(parents.find(p => p._id === formData.parentId)?.email || 'test@example.com')}&parentId=${formData.parentId}&plan=monthly&installments=9`
-                        alert(`🚨 REDIRECTING TO STRIPE CHECKOUT: ${checkoutUrl}`)
-                        window.location.href = checkoutUrl
-                        
-                      } else {
-                        alert('🚨 API FAILED')
-                        const error = await response.text()
-                        alert(`🚨 ERROR: ${error}`)
-                      }
-                    } catch (error) {
-                      alert(`🚨 EXCEPTION: ${error}`)
-                    } finally {
-                      setLoading(false)
+                      return
                     }
+                    setShowPaymentOptions(true)
                   }}
                 >
                   {loading ? (
