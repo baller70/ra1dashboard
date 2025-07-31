@@ -49,10 +49,11 @@ interface Parent {
 }
 
 interface Template {
-  id: string
+  _id: string
   name: string
   subject: string
-  content: string
+  body: string
+  content?: string
   isActive: boolean
 }
 
@@ -136,19 +137,32 @@ function CommunicationSendContent() {
 
   const fetchTemplates = async () => {
     try {
+      console.log('🔄 Fetching templates...')
       const response = await fetch('/api/templates')
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
+      console.log('📋 Templates data received:', data)
       
       // Ensure data is an array before filtering
       const templatesArray = Array.isArray(data) ? data : []
-      const activeTemplates = templatesArray.filter((template: Template) => template.isActive)
+      console.log('📊 Templates array:', templatesArray.length, 'templates')
+      
+      const activeTemplates = templatesArray.filter((template: Template) => {
+        console.log('🔍 Checking template:', template.name, 'isActive:', template.isActive)
+        return template.isActive
+      })
+      console.log('✅ Active templates:', activeTemplates.length)
+      
       setTemplates(activeTemplates.slice(0, 6)) // Show up to 6 templates
+      
+      if (activeTemplates.length === 0) {
+        toast.error('No active templates found. Please create some templates first.')
+      }
     } catch (error) {
-      console.error('Failed to fetch templates:', error)
-      toast.error('Failed to load templates')
+      console.error('❌ Failed to fetch templates:', error)
+      toast.error('Failed to load templates. Please refresh the page.')
       setTemplates([]) // Set empty array on error
     }
   }
@@ -167,7 +181,19 @@ function CommunicationSendContent() {
       parent.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
     const allIds = filteredParents.map(parent => parent._id)
-    setSelectedParents(allIds)
+    
+    // If all filtered parents are already selected, do nothing or show message
+    if (allIds.length === 0) {
+      toast.error('No parents match your search criteria')
+      return
+    }
+    
+    setSelectedParents(prev => {
+      // Merge with existing selections (don't replace)
+      const newSelections = [...new Set([...prev, ...allIds])]
+      toast.success(`Selected ${allIds.length} additional parents`)
+      return newSelections
+    })
   }
 
   const handleClearAll = () => {
@@ -175,11 +201,18 @@ function CommunicationSendContent() {
   }
 
   const handleTemplateSelect = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId)
+    const template = templates.find(t => t._id === templateId)
     if (template) {
       setSelectedTemplate(templateId)
-      setSubject(template.subject)
-      setMessage(template.content)
+      setSubject(template.subject || '')
+      setMessage(template.body || template.content || '')
+      
+      // Provide user feedback
+      toast.success(`Template "${template.name}" applied successfully!`)
+      console.log('✅ Template selected:', template.name)
+    } else {
+      console.error('❌ Template not found:', templateId)
+      toast.error('Template not found. Please try again.')
     }
   }
 
@@ -543,13 +576,13 @@ function CommunicationSendContent() {
                   ) : (
                     templates.map((template) => (
                       <div
-                        key={template.id}
+                        key={template._id}
                         className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                          selectedTemplate === template.id
+                          selectedTemplate === template._id
                             ? 'border-primary bg-primary/5'
                             : 'border-border hover:border-primary/50'
                         }`}
-                        onClick={() => handleTemplateSelect(template.id)}
+                        onClick={() => handleTemplateSelect(template._id)}
                       >
                         <h4 className="font-medium text-sm">{template.name}</h4>
                         <p className="text-xs text-muted-foreground mt-1 truncate">
