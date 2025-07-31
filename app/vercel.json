@@ -14,6 +14,6 @@
     "CLERK_PUBLISHABLE_KEY": "test_pk",
     "CLERK_SECRET_KEY": "test_sk",
     "NODE_ENV": "production",
-    "NEXT_PUBLIC_CONVEX_URL": "https://dummy-convex-url.convex.cloud"
+    "NEXT_PUBLIC_CONVEX_URL": "https://blessed-scorpion-846.convex.cloud"
   }
 } 
