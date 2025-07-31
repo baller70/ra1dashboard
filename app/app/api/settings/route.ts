@@ -180,13 +180,17 @@ export async function POST(request: Request) {
     if (systemSettings && Array.isArray(systemSettings) && userContext.isAdmin) {
       try {
         console.log('💾 Saving system settings:', systemSettings);
-        const result = await convexHttp.mutation(api.systemSettings.bulkUpdateSystemSettings, {
-          settings: systemSettings.map(setting => ({
+        // Use individual upsert instead of bulk update to troubleshoot
+        const results = [];
+        for (const setting of systemSettings) {
+          const result = await convexHttp.mutation(api.systemSettings.upsertSystemSetting, {
             key: setting.key,
             value: setting.value,
             description: setting.description || ''
-          }))
-        });
+          });
+          results.push(result);
+        }
+        const result = results;
         console.log('✅ System settings saved successfully:', result);
       } catch (error: any) {
         console.error('❌ System settings save error:', error);
