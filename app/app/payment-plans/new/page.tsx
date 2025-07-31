@@ -425,16 +425,14 @@ export default function NewPaymentPlanPage() {
         
         toast({
           title: "✅ Payment Plan Created!",
-          description: "Redirecting to checkout...",
+          description: "Redirecting to tracking system...",
           duration: 2000,
         })
         
-        // REDIRECT TO STRIPE CHECKOUT
+        // REDIRECT TO PAYMENT TRACKING PAGE
         const paymentId = result.mainPaymentId || result.paymentIds?.[0]
-        const parent = parents.find(p => p._id === formData.parentId)
-        const checkoutUrl = `/payments/${paymentId}/checkout?amount=${installmentAmount}&name=${encodeURIComponent(parent?.name || 'Parent')}&email=${encodeURIComponent(parent?.email || 'parent@example.com')}&parentId=${formData.parentId}&plan=${selectedPaymentSchedule}&installments=${installments}`
         
-        window.location.href = checkoutUrl
+        window.location.href = `/payments/${paymentId}`
         
       } else {
         const error = await response.json()
