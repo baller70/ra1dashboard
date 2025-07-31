@@ -425,14 +425,9 @@ export default function NewPaymentPlanPage() {
         
         toast({
           title: "✅ Payment Plan Created!",
-          description: "Redirecting to tracking system...",
-          duration: 2000,
+          description: "Payment plan has been set up successfully.",
+          duration: 3000,
         })
-        
-        // REDIRECT TO PAYMENT TRACKING PAGE
-        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
-        
-        window.location.href = `/payments/${paymentId}`
         
       } else {
         const error = await response.json()
