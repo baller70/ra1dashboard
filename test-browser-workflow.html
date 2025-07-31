@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Browser Test - Payment Plan Workflow</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 10px 0; }
+        #output { background: #f5f5f5; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>MCP Browser Test - Payment Plan Workflow</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Health Check</h2>
+        <button onclick="testHealthCheck()">Test Health API</button>
+        <div id="health-output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Create Payment Plan</h2>
+        <button onclick="testPaymentPlanCreation()">Create Payment Plan</button>
+        <div id="payment-plan-output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Test Redirect Workflow</h2>
+        <button onclick="testRedirectWorkflow()">Test Complete Workflow</button>
+        <div id="workflow-output"></div>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        const baseUrl = 'http://localhost:3000';
+        
+        async function testHealthCheck() {
+            const output = document.getElementById('health-output');
+            output.innerHTML = '<p>Testing health endpoint...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.innerHTML = `<p class="success">✅ Health Check Passed!</p>
+                                      <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    output.innerHTML = `<p class="error">❌ Health Check Failed: ${response.status}</p>`;
+                }
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testPaymentPlanCreation() {
+            const output = document.getElementById('payment-plan-output');
+            output.innerHTML = '<p>Creating payment plan...</p>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/payment-plans`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        parentId: "j575pe13bk6q79y02vst3qa4zh7m5w0h",
+                        type: "monthly",
+                        totalAmount: 1000,
+                        installments: 4,
+                        installmentAmount: 250,
+                        startDate: "2025-03-01",
+                        description: "MCP BROWSER TEST - Complete Workflow Verification"
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.innerHTML = `<p class="success">✅ Payment Plan Created Successfully!</p>
+                                      <p><strong>Payment Plan ID:</strong> ${data.paymentPlanId}</p>
+                                      <p><strong>Main Payment ID:</strong> ${data.mainPaymentId}</p>
+                                      <p><strong>Payment IDs for Redirect:</strong> ${JSON.stringify(data.paymentIds)}</p>
+                                      <p><strong>First Payment Status:</strong> ${data.progressData.paidInstallments > 0 ? 'PAID ✅' : 'NOT PAID ❌'}</p>
+                                      <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    
+                    // Store the payment ID for redirect test
+                    window.testPaymentId = data.paymentIds[0];
+                } else {
+                    output.innerHTML = `<p class="error">❌ Payment Plan Creation Failed: ${response.status}</p>
+                                      <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testRedirectWorkflow() {
+            const output = document.getElementById('workflow-output');
+            
+            if (!window.testPaymentId) {
+                output.innerHTML = '<p class="error">❌ Please create a payment plan first!</p>';
+                return;
+            }
+            
+            output.innerHTML = '<p>Testing redirect workflow...</p>';
+            
+            try {
+                // Test 1: Check if payment detail page is accessible
+                const paymentResponse = await fetch(`${baseUrl}/payments/${window.testPaymentId}`);
+                const paymentPageAccessible = paymentResponse.ok;
+                
+                // Test 2: Check payment data API
+                const apiResponse = await fetch(`${baseUrl}/api/payments/${window.testPaymentId}`);
+                const paymentData = await apiResponse.json();
+                
+                // Test 3: Check progress API
+                const progressResponse = await fetch(`${baseUrl}/api/payments/${window.testPaymentId}/progress`);
+                const progressData = await progressResponse.json();
+                
+                let results = `
+                    <h3>Redirect Workflow Test Results:</h3>
+                    <p><strong>Payment Detail Page Accessible:</strong> ${paymentPageAccessible ? '✅ YES' : '❌ NO'}</p>
+                    <p><strong>Payment ID:</strong> ${window.testPaymentId}</p>
+                    <p><strong>Payment Data Available:</strong> ${apiResponse.ok ? '✅ YES' : '❌ NO'}</p>
+                    <p><strong>Progress Tracking Available:</strong> ${progressResponse.ok ? '✅ YES' : '❌ NO'}</p>
+                `;
+                
+                if (progressResponse.ok) {
+                    results += `
+                        <h4>Payment Progress Details:</h4>
+                        <p><strong>Total Installments:</strong> ${progressData.totalInstallments}</p>
+                        <p><strong>Paid Installments:</strong> ${progressData.paidInstallments}</p>
+                        <p><strong>Progress Percentage:</strong> ${progressData.progressPercentage.toFixed(2)}%</p>
+                        <p><strong>First Payment Status:</strong> ${progressData.paidInstallments > 0 ? 'PAID ✅' : 'NOT PAID ❌'}</p>
+                    `;
+                }
+                
+                // Test redirect simulation
+                results += `
+                    <h4>Redirect Simulation:</h4>
+                    <p><strong>Redirect URL:</strong> /payments/${window.testPaymentId}</p>
+                    <p><strong>Redirect Would Work:</strong> ${paymentPageAccessible ? '✅ YES' : '❌ NO'}</p>
+                    <button onclick="window.open('/payments/${window.testPaymentId}', '_blank')">🔗 Test Redirect (Open in New Tab)</button>
+                `;
+                
+                output.innerHTML = results;
+                
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error testing workflow: ${error.message}</p>`;
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            testHealthCheck();
+        };
+    </script>
+</body>
+</html> 

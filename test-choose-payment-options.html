@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Choose Payment Options</title>
+</head>
+<body>
+    <h1>Testing Choose Payment Options Button</h1>
+    <script>
+        // Test the API call that the button makes
+        async function testChoosePaymentOptions() {
+            console.log('🧪 Testing Choose Payment Options functionality...');
+            
+            const requestBody = {
+                parentId: "j575pe13bk6q79y02vst3qa4zh7m5w0h",
+                type: "monthly",
+                totalAmount: 1650,
+                installmentAmount: 183.33,
+                installments: 9,
+                startDate: "2025-02-15",
+                description: "BROWSER TEST - Choose Payment Options Button",
+                paymentMethod: "stripe_card"
+            };
+            
+            try {
+                console.log('🚀 Making API call...');
+                const response = await fetch('http://localhost:3000/api/payment-plans', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('📡 Response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ SUCCESS! Payment plan created:', result);
+                    
+                    // Test the redirect
+                    const paymentId = result.paymentIds?.[0] || result.mainPaymentId;
+                    if (paymentId) {
+                        console.log(`🚀 Would redirect to: /payments/${paymentId}`);
+                        alert(`✅ SUCCESS! Payment Plan Created! Would redirect to: /payments/${paymentId}`);
+                        
+                        // Actually redirect
+                        window.location.href = `http://localhost:3000/payments/${paymentId}`;
+                    } else {
+                        console.log('⚠️ No payment ID found');
+                        alert('⚠️ Payment plan created but no payment ID found');
+                    }
+                } else {
+                    const error = await response.json();
+                    console.error('❌ API Error:', error);
+                    alert(`❌ API Error: ${JSON.stringify(error)}`);
+                }
+            } catch (error) {
+                console.error('❌ Network Error:', error);
+                alert(`❌ Network Error: ${error}`);
+            }
+        }
+        
+        // Run the test when page loads
+        window.onload = function() {
+            console.log('🏁 Page loaded, starting test...');
+            testChoosePaymentOptions();
+        };
+    </script>
+</body>
+</html>

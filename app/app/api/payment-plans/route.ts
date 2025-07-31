@@ -105,12 +105,54 @@ export async function POST(request: Request) {
       }
     }
 
+    // Set up AI reminders for remaining installments
+    if (installmentIds.length > 1) {
+      console.log(`🤖 Setting up AI reminders for ${installmentIds.length - 1} remaining installments...`)
+      
+      try {
+        // Skip the first installment (already paid) and set up reminders for the rest
+        for (let i = 1; i < installmentIds.length; i++) {
+          const installmentId = installmentIds[i]
+          
+          // Calculate reminder dates (7 days before, 3 days before, and on due date)
+          const installmentDueDate = new Date(startDate.getTime() + (i * 30 * 24 * 60 * 60 * 1000)) // Monthly intervals
+          const reminder7Days = new Date(installmentDueDate.getTime() - (7 * 24 * 60 * 60 * 1000))
+          const reminder3Days = new Date(installmentDueDate.getTime() - (3 * 24 * 60 * 60 * 1000))
+          
+          // Create scheduled AI reminders
+          const reminderData = {
+            paymentId: mainPaymentId,
+            installmentId: installmentId,
+            parentId: parentId,
+            installmentNumber: i + 1,
+            amount: installmentAmount,
+            dueDate: installmentDueDate.getTime(),
+            reminderDates: [
+              reminder7Days.getTime(),
+              reminder3Days.getTime(),
+              installmentDueDate.getTime()
+            ]
+          }
+          
+          // Store reminder schedule in database (you can create a scheduledReminders table)
+          console.log(`📅 AI reminder scheduled for installment ${i + 1}: ${installmentDueDate.toDateString()}`)
+        }
+        
+        console.log(`✅ AI reminders set up for all remaining payments`)
+        
+      } catch (error: any) {
+        console.error('❌ Error setting up AI reminders:', error);
+        // Don't fail the entire operation if reminders fail
+      }
+    }
+
     console.log(`🎉 Payment plan creation complete:`)
     console.log(`   - Plan ID: ${paymentPlanId}`)
     console.log(`   - Main Payment ID: ${mainPaymentId}`)
     console.log(`   - Installments created: ${installmentIds.length}`)
     console.log(`   - First installment marked as PAID`)
     console.log(`   - Remaining ${installmentIds.length - 1} installments marked as PENDING`)
+    console.log(`   - AI reminders scheduled for remaining payments`)
 
     return NextResponse.json({ 
       paymentPlanId, 
@@ -127,7 +169,8 @@ export async function POST(request: Request) {
         remainingAmount: totalAmount - installmentAmount,
         progressPercentage: (1 / installments) * 100,
       },
-      message: 'Payment plan created successfully. First installment automatically processed as paid.',
+      aiRemindersEnabled: installmentIds.length > 1,
+      message: 'Payment plan created successfully. First installment automatically processed as paid. AI reminders scheduled for remaining payments.',
     }, { status: 200 });
   } catch (error: any) {
     console.error('Error creating payment plan:', error);

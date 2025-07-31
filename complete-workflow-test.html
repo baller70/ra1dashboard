@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Complete Payment Plan Workflow Test - Vercel Deployment</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 30px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .button {
+            background: #667eea;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #17a2b8; font-weight: bold; }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            border-left: 4px solid #667eea;
+        }
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .step {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.5s ease;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Complete Payment Plan Workflow Test</h1>
+            <p><strong>Testing:</strong> https://ra1dashboard.vercel.app</p>
+            <p><strong>Workflow:</strong> Payment Plan Creation → Redirect → Payment Details → Tracking System</p>
+        </div>
+
+        <div class="workflow-steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h4>Create Payment Plan</h4>
+                <p>POST /api/payment-plans</p>
+                <button class="button" onclick="createPaymentPlan()">Create Plan</button>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h4>Verify Redirect Target</h4>
+                <p>GET /payments/[id]</p>
+                <button class="button" onclick="testRedirectTarget()" id="redirectBtn" disabled>Test Redirect</button>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h4>Payment Details API</h4>
+                <p>GET /api/payments/[id]</p>
+                <button class="button" onclick="testPaymentDetails()" id="detailsBtn" disabled>Get Details</button>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h4>Tracking System</h4>
+                <p>GET /api/payments/[id]/progress</p>
+                <button class="button" onclick="testTrackingSystem()" id="trackingBtn" disabled>Test Tracking</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Complete Workflow Test</h3>
+            <button class="button" onclick="runCompleteWorkflow()">🚀 Run Complete Workflow Test</button>
+            <button class="button" onclick="openVercelPages()">🌐 Open Vercel Pages in Browser</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div id="workflowProgress">Ready to test complete workflow...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://ra1dashboard.vercel.app';
+        let currentPaymentId = null;
+        let testResults = [];
+
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateProgress(percentage, message) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('workflowProgress').innerHTML = message;
+        }
+
+        async function createPaymentPlan() {
+            addResult('🔄 Creating payment plan...', 'info');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/payment-plans`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        parentId: 'j575pe13bk6q79y02vst3qa4zh7m5w0h',
+                        type: 'monthly',
+                        totalAmount: 1000,
+                        installments: 4,
+                        installmentAmount: 250,
+                        startDate: '2025-03-01',
+                        description: 'COMPLETE WORKFLOW TEST - Browser Simulation'
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    currentPaymentId = result.mainPaymentId;
+                    
+                    addResult(`✅ Payment plan created successfully!`, 'success');
+                    addResult(`📋 Payment Plan ID: ${result.paymentPlanId}`, 'info');
+                    addResult(`💳 Main Payment ID: ${currentPaymentId}`, 'info');
+                    addResult(`💰 Total Amount: $${result.progressData.totalAmount}`, 'info');
+                    addResult(`📊 Progress: ${result.progressData.progressPercentage}% (${result.progressData.paidInstallments}/${result.progressData.totalInstallments} installments paid)`, 'info');
+                    
+                    // Enable next step buttons
+                    document.getElementById('redirectBtn').disabled = false;
+                    document.getElementById('detailsBtn').disabled = false;
+                    document.getElementById('trackingBtn').disabled = false;
+                    
+                    return true;
+                } else {
+                    const error = await response.json();
+                    addResult(`❌ Failed to create payment plan: ${error.message || 'Unknown error'}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Error creating payment plan: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testRedirectTarget() {
+            if (!currentPaymentId) {
+                addResult('❌ No payment ID available. Create a payment plan first.', 'error');
+                return false;
+            }
+
+            addResult(`🔄 Testing redirect target: /payments/${currentPaymentId}`, 'info');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/payments/${currentPaymentId}`, {
+                    method: 'HEAD'
+                });
+                
+                if (response.ok) {
+                    addResult(`✅ Redirect target accessible: /payments/${currentPaymentId}`, 'success');
+                    addResult(`🌐 Page URL: ${BASE_URL}/payments/${currentPaymentId}`, 'info');
+                    return true;
+                } else {
+                    addResult(`⚠️ Redirect target returned ${response.status}: ${response.statusText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Error testing redirect target: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testPaymentDetails() {
+            if (!currentPaymentId) {
+                addResult('❌ No payment ID available. Create a payment plan first.', 'error');
+                return false;
+            }
+
+            addResult(`🔄 Testing payment details API...`, 'info');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/payments/${currentPaymentId}`);
+                
+                if (response.ok) {
+                    const details = await response.json();
+                    addResult(`✅ Payment details API working correctly`, 'success');
+                    addResult(`👤 Parent: ${details.parent.name} (${details.parent.email})`, 'info');
+                    addResult(`💰 Amount: $${details.amount}`, 'info');
+                    addResult(`📝 Notes: ${details.notes}`, 'info');
+                    addResult(`📅 Payment Plan: ${details.paymentPlan.type} - ${details.paymentPlan.installments} installments of $${details.paymentPlan.installmentAmount}`, 'info');
+                    return details;
+                } else {
+                    addResult(`❌ Payment details API failed: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Error testing payment details: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testTrackingSystem() {
+            if (!currentPaymentId) {
+                addResult('❌ No payment ID available. Create a payment plan first.', 'error');
+                return false;
+            }
+
+            addResult(`🔄 Testing tracking system API...`, 'info');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/payments/${currentPaymentId}/progress`);
+                
+                if (response.ok) {
+                    const progress = await response.json();
+                    addResult(`✅ Tracking system API working correctly`, 'success');
+                    addResult(`📊 Progress: ${progress.progressPercentage}% complete`, 'success');
+                    addResult(`💳 Installments: ${progress.paidInstallments}/${progress.totalInstallments} paid`, 'info');
+                    addResult(`💰 Amount: $${progress.paidAmount}/$${progress.totalAmount} paid`, 'info');
+                    addResult(`⏰ Remaining: $${progress.remainingAmount}`, 'info');
+                    
+                    if (progress.installments && progress.installments.length > 0) {
+                        addResult(`📋 Installment Details:`, 'info');
+                        progress.installments.forEach((installment, index) => {
+                            const status = installment.status === 'paid' ? '✅ PAID' : '⏳ PENDING';
+                            const date = new Date(installment.dueDate).toLocaleDateString();
+                            addResult(`   ${installment.installmentNumber}. $${installment.amount} - ${status} (Due: ${date})`, 'info');
+                        });
+                    }
+                    
+                    return progress;
+                } else {
+                    addResult(`❌ Tracking system API failed: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Error testing tracking system: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function runCompleteWorkflow() {
+            addResult('🚀 Starting complete workflow test...', 'info');
+            updateProgress(0, 'Starting complete workflow test...');
+            
+            // Step 1: Create Payment Plan
+            updateProgress(25, 'Step 1/4: Creating payment plan...');
+            const planCreated = await createPaymentPlan();
+            if (!planCreated) {
+                updateProgress(0, 'Workflow failed at step 1');
+                return;
+            }
+            
+            // Step 2: Test Redirect Target
+            updateProgress(50, 'Step 2/4: Testing redirect target...');
+            const redirectWorks = await testRedirectTarget();
+            if (!redirectWorks) {
+                updateProgress(25, 'Workflow failed at step 2');
+                return;
+            }
+            
+            // Step 3: Test Payment Details
+            updateProgress(75, 'Step 3/4: Testing payment details API...');
+            const detailsWork = await testPaymentDetails();
+            if (!detailsWork) {
+                updateProgress(50, 'Workflow failed at step 3');
+                return;
+            }
+            
+            // Step 4: Test Tracking System
+            updateProgress(100, 'Step 4/4: Testing tracking system...');
+            const trackingWorks = await testTrackingSystem();
+            if (!trackingWorks) {
+                updateProgress(75, 'Workflow failed at step 4');
+                return;
+            }
+            
+            // Success!
+            updateProgress(100, '🎉 Complete workflow test SUCCESSFUL!');
+            addResult('🎉 COMPLETE WORKFLOW TEST PASSED!', 'success');
+            addResult('✅ Payment Plan Creation → ✅ Redirect Target → ✅ Payment Details → ✅ Tracking System', 'success');
+        }
+
+        function openVercelPages() {
+            if (currentPaymentId) {
+                addResult(`🌐 Opening Vercel pages in browser...`, 'info');
+                addResult(`📄 Payment Plan Creation: ${BASE_URL}/payment-plans/new`, 'info');
+                addResult(`📄 Payment Details: ${BASE_URL}/payments/${currentPaymentId}`, 'info');
+                addResult(`📄 Payments List: ${BASE_URL}/payments`, 'info');
+                
+                // Open pages in new tabs
+                window.open(`${BASE_URL}/payment-plans/new`, '_blank');
+                window.open(`${BASE_URL}/payments/${currentPaymentId}`, '_blank');
+                window.open(`${BASE_URL}/payments`, '_blank');
+            } else {
+                addResult('⚠️ Create a payment plan first to get payment ID', 'error');
+            }
+        }
+
+        // Auto-run complete workflow on page load
+        window.addEventListener('load', () => {
+            addResult('🚀 Complete Workflow Test Page Loaded', 'success');
+            addResult('📍 Ready to test the complete payment plan workflow on Vercel deployment', 'info');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Redirect Test</title>
+</head>
+<body>
+    <h1>Simple Redirect Test</h1>
+    <p>This will test if redirect works in your browser:</p>
+    
+    <button onclick="testRedirect()">Test Redirect Now</button>
+    
+    <script>
+        function testRedirect() {
+            alert('About to redirect in 2 seconds...');
+            setTimeout(() => {
+                window.location.href = 'http://localhost:3000/payments/jx75hd1d81trnz2yp1v528jh397mrnq4';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
