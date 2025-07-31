@@ -98,6 +98,47 @@ export default function ContractViewPage() {
     }
   }
 
+  const handleOpenFile = (fileUrl: string, fileName: string) => {
+    try {
+      if (fileUrl.startsWith('data:')) {
+        // Handle base64 data URLs by converting to blob
+        const byteCharacters = atob(fileUrl.split(',')[1])
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const mimeType = fileUrl.split(';')[0].split(':')[1]
+        const blob = new Blob([byteArray], { type: mimeType })
+        const blobUrl = URL.createObjectURL(blob)
+        
+        // Open the blob URL in a new tab
+        const newWindow = window.open(blobUrl, '_blank')
+        
+        // Clean up the blob URL after a delay
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+        
+        if (!newWindow) {
+          toast({
+            title: "❌ Popup Blocked",
+            description: "Please allow popups and try again",
+            variant: "destructive",
+          })
+        }
+      } else {
+        // Handle regular URLs
+        window.open(fileUrl, '_blank')
+      }
+    } catch (error) {
+      console.error('Error opening file:', error)
+      toast({
+        title: "❌ Error Opening File",
+        description: "Failed to open the file. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleSave = async () => {
     if (!contract) return
 
@@ -222,7 +263,7 @@ export default function ContractViewPage() {
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              onClick={() => window.open(contract.fileUrl, '_blank')}
+              onClick={() => handleOpenFile(contract.fileUrl, contract.originalName)}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               View File

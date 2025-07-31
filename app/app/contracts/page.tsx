@@ -68,6 +68,18 @@ export default function ContractsPage() {
     fetchContracts()
   }, [statusFilter, templateFilter])
 
+  // Refresh contracts when the page becomes visible (e.g., returning from upload)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchContracts()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
   const fetchContracts = async () => {
     try {
       setLoading(true)
@@ -75,7 +87,10 @@ export default function ContractsPage() {
       if (statusFilter !== 'all') params.append('status', statusFilter)
       if (templateFilter !== 'all') params.append('templateType', templateFilter)
       
-      const response = await fetch(`/api/contracts?${params}`)
+      // Add cache-busting to ensure fresh data
+      const cacheBuster = `_cache=${Date.now()}`
+      const separator = params.toString() ? '&' : ''
+      const response = await fetch(`/api/contracts?${params}${separator}${cacheBuster}`)
       const data = await response.json()
       
       if (response.ok) {
@@ -125,6 +140,47 @@ export default function ContractsPage() {
 
   const clearSelection = () => {
     setSelectedContracts([])
+  }
+
+  const handleOpenFile = (fileUrl: string, fileName: string) => {
+    try {
+      if (fileUrl.startsWith('data:')) {
+        // Handle base64 data URLs by converting to blob
+        const byteCharacters = atob(fileUrl.split(',')[1])
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const mimeType = fileUrl.split(';')[0].split(':')[1]
+        const blob = new Blob([byteArray], { type: mimeType })
+        const blobUrl = URL.createObjectURL(blob)
+        
+        // Open the blob URL in a new tab
+        const newWindow = window.open(blobUrl, '_blank')
+        
+        // Clean up the blob URL after a delay
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+        
+        if (!newWindow) {
+          toast({
+            title: "❌ Popup Blocked",
+            description: "Please allow popups and try again",
+            variant: "destructive",
+          })
+        }
+      } else {
+        // Handle regular URLs
+        window.open(fileUrl, '_blank')
+      }
+    } catch (error) {
+      console.error('Error opening file:', error)
+      toast({
+        title: "❌ Error Opening File",
+        description: "Failed to open the file. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleBulkOperation = async (action: string) => {
@@ -459,7 +515,7 @@ export default function ContractsPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => window.open(contract.fileUrl, '_blank')}
+                          onClick={() => handleOpenFile(contract.fileUrl, contract.originalName)}
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Open File
