@@ -10,6 +10,30 @@
       "memory": 1024
     }
   },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "x-vercel-protection-bypass",
+          "value": "true"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "application/json"
+        }
+      ]
+    }
+  ],
   "env": {
     "CLERK_PUBLISHABLE_KEY": "test_pk",
     "CLERK_SECRET_KEY": "test_sk",

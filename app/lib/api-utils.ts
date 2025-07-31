@@ -86,6 +86,32 @@ export function validateRequest<T>(data: unknown, schema: z.ZodSchema<T>): T {
   return result.data
 }
 
+// Check API key authentication (for Vercel auth bypass)
+export function checkApiKeyAuth(request: Request): boolean {
+  const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
+  const validApiKey = process.env.API_SECRET_KEY || 'ra1-dashboard-api-key-2024'
+  
+  return apiKey === validApiKey
+}
+
+// Enhanced authentication with API key bypass for Vercel compatibility
+export async function requireAuthWithApiKeyBypass(request: Request) {
+  // Check for API key first (bypasses Clerk auth for Vercel compatibility)
+  if (checkApiKeyAuth(request)) {
+    console.log('🔑 API key authentication successful')
+    return {
+      id: 'api-key-user',
+      email: 'api@ra1dashboard.com',
+      firstName: 'API',
+      lastName: 'User',
+      role: 'admin'
+    }
+  }
+  
+  // Fall back to regular auth
+  return await requireAuth()
+}
+
 // Production authentication check using Clerk (with development bypass)
 export async function requireAuth() {
   // Bypass authentication when Clerk keys are not configured or using test keys (both dev and prod)

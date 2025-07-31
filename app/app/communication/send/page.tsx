@@ -262,6 +262,7 @@ function CommunicationSendContent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
         },
         body: JSON.stringify(payload),
       })

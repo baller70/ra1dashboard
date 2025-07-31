@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../../lib/api-utils'
+import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { emailService } from '../../../../lib/resend'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
@@ -8,8 +8,8 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(request: Request) {
   try {
-    console.log('🔧 Bypassing authentication for email testing')
-    // await requireAuth()
+    // Use enhanced authentication with API key bypass for Vercel compatibility
+    await requireAuthWithApiKeyBypass(request)
     
     const body = await request.json()
     console.log('📧 Email send request received:', body)

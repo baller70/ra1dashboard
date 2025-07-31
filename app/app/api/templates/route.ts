@@ -6,7 +6,7 @@ import { requireAuth } from '../../../lib/api-utils'
 import { convexHttp } from '../../../lib/db'
 import { api } from '../../../convex/_generated/api'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await requireAuth()
 
