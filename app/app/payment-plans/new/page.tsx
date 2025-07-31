@@ -458,10 +458,6 @@ export default function NewPaymentPlanPage() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* DEBUG: This should show if new code is loaded */}
-        <div className="bg-red-500 text-white p-4 text-center font-bold">
-          🚨 NEW CODE LOADED - TIMESTAMP: {new Date().toISOString()}
-        </div>
         {/* Header */}
         <div className="flex items-center space-x-4">
           <Button variant="outline" asChild>
@@ -711,6 +707,7 @@ export default function NewPaymentPlanPage() {
                   type="button" 
                   disabled={loading}
                   onClick={() => {
+                    alert('🚨 BUTTON CLICKED - OPENING MODAL')
                     if (!formData.parentId) {
                       toast({
                         title: "⚠️ Parent Required",
@@ -719,6 +716,7 @@ export default function NewPaymentPlanPage() {
                       })
                       return
                     }
+                    alert('🚨 OPENING PAYMENT OPTIONS MODAL')
                     setShowPaymentOptions(true)
                   }}
                 >
