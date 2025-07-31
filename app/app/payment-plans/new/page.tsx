@@ -620,16 +620,64 @@ export default function NewPaymentPlanPage() {
                 <Button 
                   type="button" 
                   disabled={loading}
-                  onClick={() => {
+                  onClick={async () => {
                     if (!formData.parentId) {
                       toast({
                         title: "⚠️ Parent Required",
-                        description: "Please select a parent first before choosing payment options.",
+                        description: "Please select a parent first.",
                         variant: "destructive",
                       })
                       return
                     }
-                    setShowPaymentOptions(true)
+                    
+                    setLoading(true)
+                    try {
+                      // Create payment plan with default monthly settings
+                      const response = await fetch('/api/payment-plans', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          parentId: formData.parentId,
+                          totalAmount: 1650,
+                          installmentAmount: 183.33,
+                          installments: 9,
+                          startDate: new Date().toISOString().split('T')[0],
+                          description: 'Monthly payment plan',
+                          paymentMethod: 'stripe_card',
+                          type: 'monthly'
+                        })
+                      })
+                      
+                      if (response.ok) {
+                        const result = await response.json()
+                        
+                        toast({
+                          title: "✅ Payment Plan Created!",
+                          description: "Redirecting to payment tracking...",
+                          duration: 2000,
+                        })
+                        
+                        // REDIRECT TO PAYMENT DETAIL PAGE
+                        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
+                        window.location.href = `/payments/${paymentId}`
+                        
+                      } else {
+                        const error = await response.json()
+                        toast({
+                          title: "❌ Creation Failed",
+                          description: error.error || 'Failed to create payment plan',
+                          variant: "destructive",
+                        })
+                      }
+                    } catch (error) {
+                      toast({
+                        title: "❌ Error",
+                        description: 'Error creating payment plan. Please try again.',
+                        variant: "destructive",
+                      })
+                    } finally {
+                      setLoading(false)
+                    }
                   }}
                 >
                   {loading ? (
@@ -640,7 +688,7 @@ export default function NewPaymentPlanPage() {
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Choose Payment Options
+                      Create Payment Plan
                     </>
                   )}
                 </Button>
