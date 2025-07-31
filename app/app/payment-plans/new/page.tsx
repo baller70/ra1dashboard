@@ -659,9 +659,54 @@ export default function NewPaymentPlanPage() {
                 <Button 
                   type="button" 
                   disabled={loading}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleSubmit(e as any)
+                  onClick={async () => {
+                    alert('🚨 BUTTON CLICKED - STARTING PAYMENT PLAN CREATION')
+                    setLoading(true)
+                    
+                    try {
+                      // Create payment plan with hardcoded values for testing
+                      const response = await fetch('/api/payment-plans', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          parentId: formData.parentId || 'jx7c9vhsz6tn2t8qjx7c9vhsz6tn2t8q',
+                          totalAmount: 1650,
+                          installmentAmount: 183.33,
+                          installments: 9,
+                          startDate: new Date().toISOString().split('T')[0],
+                          description: 'Test payment plan',
+                          paymentMethod: 'stripe_card',
+                          type: 'monthly'
+                        })
+                      })
+                      
+                      alert(`🚨 API RESPONSE STATUS: ${response.status}`)
+                      
+                      if (response.ok) {
+                        const result = await response.json()
+                        alert(`🚨 API SUCCESS - GOT PAYMENT ID: ${result.mainPaymentId}`)
+                        
+                        toast({
+                          title: "✅ Payment Plan Created!",
+                          description: "Redirecting to payment page...",
+                          duration: 2000,
+                        })
+                        
+                        // DIRECT REDIRECT - NO BULLSHIT
+                        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
+                        alert(`🚨 REDIRECTING TO: /payments/${paymentId}`)
+                        window.location.href = `/payments/${paymentId}`
+                        
+                      } else {
+                        alert('🚨 API FAILED')
+                        const error = await response.text()
+                        alert(`🚨 ERROR: ${error}`)
+                      }
+                    } catch (error) {
+                      alert(`🚨 EXCEPTION: ${error}`)
+                    } finally {
+                      setLoading(false)
+                    }
                   }}
                 >
                   {loading ? (
