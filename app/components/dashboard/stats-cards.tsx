@@ -2,14 +2,25 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Badge } from '../ui/badge'
 import { DollarSign, Users, AlertTriangle, Calendar, CreditCard, MessageSquare } from 'lucide-react'
 import { DashboardStats } from '../../lib/types'
 
-interface StatsCardsProps {
-  stats: DashboardStats
+interface OverdueParent {
+  parentId: string
+  parentName: string
+  parentEmail: string
+  overdueCount: number
+  totalOverdueAmount: number
+  daysPastDue: number
 }
 
-export function StatsCards({ stats }: StatsCardsProps) {
+interface StatsCardsProps {
+  stats: DashboardStats
+  overdueParents?: OverdueParent[]
+}
+
+export function StatsCards({ stats, overdueParents = [] }: StatsCardsProps) {
   const cards = [
     {
       title: 'Total Parents',
@@ -71,6 +82,27 @@ export function StatsCards({ stats }: StatsCardsProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
+              {/* Show overdue tags for Total Parents card */}
+              {card.title === 'Total Parents' && overdueParents.length > 0 && (
+                <div className="mt-3 space-y-1 max-h-40 overflow-y-auto">
+                  <div className="text-xs font-medium text-red-600 mb-2">
+                    {overdueParents.length} parents with overdue payments:
+                  </div>
+                  {overdueParents.map((parent) => (
+                    <div key={parent.parentId} className="flex items-center gap-2">
+                      <Badge variant="destructive" className="text-xs">
+                        OVERDUE
+                      </Badge>
+                      <span className="text-xs text-gray-600 truncate flex-1">
+                        {parent.parentName}
+                      </span>
+                      <span className="text-xs text-red-600 font-medium">
+                        {parent.overdueCount}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )

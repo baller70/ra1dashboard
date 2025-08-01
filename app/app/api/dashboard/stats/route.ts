@@ -5,16 +5,16 @@ import { NextResponse } from 'next/server'
 import { convexHttp } from '../../../../lib/db'
 import { api } from '../../../../convex/_generated/api'
 import { 
-  requireAuth, 
+  requireAuthWithApiKeyBypass, 
   createErrorResponse, 
   createSuccessResponse, 
   isDatabaseError,
   ApiErrors 
 } from '../../../../lib/api-utils'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
 
     // Get dashboard stats from Convex
     const stats = await convexHttp.query(api.dashboard.getDashboardStats, {});

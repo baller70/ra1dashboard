@@ -33,35 +33,64 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [revenueData, setRevenueData] = useState<PaymentTrend[]>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [overdueParents, setOverdueParents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchDashboardData = async () => {
     try {
       // Fetch dashboard stats
-      const statsResponse = await fetch('/api/dashboard/stats')
+      const statsResponse = await fetch('/api/dashboard/stats', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        setStats(statsData)
+        console.log('📊 Dashboard stats received:', statsData)
+        // Extract data from the API response format {success: true, data: {...}}
+        setStats(statsData.data || statsData)
       }
 
       // Fetch revenue trends
-      const revenueResponse = await fetch('/api/dashboard/revenue-trends')
+      const revenueResponse = await fetch('/api/dashboard/revenue-trends', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (revenueResponse.ok) {
         const revenueData = await revenueResponse.json()
-        setRevenueData(revenueData.trends || [])
+        console.log('📈 Revenue trends received:', revenueData)
+        // Revenue trends API returns array directly
+        setRevenueData(Array.isArray(revenueData) ? revenueData : (revenueData.trends || []))
       }
 
-      // Fetch recent activity
-      const activityResponse = await fetch('/api/dashboard/recent-activity')
-      if (activityResponse.ok) {
-        const activityData = await activityResponse.json()
-        setRecentActivity(activityData.activities || [])
+              // Fetch recent activity
+        const activityResponse = await fetch('/api/dashboard/recent-activity', {
+          headers: {
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
+        })
+        if (activityResponse.ok) {
+          const activityData = await activityResponse.json()
+          setRecentActivity(activityData.activities || [])
+        }
+
+        // Fetch overdue summary for tags
+        const overdueResponse = await fetch('/api/dashboard/overdue-summary', {
+          headers: {
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
+        })
+        if (overdueResponse.ok) {
+          const overdueData = await overdueResponse.json()
+          console.log('🏷️ Overdue summary received:', overdueData)
+          setOverdueParents(overdueData.data?.overdueSummary || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
   }
 
   useEffect(() => {
@@ -154,7 +183,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 6 Analytics Cards */}
-        {stats && <StatsCards stats={stats} />}
+        {stats && <StatsCards stats={stats} overdueParents={overdueParents} />}
 
         {/* Charts and Activity Section */}
         <div className="grid gap-6 md:grid-cols-3">

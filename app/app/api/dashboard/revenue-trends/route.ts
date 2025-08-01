@@ -2,13 +2,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../../lib/api-utils'
+import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { convexHttp } from '../../../../lib/db'
 import { api } from '../../../../convex/_generated/api'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
     
     // Get revenue trends from Convex
     const trends = await convexHttp.query(api.dashboard.getRevenueTrends, {});

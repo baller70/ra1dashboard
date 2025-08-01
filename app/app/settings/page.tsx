@@ -4,6 +4,7 @@
 // Force dynamic rendering - prevent static generation
 
 import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { AppLayout } from '../../components/app-layout'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -144,6 +145,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [exportingData, setExportingData] = useState(false)
   const { toast } = useToast()
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -174,9 +176,14 @@ export default function SettingsPage() {
           
           // Set user preferences with proper mapping
           if (data.userPreferences) {
+            const savedTheme = data.userPreferences.theme || 'system';
+            // Sync the actual theme with the saved preference
+            if (savedTheme !== theme) {
+              setTheme(savedTheme);
+            }
             setUserPreferences(prev => ({
               ...prev,
-              theme: data.userPreferences.theme || 'system',
+              theme: savedTheme,
               language: data.userPreferences.language || 'en',
               timezone: data.userPreferences.timezone || 'America/New_York',
               dateFormat: data.userPreferences.dateFormat || 'MM/dd/yyyy',
@@ -292,10 +299,71 @@ export default function SettingsPage() {
           description: "Your settings have been updated successfully.",
         })
         
-        // Force reload settings from server to confirm persistence
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // Immediately refresh settings from server to show persistence
+        const refreshResponse = await fetch('/api/settings', {
+          headers: {
+            'x-api-key': 'ra1-dashboard-api-key-2024',
+          },
+        });
+        
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          console.log('🔄 Settings refreshed from server:', refreshData);
+          
+          // Update the UI with the saved settings
+          if (refreshData.systemSettings && Array.isArray(refreshData.systemSettings)) {
+            const systemSettingsObj: SystemSettings = {
+              programName: refreshData.systemSettings.find((s: any) => s.key === 'program_name')?.value || '',
+              programFee: refreshData.systemSettings.find((s: any) => s.key === 'program_fee')?.value || '',
+              emailFromAddress: refreshData.systemSettings.find((s: any) => s.key === 'email_from_address')?.value || '',
+              smsFromNumber: refreshData.systemSettings.find((s: any) => s.key === 'sms_from_number')?.value || '',
+              reminderDays: refreshData.systemSettings.find((s: any) => s.key === 'reminder_days')?.value || '',
+              lateFeeAmount: refreshData.systemSettings.find((s: any) => s.key === 'late_fee_amount')?.value || '',
+              gracePeriodDays: refreshData.systemSettings.find((s: any) => s.key === 'grace_period_days')?.value || ''
+            }
+            setSettings(systemSettingsObj);
+            console.log('✅ Settings UI updated with saved values');
+          }
+          
+          // Also update user preferences including theme
+          if (refreshData.userPreferences) {
+            const savedTheme = refreshData.userPreferences.theme || 'system';
+            // Sync the actual theme with the saved preference
+            if (savedTheme !== theme) {
+              setTheme(savedTheme);
+            }
+            setUserPreferences(prev => ({
+              ...prev,
+              theme: savedTheme,
+              language: refreshData.userPreferences.language || 'en',
+              timezone: refreshData.userPreferences.timezone || 'America/New_York',
+              dateFormat: refreshData.userPreferences.dateFormat || 'MM/dd/yyyy',
+              currency: refreshData.userPreferences.currency || 'USD',
+              notifications: {
+                email: refreshData.userPreferences.emailNotifications !== false,
+                sms: refreshData.userPreferences.smsNotifications !== false,
+                push: refreshData.userPreferences.pushNotifications !== false,
+                paymentReminders: refreshData.userPreferences.paymentReminders !== false,
+                overdueAlerts: refreshData.userPreferences.overdueAlerts !== false,
+                systemUpdates: refreshData.userPreferences.systemUpdates !== false,
+                marketingEmails: refreshData.userPreferences.marketingEmails || false,
+              },
+              dashboard: {
+                defaultView: refreshData.userPreferences.defaultView || 'overview',
+                showWelcomeMessage: refreshData.userPreferences.showWelcomeMessage !== false,
+                compactMode: refreshData.userPreferences.compactMode || false,
+                autoRefresh: refreshData.userPreferences.autoRefresh !== false,
+                refreshInterval: refreshData.userPreferences.refreshInterval || 30,
+              },
+              privacy: {
+                shareUsageData: refreshData.userPreferences.shareUsageData || false,
+                allowAnalytics: refreshData.userPreferences.allowAnalytics !== false,
+                twoFactorAuth: refreshData.userPreferences.twoFactorAuth || false,
+              }
+            }));
+            console.log('✅ User preferences UI updated with saved values');
+          }
+        }
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ Settings save failed:', errorData);
@@ -799,25 +867,34 @@ export default function SettingsPage() {
                     <Label>Theme</Label>
                     <div className="flex gap-2">
                       <Button
-                        variant={userPreferences.theme === 'light' ? 'default' : 'outline'}
+                        variant={theme === 'light' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setUserPreferences(prev => ({ ...prev, theme: 'light' }))}
+                        onClick={() => {
+                          setTheme('light')
+                          setUserPreferences(prev => ({ ...prev, theme: 'light' }))
+                        }}
                       >
                         <Sun className="mr-2 h-4 w-4" />
                         Light
                       </Button>
                       <Button
-                        variant={userPreferences.theme === 'dark' ? 'default' : 'outline'}
+                        variant={theme === 'dark' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setUserPreferences(prev => ({ ...prev, theme: 'dark' }))}
+                        onClick={() => {
+                          setTheme('dark') 
+                          setUserPreferences(prev => ({ ...prev, theme: 'dark' }))
+                        }}
                       >
                         <Moon className="mr-2 h-4 w-4" />
                         Dark
                       </Button>
                       <Button
-                        variant={userPreferences.theme === 'system' ? 'default' : 'outline'}
+                        variant={theme === 'system' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setUserPreferences(prev => ({ ...prev, theme: 'system' }))}
+                        onClick={() => {
+                          setTheme('system')
+                          setUserPreferences(prev => ({ ...prev, theme: 'system' }))
+                        }}
                       >
                         <Monitor className="mr-2 h-4 w-4" />
                         System
