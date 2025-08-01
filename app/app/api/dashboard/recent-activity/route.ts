@@ -23,11 +23,19 @@ export async function GET(request: NextRequest) {
     
     const activities: any[] = []
     
-    // Add recent payments (both paid and pending)
-    recentPayments
+    // Add recent payments (avoid duplicates by grouping by parent)
+    const paymentsByParent = recentPayments
       .filter((p: any) => p.createdAt || p.paidAt)
+      .reduce((acc: any, payment: any) => {
+        if (!acc[payment.parentId] || payment.createdAt > acc[payment.parentId].createdAt) {
+          acc[payment.parentId] = payment; // Keep the latest payment per parent
+        }
+        return acc;
+      }, {});
+    
+    Object.values(paymentsByParent)
       .sort((a: any, b: any) => (b.paidAt || b.createdAt) - (a.paidAt || a.createdAt))
-      .slice(0, 8)
+      .slice(0, 5) // Reduce to make room for other activities
       .forEach((payment: any) => {
         const parent = parents.find((p: any) => p._id === payment.parentId)
         const isPaid = payment.status === 'paid'
@@ -67,6 +75,30 @@ export async function GET(request: NextRequest) {
           actionText: 'View Profile'
         })
       })
+    
+    // Add recent contract uploads (if any)
+    try {
+      const contractsData = await convex.query(api.contracts.getContracts, { limit: 20 })
+      const contracts = contractsData.contracts || []
+      contracts.slice(0, 3).forEach((contract: any) => {
+        const parent = parents.find((p: any) => p._id === contract.parentId)
+        activities.push({
+          id: `contract-${contract._id}`,
+          type: 'contract',
+          title: 'Contract Uploaded',
+          message: `New contract "${contract.title || contract.fileName || 'Document'}" uploaded`,
+          priority: 'medium',
+          timestamp: contract.createdAt || Date.now(),
+          isRead: false,
+          parentName: parent?.name || 'Unknown Parent',
+          icon: 'FileText',
+          actionUrl: `/contracts/${contract._id}`,
+          actionText: 'View Contract'
+        })
+      })
+    } catch (error) {
+      // Contracts might not be available, skip silently
+    }
     
     // Sort by timestamp and return most recent
     const sortedActivities = activities

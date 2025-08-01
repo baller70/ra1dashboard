@@ -10,16 +10,27 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
-    // BYPASS CONVEX CACHE - Manual revenue trends calculation
-    // Get all payments directly via API
-    const paymentsResponse = await fetch('https://ra1dashboard.vercel.app/api/payments?page=1&limit=1000', {
+    // BYPASS CONVEX CACHE - Manual revenue trends calculation using PAYMENT PLANS
+    // Get payment plans (not individual payments to avoid duplicates)
+    const paymentPlansResponse = await fetch('https://ra1dashboard.vercel.app/api/payment-plans', {
       headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
     });
-    const paymentsData = await paymentsResponse.json();
-    const payments = paymentsData.data.payments;
+    const paymentPlansData = await paymentPlansResponse.json();
+    const paymentPlans = paymentPlansData;
     
-    // Filter for paid and pending payments (actual revenue)
-    const eligiblePayments = payments.filter((p: any) => p.status === 'paid' || p.status === 'pending');
+    // Filter for active payment plans (actual committed revenue)
+    const activePaymentPlans = paymentPlans.filter((p: any) => p.status === 'active');
+    
+    // Group by parent to avoid duplicates (take latest plan per parent)
+    const plansByParent = activePaymentPlans.reduce((acc: any, plan: any) => {
+      if (!acc[plan.parentId] || plan.createdAt > acc[plan.parentId].createdAt) {
+        acc[plan.parentId] = plan;
+      }
+      return acc;
+    }, {});
+    
+    // Convert back to array for processing
+    const eligiblePayments = Object.values(plansByParent);
     
     // Group payments by month for the last 6 months
     const trends = [];
@@ -29,18 +40,18 @@ export async function GET(request: Request) {
       const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       
-      // Use createdAt for grouping since paidAt might not be set
-      const monthPayments = eligiblePayments.filter((p: any) => {
-        const paymentDate = p.paidAt || p.createdAt || p.dueDate;
-        return paymentDate && paymentDate >= month.getTime() && paymentDate < nextMonth.getTime();
+      // Use createdAt for grouping payment plans by month
+      const monthPaymentPlans = eligiblePayments.filter((p: any) => {
+        const planDate = p.createdAt;
+        return planDate && planDate >= month.getTime() && planDate < nextMonth.getTime();
       });
       
-      const revenue = monthPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+      const revenue = monthPaymentPlans.reduce((sum: number, p: any) => sum + (p.totalAmount || 0), 0);
       
       trends.push({
         month: month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         revenue,
-        payments: monthPayments.length,
+        payments: monthPaymentPlans.length,
         _manual: true // Flag to show this is bypassing cache
       });
     }

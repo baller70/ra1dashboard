@@ -5,6 +5,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { AppLayout } from '../components/app-layout'
 import { StatsCards } from '../components/dashboard/stats-cards'
 // Temporarily disable RevenueChart to fix build issues
@@ -30,6 +31,7 @@ import {
 import { DashboardStats, PaymentTrend } from '../lib/types'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [revenueData, setRevenueData] = useState<PaymentTrend[]>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
@@ -311,7 +313,12 @@ export default function DashboardPage() {
               )}
               
               <div className="pt-2">
-                <Button variant="ghost" size="sm" className="w-full justify-center">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full justify-center"
+                  onClick={() => router.push('/notifications')}
+                >
                   View All Activity
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
