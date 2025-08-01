@@ -13,6 +13,7 @@ import { StatsCards } from '../components/dashboard/stats-cards'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog'
 import { 
   Users, 
   CreditCard, 
@@ -37,6 +38,22 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [overdueParents, setOverdueParents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false)
+  const [allActivities, setAllActivities] = useState<any[]>([])
+
+  const fetchAllActivities = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
+      })
+      const data = await response.json()
+      if (data.success) {
+        setAllActivities(data.data.activities || [])
+      }
+    } catch (error) {
+      console.error('Error fetching all activities:', error)
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -313,19 +330,83 @@ export default function DashboardPage() {
               )}
               
               <div className="pt-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-center"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    console.log('View All Activity button clicked')
-                    router.push('/notifications')
-                  }}
-                >
-                  View All Activity
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+                <Dialog open={showAllActivitiesModal} onOpenChange={setShowAllActivitiesModal}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-center"
+                      onClick={async (e) => {
+                        e.preventDefault()
+                        console.log('View All Activity button clicked')
+                        await fetchAllActivities()
+                        setShowAllActivitiesModal(true)
+                      }}
+                    >
+                      View All Activity
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>All Recent Activities</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      {allActivities.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">No activities found</p>
+                      ) : (
+                        allActivities.map((activity) => (
+                          <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                            <div className={`p-2 rounded-full ${
+                              activity.priority === 'urgent' ? 'bg-red-100 text-red-600' :
+                              activity.priority === 'high' ? 'bg-orange-100 text-orange-600' :
+                              activity.priority === 'medium' ? 'bg-blue-100 text-blue-600' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {activity.icon === 'alert-triangle' && <AlertTriangle className="h-4 w-4" />}
+                              {activity.icon === 'check-circle' && <div className="h-4 w-4 rounded-full bg-green-500" />}
+                              {activity.icon === 'clock' && <Clock className="h-4 w-4" />}
+                              {activity.icon === 'bell' && <div className="h-4 w-4 rounded-full bg-yellow-500" />}
+                              {activity.icon === 'file-text' && <FileText className="h-4 w-4" />}
+                              {activity.icon === 'user' && <Users className="h-4 w-4" />}
+                              {activity.icon === 'mail' && <MessageSquare className="h-4 w-4" />}
+                              {activity.icon === 'message-square' && <MessageSquare className="h-4 w-4" />}
+                              {!activity.icon && <div className="h-4 w-4 rounded-full bg-gray-400" />}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-sm">{activity.title}</h4>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(activity.timestamp).toLocaleDateString()} {new Date(activity.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">{activity.message}</p>
+                              {activity.parentName && (
+                                <p className="text-xs text-gray-500 mt-1">Parent: {activity.parentName}</p>
+                              )}
+                              {activity.amount && (
+                                <p className="text-xs font-medium text-green-600 mt-1">${activity.amount}</p>
+                              )}
+                              {activity.actionUrl && activity.actionText && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="mt-2"
+                                  onClick={() => {
+                                    setShowAllActivitiesModal(false)
+                                    router.push(activity.actionUrl)
+                                  }}
+                                >
+                                  {activity.actionText}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>
