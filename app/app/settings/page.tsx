@@ -291,6 +291,11 @@ export default function SettingsPage() {
           title: "Settings saved",
           description: "Your settings have been updated successfully.",
         })
+        
+        // Force reload settings from server to confirm persistence
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ Settings save failed:', errorData);
