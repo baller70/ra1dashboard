@@ -100,11 +100,15 @@ export async function requireAuthWithApiKeyBypass(request: Request) {
   if (checkApiKeyAuth(request)) {
     console.log('🔑 API key authentication successful')
     return {
-      id: 'api-key-user',
-      email: 'api@ra1dashboard.com',
-      firstName: 'API',
+      id: 'dev-user',  // Use consistent dev-user ID
+      userId: 'dev-user',
+      email: 'dev@thebasketballfactoryinc.com',
+      firstName: 'Development',
       lastName: 'User',
-      role: 'admin'
+      role: 'admin',
+      isAdmin: true,
+      userRole: 'admin',
+      userEmail: 'dev@thebasketballfactoryinc.com'
     }
   }
   

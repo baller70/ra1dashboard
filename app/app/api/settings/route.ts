@@ -7,12 +7,12 @@ import { getUserPreferences, saveUserPreferences } from '../../../lib/user-sessi
 import { convexHttp } from '../../../lib/db'
 import { api } from '../../../convex/_generated/api'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Try to get user context, but don't fail if it's not available
+    // Use consistent authentication with API key bypass
     let userContext;
     try {
-      userContext = await getUserContext()
+      userContext = await requireAuthWithApiKeyBypass(request);
     } catch (error) {
       console.log('🔧 Development mode: User context not available, using defaults')
       userContext = { 
@@ -27,9 +27,10 @@ export async function GET() {
 
     // Get user preferences with fallback
     let userPreferences: any = {};
-    if (userContext.userId) {
+    const userId = (userContext as any).userId || (userContext as any).id;
+    if (userId) {
       try {
-        userPreferences = await getUserPreferences(userContext.userId);
+        userPreferences = await getUserPreferences(userId);
       } catch (error) {
         console.log('🔧 Development mode: Using default preferences')
         userPreferences = {};
@@ -93,10 +94,10 @@ export async function GET() {
         ...userPreferences
       },
       user: {
-        id: userContext.userId || 'dev-user',
+        id: userId || 'dev-user',
         name: (userContext as any).user?.name || 'Development User',
-        email: userContext.userEmail || 'dev@thebasketballfactoryinc.com',
-        role: userContext.userRole || 'admin',
+        email: (userContext as any).userEmail || (userContext as any).email || 'dev@thebasketballfactoryinc.com',
+        role: (userContext as any).userRole || (userContext as any).role || 'admin',
         phone: '',
         organization: 'Rise as One Basketball',
         avatar: ''
@@ -144,19 +145,20 @@ export async function POST(request: Request) {
 
     const { userPreferences: incomingPrefs, systemSettings } = (await request.json()) as any;
     const userPreferences: any = incomingPrefs;
+    const userId = (userContext as any).userId || (userContext as any).id;
 
     console.log('💾 Settings save request:', { 
       hasUserPrefs: !!userPreferences, 
       hasSystemSettings: !!systemSettings,
-      userId: userContext.userId,
-      isAdmin: userContext.isAdmin 
+      userId: userId,
+      isAdmin: (userContext as any).isAdmin 
     });
 
     // Save user preferences
-    if (userPreferences && userContext.userId) {
+    if (userPreferences && userId) {
       try {
         console.log('💾 Saving user preferences:', userPreferences);
-        await saveUserPreferences(userContext.userId, userPreferences);
+        await saveUserPreferences(userId, userPreferences);
         console.log('✅ User preferences saved successfully');
       } catch (error: any) {
         console.error('❌ Settings save error:', error)
@@ -172,7 +174,7 @@ export async function POST(request: Request) {
       userId: userContext.userId
     });
     
-    if (systemSettings && Array.isArray(systemSettings) && userContext.userId) {
+    if (systemSettings && Array.isArray(systemSettings) && userId) {
       try {
         console.log('💾 Saving system settings via user preferences:', systemSettings);
         
@@ -187,14 +189,14 @@ export async function POST(request: Request) {
         });
         
         // Get current user preferences and add system settings
-        const currentPrefs = await getUserPreferences(userContext.userId) || {};
+        const currentPrefs = await getUserPreferences(userId) || {};
         const updatedPrefs = {
           ...currentPrefs,
           systemSettings: systemSettingsData
         };
         
         // Save using the working user preferences system
-        await saveUserPreferences(userContext.userId, updatedPrefs);
+        await saveUserPreferences(userId, updatedPrefs);
         console.log('✅ System settings saved successfully via user preferences');
         
       } catch (error: any) {

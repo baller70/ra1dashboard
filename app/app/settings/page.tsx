@@ -148,7 +148,11 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch('/api/settings')
+        const response = await fetch('/api/settings', {
+          headers: {
+            'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
+          },
+        })
         if (response.ok) {
           const data = await response.json()
           
