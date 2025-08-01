@@ -81,8 +81,11 @@ export const getDashboardStats = query({
       return false;
     });
     
-    // Calculate revenue (match payments page calculation)
-    const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Calculate total committed revenue (paid + pending payments) - FIXED!
+    const eligiblePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
+    const totalRevenue = eligiblePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    
+    console.log(`FIXED Revenue calculation: ${eligiblePayments.length} eligible payments, total: $${totalRevenue}`);
     
     // Get payment plans - count unique parents with active plans (max 34)
     const paymentPlans = await ctx.db.query("paymentPlans").collect();

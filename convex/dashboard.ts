@@ -56,8 +56,8 @@ async function safeGetParent(ctx: any, parentId: any) {
   }
 }
 
-// Dashboard stats function (replaces /api/dashboard/stats)
-export const getDashboardStats = query({
+// Dashboard stats function (replaces /api/dashboard/stats) - CACHE BUSTER
+export const getFixedDashboardStats = query({
   args: {},
   handler: async (ctx) => {
     // Get all parents
@@ -81,12 +81,16 @@ export const getDashboardStats = query({
       return false;
     });
     
-    // Calculate revenue (match payments page calculation)
-    const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Calculate total committed revenue (paid + pending payments) - FIXED!
+    const eligiblePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
+    const totalRevenue = eligiblePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     
-    // Get payment plans
+    console.log(`FIXED Revenue calculation: ${eligiblePayments.length} eligible payments, total: $${totalRevenue}`);
+    
+    // Get payment plans - count unique parents with active plans (max 34)
     const paymentPlans = await ctx.db.query("paymentPlans").collect();
     const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
+    const uniqueParentsWithPlans = new Set(activePaymentPlans.map(p => p.parentId)).size;
     
     // Get upcoming dues (next 30 days) - exclude overdue payments
     const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);
@@ -94,23 +98,34 @@ export const getDashboardStats = query({
       p.dueDate && p.dueDate >= now && p.dueDate <= thirtyDaysFromNow
     ).length;
     
-    // Get message logs for this month
+    // Get message logs for this month - count actual sent messages
     const firstOfMonth = new Date();
     firstOfMonth.setDate(1);
     firstOfMonth.setHours(0, 0, 0, 0);
     const startOfMonth = firstOfMonth.getTime();
     
+    // Try multiple tables for messages
+    const scheduledMessages = await ctx.db.query("scheduledMessages")
+      .filter(q => q.gte(q.field("sentAt"), startOfMonth))
+      .collect();
+    
     const messageLogs = await ctx.db.query("messageLogs")
       .filter(q => q.gte(q.field("sentAt"), startOfMonth))
       .collect();
     
+    // Count all sent messages from this month
+    const totalMessagesSent = scheduledMessages.length + messageLogs.length;
+    
+    // Count unique parents with overdue payments (not individual payment count)
+    const uniqueParentsWithOverduePayments = new Set(overduePayments.map(p => p.parentId)).size;
+    
     return {
       totalParents: activeParents.length,
       totalRevenue,
-      overduePayments: overduePayments.length,
+      overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
       upcomingDues,
-      activePaymentPlans: activePaymentPlans.length,
-      messagesSentThisMonth: messageLogs.length
+      activePaymentPlans: uniqueParentsWithPlans, // Now shows unique parents with plans (max 34)
+      messagesSentThisMonth: totalMessagesSent // Now shows actual sent messages
     };
   },
 });
