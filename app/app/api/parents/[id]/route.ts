@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../../lib/api-utils'
+import { requireAuth, requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { cachedConvex, batchQueries } from '../../../../lib/db-cache'
 import { api } from '../../../../convex/_generated/api'
 
@@ -103,7 +103,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Temporarily disabled for testing: await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
     
     const parentId = params.id
     console.log('DELETE request for parent ID:', parentId)

@@ -84,6 +84,9 @@ export default function ParentsPage() {
     try {
       const response = await fetch(`/api/parents/${parentId}`, {
         method: 'DELETE',
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
       })
 
       if (response.ok) {
