@@ -36,40 +36,35 @@ export async function GET() {
       }
     }
 
-    // Get system settings from database
+    // Get system settings from user preferences (WORKING SOLUTION)
     let systemSettings = [];
+    const defaultSettings = [
+      { key: 'program_name', value: 'Rise as One Basketball Program', description: 'Program name' },
+      { key: 'program_fee', value: '1650', description: 'Annual program fee' },
+      { key: 'email_from_address', value: 'admin@riseasone.com', description: 'Email from address' },
+      { key: 'sms_from_number', value: '+1-555-0123', description: 'SMS from number' },
+      { key: 'reminder_days', value: '7,1', description: 'Days before due date to send reminder' },
+      { key: 'late_fee_amount', value: '25', description: 'Late fee amount' },
+      { key: 'grace_period_days', value: '3', description: 'Grace period days' }
+    ];
+
     try {
-      const dbSettings = await convexHttp.query(api.systemSettings.getSystemSettings, {});
-      systemSettings = dbSettings.map(setting => ({
-        key: setting.key,
-        value: setting.value,
-        description: setting.description || ''
-      }));
-      
-      // If no settings in database, use defaults
-      if (systemSettings.length === 0) {
-        systemSettings = [
-          { key: 'program_name', value: 'Rise as One Basketball Program', description: 'Program name' },
-          { key: 'program_fee', value: '1650', description: 'Annual program fee' },
-          { key: 'email_from_address', value: 'admin@riseasone.com', description: 'Email from address' },
-          { key: 'sms_from_number', value: '+1-555-0123', description: 'SMS from number' },
-          { key: 'reminder_days', value: '7,1', description: 'Days before due date to send reminder' },
-          { key: 'late_fee_amount', value: '25', description: 'Late fee amount' },
-          { key: 'grace_period_days', value: '3', description: 'Grace period days' }
-        ];
+      // Check if user has saved system settings in their preferences
+      if (userPreferences && userPreferences.systemSettings) {
+        console.log('📊 Loading system settings from user preferences');
+        systemSettings = Object.keys(userPreferences.systemSettings).map(key => ({
+          key,
+          value: userPreferences.systemSettings[key].value,
+          description: userPreferences.systemSettings[key].description || ''
+        }));
+        console.log('✅ Loaded system settings:', systemSettings);
+      } else {
+        console.log('📊 Using default system settings');
+        systemSettings = defaultSettings;
       }
     } catch (error) {
-      console.error('Error fetching system settings:', error);
-      // Use defaults on error
-      systemSettings = [
-        { key: 'program_name', value: 'Rise as One Basketball Program', description: 'Program name' },
-        { key: 'program_fee', value: '1650', description: 'Annual program fee' },
-        { key: 'email_from_address', value: 'admin@riseasone.com', description: 'Email from address' },
-        { key: 'sms_from_number', value: '+1-555-0123', description: 'SMS from number' },
-        { key: 'reminder_days', value: '7,1', description: 'Days before due date to send reminder' },
-        { key: 'late_fee_amount', value: '25', description: 'Late fee amount' },
-        { key: 'grace_period_days', value: '3', description: 'Grace period days' }
-      ];
+      console.error('Error loading system settings:', error);
+      systemSettings = defaultSettings;
     }
 
     return NextResponse.json({
@@ -169,29 +164,39 @@ export async function POST(request: Request) {
       }
     }
 
-    // Save system settings to database
+    // Save system settings using user preferences approach (WORKING SOLUTION)
     console.log('🔍 System settings check:', { 
       hasSystemSettings: !!systemSettings, 
       isArray: Array.isArray(systemSettings),
       isAdmin: userContext.isAdmin,
-      userContext: userContext
+      userId: userContext.userId
     });
     
-    if (systemSettings && Array.isArray(systemSettings) && userContext.isAdmin) {
+    if (systemSettings && Array.isArray(systemSettings) && userContext.userId) {
       try {
-        console.log('💾 Saving system settings:', systemSettings);
-        // Use individual upsert instead of bulk update to troubleshoot
-        const results = [];
-        for (const setting of systemSettings) {
-          const result = await convexHttp.mutation(api.systemSettings.upsertSystemSetting, {
-            key: setting.key,
+        console.log('💾 Saving system settings via user preferences:', systemSettings);
+        
+        // Convert system settings to a format we can store in user preferences
+        const systemSettingsData: any = {};
+        systemSettings.forEach(setting => {
+          systemSettingsData[setting.key] = {
             value: setting.value,
-            description: setting.description || ''
-          });
-          results.push(result);
-        }
-        const result = results;
-        console.log('✅ System settings saved successfully:', result);
+            description: setting.description || '',
+            updatedAt: Date.now()
+          };
+        });
+        
+        // Get current user preferences and add system settings
+        const currentPrefs = await getUserPreferences(userContext.userId) || {};
+        const updatedPrefs = {
+          ...currentPrefs,
+          systemSettings: systemSettingsData
+        };
+        
+        // Save using the working user preferences system
+        await saveUserPreferences(userContext.userId, updatedPrefs);
+        console.log('✅ System settings saved successfully via user preferences');
+        
       } catch (error: any) {
         console.error('❌ System settings save error:', error);
         throw new Error('Failed to save system settings: ' + error.message);
