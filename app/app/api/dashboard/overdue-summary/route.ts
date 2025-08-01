@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { convexHttp } from '../../../../lib/db'
