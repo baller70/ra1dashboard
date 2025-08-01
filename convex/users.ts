@@ -119,4 +119,131 @@ export const getUserSession = query({
       lastActive: (user as any).lastActive,
     } : null;
   },
+});
+
+// Save user settings (system settings + user preferences)
+export const saveUserSettings = mutation({
+  args: {
+    userId: v.string(), // Using string to handle dev-user
+    systemSettings: v.array(v.object({
+      key: v.string(),
+      value: v.string(),
+      description: v.optional(v.string()),
+    })),
+    userPreferences: v.any(),
+    userProfile: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const { userId, systemSettings, userPreferences, userProfile } = args;
+    
+    // For dev-user, we'll store in a special way or find/create user
+    let user;
+    if (userId === 'dev-user') {
+      // Try to find dev user by email
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", "dev@thebasketballfactoryinc.com"))
+        .first();
+      
+      if (!user) {
+        // Create dev user
+        const newUserId = await ctx.db.insert("users", {
+          email: "dev@thebasketballfactoryinc.com",
+          name: "Development User",
+          role: "admin",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        user = await ctx.db.get(newUserId);
+      }
+    } else {
+      // Try to find user by ID (assuming it's a Convex ID)
+      try {
+        user = await ctx.db.get(userId as any);
+      } catch {
+        // If not a valid Convex ID, try by email
+        user = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", userId))
+          .first();
+      }
+    }
+    
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+    
+    // Prepare settings data
+    const settingsData = {
+      systemSettings: systemSettings.reduce((acc, setting) => {
+        acc[setting.key] = {
+          value: setting.value,
+          description: setting.description || '',
+          updatedAt: Date.now()
+        };
+        return acc;
+      }, {} as any),
+      userPreferences,
+      userProfile,
+      lastUpdated: Date.now()
+    };
+    
+    // Update user with settings
+    await ctx.db.patch(user._id, {
+      settings: settingsData,
+      updatedAt: Date.now(),
+    });
+    
+    return { 
+      success: true, 
+      userId: user._id,
+      settingsData 
+    };
+  },
+});
+
+// Get user settings
+export const getUserSettings = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const { userId } = args;
+    
+    let user;
+    if (userId === 'dev-user') {
+      // Find dev user by email
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", "dev@thebasketballfactoryinc.com"))
+        .first();
+    } else {
+      // Try to find user by ID or email
+      try {
+        user = await ctx.db.get(userId as any);
+      } catch {
+        user = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", userId))
+          .first();
+      }
+    }
+    
+    if (!user) {
+      return null;
+    }
+    
+    const settings = (user as any).settings || {};
+    
+    return {
+      user: {
+        id: user._id,
+        email: (user as any).email,
+        name: (user as any).name,
+        role: (user as any).role,
+      },
+      systemSettings: settings.systemSettings || {},
+      userPreferences: settings.userPreferences || {},
+      userProfile: settings.userProfile || {},
+      lastUpdated: settings.lastUpdated || null
+    };
+  },
 }); 

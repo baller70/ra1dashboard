@@ -10,6 +10,7 @@ export default defineSchema({
     updatedAt: v.optional(v.number()),
     lastActive: v.optional(v.number()),
     sessionData: v.optional(v.any()),
+    settings: v.optional(v.any()),
     clerkId: v.optional(v.string()),
   })
     .index("by_email", ["email"])

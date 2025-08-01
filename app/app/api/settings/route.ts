@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { getUserContext, requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
-import { getUserPreferences, saveUserPreferences } from '../../../lib/user-session'
 import { convexHttp } from '../../../lib/db'
 import { api } from '../../../convex/_generated/api'
 
@@ -25,20 +24,20 @@ export async function GET(request: Request) {
       }
     }
 
-    // Get user preferences with fallback
-    let userPreferences: any = {};
-    const userId = (userContext as any).userId || (userContext as any).id;
-    if (userId) {
-      try {
-        userPreferences = await getUserPreferences(userId);
-      } catch (error) {
-        console.log('🔧 Development mode: Using default preferences')
-        userPreferences = {};
-      }
+    const userId = (userContext as any).userId || (userContext as any).id || 'dev-user';
+    console.log('🔍 Getting settings for user:', userId);
+
+    // Get settings from Convex using the new getUserSettings function
+    let settingsData;
+    try {
+      settingsData = await convexHttp.query(api.users.getUserSettings, { userId });
+      console.log('📊 Settings loaded from Convex:', settingsData);
+    } catch (error) {
+      console.log('⚠️ Failed to load settings from Convex:', error);
+      settingsData = null;
     }
 
-    // Get system settings from user preferences (WORKING SOLUTION)
-    let systemSettings = [];
+    // Default settings fallback
     const defaultSettings = [
       { key: 'program_name', value: 'Rise as One Basketball Program', description: 'Program name' },
       { key: 'program_fee', value: '1650', description: 'Annual program fee' },
@@ -49,24 +48,22 @@ export async function GET(request: Request) {
       { key: 'grace_period_days', value: '3', description: 'Grace period days' }
     ];
 
-    try {
-      // Check if user has saved system settings in their preferences
-      if (userPreferences && userPreferences.systemSettings) {
-        console.log('📊 Loading system settings from user preferences');
-        systemSettings = Object.keys(userPreferences.systemSettings).map(key => ({
-          key,
-          value: userPreferences.systemSettings[key].value,
-          description: userPreferences.systemSettings[key].description || ''
-        }));
-        console.log('✅ Loaded system settings:', systemSettings);
-      } else {
-        console.log('📊 Using default system settings');
-        systemSettings = defaultSettings;
-      }
-    } catch (error) {
-      console.error('Error loading system settings:', error);
+    // Convert system settings from Convex format to API format
+    let systemSettings = [];
+    if (settingsData && settingsData.systemSettings && Object.keys(settingsData.systemSettings).length > 0) {
+      systemSettings = Object.keys(settingsData.systemSettings).map(key => ({
+        key,
+        value: settingsData.systemSettings[key].value,
+        description: settingsData.systemSettings[key].description || ''
+      }));
+      console.log('✅ Using saved system settings from Convex');
+    } else {
       systemSettings = defaultSettings;
+      console.log('📊 Using default system settings');
     }
+
+    // Get user preferences from Convex data or use defaults
+    const userPreferences = settingsData?.userPreferences || {};
 
     return NextResponse.json({
       systemSettings,
@@ -93,7 +90,7 @@ export async function GET(request: Request) {
         twoFactorAuth: userPreferences.twoFactorAuth || false,
         ...userPreferences
       },
-      user: {
+      user: settingsData?.user || {
         id: userId || 'dev-user',
         name: (userContext as any).user?.name || 'Development User',
         email: (userContext as any).userEmail || (userContext as any).email || 'dev@thebasketballfactoryinc.com',
@@ -143,76 +140,41 @@ export async function POST(request: Request) {
       userContext.userRole = 'admin';
     }
 
-    const { userPreferences: incomingPrefs, systemSettings } = (await request.json()) as any;
+    const { userPreferences: incomingPrefs, systemSettings, userProfile } = (await request.json()) as any;
     const userPreferences: any = incomingPrefs;
-    const userId = (userContext as any).userId || (userContext as any).id;
+    const userId = (userContext as any).userId || (userContext as any).id || 'dev-user';
 
     console.log('💾 Settings save request:', { 
       hasUserPrefs: !!userPreferences, 
       hasSystemSettings: !!systemSettings,
+      hasUserProfile: !!userProfile,
       userId: userId,
       isAdmin: (userContext as any).isAdmin 
     });
 
-    // Save user preferences
-    if (userPreferences && userId) {
-      try {
-        console.log('💾 Saving user preferences:', userPreferences);
-        await saveUserPreferences(userId, userPreferences);
-        console.log('✅ User preferences saved successfully');
-      } catch (error: any) {
-        console.error('❌ Settings save error:', error)
-        throw new Error('Failed to save user preferences: ' + error.message);
-      }
+    // Save settings to Convex using the new saveUserSettings function
+    try {
+      const result = await convexHttp.mutation(api.users.saveUserSettings, {
+        userId,
+        systemSettings: systemSettings || [],
+        userPreferences: userPreferences || {},
+        userProfile: userProfile || {}
+      });
+      
+      console.log('✅ Settings saved to Convex successfully:', result);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Settings updated successfully',
+        updatedPreferences: userPreferences,
+        updatedSystemSettings: systemSettings,
+        result
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Convex settings save error:', error);
+      throw new Error('Failed to save settings to Convex: ' + error.message);
     }
-
-    // Save system settings using user preferences approach (WORKING SOLUTION)
-    console.log('🔍 System settings check:', { 
-      hasSystemSettings: !!systemSettings, 
-      isArray: Array.isArray(systemSettings),
-      isAdmin: userContext.isAdmin,
-      userId: userContext.userId
-    });
-    
-    if (systemSettings && Array.isArray(systemSettings) && userId) {
-      try {
-        console.log('💾 Saving system settings via user preferences:', systemSettings);
-        
-        // Convert system settings to a format we can store in user preferences
-        const systemSettingsData: any = {};
-        systemSettings.forEach(setting => {
-          systemSettingsData[setting.key] = {
-            value: setting.value,
-            description: setting.description || '',
-            updatedAt: Date.now()
-          };
-        });
-        
-        // Get current user preferences and add system settings
-        const currentPrefs = await getUserPreferences(userId) || {};
-        const updatedPrefs = {
-          ...currentPrefs,
-          systemSettings: systemSettingsData
-        };
-        
-        // Save using the working user preferences system
-        await saveUserPreferences(userId, updatedPrefs);
-        console.log('✅ System settings saved successfully via user preferences');
-        
-      } catch (error: any) {
-        console.error('❌ System settings save error:', error);
-        throw new Error('Failed to save system settings: ' + error.message);
-      }
-    } else {
-      console.log('⚠️ System settings not saved due to failed conditions');
-    }
-
-    return NextResponse.json({ 
-      success: true,
-      message: 'Settings updated successfully',
-      updatedPreferences: userPreferences || null,
-      updatedSystemSettings: userContext.isAdmin ? systemSettings : null
-    })
   } catch (error: any) {
     console.error('Settings update error:', error)
     return NextResponse.json(
