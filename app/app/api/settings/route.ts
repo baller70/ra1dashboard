@@ -27,11 +27,31 @@ export async function GET(request: Request) {
     const userId = (userContext as any).userId || (userContext as any).id || 'dev-user';
     console.log('🔍 Getting settings for user:', userId);
 
-    // Get settings from Convex using the new getUserSettings function
+    // Get settings from Convex using the working getUserSession approach
     let settingsData;
     try {
-      settingsData = await convexHttp.query(api.users.getUserSettings, { userId });
-      console.log('📊 Settings loaded from Convex:', settingsData);
+      // Find user by email
+      const user = await convexHttp.query(api.users.getUserByEmail, { 
+        email: 'dev@thebasketballfactoryinc.com' 
+      });
+
+      if (user) {
+        // Get user session data which contains settings
+        const sessionData = await convexHttp.query(api.users.getUserSession, { 
+          userId: user._id 
+        });
+        
+        if (sessionData && sessionData.sessionData && sessionData.sessionData.settings) {
+          settingsData = sessionData.sessionData.settings;
+          console.log('📊 Settings loaded from Convex user session:', settingsData);
+        } else {
+          console.log('📊 No settings found in user session');
+          settingsData = null;
+        }
+      } else {
+        console.log('📊 User not found');
+        settingsData = null;
+      }
     } catch (error) {
       console.log('⚠️ Failed to load settings from Convex:', error);
       settingsData = null;
@@ -152,23 +172,60 @@ export async function POST(request: Request) {
       isAdmin: (userContext as any).isAdmin 
     });
 
-    // Save settings to Convex using the new saveUserSettings function
+    // Save settings using the working createUserSession approach
     try {
-      const result = await convexHttp.mutation(api.users.saveUserSettings, {
-        userId,
-        systemSettings: systemSettings || [],
+      // Prepare settings data in the same format as before
+      const settingsData: any = {
+        systemSettings: {},
         userPreferences: userPreferences || {},
-        userProfile: userProfile || {}
+        userProfile: userProfile || {},
+        lastUpdated: Date.now()
+      };
+
+      // Convert systemSettings array to object format
+      if (systemSettings && Array.isArray(systemSettings)) {
+        systemSettings.forEach((setting: any) => {
+          settingsData.systemSettings[setting.key] = {
+            value: setting.value,
+            description: setting.description || '',
+            updatedAt: Date.now()
+          };
+        });
+      }
+
+      // Find or create user and save settings
+      let user = await convexHttp.query(api.users.getUserByEmail, { 
+        email: 'dev@thebasketballfactoryinc.com' 
       });
+
+      if (!user) {
+        // Create user if doesn't exist
+        user = await convexHttp.mutation(api.users.getOrCreateUser, {
+          email: 'dev@thebasketballfactoryinc.com',
+          name: 'Development User'
+        });
+      }
+
+      // Save settings using the working createUserSession approach
+      if (user) {
+        await convexHttp.mutation(api.users.createUserSession, {
+          userId: user._id,
+          sessionData: {
+            ...((user as any).sessionData || {}),
+            settings: settingsData
+          }
+        });
+      } else {
+        throw new Error('User not found or created');
+      }
       
-      console.log('✅ Settings saved to Convex successfully:', result);
+      console.log('✅ Settings saved to Convex successfully using user session');
       
       return NextResponse.json({
         success: true,
         message: 'Settings updated successfully',
         updatedPreferences: userPreferences,
-        updatedSystemSettings: systemSettings,
-        result
+        updatedSystemSettings: systemSettings
       });
       
     } catch (error: any) {

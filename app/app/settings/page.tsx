@@ -148,74 +148,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        // First, try to load from localStorage for instant loading
-        const savedSettings = localStorage.getItem('ra1-dashboard-settings');
-        if (savedSettings) {
-          try {
-            const localData = JSON.parse(savedSettings);
-            console.log('📱 Loading settings from localStorage:', localData);
-            
-            // Load system settings from localStorage
-            if (localData.systemSettings && Array.isArray(localData.systemSettings)) {
-              const systemSettingsObj: SystemSettings = {
-                programName: localData.systemSettings.find((s: any) => s.key === 'program_name')?.value || '',
-                programFee: localData.systemSettings.find((s: any) => s.key === 'program_fee')?.value || '',
-                emailFromAddress: localData.systemSettings.find((s: any) => s.key === 'email_from_address')?.value || '',
-                smsFromNumber: localData.systemSettings.find((s: any) => s.key === 'sms_from_number')?.value || '',
-                reminderDays: localData.systemSettings.find((s: any) => s.key === 'reminder_days')?.value || '',
-                lateFeeAmount: localData.systemSettings.find((s: any) => s.key === 'late_fee_amount')?.value || '',
-                gracePeriodDays: localData.systemSettings.find((s: any) => s.key === 'grace_period_days')?.value || ''
-              }
-              setSettings(systemSettingsObj)
-              console.log('✅ System settings loaded from localStorage');
-            }
-            
-            // Load user preferences from localStorage
-            if (localData.userPreferences) {
-              const prefs = localData.userPreferences;
-              setUserPreferences(prev => ({
-                ...prev,
-                theme: prefs.theme || 'system',
-                language: prefs.language || 'en',
-                timezone: prefs.timezone || 'America/New_York',
-                dateFormat: prefs.dateFormat || 'MM/dd/yyyy',
-                currency: prefs.currency || 'USD',
-                notifications: {
-                  email: prefs.emailNotifications !== false,
-                  sms: prefs.smsNotifications !== false,
-                  push: prefs.pushNotifications !== false,
-                  paymentReminders: prefs.paymentReminders !== false,
-                  overdueAlerts: prefs.overdueAlerts !== false,
-                  systemUpdates: prefs.systemUpdates !== false,
-                  marketingEmails: prefs.marketingEmails || false,
-                },
-                dashboard: {
-                  defaultView: prefs.defaultView || 'overview',
-                  showWelcomeMessage: prefs.showWelcomeMessage !== false,
-                  compactMode: prefs.compactMode || false,
-                  autoRefresh: prefs.autoRefresh !== false,
-                  refreshInterval: prefs.refreshInterval || 30,
-                },
-                privacy: {
-                  shareUsageData: prefs.shareUsageData || false,
-                  allowAnalytics: prefs.allowAnalytics !== false,
-                  twoFactorAuth: prefs.twoFactorAuth || false,
-                }
-              }))
-              console.log('✅ User preferences loaded from localStorage');
-            }
-            
-            // Load user profile from localStorage
-            if (localData.userProfile) {
-              setUserProfile(localData.userProfile);
-              console.log('✅ User profile loaded from localStorage');
-            }
-          } catch (localError) {
-            console.warn('⚠️ Failed to parse localStorage settings:', localError);
-          }
-        }
-
-        // Then try to fetch from server (in background)
+        // Load settings from Convex database
         const response = await fetch('/api/settings', {
           headers: {
             'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
@@ -337,45 +270,32 @@ export default function SettingsPage() {
         twoFactorAuth: userPreferences.privacy.twoFactorAuth,
       }
 
-      // Save to localStorage immediately for instant persistence
-      const settingsData = {
-        systemSettings: systemSettingsArray,
-        userPreferences: userPreferencesForAPI,
-        userProfile,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('ra1-dashboard-settings', JSON.stringify(settingsData));
-      console.log('💾 Settings saved to localStorage for instant persistence');
-
-      // Also try to save to server
-      try {
-        const response = await fetch('/api/settings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
-          },
-          body: JSON.stringify({
-            systemSettings: systemSettingsArray,
-            userPreferences: userPreferencesForAPI,
-            userProfile
-          }),
-        })
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Settings saved to server successfully:', result);
-        } else {
-          console.warn('⚠️ Server save failed, but localStorage saved successfully');
-        }
-      } catch (serverError) {
-        console.warn('⚠️ Server save failed, but localStorage saved successfully:', serverError);
-      }
-
-      toast({
-        title: "Settings saved",
-        description: "Your settings have been updated successfully.",
+      // Save to Convex database
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
+        },
+        body: JSON.stringify({
+          systemSettings: systemSettingsArray,
+          userPreferences: userPreferencesForAPI,
+          userProfile
+        }),
       })
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Settings saved to Convex successfully:', result);
+        toast({
+          title: "Settings saved",
+          description: "Your settings have been updated successfully.",
+        })
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Settings save failed:', errorData);
+        throw new Error(errorData.error || 'Failed to save settings')
+      }
     } catch (error) {
       toast({
         title: "Error",
