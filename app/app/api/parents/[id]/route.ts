@@ -8,7 +8,7 @@ import { api } from '../../../../convex/_generated/api'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Temporarily disabled for testing: await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
     
     const parentId = params.id
     console.log('GET request for parent ID:', parentId)
@@ -72,7 +72,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Temporarily disabled for testing: await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
     
     const parentId = params.id
     const updates = await request.json()
