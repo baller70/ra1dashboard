@@ -113,10 +113,13 @@ export const getDashboardStats = query({
     // Count all sent messages from this month
     const totalMessagesSent = scheduledMessages.length + messageLogs.length;
     
+    // Count unique parents with overdue payments (not individual payment count)
+    const uniqueParentsWithOverduePayments = new Set(overduePayments.map(p => p.parentId)).size;
+    
     return {
       totalParents: activeParents.length,
       totalRevenue,
-      overduePayments: overduePayments.length,
+      overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
       upcomingDues,
       activePaymentPlans: uniqueParentsWithPlans, // Now shows unique parents with plans (max 34)
       messagesSentThisMonth: totalMessagesSent // Now shows actual sent messages
