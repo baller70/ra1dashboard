@@ -317,7 +317,11 @@ export default function DashboardPage() {
                   variant="ghost" 
                   size="sm" 
                   className="w-full justify-center"
-                  onClick={() => router.push('/notifications')}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    console.log('View All Activity button clicked')
+                    router.push('/notifications')
+                  }}
                 >
                   View All Activity
                   <ArrowRight className="h-4 w-4 ml-2" />
