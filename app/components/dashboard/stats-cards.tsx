@@ -84,27 +84,6 @@ export function StatsCards({ stats, overdueParents = [] }: StatsCardsProps) {
               <div className="text-2xl font-bold">
                 {card.title === 'Overdue Payments' ? overdueParents.length : card.value}
               </div>
-              {/* Show overdue parent tags for Overdue Payments card */}
-              {card.title === 'Overdue Payments' && overdueParents.length > 0 && (
-                <div className="mt-3 space-y-1 max-h-40 overflow-y-auto">
-                  <div className="text-xs font-medium text-red-600 mb-2">
-                    Parents with overdue payments:
-                  </div>
-                  {overdueParents.map((parent) => (
-                    <div key={parent.parentId} className="flex items-center gap-2">
-                      <Badge variant="destructive" className="text-xs">
-                        OVERDUE
-                      </Badge>
-                      <span className="text-xs text-gray-600 truncate flex-1">
-                        {parent.parentName}
-                      </span>
-                      <span className="text-xs text-red-600 font-medium">
-                        {parent.overdueCount}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
         )
