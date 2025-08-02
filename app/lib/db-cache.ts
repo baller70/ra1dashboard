@@ -78,9 +78,10 @@ export class CachedConvexClient {
     const result = await this.convex.mutation(mutation, args)
     
     // Clear cache for mutations that might affect data
-    if (mutation._name?.includes('create') || 
-        mutation._name?.includes('update') || 
-        mutation._name?.includes('delete')) {
+    const mutationName = typeof mutation._name === 'string' ? mutation._name : ''
+    if (mutationName.includes('create') || 
+        mutationName.includes('update') || 
+        mutationName.includes('delete')) {
       queryCache.clear()
     }
     

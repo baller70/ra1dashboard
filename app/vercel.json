@@ -10,6 +10,24 @@
       "memory": 1024
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/parents/:id",
+      "destination": "/api/parents/[id]"
+    },
+    {
+      "source": "/api/payments/:id",
+      "destination": "/api/payments/[id]"
+    },
+    {
+      "source": "/api/contracts/:id", 
+      "destination": "/api/contracts/[id]"
+    },
+    {
+      "source": "/api/templates/:id",
+      "destination": "/api/templates/[id]"
+    }
+  ],
   "env": {
     "CLERK_PUBLISHABLE_KEY": "test_pk",
     "CLERK_SECRET_KEY": "test_sk",

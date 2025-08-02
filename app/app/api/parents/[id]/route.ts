@@ -1,12 +1,14 @@
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { cachedConvex, batchQueries } from '../../../../lib/db-cache'
+import { convexHttp } from '../../../../lib/db'
 import { api } from '../../../../convex/_generated/api'
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
@@ -70,7 +72,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
@@ -101,15 +103,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
     const parentId = params.id
     console.log('DELETE request for parent ID:', parentId)
 
-    // Delete parent using cached client (this will clear cache)
-    await cachedConvex.mutation(api.parents.deleteParent, {
+    // Delete parent using direct Convex client to avoid cache issues
+    await convexHttp.mutation(api.parents.deleteParent, {
       id: parentId as any
     });
 

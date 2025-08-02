@@ -74,7 +74,7 @@ export default function ParentsPage() {
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
 
-  // Delete parent function
+  // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
     if (!confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone.`)) {
       return
@@ -82,12 +82,26 @@ export default function ParentsPage() {
 
     setDeleteLoading(parentId)
     try {
-      const response = await fetch(`/api/parents/${parentId}`, {
+      // Try dynamic route first
+      let response = await fetch(`/api/parents/${parentId}`, {
         method: 'DELETE',
         headers: {
           'x-api-key': 'ra1-dashboard-api-key-2024'
         }
       })
+
+      // If dynamic route fails with 404, use alternative endpoint
+      if (!response.ok && response.status === 404) {
+        console.log('Dynamic route failed, using alternative delete endpoint')
+        response = await fetch('/api/parents/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          },
+          body: JSON.stringify({ parentId })
+        })
+      }
 
       if (response.ok) {
         // Remove the parent from the local state
@@ -106,7 +120,7 @@ export default function ParentsPage() {
         const errorData = await response.json()
         toast({
           title: 'Delete Failed',
-          description: errorData.details || 'Failed to delete parent',
+          description: errorData.details || errorData.error || 'Failed to delete parent',
           variant: 'destructive'
         })
       }

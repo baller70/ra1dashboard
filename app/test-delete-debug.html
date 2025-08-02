@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Delete Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Parent Delete Debug Tool</h1>
+        <p>This tool helps debug parent deletion issues by testing different endpoints and methods.</p>
+        
+        <div class="test-section info">
+            <h3>📋 Setup</h3>
+            <label>
+                Parent ID to test: 
+                <input type="text" id="parentId" placeholder="Enter parent ID (e.g., k17abc123...)" style="width: 300px;">
+            </label>
+            <br>
+            <label>
+                Base URL: 
+                <input type="text" id="baseUrl" value="http://localhost:3000" placeholder="http://localhost:3000" style="width: 300px;">
+            </label>
+            <br><br>
+            <button onclick="loadParents()">📥 Load Parents List</button>
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+
+        <div class="test-section" id="parentsListSection">
+            <h3>👨‍👩‍👧‍👦 Available Parents</h3>
+            <div id="parentsResult">Click "Load Parents List" to see available parents</div>
+        </div>
+
+        <div class="test-section" id="testResults">
+            <h3>🧪 Test Results</h3>
+            <div id="results">Test results will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'ra1-dashboard-api-key-2024';
+        
+        function getBaseUrl() {
+            return document.getElementById('baseUrl').value || 'http://localhost:3000';
+        }
+        
+        function getParentId() {
+            return document.getElementById('parentId').value;
+        }
+        
+        function addResult(title, content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-section ${type}`;
+            resultDiv.innerHTML = `
+                <h4>${title}</h4>
+                <pre>${JSON.stringify(content, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = 'Test results will appear here...';
+        }
+        
+        async function loadParents() {
+            const baseUrl = getBaseUrl();
+            const parentsResult = document.getElementById('parentsResult');
+            parentsResult.innerHTML = '<div class="loading"></div> Loading parents...';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/parents`, {
+                    headers: {
+                        'x-api-key': API_KEY
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const parents = data.data.parents;
+                    let html = `<p>Found ${parents.length} parents:</p><ul>`;
+                    
+                    parents.forEach(parent => {
+                        html += `<li>
+                            <strong>${parent.name}</strong> (${parent.email})
+                            <br><code>ID: ${parent._id}</code>
+                            <button onclick="document.getElementById('parentId').value='${parent._id}'; runAllTests()">🧪 Test Delete</button>
+                        </li>`;
+                    });
+                    
+                    html += '</ul>';
+                    parentsResult.innerHTML = html;
+                } else {
+                    parentsResult.innerHTML = `<div class="error">Failed to load parents: ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                parentsResult.innerHTML = `<div class="error">Error loading parents: ${error.message}</div>`;
+            }
+        }
+        
+        async function testEndpoint(name, url, options = {}) {
+            try {
+                console.log(`Testing ${name}:`, url, options);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': API_KEY,
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.text();
+                let parsedData;
+                
+                try {
+                    parsedData = JSON.parse(data);
+                } catch {
+                    parsedData = { rawResponse: data };
+                }
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    data: parsedData
+                };
+                
+                addResult(`${name} (${response.status})`, result, response.ok ? 'success' : 'error');
+                return result;
+            } catch (error) {
+                const result = {
+                    error: error.message,
+                    stack: error.stack
+                };
+                addResult(`${name} (ERROR)`, result, 'error');
+                return result;
+            }
+        }
+        
+        async function runAllTests() {
+            const parentId = getParentId();
+            const baseUrl = getBaseUrl();
+            
+            if (!parentId) {
+                alert('Please enter a parent ID to test');
+                return;
+            }
+            
+            clearResults();
+            addResult('🚀 Starting Tests', { parentId, baseUrl, timestamp: new Date().toISOString() });
+            
+            // Test 1: Dynamic route GET (should work)
+            await testEndpoint(
+                '1️⃣ Dynamic Route GET',
+                `${baseUrl}/api/parents/${parentId}`
+            );
+            
+            // Test 2: Dynamic route DELETE (problematic)
+            await testEndpoint(
+                '2️⃣ Dynamic Route DELETE',
+                `${baseUrl}/api/parents/${parentId}`,
+                { method: 'DELETE' }
+            );
+            
+            // Test 3: Alternative DELETE (POST)
+            await testEndpoint(
+                '3️⃣ Alternative DELETE (POST)',
+                `${baseUrl}/api/parents/delete`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ parentId })
+                }
+            );
+            
+            // Test 4: Alternative DELETE (Query param)
+            await testEndpoint(
+                '4️⃣ Alternative DELETE (Query)',
+                `${baseUrl}/api/parents/delete?id=${parentId}`,
+                { method: 'DELETE' }
+            );
+            
+            // Test 5: Debug test endpoint
+            await testEndpoint(
+                '5️⃣ Debug Test Endpoint',
+                `${baseUrl}/api/test-delete-parent`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ parentId })
+                }
+            );
+            
+            addResult('✅ Tests Complete', { 
+                message: 'All tests completed. Check results above.',
+                recommendation: 'If dynamic routes fail but alternatives work, update your frontend to use the working endpoint.'
+            }, 'success');
+        }
+        
+        // Auto-load parents on page load
+        window.addEventListener('load', () => {
+            loadParents();
+        });
+    </script>
+</body>
+</html>
