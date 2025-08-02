@@ -202,26 +202,16 @@ export default function NewPaymentPlanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    alert('🚨 HANDLESUBMIT CALLED!')
-    console.log('🔥 Form submitted with data:', formData)
+    console.log('Form submitted with data:', formData)
     
-    // TEMPORARILY DISABLED FOR TESTING - USE DEFAULTS IF EMPTY
+    // Validate required fields
     if (!formData.parentId || !formData.totalAmount || !formData.installmentAmount) {
-      console.warn('⚠️ Using default values for testing:', { 
-        parentId: formData.parentId || 'DEFAULT_PARENT', 
-        totalAmount: formData.totalAmount || '1650', 
-        installmentAmount: formData.installmentAmount || '183.33' 
+      toast({
+        title: "❌ Missing Information",
+        description: "Please fill in all required fields: Parent, Total Amount, and Installment Amount.",
+        variant: "destructive",
       })
-      
-      // Set defaults for testing
-      setFormData(prev => ({
-        ...prev,
-        parentId: prev.parentId || 'jx7c9vhsz6tn2t8qjx7c9vhsz6tn2t8q', // Use first parent ID from your system
-        totalAmount: prev.totalAmount || '1650',
-        installmentAmount: prev.installmentAmount || '183.33'
-      }))
-      
-      alert('🚨 USING DEFAULT VALUES FOR TESTING!')
+      return
     }
 
     setLoading(true)
@@ -233,62 +223,55 @@ export default function NewPaymentPlanPage() {
         installments: parseInt(formData.installments)
       }
       
-      console.log('🚀 Sending API request with body:', requestBody)
-      
-      alert('🔥 ABOUT TO MAKE API CALL!')
+      console.log('Sending API request with body:', requestBody)
       
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
         body: JSON.stringify(requestBody)
       })
 
-      alert(`🔥 API RESPONSE STATUS: ${response.status}`)
-
       if (response.ok) {
-        alert('🔥 RESPONSE IS OK - PARSING JSON!')
         const result = await response.json()
-        alert(`🔥 GOT RESULT: ${JSON.stringify(result, null, 2)}`)
-        
         console.log('✅ Payment plan created:', result)
-        console.log('🔍 Full result object:', JSON.stringify(result, null, 2))
         
         // Show success toast
         toast({
           title: "✅ Payment Plan Created Successfully!",
           description: `Payment plan created for ${parents.find(p => p._id === formData.parentId)?.name || 'selected parent'}. First payment automatically processed.`,
           variant: "default",
-          duration: 2000,
+          duration: 3000,
         })
         
         // Get the payment ID for redirect
-        console.log('🔍 DEBUGGING API RESPONSE:', JSON.stringify(result, null, 2))
-        
         const paymentId = result.paymentIds?.[0] || result.mainPaymentId
-        console.log('🔍 EXTRACTED PAYMENT ID:', paymentId)
-        alert(`🔍 EXTRACTED PAYMENT ID: ${paymentId}`)
         
         if (paymentId) {
-          console.log(`🚀 Redirecting to payment detail page: /payments/${paymentId}`)
-          alert(`🚀 ABOUT TO REDIRECT TO: /payments/${paymentId}`)
+          console.log(`Redirecting to payment detail page: /payments/${paymentId}`)
           
-          // IMMEDIATE REDIRECT - NO BULLSHIT
-          window.location.href = `/payments/${paymentId}`
+          // Redirect to payment details
+          setTimeout(() => {
+            router.push(`/payments/${paymentId}`)
+          }, 1500)
           
         } else {
-          console.log('⚠️ No payment ID found in result')
-          alert('❌ NO PAYMENT ID FOUND - REDIRECT FAILED!')
+          console.log('⚠️ No payment ID found in result, redirecting to payments page')
           toast({
             title: "⚠️ Payment Plan Created",
-            description: "Payment plan created but redirect failed. Check payments page.",
+            description: "Payment plan created successfully. Redirecting to payments page.",
             variant: "default",
           })
+          
+          setTimeout(() => {
+            router.push('/payments')
+          }, 2000)
         }
         
       } else {
-        alert(`🔥 API CALL FAILED - STATUS: ${response.status}`)
         const error = await response.json()
-        alert(`🔥 ERROR RESPONSE: ${JSON.stringify(error)}`)
         console.error('❌ API Error:', error)
         toast({
           title: "❌ Creation Failed",
@@ -297,7 +280,6 @@ export default function NewPaymentPlanPage() {
         })
       }
     } catch (error) {
-      alert(`🔥 CAUGHT EXCEPTION: ${error}`)
       console.error('❌ Error creating payment plan:', error)
       toast({
         title: "❌ Error",
