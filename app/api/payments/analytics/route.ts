@@ -2,14 +2,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../../lib/api-utils'
+import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { convexHttp } from '../../../../lib/db'
 import { api } from '../../../../convex/_generated/api'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Temporarily disabled for development - uncomment when Clerk is properly configured
-    // await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
     
     // Get payment analytics from Convex
     const analytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});

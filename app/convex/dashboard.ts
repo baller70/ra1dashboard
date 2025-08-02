@@ -56,12 +56,14 @@ async function safeGetParent(ctx: any, parentId: any) {
   }
 }
 
-// Dashboard stats function (replaces /api/dashboard/stats)
-export const getDashboardStats = query({
+// Dashboard stats function (replaces /api/dashboard/stats) - CACHE BUSTER
+export const getFixedDashboardStats = query({
   args: {},
   handler: async (ctx) => {
     // Get all parents
     const parents = await ctx.db.query("parents").collect();
+    console.log(`📊 Dashboard Stats: Found ${parents.length} total parents in database`);
+    console.log(`📊 Parent statuses:`, parents.map(p => ({ name: p.name, status: p.status })));
     const activeParents = parents.filter(p => p.status === 'active');
     
     // Get all payments
@@ -120,7 +122,7 @@ export const getDashboardStats = query({
     const uniqueParentsWithOverduePayments = new Set(overduePayments.map(p => p.parentId)).size;
     
     return {
-      totalParents: activeParents.length,
+      totalParents: parents.length, // Count ALL parents, not just active ones
       totalRevenue,
       overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
       upcomingDues,
@@ -296,12 +298,30 @@ export const getAnalyticsDashboard = query({
       const payments = await ctx.db.query("payments").collect();
       console.log(`💰 Found ${payments.length} payments`);
 
-      // Calculate overview stats
-      const paidPayments = payments.filter(p => p.status === 'paid');
-      const overduePayments = payments.filter(p => p.status === 'overdue');
-      const upcomingPayments = payments.filter(p => p.status === 'pending' && p.dueDate);
+      // Calculate overview stats with proper date filtering
+      const now = Date.now();
+      const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);
+      console.log(`📅 Date filtering: now=${new Date(now).toISOString()}, thirtyDaysFromNow=${new Date(thirtyDaysFromNow).toISOString()}`);
       
-      const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const paidPayments = payments.filter(p => p.status === 'paid');
+      const overduePayments = payments.filter(p => p.status === 'pending' && p.dueDate && p.dueDate < now);
+      const upcomingPayments = payments.filter(p => p.status === 'pending' && p.dueDate && p.dueDate >= now && p.dueDate <= thirtyDaysFromNow);
+      
+      console.log(`📊 Payment filtering results:`);
+      console.log(`  - Total payments: ${payments.length}`);
+      console.log(`  - Paid payments: ${paidPayments.length}`);
+      console.log(`  - Overdue payments (pending + due < now): ${overduePayments.length}`);
+      console.log(`  - Upcoming payments (pending + due in next 30 days): ${upcomingPayments.length}`);
+      
+      // Check a few sample payment dates
+      const samplePayments = payments.slice(0, 3);
+      samplePayments.forEach((p, i) => {
+        console.log(`  - Sample payment ${i+1}: dueDate=${p.dueDate ? new Date(p.dueDate).toISOString() : 'null'}, status=${p.status}`);
+      });
+      
+      // Include both paid and pending payments in total revenue
+      const revenuePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
+      const totalRevenue = revenuePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
       // CRITICAL FIX: Generate recentActivity with ONLY NUMBERS for timestamps
       const recentActivity = [];
@@ -434,8 +454,8 @@ export const getAnalyticsDashboard = query({
           totalParents: parents.length,
           totalRevenue,
           overduePayments: overduePayments.length,
-          upcomingDues: upcomingPayments.length,
-          activePaymentPlans: payments.filter(p => (p as any).paymentPlanId).length,
+          upcomingDues: upcomingPayments.length, // Use the correct date-filtered upcoming payments
+          activePaymentPlans: uniqueParentsWithPlans, // Use unique parents with active plans
           messagesSentThisMonth: communicationStats.totalMessages,
           activeRecurringMessages: 0,
           pendingRecommendations: recommendations.length,

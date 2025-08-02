@@ -131,12 +131,21 @@ export default function AnalyticsPage() {
       setRefreshing(true)
       setError(null)
 
-      // Fetch dashboard analytics
-      const dashboardResponse = await fetch('/api/analytics/dashboard')
+      // Fetch dashboard analytics using the same corrected API as the dashboard page
+      const cacheBuster = Date.now()
+      const dashboardResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'Cache-Control': 'no-cache'
+        }
+      })
       if (!dashboardResponse.ok) {
         throw new Error('Failed to fetch dashboard analytics')
       }
-      const dashboardData = await dashboardResponse.json()
+      const dashboardResponseData = await dashboardResponse.json()
+      const dashboardData = {
+        overview: dashboardResponseData.data || dashboardResponseData
+      }
 
       // Enhance data with additional mock insights for better visualization
       const enhancedData = {
@@ -160,8 +169,12 @@ export default function AnalyticsPage() {
 
       setAnalyticsData(enhancedData)
 
-      // Fetch payment analytics
-      const paymentResponse = await fetch('/api/payments/analytics')
+      // Fetch payment analytics with API key for consistency
+      const paymentResponse = await fetch('/api/payments/analytics', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (!paymentResponse.ok) {
         throw new Error('Failed to fetch payment analytics')
       }
@@ -188,14 +201,30 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false)
       setRefreshing(false)
+      setLastUpdated(new Date())
     }
   }, [])
 
   useEffect(() => {
     fetchAnalytics()
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchAnalytics, 5 * 60 * 1000)
+    // Auto-refresh every 30 seconds for live updates
+    const interval = setInterval(fetchAnalytics, 30 * 1000)
     return () => clearInterval(interval)
+  }, [fetchAnalytics])
+
+  // Listen for parent deletions from other pages to refresh analytics
+  useEffect(() => {
+    const handleParentDeleted = () => {
+      console.log('🔔 Analytics page received parent-deleted event, refreshing data...')
+      fetchAnalytics()
+    }
+    
+    console.log('🎧 Analytics page event listener registered for parent-deleted events')
+    window.addEventListener('parent-deleted', handleParentDeleted)
+    return () => {
+      console.log('🔇 Analytics page event listener removed')
+      window.removeEventListener('parent-deleted', handleParentDeleted)
+    }
   }, [fetchAnalytics])
 
   const formatCurrency = (value: number) => {
@@ -329,6 +358,10 @@ export default function AnalyticsPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
+              {refreshing ? 'Updating...' : 'Live'}
+            </div>
             <Button
               onClick={fetchAnalytics}
               variant="outline"

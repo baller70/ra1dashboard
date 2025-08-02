@@ -62,6 +62,8 @@ export const getFixedDashboardStats = query({
   handler: async (ctx) => {
     // Get all parents
     const parents = await ctx.db.query("parents").collect();
+    console.log(`📊 Dashboard Stats: Found ${parents.length} total parents in database`);
+    console.log(`📊 Parent statuses:`, parents.map(p => ({ name: p.name, status: p.status })));
     const activeParents = parents.filter(p => p.status === 'active');
     
     // Get all payments
@@ -120,7 +122,7 @@ export const getFixedDashboardStats = query({
     const uniqueParentsWithOverduePayments = new Set(overduePayments.map(p => p.parentId)).size;
     
     return {
-      totalParents: activeParents.length,
+      totalParents: parents.length, // Count ALL parents, not just active ones
       totalRevenue,
       overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
       upcomingDues,
@@ -140,11 +142,11 @@ export const getRevenueTrends = query({
     
     // Group payments by month for the last 6 months
     const trends = [];
-    const now = new Date();
+    const nowDate = new Date();
     
     for (let i = 5; i >= 0; i--) {
-      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const month = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1);
+      const nextMonth = new Date(nowDate.getFullYear(), nowDate.getMonth() - i + 1, 1);
       
       const monthPayments = payments.filter(p => 
         p.paidAt && p.paidAt >= month.getTime() && p.paidAt < nextMonth.getTime()
@@ -296,12 +298,36 @@ export const getAnalyticsDashboard = query({
       const payments = await ctx.db.query("payments").collect();
       console.log(`💰 Found ${payments.length} payments`);
 
-      // Calculate overview stats
-      const paidPayments = payments.filter(p => p.status === 'paid');
-      const overduePayments = payments.filter(p => p.status === 'overdue');
-      const upcomingPayments = payments.filter(p => p.status === 'pending' && p.dueDate);
+      // Calculate overview stats with proper date filtering
+      const now = Date.now();
+      const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);
       
-      const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const paidPayments = payments.filter(p => p.status === 'paid');
+      
+      // Calculate overdue payments using consistent logic with getDashboardStats
+      const overduePaymentsList = payments.filter(payment => {
+        if (payment.status === 'overdue') {
+          return true;
+        }
+        if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
+          return true;
+        }
+        return false;
+      });
+      
+      const upcomingPayments = payments.filter(p => p.status === 'pending' && p.dueDate && p.dueDate >= now && p.dueDate <= thirtyDaysFromNow);
+      
+      // Get payment plans and count unique parents with active plans (consistent with getDashboardStats)
+      const paymentPlans = await ctx.db.query("paymentPlans").collect();
+      const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
+      const uniqueParentsWithPlans = new Set(activePaymentPlans.map(p => p.parentId)).size;
+      
+      // Include both paid and pending payments in total revenue (consistent with getDashboardStats)
+      const revenuePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
+      console.log(`💰 Revenue calculation: ${revenuePayments.length} payments (paid + pending) out of ${payments.length} total`);
+      console.log(`💰 First few payment amounts:`, revenuePayments.slice(0, 3).map(p => ({ amount: p.amount, status: p.status })));
+      const totalRevenue = revenuePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      console.log(`💰 TOTAL REVENUE CALCULATED: $${totalRevenue}`);
 
       // CRITICAL FIX: Generate recentActivity with ONLY NUMBERS for timestamps
       const recentActivity = [];
@@ -362,11 +388,11 @@ export const getAnalyticsDashboard = query({
       }
 
       // Revenue by month calculation
-      const now = new Date();
+      const currentDate = new Date();
       const revenueByMonth = [];
       
       for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
         const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         
         const monthPayments = paidPayments.filter(payment => {
@@ -433,9 +459,9 @@ export const getAnalyticsDashboard = query({
         overview: {
           totalParents: parents.length,
           totalRevenue,
-          overduePayments: overduePayments.length,
-          upcomingDues: upcomingPayments.length,
-          activePaymentPlans: payments.filter(p => (p as any).paymentPlanId).length,
+          overduePayments: new Set(overduePaymentsList.map(p => p.parentId)).size, // Count unique parents with overdue payments
+          upcomingDues: upcomingPayments.length, // Use the correct date-filtered upcoming payments
+          activePaymentPlans: uniqueParentsWithPlans, // Use unique parents with active plans
           messagesSentThisMonth: communicationStats.totalMessages,
           activeRecurringMessages: 0,
           pendingRecommendations: recommendations.length,

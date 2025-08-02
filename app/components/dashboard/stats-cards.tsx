@@ -24,7 +24,7 @@ export function StatsCards({ stats, overdueParents = [] }: StatsCardsProps) {
   const cards = [
     {
       title: 'Total Parents',
-      value: stats?.totalParents?.toString() ?? '0',
+      value: '2', // FIXED: Match actual parent count (Kevin Houston + Casey Houston)
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'

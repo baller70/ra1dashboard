@@ -107,10 +107,9 @@ export default function ParentsPage() {
         // Remove the parent from the local state
         setParents(prevParents => prevParents.filter(p => p._id !== parentId))
         
-        // Also trigger a page refresh to ensure data consistency across all pages
-        setTimeout(() => {
-          window.dispatchEvent(new Event('parent-deleted'))
-        }, 500)
+        // Immediately dispatch event for dashboard refresh
+        window.dispatchEvent(new Event('parent-deleted'))
+        console.log('🔔 Dispatched parent-deleted event for dashboard refresh')
         
         toast({
           title: 'Parent Deleted',
@@ -188,9 +187,16 @@ export default function ParentsPage() {
   }, [parents])
 
   const filteredParents = (Array.isArray(parents) ? parents : []).filter(parent => {
-    const matchesSearch = parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         parent.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || parent.status === statusFilter
+    // Defensive null checks to prevent runtime errors
+    if (!parent || typeof parent !== 'object') return false
+    
+    const parentName = parent.name || ''
+    const parentEmail = parent.email || ''
+    const parentStatus = parent.status || ''
+    
+    const matchesSearch = parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         parentEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || parentStatus === statusFilter
     return matchesSearch && matchesStatus
   })
 

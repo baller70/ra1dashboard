@@ -289,13 +289,13 @@ export type TemplateVersionWithRelations_DEPRECATED = TemplateVersion & {
 // -- Dashboard stats additional metrics
 export interface DashboardStats {
   totalParents: number
-  totalPayments: number
   totalRevenue: number
   overduePayments: number
-  upcomingDues?: number
-  activePaymentPlans?: number
-  messagesSentThisMonth?: number
-  recentActivity: any[]
+  pendingPayments: number
+  paymentSuccessRate: number
+  messagesSentThisMonth: number
+  activeTemplates: number
+  averagePaymentTime: number
 }
 
 // -- Recurring messages extended fields

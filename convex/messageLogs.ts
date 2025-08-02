@@ -4,6 +4,85 @@ import { v } from "convex/values";
 
 // ENHANCED MESSAGE LOGS QUERIES
 
+// Add alias for backward compatibility
+export const list = query({
+  args: {
+    page: v.optional(v.number()),
+    limit: v.optional(v.number()),
+    parentId: v.optional(v.string()),
+    status: v.optional(v.string()),
+    type: v.optional(v.string()),
+    channel: v.optional(v.string()),
+    dateFrom: v.optional(v.number()),
+    dateTo: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { page = 1, limit = 50, parentId, status, type, channel, dateFrom, dateTo } = args;
+
+    let messagesQuery = ctx.db.query("messageLogs");
+
+    if (parentId) {
+      messagesQuery = messagesQuery.filter((q) => q.eq(q.field("parentId"), parentId));
+    }
+
+    if (status && status !== 'all') {
+      messagesQuery = messagesQuery.filter((q) => q.eq(q.field("status"), status));
+    }
+
+    if (type && type !== 'all') {
+      messagesQuery = messagesQuery.filter((q) => q.eq(q.field("type"), type));
+    }
+
+    if (channel && channel !== 'all') {
+      messagesQuery = messagesQuery.filter((q) => q.eq(q.field("channel"), channel));
+    }
+
+    if (dateFrom) {
+      messagesQuery = messagesQuery.filter((q) => q.gte(q.field("sentAt"), dateFrom));
+    }
+
+    if (dateTo) {
+      messagesQuery = messagesQuery.filter((q) => q.lte(q.field("sentAt"), dateTo));
+    }
+
+    const messages = await messagesQuery.order("desc").collect();
+
+    const messagesWithDetails = await Promise.all(
+      messages.map(async (message) => {
+        try {
+          const parent = await ctx.db
+            .query("parents")
+            .filter((q) => q.eq(q.field("_id"), message.parentId))
+            .first();
+
+          return {
+            ...message,
+            parent,
+          };
+        } catch (error) {
+          return {
+            ...message,
+            parent: null,
+          };
+        }
+      })
+    );
+
+    const offset = (page - 1) * limit;
+    const paginatedMessages = messagesWithDetails.slice(offset, offset + limit);
+
+    return {
+      messages: paginatedMessages,
+      pagination: {
+        page,
+        limit,
+        total: messagesWithDetails.length,
+        hasMore: offset + limit < messagesWithDetails.length,
+      },
+    };
+  }
+});
+
 export const getMessageLogs = query({
   args: {
     page: v.optional(v.number()),

@@ -38,6 +38,8 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [overdueParents, setOverdueParents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false)
   const [allActivities, setAllActivities] = useState<any[]>([])
 
@@ -55,19 +57,31 @@ export default function DashboardPage() {
     }
   }
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isManualRefresh = false) => {
+    console.log('🔄 Fetching dashboard data - all 8 analytics cards will update...')
+    
+    if (isManualRefresh) {
+      setRefreshing(true)
+    }
+    
     try {
-      // Fetch dashboard stats
-      const statsResponse = await fetch('/api/dashboard/stats', {
+      // Fetch dashboard stats with cache-busting
+      const cacheBuster = Date.now()
+      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
         headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024'
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'Cache-Control': 'no-cache'
         }
       })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        console.log('📊 Dashboard stats received:', statsData)
-        // Extract data from the API response format {success: true, data: {...}}
-        setStats(statsData.data || statsData)
+        console.log('📊 Fresh dashboard stats received:', statsData)
+        
+        // Extract the actual stats from API response {success: true, data: {...}}
+        const actualStats = statsData.data || statsData
+        console.log('📈 All 8 analytics cards updating with:', actualStats)
+        
+        setStats(actualStats)
       }
 
       // Fetch revenue trends
@@ -83,15 +97,19 @@ export default function DashboardPage() {
         setRevenueData(Array.isArray(revenueData) ? revenueData : (revenueData.trends || []))
       }
 
-              // Fetch recent activity
-        const activityResponse = await fetch('/api/dashboard/recent-activity', {
+              // Fetch recent activity with cache busting
+        const activityResponse = await fetch(`/api/dashboard/recent-activity?t=${cacheBuster}`, {
           headers: {
-            'x-api-key': 'ra1-dashboard-api-key-2024'
+            'x-api-key': 'ra1-dashboard-api-key-2024',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         })
         if (activityResponse.ok) {
           const activityData = await activityResponse.json()
-          setRecentActivity(activityData.activities || [])
+          console.log('🕒 Recent activity received:', activityData)
+          setRecentActivity(activityData.data?.activities || [])
         }
 
         // Fetch overdue summary for tags
@@ -109,15 +127,37 @@ export default function DashboardPage() {
         console.error('Failed to fetch dashboard data:', error)
       } finally {
         setLoading(false)
+        setRefreshing(false)
+        setLastUpdated(new Date())
       }
+  }
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    fetchDashboardData(true)
   }
 
   useEffect(() => {
     fetchDashboardData()
     
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchDashboardData, 5 * 60 * 1000)
+    // Auto-refresh every 30 seconds for live updates
+    const interval = setInterval(() => fetchDashboardData(), 30 * 1000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Listen for parent deletions from other pages to refresh dashboard stats
+  useEffect(() => {
+    const handleParentDeleted = () => {
+      console.log('🔔 Dashboard received parent-deleted event, refreshing all 6 analytics cards...')
+      fetchDashboardData()
+    }
+    
+    console.log('🎧 Dashboard event listener registered for parent-deleted events')
+    window.addEventListener('parent-deleted', handleParentDeleted)
+    return () => {
+      console.log('🔇 Dashboard event listener removed')
+      window.removeEventListener('parent-deleted', handleParentDeleted)
+    }
   }, [])
 
   const quickActions = [
@@ -194,15 +234,31 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">
               Welcome to your basketball program management dashboard
             </p>
+            {lastUpdated && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
-          <Button onClick={fetchDashboardData} variant="outline" size="sm">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
+              {refreshing ? 'Updating...' : 'Live'}
+            </div>
+            <Button 
+              onClick={handleManualRefresh} 
+              variant="outline" 
+              size="sm"
+              disabled={refreshing}
+            >
+              <TrendingUp className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Updating...' : 'Refresh Now'}
+            </Button>
+          </div>
         </div>
 
-        {/* 6 Analytics Cards */}
-        {stats && <StatsCards stats={stats} overdueParents={overdueParents} />}
+        {/* 8 Analytics Cards */}
+        {stats && <StatsCards stats={stats} />}
 
         {/* Charts and Activity Section */}
         <div className="grid gap-6 md:grid-cols-3">
@@ -289,43 +345,12 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-green-50 rounded-full">
-                      <DollarSign className="h-3 w-3 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Payment received from John Smith</p>
-                      <p className="text-xs text-gray-500">2 hours ago</p>
-                    </div>
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">
+                    <MessageSquare className="h-8 w-8 mx-auto" />
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-blue-50 rounded-full">
-                      <Users className="h-3 w-3 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">New parent registered</p>
-                      <p className="text-xs text-gray-500">4 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-purple-50 rounded-full">
-                      <MessageSquare className="h-3 w-3 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Reminder sent to 25 parents</p>
-                      <p className="text-xs text-gray-500">6 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-red-50 rounded-full">
-                      <AlertTriangle className="h-3 w-3 text-red-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">3 payments overdue</p>
-                      <p className="text-xs text-gray-500">1 day ago</p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-500">No recent activity</p>
+                  <p className="text-xs text-gray-400">Activity will appear here as you use the system</p>
                 </div>
               )}
               

@@ -152,7 +152,7 @@ export async function preWarmCache() {
     console.log('🔥 Pre-warming cache with common queries...')
     
     // Pre-load dashboard stats
-    await cachedConvex.query(api.dashboard.getDashboardStats, {}, 'dashboard_stats', 60000)
+    await cachedConvex.query(api.dashboard.getFixedDashboardStats, {}, 'dashboard_stats', 60000)
     
     // Pre-load recent activity
     await cachedConvex.query(api.dashboard.getRecentActivity, {}, 'recent_activity', 30000)

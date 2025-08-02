@@ -151,9 +151,9 @@ export const getPaymentAnalytics = query({
   handler: async (ctx, args) => {
     const payments = await ctx.db.query("payments").collect();
 
-    const totalRevenue = payments
-      .filter((p) => p.status === "paid")
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    // FIXED: Calculate total committed revenue (paid + pending) to match dashboard
+    const eligiblePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
+    const totalRevenue = eligiblePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     const collectedPayments = payments
       .filter((p) => p.status === "paid")
@@ -176,20 +176,23 @@ export const getPaymentAnalytics = query({
     });
     
     const overduePayments = overduePaymentsList.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const overdueCount = overduePaymentsList.length;
+    
+    // FIXED: Count unique parents with overdue payments to match dashboard
+    const uniqueParentsWithOverduePayments = new Set(overduePaymentsList.map(p => p.parentId)).size;
 
-    const activePlans = await ctx.db
-      .query("paymentPlans")
-      .filter((q) => q.eq(q.field("status"), "active"))
-      .collect();
+    const paymentPlans = await ctx.db.query("paymentPlans").collect();
+    const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
+    
+    // FIXED: Count unique parents with active plans to match dashboard
+    const uniqueParentsWithPlans = new Set(activePaymentPlans.map(p => p.parentId)).size;
 
     return {
-      totalRevenue,
+      totalRevenue, // Now includes paid + pending
       collectedPayments,
       pendingPayments,
       overduePayments,
-      overdueCount,
-      activePlans: activePlans.length,
+      overdueCount: uniqueParentsWithOverduePayments, // Now shows unique parents
+      activePlans: uniqueParentsWithPlans, // Now shows unique parents with plans
       avgPaymentTime: 3,
     };
   },

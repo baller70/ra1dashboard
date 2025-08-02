@@ -131,12 +131,21 @@ export default function AnalyticsPage() {
       setRefreshing(true)
       setError(null)
 
-      // Fetch dashboard analytics
-      const dashboardResponse = await fetch('/api/analytics/dashboard')
+      // Fetch dashboard analytics using the same corrected API as the dashboard page
+      const cacheBuster = Date.now()
+      const dashboardResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'Cache-Control': 'no-cache'
+        }
+      })
       if (!dashboardResponse.ok) {
         throw new Error('Failed to fetch dashboard analytics')
       }
-      const dashboardData = await dashboardResponse.json()
+      const dashboardResponseData = await dashboardResponse.json()
+      const dashboardData = {
+        overview: dashboardResponseData.data || dashboardResponseData
+      }
 
       // Enhance data with additional mock insights for better visualization
       const enhancedData = {
@@ -196,6 +205,21 @@ export default function AnalyticsPage() {
     // Auto-refresh every 5 minutes
     const interval = setInterval(fetchAnalytics, 5 * 60 * 1000)
     return () => clearInterval(interval)
+  }, [fetchAnalytics])
+
+  // Listen for parent deletions from other pages to refresh analytics
+  useEffect(() => {
+    const handleParentDeleted = () => {
+      console.log('🔔 Duplicate analytics page received parent-deleted event, refreshing data...')
+      fetchAnalytics()
+    }
+    
+    console.log('🎧 Duplicate analytics page event listener registered for parent-deleted events')
+    window.addEventListener('parent-deleted', handleParentDeleted)
+    return () => {
+      console.log('🔇 Duplicate analytics page event listener removed')
+      window.removeEventListener('parent-deleted', handleParentDeleted)
+    }
   }, [fetchAnalytics])
 
   const formatCurrency = (value: number) => {

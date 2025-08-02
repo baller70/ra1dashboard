@@ -28,3 +28,4 @@ app/.env
 
 # Local Netlify folder
 .netlify
+.vercel

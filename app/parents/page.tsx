@@ -81,18 +81,24 @@ export default function ParentsPage() {
     }
 
     setDeleteLoading(parentId)
+    console.log('🗑️ Starting delete process for parent:', parentId, parentName)
+    
     try {
       // Try dynamic route first
+      console.log('🔄 Attempting delete via dynamic route...')
       let response = await fetch(`/api/parents/${parentId}`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'x-api-key': 'ra1-dashboard-api-key-2024'
         }
       })
 
+      console.log('📡 Dynamic route response status:', response.status)
+
       // If dynamic route fails with 404, use alternative endpoint
       if (!response.ok && response.status === 404) {
-        console.log('Dynamic route failed, using alternative delete endpoint')
+        console.log('🔄 Dynamic route failed, using alternative delete endpoint')
         response = await fetch('/api/parents/delete', {
           method: 'POST',
           headers: {
@@ -101,35 +107,45 @@ export default function ParentsPage() {
           },
           body: JSON.stringify({ parentId })
         })
+        console.log('📡 Alternative route response status:', response.status)
       }
 
       if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Delete successful:', result)
+        
         // Remove the parent from the local state
         setParents(prevParents => prevParents.filter(p => p._id !== parentId))
         
-        // Also trigger a page refresh to ensure data consistency across all pages
-        setTimeout(() => {
-          window.dispatchEvent(new Event('parent-deleted'))
-        }, 500)
+        // Immediately dispatch event for dashboard refresh
+        window.dispatchEvent(new Event('parent-deleted'))
+        console.log('🔔 Dispatched parent-deleted event for dashboard refresh')
+        
+        // Also reload the page data
+        fetchParents()
         
         toast({
-          title: 'Parent Deleted',
-          description: `${parentName} has been successfully deleted from both parent and payment pages.`,
+          title: '✅ Parent Deleted Successfully',
+          description: `${parentName} has been permanently removed from the system.`,
+          duration: 5000,
         })
       } else {
         const errorData = await response.json()
+        console.error('❌ Delete failed:', errorData)
         toast({
-          title: 'Delete Failed',
-          description: errorData.details || errorData.error || 'Failed to delete parent',
-          variant: 'destructive'
+          title: '❌ Delete Failed',
+          description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
+          variant: 'destructive',
+          duration: 5000,
         })
       }
     } catch (error) {
-      console.error('Error deleting parent:', error)
+      console.error('💥 Error deleting parent:', error)
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while deleting the parent',
-        variant: 'destructive'
+        title: '💥 Unexpected Error',
+        description: `An error occurred while deleting ${parentName}. Please try again.`,
+        variant: 'destructive',
+        duration: 5000,
       })
     } finally {
       setDeleteLoading(null)
@@ -188,9 +204,16 @@ export default function ParentsPage() {
   }, [parents])
 
   const filteredParents = (Array.isArray(parents) ? parents : []).filter(parent => {
-    const matchesSearch = parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         parent.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || parent.status === statusFilter
+    // Defensive null checks to prevent runtime errors
+    if (!parent || typeof parent !== 'object') return false
+    
+    const parentName = parent.name || ''
+    const parentEmail = parent.email || ''
+    const parentStatus = parent.status || ''
+    
+    const matchesSearch = parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         parentEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || parentStatus === statusFilter
     return matchesSearch && matchesStatus
   })
 

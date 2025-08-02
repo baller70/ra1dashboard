@@ -83,16 +83,21 @@ const Recharts = nextDynamic(() => import('recharts'), { ssr: false, loading: ()
 export default function PaymentsPage() {
   const [activeProgram, setActiveProgram] = useState('yearly-program')
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [paymentsData, setPaymentsData] = useState<any>(null)
   const [analytics, setAnalytics] = useState<any>(null)
   const [teamsData, setTeamsData] = useState<any>(null)
   const [allParentsData, setAllParentsData] = useState<any>(null)
 
   // Define fetchData as a standalone function
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isManualRefresh = false) => {
     try {
       console.log('🔄 Starting data fetch...')
       setLoading(true)
+      if (isManualRefresh) {
+        setRefreshing(true)
+      }
       
       // Ultra-aggressive cache busting
       const timestamp = Date.now() + Math.random() * 10000
@@ -112,7 +117,10 @@ export default function PaymentsPage() {
         }),
         fetch(`/api/payments/analytics?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          headers: { 
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
         }),
         fetch(`/api/teams?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
@@ -169,8 +177,21 @@ export default function PaymentsPage() {
       })
     } finally {
       setLoading(false)
+      setRefreshing(false)
+      setLastUpdated(new Date())
     }
   }, [activeProgram])
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    fetchData(true)
+  }
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => fetchData(), 30 * 1000)
+    return () => clearInterval(interval)
+  }, [fetchData])
 
   // Listen for parent deletions from other pages
   useEffect(() => {
@@ -289,18 +310,24 @@ export default function PaymentsPage() {
     }
 
     setDeleteLoading(parentId)
+    console.log('🗑️ Starting delete process for parent:', parentId, parentName)
+    
     try {
       // Try dynamic route first
+      console.log('🔄 Attempting delete via dynamic route...')
       let response = await fetch(`/api/parents/${parentId}`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'x-api-key': 'ra1-dashboard-api-key-2024'
         }
       })
 
+      console.log('📡 Dynamic route response status:', response.status)
+
       // If dynamic route fails with 404, use alternative endpoint
       if (!response.ok && response.status === 404) {
-        console.log('Dynamic route failed, using alternative delete endpoint')
+        console.log('🔄 Dynamic route failed, using alternative delete endpoint')
         response = await fetch('/api/parents/delete', {
           method: 'POST',
           headers: {
@@ -309,25 +336,37 @@ export default function PaymentsPage() {
           },
           body: JSON.stringify({ parentId })
         })
+        console.log('📡 Alternative route response status:', response.status)
       }
 
       if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Delete successful:', result)
+        
         // Refresh all data to ensure consistency across both pages
         await fetchData()
+        
+        // Dispatch event to update dashboard and analytics pages
+        window.dispatchEvent(new Event('parent-deleted'))
+        console.log('🔔 Dispatched parent-deleted event from payments page')
+        
         toast({
-          title: 'Parent Deleted',
-          description: `${parentName} has been successfully deleted from both parent and payment pages.`,
+          title: '✅ Parent Deleted Successfully',
+          description: `${parentName} and all associated payments have been permanently removed.`,
+          duration: 5000,
         })
       } else {
         const errorData = await response.json()
+        console.error('❌ Delete failed:', errorData)
         toast({
-          title: 'Delete Failed',
-          description: errorData.details || errorData.error || 'Failed to delete parent',
-          variant: 'destructive'
+          title: '❌ Delete Failed',
+          description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
+          variant: 'destructive',
+          duration: 5000,
         })
       }
     } catch (error) {
-      console.error('Error deleting parent:', error)
+      console.error('💥 Error deleting parent:', error)
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while deleting the parent',
@@ -822,8 +861,26 @@ export default function PaymentsPage() {
             <p className="text-muted-foreground">
               Manage payments, track progress, and handle overdue accounts
             </p>
+            {lastUpdated && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
           <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
+              {refreshing ? 'Updating...' : 'Live'}
+            </div>
+            <Button 
+              onClick={handleManualRefresh} 
+              variant="outline" 
+              size="sm"
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Updating...' : 'Refresh'}
+            </Button>
             {selectedPayments.length > 0 && (
               <Button 
                 onClick={generateAIReminders}

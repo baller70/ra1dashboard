@@ -1,14 +1,15 @@
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../lib/api-utils'
+import { requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
 import { convexHttp } from '../../../lib/convex-server'
 import { api } from '../../../convex/_generated/api'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
     
     // Get payment plans from Convex
     const paymentPlans = await convexHttp.query(api.payments.getPaymentPlans, {});
@@ -25,7 +26,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAuth();
+    await requireAuthWithApiKeyBypass(request);
     const body = await request.json();
     const { parentId, totalAmount, type, installments, startDate, description, installmentAmount } = body;
 

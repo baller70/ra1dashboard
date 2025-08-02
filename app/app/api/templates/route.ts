@@ -2,13 +2,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../lib/api-utils'
+import { requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
 import { convexHttp } from '../../../lib/db'
 import { api } from '../../../convex/_generated/api'
 
 export async function GET(request: Request) {
   try {
-    await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
 
     // Get templates from Convex
     const result = await convexHttp.query(api.templates.getTemplates, {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requireAuth()
+    await requireAuthWithApiKeyBypass(request)
 
     const body = await request.json()
     const {

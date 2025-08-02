@@ -314,6 +314,11 @@ export default function PaymentsPage() {
       if (response.ok) {
         // Refresh all data to ensure consistency across both pages
         await fetchData()
+        
+        // Dispatch event to update dashboard and analytics pages
+        window.dispatchEvent(new Event('parent-deleted'))
+        console.log('🔔 Dispatched parent-deleted event from duplicate payments page')
+        
         toast({
           title: 'Parent Deleted',
           description: `${parentName} has been successfully deleted from both parent and payment pages.`,

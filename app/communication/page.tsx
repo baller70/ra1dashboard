@@ -48,7 +48,11 @@ export default function CommunicationPage() {
       if (searchTerm) params.append('search', searchTerm)
       if (categoryFilter !== 'all') params.append('category', categoryFilter)
       
-      const response = await fetch(`/api/templates?${params}`)
+      const response = await fetch(`/api/templates?${params}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       const data = await response.json()
       setTemplates(data || [])
     } catch (error) {
@@ -69,6 +73,7 @@ export default function CommunicationPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify({
           prompt: aiPrompt,

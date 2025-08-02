@@ -60,13 +60,13 @@ export default function NewParentPage() {
     
     // Validate form
     if (!validateForm()) {
+      setLoading(false)
       toast({
-        title: "❌ Validation Error",
+        title: "❌ Validation Error", 
         description: "Please fix the errors below",
         variant: "destructive",
       })
-      setLoading(false)
-      console.log('Form validation failed:', errors)
+      console.log('Form validation failed')
       return
     }
     
@@ -77,6 +77,7 @@ export default function NewParentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify(formData),
       })
@@ -109,20 +110,24 @@ export default function NewParentPage() {
           notes: ''
         })
         
-        // Redirect back to payment plan creation
+        // Redirect to parents list to see the new parent
         setTimeout(() => {
-          console.log('Redirecting back to payment plan creation...')
-          router.push('/payment-plans/new')
+          console.log('Redirecting to parents list...')
+          router.push('/parents')
         }, 1500)
         
       } else {
         const errorMsg = result.error || result.message || 'Failed to create parent'
+        console.error('API Error Response:', {
+          status: response.status,
+          result: result,
+          errorMsg: errorMsg
+        })
         toast({
           title: "❌ Error Creating Parent",
           description: errorMsg,
           variant: "destructive",
         })
-        console.error('API Error:', errorMsg)
       }
       
     } catch (error) {
