@@ -172,6 +172,7 @@ export default function NewPaymentPlanPage() {
 
   const fetchParents = async () => {
     try {
+      console.log('🔄 Fetching parents with API key authentication...')
       const response = await fetch('/api/parents?limit=1000', {
         cache: 'no-store',
         headers: { 
@@ -179,6 +180,7 @@ export default function NewPaymentPlanPage() {
           'x-api-key': 'ra1-dashboard-api-key-2024'
         }
       })
+      console.log('📡 Parents API response status:', response.status)
       if (response.ok) {
         const data = await response.json()
         const parentsData = data.data?.parents || data.parents || []
@@ -226,7 +228,8 @@ export default function NewPaymentPlanPage() {
         installments: parseInt(formData.installments)
       }
       
-      console.log('Sending API request with body:', requestBody)
+      console.log('🚀 Sending API request with body:', requestBody)
+      console.log('🔑 Using API key: ra1-dashboard-api-key-2024')
       
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
@@ -236,6 +239,9 @@ export default function NewPaymentPlanPage() {
         },
         body: JSON.stringify(requestBody)
       })
+      
+      console.log('📡 Response status:', response.status)
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (response.ok) {
         const result = await response.json()
@@ -674,6 +680,44 @@ export default function NewPaymentPlanPage() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+        
+        {/* Debug section for testing API */}
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => {
+                  console.log('🧪 Testing API connection...')
+                  fetch('/api/health')
+                    .then(r => r.json())
+                    .then(data => console.log('🏥 Health check:', data))
+                    .catch(err => console.error('❌ Health check failed:', err))
+                }}
+              >
+                🧪 Test API Connection
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => {
+                  console.log('🔑 Testing authentication...')
+                  fetch('/api/parents?limit=5', {
+                    headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
+                  })
+                    .then(r => r.json())
+                    .then(data => console.log('👨‍👩‍👧‍👦 Parents test:', data))
+                    .catch(err => console.error('❌ Parents test failed:', err))
+                }}
+              >
+                🔑 Test Authentication
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
