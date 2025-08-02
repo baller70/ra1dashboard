@@ -174,7 +174,10 @@ export default function NewPaymentPlanPage() {
     try {
       const response = await fetch('/api/parents?limit=1000', {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        headers: { 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
       })
       if (response.ok) {
         const data = await response.json()
