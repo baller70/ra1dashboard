@@ -67,7 +67,7 @@ export default function DashboardPage() {
     try {
       // Fetch dashboard stats with cache-busting
       const cacheBuster = Date.now()
-      const statsResponse = await fetch(`/api/dashboard/stats-live?t=${cacheBuster}`, {
+      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
         headers: {
           'x-api-key': 'ra1-dashboard-api-key-2024',
           'Cache-Control': 'no-cache'

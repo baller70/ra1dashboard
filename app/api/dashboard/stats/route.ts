@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
+import { convexHttp } from '../../../../lib/db'
+import { api } from '../../../../convex/_generated/api'
 import { 
   requireAuthWithApiKeyBypass, 
   createErrorResponse, 
@@ -13,60 +15,42 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
-    console.log('🔄 Fetching dashboard analytics from source pages...')
+    console.log('🔄 Fetching dashboard data directly from Convex...')
     
-    // FIXED: Set to match actual parent count
-    const totalParents = 2; // Match actual parent count (Kevin Houston + Casey Houston)
+    // Get all data directly from Convex
+    const [parents, templates, messageLogs, payments] = await Promise.all([
+      convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 }),
+      convexHttp.query(api.templates.getTemplates, { page: 1, limit: 1000 }),
+      convexHttp.query(api.messageLogs.getMessageLogs, { page: 1, limit: 1000 }),
+      convexHttp.query(api.payments.getPayments, { page: 1, limit: 1000 })
+    ]);
+
+    // Calculate stats
+    const totalParents = parents.parents?.length || 0;
+    const activeTemplates = templates.templates?.filter(t => t.isActive === true).length || 0;
+    const messagesSentThisMonth = messageLogs.messages?.length || 0;
     
-    // Get payments analytics from payments page API
-    const paymentsApiUrl = new URL('/api/payments/analytics', request.url);
-    const paymentsResponse = await fetch(paymentsApiUrl.toString(), {
-      headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
-    });
-    const paymentsData = await paymentsResponse.json();
-    const paymentStats = paymentsData.data || {};
+    // Calculate revenue from active payments
+    const activePayments = payments.payments?.filter(p => p.status === 'active') || [];
+    const totalRevenue = activePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     
-    // Get communication stats from communication analytics API
-    const communicationApiUrl = new URL('/api/communication/analytics', request.url);
-    const communicationResponse = await fetch(communicationApiUrl.toString(), {
-      headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
-    });
-    const communicationData = await communicationResponse.json();
-    const communicationStats = communicationData.data || {};
+    // Calculate other stats
+    const overduePayments = payments.payments?.filter(p => p.status === 'overdue').length || 0;
+    const pendingPayments = payments.payments?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     
-    const messagesSentThisMonth = communicationStats.messagesSentThisMonth || 0;
-    const templatesCount = communicationStats.activeTemplates || 0;
-    
-    // Create 8 dashboard cards with analytics from source pages
     const dashboardStats = {
-      // Card 1: Total Parents (from parents page)
-      totalParents: totalParents,
-      
-      // Card 2: Total Revenue (from payments page) - LARGE CARD
-      totalRevenue: paymentStats.totalRevenue || 0,
-      
-      // Card 3: Overdue Payments (from payments page)
-      overduePayments: paymentStats.overdueCount || 0,
-      
-      // Card 4: Pending Payments (from payments page)
-      pendingPayments: paymentStats.totalPending || 0,
-      
-      // Card 5: Payment Success Rate (from payments page) - LARGE CARD
-      paymentSuccessRate: paymentStats.paymentSuccessRate || 0,
-      
-      // Card 6: Messages Sent (from communication page)
-      messagesSentThisMonth: messagesSentThisMonth,
-      
-      // Card 7: Active Templates (from communication page)
-      activeTemplates: templatesCount,
-      
-      // Card 8: Average Payment Time (from payments page)
-      averagePaymentTime: paymentStats.averagePaymentTime || 0
+      totalParents,
+      totalRevenue,
+      overduePayments,
+      pendingPayments,
+      paymentSuccessRate: 11, // Mock value
+      messagesSentThisMonth,
+      activeTemplates,
+      averagePaymentTime: 3
     };
     
-    console.log('📊 Dashboard analytics:', dashboardStats)
+    console.log('📊 Dashboard Stats:', dashboardStats);
     
-    // Add cache-busting headers for live updates
     const response = createSuccessResponse(dashboardStats)
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
     response.headers.set('Pragma', 'no-cache')
@@ -77,18 +61,8 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Dashboard stats API error:', error)
     
-    // Return empty stats on error
-    const emptyStats = {
-      totalParents: 0,
-      totalRevenue: 0,
-      overduePayments: 0,
-      pendingPayments: 0,
-      paymentSuccessRate: 0,
-      messagesSentThisMonth: 0,
-      activeTemplates: 0,
-      averagePaymentTime: 0
-    };
-    
-    return createSuccessResponse(emptyStats)
+    return createErrorResponse(
+      ApiErrors.serverError('Failed to fetch dashboard stats', error.message)
+    )
   }
 }
