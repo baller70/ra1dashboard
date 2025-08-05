@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
     const [parentsRes, analyticsRes, templatesRes] = await Promise.all([
-      fetch(`${baseUrl}/api/parents`),
+      fetch(`${baseUrl}/api/parents?status=active`),
       fetch(`${baseUrl}/api/payments/analytics?program=yearly-program`, {
         headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
       }),
@@ -34,13 +34,24 @@ export async function GET(request: Request) {
       templatesRes.json()
     ]);
 
+    console.log('🔍 DETAILED DEBUG - Parents Data Structure:', JSON.stringify(parentsData, null, 2));
+    console.log('🔍 DETAILED DEBUG - Analytics Data Structure:', JSON.stringify(analyticsData, null, 2));
+    console.log('🔍 DETAILED DEBUG - Templates Data Structure:', JSON.stringify(templatesData, null, 2));
+
     // Calculate stats using SAME logic as payment page
-    const totalParents = 5; // Based on actual /api/parents response showing 5 parents
+    const totalParents = parentsData.data?.parents?.length || parentsData.data?.length || 0;
+    console.log('🔍 TOTAL PARENTS CALCULATION:', {
+      'parentsData.data?.parents?.length': parentsData.data?.parents?.length,
+      'parentsData.data?.length': parentsData.data?.length,
+      'Final totalParents': totalParents
+    });
     const totalRevenue = analyticsData.data?.totalRevenue || 0;
     const overduePayments = analyticsData.data?.overdueCount || 0;
     const pendingPayments = Math.round(analyticsData.data?.totalPending || 0); // Use the actual pending amount
-    // FORCE correct templates count based on actual API data
-    const activeTemplates = 5; // Based on actual /api/templates response showing 5 active templates
+    // Calculate templates count from actual API data
+    const activeTemplates = Array.isArray(templatesData) ? 
+      templatesData.filter(t => t.isActive === true).length : 
+      (templatesData.data?.filter(t => t.isActive === true).length || 0);
     
     // For messages, use a reasonable count (we can improve this later)
     const messagesSentThisMonth = 6; // Based on your server logs showing 6 messages

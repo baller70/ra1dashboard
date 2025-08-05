@@ -14,10 +14,14 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as aiRecommendations from "../aiRecommendations.js";
+import type * as analytics from "../analytics.js";
 import type * as backgroundJobs from "../backgroundJobs.js";
 import type * as contracts from "../contracts.js";
 import type * as dashboard from "../dashboard.js";
+import type * as dashboardStats from "../dashboardStats.js";
+import type * as dataCleanup from "../dataCleanup.js";
 import type * as emailReminders from "../emailReminders.js";
+import type * as liveCounters from "../liveCounters.js";
 import type * as messageLogs from "../messageLogs.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
@@ -40,10 +44,14 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   aiRecommendations: typeof aiRecommendations;
+  analytics: typeof analytics;
   backgroundJobs: typeof backgroundJobs;
   contracts: typeof contracts;
   dashboard: typeof dashboard;
+  dashboardStats: typeof dashboardStats;
+  dataCleanup: typeof dataCleanup;
   emailReminders: typeof emailReminders;
+  liveCounters: typeof liveCounters;
   messageLogs: typeof messageLogs;
   migrations: typeof migrations;
   notifications: typeof notifications;
