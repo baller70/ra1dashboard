@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { DollarSign, Users, AlertTriangle, Calendar, CreditCard, MessageSquare } from 'lucide-react'
+import { DollarSign, Users, AlertTriangle, Calendar, CreditCard, MessageSquare, FileText, TrendingUp, Clock } from 'lucide-react'
 import { DashboardStats } from '../../lib/types'
 
 interface OverdueParent {
@@ -24,7 +24,7 @@ export function StatsCards({ stats, overdueParents = [] }: StatsCardsProps) {
   const cards = [
     {
       title: 'Total Parents',
-      value: '2', // FIXED: Match actual parent count (Kevin Houston + Casey Houston)
+      value: stats?.totalParents?.toString() ?? '0',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
@@ -63,11 +63,39 @@ export function StatsCards({ stats, overdueParents = [] }: StatsCardsProps) {
       icon: MessageSquare,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50'
+    },
+    {
+      title: 'Active Templates',
+      value: stats?.activeTemplates?.toString() ?? '0',
+      icon: FileText,
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50'
+    },
+    {
+      title: 'Payment Success Rate',
+      value: `${stats?.paymentSuccessRate ?? 0}%`,
+      icon: TrendingUp,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50'
+    },
+    {
+      title: 'Pending Payments',
+      value: `$${stats?.pendingPayments?.toLocaleString() ?? '0'}`,
+      icon: Clock,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50'
+    },
+    {
+      title: 'Average Payment Time',
+      value: `${stats?.averagePaymentTime ?? 0} days`,
+      icon: Calendar,
+      color: 'text-slate-600',
+      bgColor: 'bg-slate-50'
     }
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {cards.map((card, index) => {
         const Icon = card.icon
         return (
