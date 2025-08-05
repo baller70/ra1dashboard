@@ -70,7 +70,11 @@ export default function ContractViewPage() {
 
   const fetchContract = async () => {
     try {
-      const response = await fetch(`/api/contracts/${contractId}`)
+      const response = await fetch(`/api/contracts/${contractId}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setContract(data)
@@ -147,7 +151,8 @@ export default function ContractViewPage() {
       const response = await fetch(`/api/contracts/${contractId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify({
           status,

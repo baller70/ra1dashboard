@@ -48,7 +48,11 @@ function ContractUploadPageContent() {
   const fetchParents = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/parents?limit=1000')
+      const response = await fetch('/api/parents?limit=1000', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       const data = await response.json()
       
       if (response.ok) {
@@ -118,6 +122,9 @@ function ContractUploadPageContent() {
 
       const response = await fetch('/api/contracts/upload', {
         method: 'POST',
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
         body: formData
       })
 

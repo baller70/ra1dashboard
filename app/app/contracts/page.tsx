@@ -90,7 +90,11 @@ export default function ContractsPage() {
       // Add cache-busting to ensure fresh data
       const cacheBuster = `_cache=${Date.now()}`
       const separator = params.toString() ? '&' : ''
-      const response = await fetch(`/api/contracts?${params}${separator}${cacheBuster}`)
+      const response = await fetch(`/api/contracts?${params}${separator}${cacheBuster}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       const data = await response.json()
       
       if (response.ok) {
@@ -191,7 +195,8 @@ export default function ContractsPage() {
       const response = await fetch('/api/contracts/bulk', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify({
           action,
