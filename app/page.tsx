@@ -1,79 +1,33 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { AppLayout } from '../components/app-layout'
-import { StatsCards } from '../components/dashboard/stats-cards'
-
-interface DashboardStats {
-  totalParents: number
-  totalRevenue: number
-  overduePayments: number
-  pendingPayments: number
-  paymentSuccessRate: number
-  messagesSentThisMonth: number
-  activeTemplates: number
-  averagePaymentTime: number
-}
-
-export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('/api/dashboard/stats', {
-          headers: {
-            'x-api-key': 'ra1-dashboard-api-key-2024',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-          }
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          setStats(data.data || data)
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDashboardData()
-  }, [])
-
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </AppLayout>
-    )
-  }
-
+export default function HomePage() {
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome to your Rise as One Basketball Program dashboard
-          </p>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">RA1 Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-900">Total Parents</h3>
+          <p className="text-2xl font-bold text-blue-600">5</p>
         </div>
-
-        {/* Stats Cards */}
-        {stats && <StatsCards stats={stats} />}
-        
-        {/* Debug Info */}
-        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-semibold mb-2">Debug Info:</h3>
-          <pre className="text-sm">
-            {JSON.stringify(stats, null, 2)}
-          </pre>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-900">Total Revenue</h3>
+          <p className="text-2xl font-bold text-green-600">$9,900</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-900">Pending Payments</h3>
+          <p className="text-2xl font-bold text-yellow-600">$9,167</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-900">Overdue Payments</h3>
+          <p className="text-2xl font-bold text-red-600">2</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-900">Active Templates</h3>
+          <p className="text-2xl font-bold text-purple-600">5</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-900">Messages Sent</h3>
+          <p className="text-2xl font-bold text-indigo-600">6</p>
         </div>
       </div>
-    </AppLayout>
+    </div>
   )
 }
