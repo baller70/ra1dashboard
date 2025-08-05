@@ -46,7 +46,11 @@ export default function TemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('/api/templates')
+      const response = await fetch('/api/templates', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)

@@ -97,7 +97,11 @@ function CommunicationSendContent() {
 
   const fetchParents = async () => {
     try {
-      const response = await fetch('/api/parents?limit=1000')
+      const response = await fetch('/api/parents?limit=1000', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -138,7 +142,11 @@ function CommunicationSendContent() {
   const fetchTemplates = async () => {
     try {
       console.log('🔄 Fetching templates...')
-      const response = await fetch('/api/templates')
+      const response = await fetch('/api/templates', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
