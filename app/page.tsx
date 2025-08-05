@@ -67,19 +67,29 @@ export default function DashboardPage() {
     try {
       // Fetch dashboard stats with cache-busting
       const cacheBuster = Date.now()
-      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
+      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}&nocache=${Math.random()}`, {
         headers: {
           'x-api-key': 'ra1-dashboard-api-key-2024',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         console.log('📊 Fresh dashboard stats received:', statsData)
+        console.log('📊 Raw API response:', JSON.stringify(statsData, null, 2))
         
         // Extract the actual stats from API response {success: true, data: {...}}
         const actualStats = statsData.data || statsData
-        console.log('📈 All 8 analytics cards updating with:', actualStats)
+        console.log('📈 All 9 analytics cards updating with:', actualStats)
+        console.log('📈 Stats object keys:', Object.keys(actualStats))
+        console.log('📈 Individual values:', {
+          totalParents: actualStats.totalParents,
+          totalRevenue: actualStats.totalRevenue,
+          activeTemplates: actualStats.activeTemplates,
+          messagesSentThisMonth: actualStats.messagesSentThisMonth
+        })
         
         setStats(actualStats)
       }
