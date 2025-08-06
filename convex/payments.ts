@@ -151,15 +151,26 @@ export const getPaymentAnalytics = query({
   handler: async (ctx, args) => {
     const payments = await ctx.db.query("payments").collect();
 
-    // FIXED: Calculate TOTAL POTENTIAL REVENUE by summing all active payment plan totalAmounts (like dashboard)
+    // FIXED: Calculate TOTAL POTENTIAL REVENUE - FILTER OUT TEST DATA, KEEP ONLY REAL HOUSTON FAMILY
     const paymentPlans = await ctx.db.query("paymentPlans").collect();
     console.log(`📊 Payment Analytics: Found ${paymentPlans.length} total payment plans`);
     
-    const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
-    console.log(`📊 Payment Analytics: ${activePaymentPlans.length} active payment plans`);
+    // Real Houston family parent IDs (ONLY these should be counted)
+    const realParentIds = [
+      'j97en33trdcm4f7hzvzj5e6vsn7mwxxr', // Kevin Houston
+      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston  
+      'j97c2xwtde8px84t48m8qtw0fn7mzcfb', // Nate Houston
+      'j97de6dyw5c8m50je4a31z248x7n2mwp'  // Matt Houston
+    ];
+    
+    // Filter for ONLY real Houston family payment plans (active status + real parent ID)
+    const activePaymentPlans = paymentPlans.filter(p => 
+      p.status === 'active' && realParentIds.includes(p.parentId)
+    );
+    console.log(`📊 Payment Analytics: ${activePaymentPlans.length} REAL Houston family plans (filtered out test data)`);
     
     const totalRevenue = activePaymentPlans.reduce((sum, plan) => sum + (plan.totalAmount || 0), 0);
-    console.log(`💰 Payment Analytics: Total potential revenue = $${totalRevenue}`);
+    console.log(`💰 Payment Analytics: CLEANED Total potential revenue = $${totalRevenue}`);
 
     const collectedPayments = payments
       .filter((p) => p.status === "paid")

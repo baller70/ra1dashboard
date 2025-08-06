@@ -55,12 +55,25 @@ export async function GET(request: Request) {
     const pendingPayments = payments.filter(p => p.status === 'pending');
     const overduePayments = payments.filter(p => p.status === 'overdue');
     
-    // Calculate TOTAL POTENTIAL REVENUE by summing all active payment plan totalAmounts
+    // Calculate TOTAL POTENTIAL REVENUE - FILTER OUT TEST DATA, KEEP ONLY REAL HOUSTON FAMILY
     const paymentPlans = paymentPlansResult || [];
-    const activePaymentPlans = paymentPlans.filter(plan => plan.status === 'active');
+    
+    // Real Houston family parent IDs (ONLY these should be counted)
+    const realParentIds = [
+      'j97en33trdcm4f7hzvzj5e6vsn7mwxxr', // Kevin Houston
+      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston  
+      'j97c2xwtde8px84t48m8qtw0fn7mzcfb', // Nate Houston
+      'j97de6dyw5c8m50je4a31z248x7n2mwp'  // Matt Houston
+    ];
+    
+    // Filter for ONLY real Houston family payment plans (active status + real parent ID)
+    const activePaymentPlans = paymentPlans.filter(plan => 
+      plan.status === 'active' && realParentIds.includes(plan.parentId)
+    );
+    
     const totalRevenue = activePaymentPlans.reduce((sum, plan) => sum + (plan.totalAmount || 0), 0);
     
-    console.log(`💰 TOTAL POTENTIAL REVENUE: ${activePaymentPlans.length} active payment plans × $1650 each = $${totalRevenue}`);
+    console.log(`💰 CLEANED TOTAL POTENTIAL REVENUE: ${activePaymentPlans.length} real Houston family plans × $1650 each = $${totalRevenue}`);
     
     const totalPending = pendingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const overdueCount = overduePayments.length;
