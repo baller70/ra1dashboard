@@ -3,6 +3,105 @@ import { v } from "convex/values";
 
 // Data cleanup and organization functions for analytics accuracy
 
+// Remove ALL test data and keep only real Houston family data
+export const removeTestDataKeepReal = mutation({
+  args: { confirm: v.boolean() },
+  handler: async (ctx, args) => {
+    if (!args.confirm) {
+      return { error: "Must confirm cleanup by passing confirm: true" };
+    }
+    
+    console.log("🧹 Starting removal of ALL test data...");
+    
+    // Get all parents
+    const allParents = await ctx.db.query("parents").collect();
+    console.log(`📊 Found ${allParents.length} total parents`);
+    
+    // Define REAL parents (only Houston family members)
+    const realParentEmails = [
+      "khouston721@gmail.com",  // Kevin Houston
+      "khouston@gmail.com",     // Casey Houston  
+      "khous7@gmail.com",       // Nate Houston
+      "khouston75621@gmail.com" // Matt Houston
+    ];
+    
+    const realParentNames = [
+      "Kevin Houston",
+      "Casey Houston", 
+      "Nate Houston",
+      "matt Houston"
+    ];
+    
+    // Identify real vs test parents
+    const realParents = allParents.filter(parent => 
+      realParentEmails.includes(parent.email) || 
+      realParentNames.includes(parent.name)
+    );
+    
+    const testParents = allParents.filter(parent => 
+      !realParentEmails.includes(parent.email) && 
+      !realParentNames.includes(parent.name)
+    );
+    
+    console.log(`✅ Real parents: ${realParents.length}`);
+    console.log(`❌ Test parents to delete: ${testParents.length}`);
+    
+    // Get test parent IDs
+    const testParentIds = testParents.map(p => p._id);
+    
+    let deletedCounts = {
+      parents: 0,
+      paymentPlans: 0,
+      payments: 0,
+      installments: 0
+    };
+    
+    // 1. Delete test payment plans
+    const allPaymentPlans = await ctx.db.query("paymentPlans").collect();
+    for (const plan of allPaymentPlans) {
+      if (testParentIds.includes(plan.parentId)) {
+        await ctx.db.delete(plan._id);
+        deletedCounts.paymentPlans++;
+      }
+    }
+    
+    // 2. Delete test payments
+    const allPayments = await ctx.db.query("payments").collect();
+    for (const payment of allPayments) {
+      if (testParentIds.includes(payment.parentId)) {
+        await ctx.db.delete(payment._id);
+        deletedCounts.payments++;
+      }
+    }
+    
+    // 3. Delete test payment installments
+    const allInstallments = await ctx.db.query("paymentInstallments").collect();
+    for (const installment of allInstallments) {
+      if (testParentIds.includes(installment.parentId)) {
+        await ctx.db.delete(installment._id);
+        deletedCounts.installments++;
+      }
+    }
+    
+    // 4. Finally delete test parents
+    for (const parent of testParents) {
+      await ctx.db.delete(parent._id);
+      deletedCounts.parents++;
+    }
+    
+    console.log("🎉 Test data cleanup completed!");
+    console.log("📊 Deleted counts:", deletedCounts);
+    console.log(`✅ Remaining real parents: ${realParents.length}`);
+    
+    return {
+      success: true,
+      deletedCounts,
+      realParentsRemaining: realParents.length,
+      realParents: realParents.map(p => ({ name: p.name, email: p.email }))
+    };
+  },
+});
+
 // Check data integrity and identify issues
 export const analyzeDataIntegrity = query({
   args: {},

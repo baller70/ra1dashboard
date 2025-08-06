@@ -16,6 +16,7 @@ import type {
 import type * as aiRecommendations from "../aiRecommendations.js";
 import type * as analytics from "../analytics.js";
 import type * as backgroundJobs from "../backgroundJobs.js";
+import type * as cleanupTestData from "../cleanupTestData.js";
 import type * as contracts from "../contracts.js";
 import type * as dashboard from "../dashboard.js";
 import type * as dashboardStats from "../dashboardStats.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   aiRecommendations: typeof aiRecommendations;
   analytics: typeof analytics;
   backgroundJobs: typeof backgroundJobs;
+  cleanupTestData: typeof cleanupTestData;
   contracts: typeof contracts;
   dashboard: typeof dashboard;
   dashboardStats: typeof dashboardStats;
