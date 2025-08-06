@@ -33,6 +33,9 @@ export async function GET(request: Request) {
     const totalParents = parentsResponse.parents?.length || 0;
     const payments = paymentsResponse.payments || [];
     
+    console.log(`📊 LIVE DATA CHECK: ${totalParents} parents, ${activeTemplates} templates, ${payments.length} payments`);
+    console.log(`📊 Parent IDs:`, parentsResponse.parents?.map(p => ({ id: p._id, name: p.name })));
+    
     // Calculate real payment stats
     const activePayments = payments.filter(p => p.status === 'active');
     const pendingPayments = payments.filter(p => p.status === 'pending');
