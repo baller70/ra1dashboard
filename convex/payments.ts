@@ -151,9 +151,15 @@ export const getPaymentAnalytics = query({
   handler: async (ctx, args) => {
     const payments = await ctx.db.query("payments").collect();
 
-    // FIXED: Calculate total committed revenue (paid + pending) to match dashboard
-    const eligiblePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
-    const totalRevenue = eligiblePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    // FIXED: Calculate TOTAL POTENTIAL REVENUE by summing all active payment plan totalAmounts (like dashboard)
+    const paymentPlans = await ctx.db.query("paymentPlans").collect();
+    console.log(`📊 Payment Analytics: Found ${paymentPlans.length} total payment plans`);
+    
+    const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
+    console.log(`📊 Payment Analytics: ${activePaymentPlans.length} active payment plans`);
+    
+    const totalRevenue = activePaymentPlans.reduce((sum, plan) => sum + (plan.totalAmount || 0), 0);
+    console.log(`💰 Payment Analytics: Total potential revenue = $${totalRevenue}`);
 
     const collectedPayments = payments
       .filter((p) => p.status === "paid")
@@ -180,14 +186,13 @@ export const getPaymentAnalytics = query({
     // FIXED: Count unique parents with overdue payments to match dashboard
     const uniqueParentsWithOverduePayments = new Set(overduePaymentsList.map(p => p.parentId)).size;
 
-    const paymentPlans = await ctx.db.query("paymentPlans").collect();
-    const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
+    // paymentPlans already fetched above for totalRevenue calculation
     
     // FIXED: Count unique parents with active plans to match dashboard
     const uniqueParentsWithPlans = new Set(activePaymentPlans.map(p => p.parentId)).size;
 
-    return {
-      totalRevenue, // Now includes paid + pending
+    const result = {
+      totalRevenue, // Now sum of all active payment plan totalAmounts
       collectedPayments,
       pendingPayments,
       overduePayments,
@@ -195,6 +200,9 @@ export const getPaymentAnalytics = query({
       activePlans: uniqueParentsWithPlans, // Now shows unique parents with plans
       avgPaymentTime: 3,
     };
+    
+    console.log(`📊 Payment Analytics FINAL RESULT: totalRevenue = $${result.totalRevenue}`);
+    return result;
   },
 });
 
