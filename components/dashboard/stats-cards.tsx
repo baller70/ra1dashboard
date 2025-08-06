@@ -55,7 +55,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
   const mediumCards = [
     {
       title: 'Total Parents',
-      value: '2', // FIXED: Match actual parent count (Kevin Houston + Casey Houston)
+      value: stats?.totalParents?.toString() ?? '0',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -106,12 +106,12 @@ export function StatsCards({ stats }: StatsCardsProps) {
   // Large cards (2 cards)
   const largeCards = [
     {
-      title: 'Total Revenue',
+      title: 'Total Potential Revenue',
       value: formatCurrency(stats?.totalRevenue ?? 0),
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      description: 'Total collected revenue',
+      description: 'Total potential revenue',
       trend: '+12.5%',
       trendColor: 'text-green-600'
     },
