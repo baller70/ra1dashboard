@@ -38,8 +38,6 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [overdueParents, setOverdueParents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false)
   const [allActivities, setAllActivities] = useState<any[]>([])
 
@@ -57,39 +55,23 @@ export default function DashboardPage() {
     }
   }
 
-  const fetchDashboardData = async (isManualRefresh = false) => {
-    console.log('🔄 Fetching dashboard data - all 8 analytics cards will update...')
-    
-    if (isManualRefresh) {
-      setRefreshing(true)
-    }
-    
+  const fetchDashboardData = async () => {
     try {
       // Fetch dashboard stats with cache-busting
       const cacheBuster = Date.now()
-      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}&nocache=${Math.random()}`, {
+      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
         headers: {
           'x-api-key': 'ra1-dashboard-api-key-2024',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+          'Cache-Control': 'no-cache'
         }
       })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         console.log('📊 Fresh dashboard stats received:', statsData)
-        console.log('📊 Raw API response:', JSON.stringify(statsData, null, 2))
         
         // Extract the actual stats from API response {success: true, data: {...}}
         const actualStats = statsData.data || statsData
-        console.log('📈 All 8 analytics cards updating with:', actualStats)
-        console.log('📈 Stats object keys:', Object.keys(actualStats))
-        console.log('📈 Individual values:', {
-          totalParents: actualStats.totalParents,
-          totalRevenue: actualStats.totalRevenue,
-          activeTemplates: actualStats.activeTemplates,
-          messagesSentThisMonth: actualStats.messagesSentThisMonth
-        })
+        console.log('📈 All 6 analytics cards updating with:', actualStats)
         
         setStats(actualStats)
       }
@@ -107,58 +89,47 @@ export default function DashboardPage() {
         setRevenueData(Array.isArray(revenueData) ? revenueData : (revenueData.trends || []))
       }
 
-      // Fetch recent activity with cache busting
-      const activityResponse = await fetch(`/api/dashboard/recent-activity?t=${cacheBuster}`, {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+              // Fetch recent activity
+        const activityResponse = await fetch('/api/dashboard/recent-activity', {
+          headers: {
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
+        })
+        if (activityResponse.ok) {
+          const activityData = await activityResponse.json()
+          setRecentActivity(activityData.activities || [])
         }
-      })
-      if (activityResponse.ok) {
-        const activityData = await activityResponse.json()
-        console.log('🕒 Recent activity received:', activityData)
-        setRecentActivity(activityData.data?.activities || [])
-      }
 
-      // Fetch overdue summary for tags
-      const overdueResponse = await fetch('/api/dashboard/overdue-summary', {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024'
+        // Fetch overdue summary for tags
+        const overdueResponse = await fetch('/api/dashboard/overdue-summary', {
+          headers: {
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
+        })
+        if (overdueResponse.ok) {
+          const overdueData = await overdueResponse.json()
+          console.log('🏷️ Overdue summary received:', overdueData)
+          setOverdueParents(overdueData.data?.overdueSummary || [])
         }
-      })
-      if (overdueResponse.ok) {
-        const overdueData = await overdueResponse.json()
-        console.log('🏷️ Overdue summary received:', overdueData)
-        setOverdueParents(overdueData.data?.overdueSummary || [])
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-      setLastUpdated(new Date())
-    }
-  }
-
-  // Manual refresh function
-  const handleManualRefresh = () => {
-    fetchDashboardData(true)
   }
 
   useEffect(() => {
     fetchDashboardData()
     
-    // Auto-refresh every 30 seconds for live updates
-    const interval = setInterval(() => fetchDashboardData(), 30 * 1000)
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(fetchDashboardData, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
   // Listen for parent deletions from other pages to refresh dashboard stats
   useEffect(() => {
     const handleParentDeleted = () => {
-      console.log('🔔 Dashboard received parent-deleted event, refreshing all 8 analytics cards...')
+      console.log('🔔 Dashboard received parent-deleted event, refreshing all 6 analytics cards...')
       fetchDashboardData()
     }
     
@@ -209,19 +180,19 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-muted-foreground">Loading your dashboard...</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome to your basketball program management dashboard
+            </p>
           </div>
           
-          {/* Loading skeleton for stats cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <CardHeader className="pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  <div className="h-8 w-8 bg-gray-200 rounded"></div>
                 </CardHeader>
                 <CardContent>
                   <div className="h-8 bg-gray-200 rounded w-16"></div>
@@ -244,31 +215,15 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">
               Welcome to your basketball program management dashboard
             </p>
-            {lastUpdated && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </p>
-            )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
-              {refreshing ? 'Updating...' : 'Live'}
-            </div>
-            <Button 
-              onClick={handleManualRefresh} 
-              variant="outline" 
-              size="sm"
-              disabled={refreshing}
-            >
-              <TrendingUp className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Updating...' : 'Refresh Now'}
-            </Button>
-          </div>
+          <Button onClick={fetchDashboardData} variant="outline" size="sm">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
         </div>
 
-        {/* 8 Analytics Cards */}
-        {stats && <StatsCards stats={stats} />}
+        {/* 6 Analytics Cards */}
+        {stats && <StatsCards stats={stats} overdueParents={overdueParents} />}
 
         {/* Charts and Activity Section */}
         <div className="grid gap-6 md:grid-cols-3">

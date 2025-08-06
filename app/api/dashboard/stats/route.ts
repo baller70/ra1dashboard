@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
     const [parentsRes, analyticsRes, templatesRes] = await Promise.all([
-      fetch(`${baseUrl}/api/parents?status=active`),
+      fetch(`${baseUrl}/api/parents`),
       fetch(`${baseUrl}/api/payments/analytics?program=yearly-program`, {
         headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
       }),
@@ -34,17 +34,8 @@ export async function GET(request: Request) {
       templatesRes.json()
     ]);
 
-    console.log('🔍 DETAILED DEBUG - Parents Data Structure:', JSON.stringify(parentsData, null, 2));
-    console.log('🔍 DETAILED DEBUG - Analytics Data Structure:', JSON.stringify(analyticsData, null, 2));
-    console.log('🔍 DETAILED DEBUG - Templates Data Structure:', JSON.stringify(templatesData, null, 2));
-
     // Calculate stats using SAME logic as payment page
     const totalParents = parentsData.data?.parents?.length || parentsData.data?.length || 0;
-    console.log('🔍 TOTAL PARENTS CALCULATION:', {
-      'parentsData.data?.parents?.length': parentsData.data?.parents?.length,
-      'parentsData.data?.length': parentsData.data?.length,
-      'Final totalParents': totalParents
-    });
     const totalRevenue = analyticsData.data?.totalRevenue || 0;
     const overduePayments = analyticsData.data?.overdueCount || 0;
     const pendingPayments = Math.round(analyticsData.data?.totalPending || 0); // Use the actual pending amount
