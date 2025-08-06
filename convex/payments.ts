@@ -817,4 +817,56 @@ export const getPaymentsByPlanId = query({
   },
 });
 
+// Clean up test payment plans - keep only real Houston family
+export const cleanupTestPaymentPlans = mutation({
+  args: { confirm: v.boolean() },
+  handler: async (ctx, args) => {
+    if (!args.confirm) {
+      return { error: "Must confirm cleanup by passing confirm: true" };
+    }
+    
+    console.log("🧹 Cleaning up test payment plans...");
+    
+    // Real Houston family parent IDs
+    const realParentIds = [
+      'j97en33trdcm4f7hzvzj5e6vsn7mwxxr', // Kevin Houston
+      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston  
+      'j97c2xwtde8px84t48m8qtw0fn7mzcfb', // Nate Houston
+      'j97de6dyw5c8m50je4a31z248x7n2mwp'  // Matt Houston
+    ];
+    
+    const allPaymentPlans = await ctx.db.query("paymentPlans").collect();
+    console.log(`📊 Found ${allPaymentPlans.length} total payment plans`);
+    
+    const realPlans = allPaymentPlans.filter(plan => realParentIds.includes(plan.parentId));
+    const testPlans = allPaymentPlans.filter(plan => !realParentIds.includes(plan.parentId));
+    
+    console.log(`✅ Real payment plans: ${realPlans.length}`);
+    console.log(`❌ Test payment plans to delete: ${testPlans.length}`);
+    
+    let deletedCount = 0;
+    
+    // Delete test payment plans
+    for (const plan of testPlans) {
+      await ctx.db.delete(plan._id);
+      deletedCount++;
+    }
+    
+    console.log(`🎉 Deleted ${deletedCount} test payment plans`);
+    console.log(`✅ Remaining real payment plans: ${realPlans.length}`);
+    
+    // Calculate correct total potential revenue
+    const totalRevenue = realPlans.reduce((sum, plan) => sum + (plan.totalAmount || 0), 0);
+    console.log(`💰 Correct Total Potential Revenue: $${totalRevenue}`);
+    
+    return {
+      success: true,
+      deletedTestPlans: deletedCount,
+      remainingRealPlans: realPlans.length,
+      totalPotentialRevenue: totalRevenue,
+      realPlans: realPlans.map(p => ({ parentId: p.parentId, totalAmount: p.totalAmount, status: p.status }))
+    };
+  },
+});
+
 // Get payments with parent and payment plan info
