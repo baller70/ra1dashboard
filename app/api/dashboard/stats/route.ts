@@ -46,8 +46,22 @@ export async function GET(request: Request) {
       paymentPlansCount: paymentPlansResult?.length || 0
     });
 
-    // Calculate stats from Convex data
-    const totalParents = parentsResult.parents?.length || 0;
+    // Calculate stats from Convex data - FILTER OUT TEST PARENTS, KEEP ONLY REAL HOUSTON FAMILY
+    const allParents = parentsResult.parents || [];
+    
+    // Real Houston family parent IDs (ONLY these should be counted)
+    const realParentIds = [
+      'j97en33trdcm4f7hzvzj5e6vsn7mwxxr', // Kevin Houston
+      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston  
+      'j97c2xwtde8px84t48m8qtw0fn7mzcfb', // Nate Houston
+      'j97de6dyw5c8m50je4a31z248x7n2mwp'  // Matt Houston
+    ];
+    
+    // Filter for ONLY real Houston family parents
+    const realParents = allParents.filter(parent => realParentIds.includes(parent._id));
+    const totalParents = realParents.length;
+    
+    console.log(`👨‍👩‍👧‍👦 REAL PARENTS COUNT: ${totalParents} Houston family members (filtered out test parents)`);
     
     // Calculate payment analytics
     const payments = paymentsResult.payments || [];
@@ -57,14 +71,6 @@ export async function GET(request: Request) {
     
     // Calculate TOTAL POTENTIAL REVENUE - FILTER OUT TEST DATA, KEEP ONLY REAL HOUSTON FAMILY
     const paymentPlans = paymentPlansResult || [];
-    
-    // Real Houston family parent IDs (ONLY these should be counted)
-    const realParentIds = [
-      'j97en33trdcm4f7hzvzj5e6vsn7mwxxr', // Kevin Houston
-      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston  
-      'j97c2xwtde8px84t48m8qtw0fn7mzcfb', // Nate Houston
-      'j97de6dyw5c8m50je4a31z248x7n2mwp'  // Matt Houston
-    ];
     
     // Filter for ONLY real Houston family payment plans (active status + real parent ID)
     const activePaymentPlans = paymentPlans.filter(plan => 
