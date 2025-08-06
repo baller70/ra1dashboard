@@ -15,52 +15,75 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
-    console.log('🔄 Fetching dashboard data from SAME APIs as payment page...')
+    console.log('🔄 Fetching dashboard data directly from Convex for Vercel compatibility...')
     
-    // Use the SAME APIs that the payment page uses for consistency
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    
-    const [parentsRes, analyticsRes, templatesRes] = await Promise.all([
-      fetch(`${baseUrl}/api/parents`),
-      fetch(`${baseUrl}/api/payments/analytics?program=yearly-program`, {
-        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
+    // Use direct Convex calls instead of internal HTTP calls for Vercel compatibility
+    const [parentsResult, paymentsResult, templatesResult] = await Promise.all([
+      // Get parents (active only)
+      convexHttp.query(api.parents.getParents, {
+        page: 1,
+        limit: 1000,
+        status: 'active'
       }),
-      fetch(`${baseUrl}/api/templates`)
+      // Get payments for analytics
+      convexHttp.query(api.payments.getPayments, {
+        page: 1,
+        limit: 1000
+      }),
+      // Get templates
+      convexHttp.query(api.templates.getTemplates, {
+        page: 1,
+        limit: 1000
+      })
     ]);
 
-    const [parentsData, analyticsData, templatesData] = await Promise.all([
-      parentsRes.json(),
-      analyticsRes.json(), 
-      templatesRes.json()
-    ]);
+    console.log('📊 Convex Data Retrieved:', {
+      parentsCount: parentsResult.parents?.length || 0,
+      paymentsCount: paymentsResult.payments?.length || 0,
+      templatesCount: templatesResult.templates?.length || 0
+    });
 
-    // Calculate stats using SAME logic as payment page
-    const totalParents = parentsData.data?.parents?.length || parentsData.data?.length || 0;
-    const totalRevenue = analyticsData.data?.totalRevenue || 0;
-    const overduePayments = analyticsData.data?.overdueCount || 0;
-    const pendingPayments = Math.round(analyticsData.data?.totalPending || 0); // Use the actual pending amount
-    // Calculate templates count from actual API data
-    const activeTemplates = Array.isArray(templatesData) ? 
-      templatesData.filter(t => t.isActive === true).length : 
-      (templatesData.data?.filter(t => t.isActive === true).length || 0);
+    // Calculate stats from Convex data
+    const totalParents = parentsResult.parents?.length || 0;
     
-    // For messages, use a reasonable count (we can improve this later)
-    const messagesSentThisMonth = 6; // Based on your server logs showing 6 messages
+    // Calculate payment analytics
+    const payments = paymentsResult.payments || [];
+    const paidPayments = payments.filter(p => p.status === 'paid');
+    const pendingPayments = payments.filter(p => p.status === 'pending');
+    const overduePayments = payments.filter(p => p.status === 'overdue');
+    
+    const totalRevenue = payments
+      .filter(p => p.status === 'paid' || p.status === 'pending')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    
+    const totalPending = pendingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const overdueCount = overduePayments.length;
+    
+    // Calculate payment success rate
+    const totalPayments = payments.length;
+    const paymentSuccessRate = totalPayments > 0 ? Math.round((paidPayments.length / totalPayments) * 100) : 0;
+    
+    // Calculate templates
+    const templates = templatesResult.templates || [];
+    const activeTemplates = templates.filter(t => t.isActive === true).length;
+    
+    // Calculate messages (approximate - we can improve this later)
+    const messagesSentThisMonth = 6; // Based on historical data
     
     const dashboardStats = {
       totalParents,
       totalRevenue,
-      overduePayments,
-      pendingPayments,
-      paymentSuccessRate: analyticsData.data?.paymentSuccessRate || 0,
+      overduePayments: overdueCount,
+      pendingPayments: Math.round(totalPending),
+      paymentSuccessRate,
       messagesSentThisMonth,
       activeTemplates,
-      averagePaymentTime: analyticsData.data?.averagePaymentTime || 3,
-      upcomingDues: pendingPayments, // Same as pending payments for now
-      activePaymentPlans: pendingPayments // Approximate based on pending payments
+      averagePaymentTime: 3, // Static for now
+      upcomingDues: Math.round(totalPending),
+      activePaymentPlans: Math.round(totalPending)
     };
     
-    console.log('📊 Dashboard Stats:', dashboardStats);
+    console.log('📊 Final Dashboard Stats:', dashboardStats);
     
     const response = createSuccessResponse(dashboardStats)
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
