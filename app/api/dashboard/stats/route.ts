@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     console.log('🔄 Fetching dashboard data directly from Convex for Vercel compatibility...')
     
     // Use direct Convex calls instead of internal HTTP calls for Vercel compatibility
-    const [parentsResult, paymentsResult, templatesResult] = await Promise.all([
+    const [parentsResult, paymentsResult, templatesResult, paymentPlansResult] = await Promise.all([
       // Get parents (active only)
       convexHttp.query(api.parents.getParents, {
         page: 1,
@@ -34,13 +34,16 @@ export async function GET(request: Request) {
       convexHttp.query(api.templates.getTemplates, {
         page: 1,
         limit: 1000
-      })
+      }),
+      // Get payment plans for total potential revenue
+      convexHttp.query(api.payments.getPaymentPlans, {})
     ]);
 
     console.log('📊 Convex Data Retrieved:', {
       parentsCount: parentsResult.parents?.length || 0,
       paymentsCount: paymentsResult.payments?.length || 0,
-      templatesCount: templatesResult.templates?.length || 0
+      templatesCount: templatesResult.templates?.length || 0,
+      paymentPlansCount: paymentPlansResult?.length || 0
     });
 
     // Calculate stats from Convex data
@@ -52,9 +55,12 @@ export async function GET(request: Request) {
     const pendingPayments = payments.filter(p => p.status === 'pending');
     const overduePayments = payments.filter(p => p.status === 'overdue');
     
-    const totalRevenue = payments
-      .filter(p => p.status === 'paid' || p.status === 'pending')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Calculate TOTAL POTENTIAL REVENUE by summing all active payment plan totalAmounts
+    const paymentPlans = paymentPlansResult || [];
+    const activePaymentPlans = paymentPlans.filter(plan => plan.status === 'active');
+    const totalRevenue = activePaymentPlans.reduce((sum, plan) => sum + (plan.totalAmount || 0), 0);
+    
+    console.log(`💰 TOTAL POTENTIAL REVENUE: ${activePaymentPlans.length} active payment plans × $1650 each = $${totalRevenue}`);
     
     const totalPending = pendingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const overdueCount = overduePayments.length;
