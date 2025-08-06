@@ -121,14 +121,47 @@ export const getFixedDashboardStats = query({
     // Count unique parents with overdue payments (not individual payment count)
     const uniqueParentsWithOverduePayments = new Set(overduePayments.map(p => p.parentId)).size;
     
-    return {
-      totalParents: parents.length, // Count ALL parents, not just active ones
-      totalRevenue,
-      overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
-      upcomingDues,
-      activePaymentPlans: uniqueParentsWithPlans, // Now shows unique parents with plans (max 34)
-      messagesSentThisMonth: totalMessagesSent // Now shows actual sent messages
-    };
+    try {
+      // Get active templates count from templates table
+      const templates = await ctx.db.query("templates").collect();
+      const activeTemplates = templates.filter(t => t.isActive === true).length;
+      
+      console.log(`📧 Templates: Found ${templates.length} total templates, ${activeTemplates} are active`);
+      
+      // Calculate pending payments count for the card
+      const pendingPaymentsCount = pendingPayments.length;
+      
+      // Calculate payment success rate
+      const totalPaymentsForRate = payments.length;
+      const paymentSuccessRate = totalPaymentsForRate > 0 ? Math.round((paidPayments.length / totalPaymentsForRate) * 100) : 0;
+      
+      console.log(`📊 About to return enhanced dashboard stats with ${activeTemplates} templates`);
+      
+      return {
+        totalParents: parents.length, // Count ALL parents, not just active ones
+        totalRevenue,
+        overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
+        pendingPayments: pendingPaymentsCount, // Add pending payments count
+        upcomingDues,
+        activePaymentPlans: uniqueParentsWithPlans, // Now shows unique parents with plans (max 34)
+        messagesSentThisMonth: totalMessagesSent, // Now shows actual sent messages
+        activeTemplates, // Add active templates count
+        paymentSuccessRate, // Add payment success rate
+        averagePaymentTime: 3 // Static for now, can be calculated later
+      };
+    } catch (error) {
+      console.error('❌ Error in enhanced dashboard stats calculation:', error);
+      
+      // Fallback to basic stats if enhanced calculation fails
+      return {
+        totalParents: parents.length,
+        totalRevenue,
+        overduePayments: uniqueParentsWithOverduePayments,
+        upcomingDues,
+        activePaymentPlans: uniqueParentsWithPlans,
+        messagesSentThisMonth: totalMessagesSent
+      };
+    }
   },
 });
 
