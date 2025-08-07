@@ -307,7 +307,13 @@ export default function PaymentsPage() {
 
   // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
-    if (!confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone and will remove all associated payments and data.`)) {
+    console.log('🚀 DELETE BUTTON CLICKED! Parent:', parentId, parentName)
+    
+    const confirmResult = confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone and will remove all associated payments and data.`)
+    console.log('❓ User confirmation result:', confirmResult)
+    
+    if (!confirmResult) {
+      console.log('❌ User cancelled deletion')
       return
     }
 
@@ -344,37 +350,46 @@ export default function PaymentsPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Delete successful:', result)
+        console.log('🔄 About to refresh data...')
         
         // Refresh all data to ensure consistency across both pages
         await fetchData()
+        console.log('✅ Data refreshed successfully')
         
         // Dispatch event to update dashboard and analytics pages
         window.dispatchEvent(new Event('parent-deleted'))
         console.log('🔔 Dispatched parent-deleted event from payments page')
         
+        console.log('🍞 About to show success toast...')
         toast({
           title: '✅ Parent Deleted Successfully',
           description: `${parentName} and all associated payments have been permanently removed.`,
           duration: 5000,
         })
+        console.log('✅ Success toast shown!')
       } else {
         const errorData = await response.json()
         console.error('❌ Delete failed:', errorData)
+        console.log('🍞 About to show error toast...')
         toast({
           title: '❌ Delete Failed',
           description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
           variant: 'destructive',
           duration: 5000,
         })
+        console.log('❌ Error toast shown!')
       }
     } catch (error) {
       console.error('💥 Error deleting parent:', error)
+      console.log('🍞 About to show exception toast...')
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while deleting the parent',
         variant: 'destructive'
       })
+      console.log('💥 Exception toast shown!')
     } finally {
+      console.log('🏁 Delete process finished, clearing loading state')
       setDeleteLoading(null)
     }
   }
