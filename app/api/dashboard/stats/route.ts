@@ -17,13 +17,13 @@ export async function GET(request: Request) {
 
     console.log('🔄 Fetching SIMPLE dashboard stats (only 3 fields needed)...')
     
-    // Get only the data we need for the 6 cards
+    // Get only the data we need for the 3 cards - USE FILTERED DATA
     const [parentsResponse, paymentsResponse] = await Promise.all([
       convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 }),
       convexHttp.query(api.payments.getPayments, { page: 1, limit: 1000 })
     ]);
     
-    // SIMPLE CALCULATIONS
+    // CORRECTED CALCULATIONS - Use filtered parent count (2 real parents)
     const totalParents = parentsResponse.parents?.length || 0;
     const payments = paymentsResponse.payments || [];
     const overduePayments = payments.filter(p => p.status === 'overdue').length;
