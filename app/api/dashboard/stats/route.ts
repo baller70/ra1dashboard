@@ -10,7 +10,8 @@ export async function GET(request: Request) {
 
     console.log('🔄 Dashboard stats API - calling the EXACT SAME API routes as the pages use...')
 
-    const baseUrl = 'http://localhost:3000'
+    const baseUrl = request.url.includes('localhost') ? 'http://localhost:3000' : 
+                    `https://${request.headers.get('host')}`
     const headers = { 'x-api-key': 'ra1-dashboard-api-key-2024' }
 
     // CALL THE EXACT SAME APIs THAT THE PAGES USE
