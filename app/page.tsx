@@ -205,7 +205,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? '—' : stats?.pendingPayments ?? 0}
+                {loading ? '—' : `$${(stats?.pendingPayments ?? 0).toLocaleString()}`}
               </div>
               <p className="text-xs text-muted-foreground">
                 {loading ? 'Loading...' : 'Live payment data'}
