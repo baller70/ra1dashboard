@@ -17,14 +17,19 @@ export async function GET(request: Request) {
 
     // Post-process using authoritative plans list (never infer from parents)
     try {
-      const plansArr: any[] = await convexHttp.query(api.payments.getPaymentPlans as any, {});
-      const countablePlans = (plansArr || []).filter((p: any) => ['active', 'pending'].includes(p.status));
-      const plansTotal = countablePlans.reduce((s: number, p: any) => s + (p.totalAmount || 0), 0);
-      const firstInstallments = countablePlans.reduce((s: number, p: any) => s + (p.installmentAmount || 0), 0);
+      // Prefer using our own API endpoint to ensure consistency across environments
+      const baseUrl = request.url.includes('localhost') ? 'http://localhost:3000' : `https://${request.headers.get('host')}`
+      const plansRes = await fetch(`${baseUrl}/api/payment-plans?_t=${Date.now()}`, {
+        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' },
+        cache: 'no-store'
+      })
+      const plansArr: any[] = plansRes.ok ? await plansRes.json() : []
+      const countablePlans = (plansArr || []).filter((p: any) => ['active', 'pending'].includes(p.status))
+      const plansTotal = countablePlans.reduce((s: number, p: any) => s + (p.totalAmount || 0), 0)
+      const activePlans = new Set(countablePlans.map((p: any) => p.parentId)).size
 
-      // Backend already includes explicit paid + first installments; keep that as collected
-      const collected = Number(paymentAnalytics?.collectedPayments || 0);
-      const activePlans = new Set(countablePlans.map((p: any) => p.parentId)).size;
+      // Keep collected from backend (paid + first installments), recompute pending from authoritative totals
+      const collected = Number(paymentAnalytics?.collectedPayments || 0)
 
       paymentAnalytics = {
         ...paymentAnalytics,
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
         collectedPayments: collected,
         pendingPayments: Math.max(plansTotal - collected, 0),
         activePlans,
-      };
+      }
     } catch (ppErr) {
       console.warn('Post-process analytics adjustment failed:', ppErr);
     }
