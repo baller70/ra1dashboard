@@ -17,12 +17,13 @@ export async function GET(request: Request) {
     // CALL THE EXACT SAME APIs THAT THE PAGES USE
     const cacheBust = Date.now()
     const requestInit: RequestInit = { headers, cache: 'no-store' }
-    const [parentsRes, paymentsRes, templatesRes, messagesRes] = await Promise.allSettled([
+    const [parentsRes, paymentsRes, templatesRes, messagesRes, plansRes] = await Promise.allSettled([
       fetch(`${baseUrl}/api/parents?_t=${cacheBust}`, requestInit),
       fetch(`${baseUrl}/api/payments/analytics?_t=${cacheBust}`, requestInit),
       fetch(`${baseUrl}/api/templates?_t=${cacheBust}`, requestInit),
       // Use communication history endpoint to derive total messages count
-      fetch(`${baseUrl}/api/communication/history?limit=1&page=1&_t=${cacheBust}`, requestInit)
+      fetch(`${baseUrl}/api/communication/history?limit=1&page=1&_t=${cacheBust}`, requestInit),
+      fetch(`${baseUrl}/api/payment-plans?_t=${cacheBust}`, requestInit)
     ])
 
     let totalParents = 0
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
     if (paymentsRes.status === 'fulfilled' && paymentsRes.value.ok) {
       const paymentsData = await paymentsRes.value.json()
       if (paymentsData.success && paymentsData.data) {
+        // We'll override potential revenue from plans below for accuracy
         totalPotentialRevenue = paymentsData.data.totalRevenue || 0
         // Dashboard cards: overduePayments shows count
         overduePayments = paymentsData.data.overdueCount || 0
@@ -54,6 +56,20 @@ export async function GET(request: Request) {
         // Collected revenue for "Total Revenue" card
         totalRevenue = paymentsData.data.collectedPayments || 0
       }
+    }
+
+    // Payment plans (authoritative totals)
+    if (plansRes.status === 'fulfilled' && plansRes.value.ok) {
+      try {
+        const plans = await plansRes.value.json()
+        if (Array.isArray(plans)) {
+          const countable = plans.filter((p: any) => ['active', 'pending'].includes(p.status))
+          const plansTotal = countable.reduce((s: number, p: any) => s + (p.totalAmount || 0), 0)
+          const uniqueParents = new Set(countable.map((p: any) => p.parentId)).size
+          totalPotentialRevenue = plansTotal
+          activePaymentPlans = uniqueParents
+        }
+      } catch {}
     }
 
     // Templates data from Templates page API
