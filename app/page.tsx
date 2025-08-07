@@ -28,6 +28,7 @@ import {
 interface DashboardStats {
   totalParents: number
   totalPotentialRevenue: number
+  totalRevenue?: number
   overduePayments: number
   pendingPayments: number
   upcomingDues: number
@@ -189,7 +190,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? '—' : `$${stats?.totalPotentialRevenue?.toLocaleString() ?? 0}`}
+                {loading ? '—' : `$${(stats?.totalRevenue ?? stats?.totalPotentialRevenue ?? 0).toLocaleString()}`}
               </div>
               <p className="text-xs text-muted-foreground">
                 {loading ? 'Loading...' : 'Connected to payments page'}

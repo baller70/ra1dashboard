@@ -27,6 +27,7 @@ export async function GET(request: Request) {
 
     let totalParents = 0
     let totalPotentialRevenue = 0
+    let totalRevenue = 0
     let overduePayments = 0
     let activeTemplates = 0
     let pendingPayments = 0
@@ -50,6 +51,8 @@ export async function GET(request: Request) {
         pendingPayments = paymentsData.data.pendingPayments || 0
         // Active payment plans
         activePaymentPlans = paymentsData.data.activePlans || 0
+        // Collected revenue for "Total Revenue" card
+        totalRevenue = paymentsData.data.collectedPayments || 0
       }
     }
 
@@ -81,6 +84,7 @@ export async function GET(request: Request) {
     const dashboardStats = {
       totalParents,
       totalPotentialRevenue,
+      totalRevenue,
       overduePayments,            // count
       pendingPayments,            // amount ($)
       upcomingDues: overduePayments,
