@@ -11,11 +11,11 @@ async function safeGetParent(ctx: any, parentId: any) {
   }
 }
 
-// Dashboard stats function - RETURNS EMPTY DATA (post-purge)
-export const getFixedDashboardStats = query({
+// Dashboard stats function - RETURNS EMPTY DATA (post-purge) - RENAMED TO FORCE CACHE CLEAR
+export const getCleanDashboardStats = query({
   args: {},
   handler: async (ctx) => {
-    console.log('🔄 Convex getFixedDashboardStats called - returning empty data since all data has been purged...')
+    console.log('🔄 Convex getCleanDashboardStats called - returning GUARANTEED empty data since all data has been purged...')
     
     // ALL DASHBOARD DATA HAS BEEN PERMANENTLY PURGED
     // Return empty/zero values since database has been cleared

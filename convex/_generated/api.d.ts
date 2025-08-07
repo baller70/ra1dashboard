@@ -26,6 +26,7 @@ import type * as liveCounters from "../liveCounters.js";
 import type * as messageLogs from "../messageLogs.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
+import type * as nukeDashboardData from "../nukeDashboardData.js";
 import type * as parents from "../parents.js";
 import type * as paymentInstallments from "../paymentInstallments.js";
 import type * as payments from "../payments.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   messageLogs: typeof messageLogs;
   migrations: typeof migrations;
   notifications: typeof notifications;
+  nukeDashboardData: typeof nukeDashboardData;
   parents: typeof parents;
   paymentInstallments: typeof paymentInstallments;
   payments: typeof payments;
