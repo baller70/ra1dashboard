@@ -26,6 +26,9 @@ export const getNotifications = query({
 
     // Apply additional filters
     notifications = notifications.filter(notification => {
+      // FILTER OUT TEST/SAMPLE DATA
+      if (notification.metadata && (notification.metadata as any).sample === true) return false;
+      
       // Filter by read status
       if (!includeRead && notification.isRead) return false;
       

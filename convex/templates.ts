@@ -27,7 +27,24 @@ export const getTemplates = query({
       templatesQuery = templatesQuery.filter((q) => q.eq(q.field("isActive"), isActive));
     }
 
-    const templates = await templatesQuery.collect();
+    const allTemplates = await templatesQuery.collect();
+    
+    // FILTER OUT TEST DATA: Remove templates with test indicators
+    const templates = allTemplates.filter(template => {
+      const hasTestIndicators = 
+        template.name?.toLowerCase().includes('test') ||
+        template.name?.toLowerCase().includes('sample') ||
+        template.name?.toLowerCase().includes('demo') ||
+        template.content?.toLowerCase().includes('test') ||
+        template.content?.toLowerCase().includes('sample') ||
+        template.content?.toLowerCase().includes('demo') ||
+        template.subject?.toLowerCase().includes('test') ||
+        template.subject?.toLowerCase().includes('sample') ||
+        template.body?.toLowerCase().includes('test') ||
+        template.body?.toLowerCase().includes('sample');
+      
+      return !hasTestIndicators; // Only return NON-test templates
+    });
 
     let filteredTemplates = templates;
     if (search) {

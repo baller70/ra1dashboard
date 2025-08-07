@@ -17,7 +17,30 @@ export const getParents = query({
       parentsQuery = parentsQuery.filter((q) => q.eq(q.field("status"), status));
     }
 
-    const parents = await parentsQuery.collect();
+    const allParents = await parentsQuery.collect();
+    
+    // FILTER OUT TEST DATA: Only return Houston family members
+    const realParentEmails = [
+      "khouston721@gmail.com",  // Kevin Houston
+      "khouston@gmail.com",     // Casey Houston  
+      "khous7@gmail.com",       // Nate Houston
+      "khouston75621@gmail.com", // Matt Houston
+      "khouston767521@gmail.com" // Payton Houston
+    ];
+    
+    const realParentNames = [
+      "Kevin Houston",
+      "Casey Houston", 
+      "Nate Houston",
+      "matt Houston",
+      "Payton Houston"
+    ];
+    
+    // Only return REAL parents, no test data
+    const parents = allParents.filter(parent => 
+      realParentEmails.includes(parent.email) || 
+      realParentNames.includes(parent.name)
+    );
 
     let filteredParents = parents;
     if (search) {
