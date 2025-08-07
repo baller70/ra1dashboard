@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     } catch (fallbackErr) {
       console.error('Fallback analytics failed:', fallbackErr)
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch payment analytics' },
+        { success: false, error: 'Failed to fetch payment analytics', detail: (error as any)?.message || String(error) },
         { status: 500 }
       )
     }
