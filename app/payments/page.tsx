@@ -1390,10 +1390,17 @@ export default function PaymentsPage() {
                                     <span>No Payment Plan</span>
                                   </Badge>
                                 ) : (
-                                  <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1 capitalize">
-                                    {getStatusIcon(payment.status)}
-                                    <span>{payment.status}</span>
-                                  </Badge>
+                                  {payment.paymentPlan && payment.status === 'pending' ? (
+                                    <Badge className="flex items-center space-x-1 capitalize bg-green-600 text-white">
+                                      <CheckCircle className="h-4 w-4" />
+                                      <span>Active</span>
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1 capitalize">
+                                      {getStatusIcon(payment.status)}
+                                      <span>{payment.status}</span>
+                                    </Badge>
+                                  )}
                                 )}
                                 {payment.paymentPlan && (
                                   <Badge variant="outline" className="capitalize">
@@ -1402,8 +1409,11 @@ export default function PaymentsPage() {
                                 )}
                               </div>
                               <div>
-                                <div className="flex items-center space-x-2">
+                                  <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
+                                    {payment.paymentPlan && !isParentOverdue(payment) && (
+                                      <Badge className="text-xs font-bold bg-green-600 text-white">ACTIVE</Badge>
+                                    )}
                                   {!payment.isMockEntry && isParentOverdue(payment) && (
                                     <Badge variant="destructive" className="text-xs font-bold">
                                       OVERDUE
