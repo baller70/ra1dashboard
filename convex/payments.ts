@@ -151,22 +151,19 @@ export const getPaymentAnalytics = query({
   handler: async (ctx, args) => {
     const payments = await ctx.db.query("payments").collect();
 
-    // Fetch parents and payment plans
-    const allParents = await ctx.db.query("parents").collect();
+    // Fetch payment plans only; do NOT derive from parents
     const paymentPlans = await ctx.db.query("paymentPlans").collect();
+    // Include newly created plans that are not yet fully active
+    const countablePlans = paymentPlans.filter(p => ['active', 'pending'].includes((p as any).status));
 
-    const activePlans = paymentPlans.filter(p => p.status === 'active');
-    const activeParents = allParents.filter(p => p.status === 'active');
-
-    // Potential revenue: sum of active plans' totalAmount (fallback to active parents × 1650)
-    const plansTotal = activePlans.reduce((sum, p: any) => sum + (p.totalAmount || 0), 0);
-    const totalRevenue = plansTotal > 0 ? plansTotal : (activeParents.length * 1650);
+    // Potential revenue: sum of active plans' totalAmount (no parents fallback)
+    const totalRevenue = countablePlans.reduce((sum, p: any) => sum + (p.totalAmount || 0), 0);
 
     // Collected: explicit paid payments + first installment of every active plan (first payment always made)
     const explicitPaid = payments
       .filter(p => p.status === 'paid')
       .reduce((sum, p) => sum + (p.amount || 0), 0);
-    const firstInstallments = activePlans.reduce((sum, p: any) => sum + (p.installmentAmount || 0), 0);
+    const firstInstallments = countablePlans.reduce((sum, p: any) => sum + (p.installmentAmount || 0), 0);
     const collectedPayments = explicitPaid + firstInstallments;
 
     // Pending: remainder of plan totals after first installment per plan
@@ -176,7 +173,7 @@ export const getPaymentAnalytics = query({
     // Treat a plan as overdue only if its nextDueDate is clearly in the past BEYOND the first installment window
     const now = Date.now();
     const MILLIS_IN_DAY = 24 * 60 * 60 * 1000;
-    const computedOverduePlans = activePlans.filter((plan: any) => {
+    const computedOverduePlans = countablePlans.filter((plan: any) => {
       const baseDue = plan.nextDueDate || plan.startDate;
       if (!baseDue) return false;
       // Assume monthly plans; advance one period for the first installment which is considered paid
@@ -195,7 +192,7 @@ export const getPaymentAnalytics = query({
       .filter(p => p.status === 'overdue')
       .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-    const uniqueParentsWithPlans = new Set(activePlans.map((p: any) => p.parentId)).size;
+    const uniqueParentsWithPlans = new Set(countablePlans.map((p: any) => p.parentId)).size;
 
     const result = {
       totalRevenue,

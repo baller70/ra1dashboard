@@ -15,32 +15,23 @@ export async function GET(request: Request) {
     // FETCH LIVE PAYMENT DATA FROM CONVEX
     let paymentAnalytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});
 
-    // Post-process to enforce business rules:
-    // - First installment for each active plan counts as collected
-    // - Pending is plan totals minus collected
+    // Post-process using authoritative plans list (never infer from parents)
     try {
-      // Prefer deriving from payments list so we have plan fields per payment
-      const paymentsList: any = await convexHttp.query(api.payments.getPayments as any, { page: 1, limit: 1000 });
-      const paymentsArr: any[] = paymentsList?.payments || [];
-      const plansByParent = new Map<string, any>();
-      for (const p of paymentsArr) {
-        if (p.paymentPlan && p.parentId) {
-          // Use the first seen plan per parent
-          if (!plansByParent.has(p.parentId)) plansByParent.set(p.parentId, p.paymentPlan);
-        }
-      }
-      const plans = Array.from(plansByParent.values());
-      const plansTotal = plans.reduce((s, plan: any) => s + (plan.totalAmount || 0), 0);
-      const firstInstallments = plans.reduce((s, plan: any) => s + (plan.installmentAmount || 0), 0);
-      const collected = (paymentAnalytics?.collectedPayments || 0) + firstInstallments;
-      const totalRevenue = paymentAnalytics?.totalRevenue && paymentAnalytics.totalRevenue > 0 ? paymentAnalytics.totalRevenue : plansTotal;
-      const pending = Math.max((totalRevenue || 0) - collected, 0);
+      const plansArr: any[] = await convexHttp.query(api.payments.getPaymentPlans as any, {});
+      const countablePlans = (plansArr || []).filter((p: any) => ['active', 'pending'].includes(p.status));
+      const plansTotal = countablePlans.reduce((s: number, p: any) => s + (p.totalAmount || 0), 0);
+      const firstInstallments = countablePlans.reduce((s: number, p: any) => s + (p.installmentAmount || 0), 0);
+
+      // Backend already includes explicit paid + first installments; keep that as collected
+      const collected = Number(paymentAnalytics?.collectedPayments || 0);
+      const activePlans = new Set(countablePlans.map((p: any) => p.parentId)).size;
+
       paymentAnalytics = {
         ...paymentAnalytics,
-        totalRevenue,
+        totalRevenue: plansTotal,
         collectedPayments: collected,
-        pendingPayments: pending,
-        activePlans: plansByParent.size,
+        pendingPayments: Math.max(plansTotal - collected, 0),
+        activePlans,
       };
     } catch (ppErr) {
       console.warn('Post-process analytics adjustment failed:', ppErr);
