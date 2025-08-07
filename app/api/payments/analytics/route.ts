@@ -19,9 +19,19 @@ export async function GET(request: Request) {
     // - First installment for each active plan counts as collected
     // - Pending is plan totals minus collected
     try {
-      const activePlansArr: any[] = await convexHttp.query(api.payments.getPaymentPlans as any, { status: 'active' });
-      const plansTotal = Array.isArray(activePlansArr) ? activePlansArr.reduce((s, p: any) => s + (p.totalAmount || 0), 0) : 0;
-      const firstInstallments = Array.isArray(activePlansArr) ? activePlansArr.reduce((s, p: any) => s + (p.installmentAmount || 0), 0) : 0;
+      // Prefer deriving from payments list so we have plan fields per payment
+      const paymentsList: any = await convexHttp.query(api.payments.getPayments as any, { page: 1, limit: 1000 });
+      const paymentsArr: any[] = paymentsList?.payments || [];
+      const plansByParent = new Map<string, any>();
+      for (const p of paymentsArr) {
+        if (p.paymentPlan && p.parentId) {
+          // Use the first seen plan per parent
+          if (!plansByParent.has(p.parentId)) plansByParent.set(p.parentId, p.paymentPlan);
+        }
+      }
+      const plans = Array.from(plansByParent.values());
+      const plansTotal = plans.reduce((s, plan: any) => s + (plan.totalAmount || 0), 0);
+      const firstInstallments = plans.reduce((s, plan: any) => s + (plan.installmentAmount || 0), 0);
       const collected = (paymentAnalytics?.collectedPayments || 0) + firstInstallments;
       const totalRevenue = paymentAnalytics?.totalRevenue && paymentAnalytics.totalRevenue > 0 ? paymentAnalytics.totalRevenue : plansTotal;
       const pending = Math.max((totalRevenue || 0) - collected, 0);
@@ -30,7 +40,7 @@ export async function GET(request: Request) {
         totalRevenue,
         collectedPayments: collected,
         pendingPayments: pending,
-        activePlans: new Set((activePlansArr || []).map((p: any) => p.parentId)).size,
+        activePlans: plansByParent.size,
       };
     } catch (ppErr) {
       console.warn('Post-process analytics adjustment failed:', ppErr);
