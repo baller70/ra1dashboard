@@ -83,9 +83,18 @@ export async function POST(request: Request) {
     // await requireAuth()
 
     const body = await request.json()
+    // Normalize empty strings to null so optional fields pass validation
+    const normalizedBody = Object.fromEntries(
+      Object.entries(body || {}).map(([key, value]) => {
+        if (typeof value === 'string' && value.trim() === '') {
+          return [key, null]
+        }
+        return [key, value]
+      })
+    )
     
     // Validate and sanitize input data
-    const validatedData = validateData(CreateParentSchema, body)
+    const validatedData = validateData(CreateParentSchema, normalizedBody)
     const sanitizedData = sanitizeParentData(validatedData)
 
     // Check if email already exists - get all parents and check
@@ -118,7 +127,8 @@ export async function POST(request: Request) {
     
     const parentId = await convexHttp.mutation(api.parents.createParent, createData);
 
-    return createSuccessResponse({ _id: parentId });
+    // Return minimal created parent info for UI feedback
+    return createSuccessResponse({ _id: parentId, name: sanitizedData.name, email: sanitizedData.email });
   } catch (error) {
     console.error('Parent creation error:', error)
     
