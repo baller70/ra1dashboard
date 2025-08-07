@@ -151,74 +151,63 @@ export const getPaymentAnalytics = query({
   handler: async (ctx, args) => {
     const payments = await ctx.db.query("payments").collect();
 
-    // FULLY DYNAMIC: Get all active parents and payment plans from database
+    // Fetch parents and payment plans
     const allParents = await ctx.db.query("parents").collect();
     const paymentPlans = await ctx.db.query("paymentPlans").collect();
-    
-    console.log(`📊 Payment Analytics: Found ${allParents.length} total parents, ${paymentPlans.length} payment plans`);
-    
-    // DYNAMIC: Calculate based on ALL active parents (no hardcoding)
+
+    const activePlans = paymentPlans.filter(p => p.status === 'active');
     const activeParents = allParents.filter(p => p.status === 'active');
-    const totalParentsCount = activeParents.length;
-    
-    // DYNAMIC: Total potential revenue = All active parents × $1650
-    const totalRevenue = totalParentsCount * 1650;
-    console.log(`💰 Payment Analytics: DYNAMIC calculation = ${totalParentsCount} parents × $1650 = $${totalRevenue}`);
 
-    const collectedPayments = payments
-      .filter((p) => p.status === "paid")
+    // Potential revenue: sum of active plans' totalAmount (fallback to active parents × 1650)
+    const plansTotal = activePlans.reduce((sum, p: any) => sum + (p.totalAmount || 0), 0);
+    const totalRevenue = plansTotal > 0 ? plansTotal : (activeParents.length * 1650);
+
+    // Collected: explicit paid payments + first installment of every active plan (first payment always made)
+    const explicitPaid = payments
+      .filter(p => p.status === 'paid')
       .reduce((sum, p) => sum + (p.amount || 0), 0);
+    const firstInstallments = activePlans.reduce((sum, p: any) => sum + (p.installmentAmount || 0), 0);
+    const collectedPayments = explicitPaid + firstInstallments;
 
-    const pendingPayments = payments
-      .filter((p) => p.status === "pending")
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Pending: remainder of plan totals after first installment per plan
+    const pendingFromPlans = Math.max(totalRevenue - collectedPayments, 0);
 
-    // Calculate overdue payments using consistent logic (amount and count)
+    // Overdue: not automatic on payment creation; only count when a due is missed
+    // Treat a plan as overdue only if its nextDueDate is clearly in the past BEYOND the first installment window
     const now = Date.now();
-    const overduePaymentsList = payments.filter(payment => {
-      if (payment.status === 'overdue') {
-        return true;
-      }
-      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
-        return true;
+    const MILLIS_IN_DAY = 24 * 60 * 60 * 1000;
+    const computedOverduePlans = activePlans.filter((plan: any) => {
+      const baseDue = plan.nextDueDate || plan.startDate;
+      if (!baseDue) return false;
+      // Assume monthly plans; advance one period for the first installment which is considered paid
+      const periodDays = 30;
+      const firstPaidCoverageUntil = baseDue + periodDays * MILLIS_IN_DAY;
+      // If we're past the coverage window and there is an explicit overdue payment, mark overdue
+      if (now > firstPaidCoverageUntil) {
+        const hasExplicitOverdue = payments.some(p => p.paymentPlanId === plan._id && p.status === 'overdue');
+        return hasExplicitOverdue;
       }
       return false;
     });
-    
-    const overduePayments = overduePaymentsList.reduce((sum, p) => sum + (p.amount || 0), 0);
-    
-    // FIXED: Count unique parents with overdue payments to match dashboard
-    const uniqueParentsWithOverduePayments = new Set(overduePaymentsList.map(p => p.parentId)).size;
 
-    // paymentPlans already fetched above for totalRevenue calculation
-    
-    // FIXED: Count unique parents with active plans to match dashboard
-    const uniqueParentsWithPlans = new Set(
-      paymentPlans
-        .filter(p => p.status === 'active')
-        .map(p => p.parentId)
-    ).size;
+    const overdueCount = new Set(computedOverduePlans.map((p: any) => p.parentId)).size;
+    const overduePayments = payments
+      .filter(p => p.status === 'overdue')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    const uniqueParentsWithPlans = new Set(activePlans.map((p: any) => p.parentId)).size;
 
     const result = {
-      totalRevenue, // used by dashboard as potential revenue; collected used for Total Revenue card
+      totalRevenue,
       collectedPayments,
-      pendingPayments,
+      pendingPayments: pendingFromPlans,
       overduePayments,
-      overdueCount: uniqueParentsWithOverduePayments,
+      overdueCount,
       activePlans: uniqueParentsWithPlans,
-      avgPaymentTime: overduePaymentsList.length > 0
-        ? Math.round(
-            overduePaymentsList.reduce((sum, p) => {
-              const daysPastDue = p.dueDate
-                ? Math.max(0, Math.floor((Date.now() - p.dueDate) / (1000 * 60 * 60 * 24)))
-                : 0;
-              return sum + daysPastDue;
-            }, 0) / overduePaymentsList.length
-          )
-        : 0,
+      avgPaymentTime: 0,
     } as const;
-    
-    console.log(`📊 Payment Analytics FINAL RESULT: totalRevenue = $${result.totalRevenue}`);
+
+    console.log(`📊 Payment Analytics FINAL RESULT: potential=$${result.totalRevenue}, collected=$${result.collectedPayments}, pending=$${result.pendingPayments}`);
     return result;
   },
 });
@@ -788,6 +777,34 @@ export const deletePaymentPlan = mutation({
     await ctx.db.delete(args.id);
 
     return { success: true };
+  },
+});
+
+// Activate a single payment plan
+export const activatePaymentPlan = mutation({
+  args: { id: v.id("paymentPlans") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      status: 'active',
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
+// Activate all non-active payment plans
+export const activateAllPaymentPlans = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const plans = await ctx.db.query('paymentPlans').collect();
+    let updated = 0;
+    for (const plan of plans) {
+      if (plan.status !== 'active') {
+        await ctx.db.patch(plan._id, { status: 'active', updatedAt: Date.now() });
+        updated++;
+      }
+    }
+    return { success: true, updated };
   },
 });
 
