@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as actualCleanup from "../actualCleanup.js";
 import type * as aiRecommendations from "../aiRecommendations.js";
 import type * as analytics from "../analytics.js";
 import type * as backgroundJobs from "../backgroundJobs.js";
@@ -34,6 +35,7 @@ import type * as scheduledMessages from "../scheduledMessages.js";
 import type * as systemSettings from "../systemSettings.js";
 import type * as teams from "../teams.js";
 import type * as templates from "../templates.js";
+import type * as totalDataPurge from "../totalDataPurge.js";
 import type * as users from "../users.js";
 
 /**
@@ -45,6 +47,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  actualCleanup: typeof actualCleanup;
   aiRecommendations: typeof aiRecommendations;
   analytics: typeof analytics;
   backgroundJobs: typeof backgroundJobs;
@@ -66,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   systemSettings: typeof systemSettings;
   teams: typeof teams;
   templates: typeof templates;
+  totalDataPurge: typeof totalDataPurge;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

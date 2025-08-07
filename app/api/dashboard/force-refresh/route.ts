@@ -15,43 +15,21 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
-    console.log('🔄 FORCE REFRESH: Fetching FRESH dashboard data...')
+    console.log('🔄 FORCE REFRESH: Returning empty data since all dashboard data has been purged...')
     
-    // Get fresh data directly from Convex with no caching
-    const [templatesResponse, parentsResponse, paymentsResponse] = await Promise.all([
-      convexHttp.query(api.templates.getTemplates, { page: 1, limit: 1000 }),
-      convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 }),
-      convexHttp.query(api.payments.getPayments, { page: 1, limit: 1000 })
-    ]);
-    
-    const activeTemplates = templatesResponse.templates?.filter(t => t.isActive === true).length || 0;
-    const totalParents = parentsResponse.parents?.length || 0;
-    const payments = paymentsResponse.payments || [];
-    
-    console.log(`🔄 FORCE REFRESH RESULTS:`);
-    console.log(`📊 Parents: ${totalParents} (IDs: ${parentsResponse.parents?.map(p => p.name).join(', ')})`);
-    console.log(`📧 Templates: ${activeTemplates}`);
-    console.log(`💰 Payments: ${payments.length}`);
-    
-    // Calculate payment stats
-    const activePayments = payments.filter(p => p.status === 'active');
-    const pendingPayments = payments.filter(p => p.status === 'pending');
-    const overduePayments = payments.filter(p => p.status === 'overdue');
-    
-    // SIMPLE: Total Revenue = Parents × $1650
-    const totalRevenue = totalParents * 1650;
-    
+    // ALL DASHBOARD DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty/zero values since database has been cleared
     const refreshedStats = {
-      totalParents,
-      totalRevenue,
-      activeTemplates,
-      activePaymentPlans: totalParents, // 1 per parent
-      pendingPayments: pendingPayments.length,
-      overduePayments: overduePayments.length,
-      upcomingDues: pendingPayments.length,
-      messagesSentThisMonth: 6, // Static for now
-      paymentSuccessRate: payments.length > 0 ? Math.round((activePayments.length / payments.length) * 100) : 0,
-      averagePaymentTime: 3,
+      totalParents: 0,
+      totalRevenue: 0,
+      activeTemplates: 0,
+      activePaymentPlans: 0,
+      pendingPayments: 0,
+      overduePayments: 0,
+      upcomingDues: 0,
+      messagesSentThisMonth: 0,
+      paymentSuccessRate: 0,
+      averagePaymentTime: 0,
       refreshedAt: new Date().toISOString()
     };
     

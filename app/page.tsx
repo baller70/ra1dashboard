@@ -4,143 +4,45 @@
 // Force dynamic rendering - prevent static generation
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '../components/app-layout'
-import { StatsCards } from '../components/dashboard/stats-cards'
-// Temporarily disable RevenueChart to fix build issues
-// import { RevenueChart } from '../components/dashboard/revenue-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
-// Dialog imports removed (Recent Activity modal deleted)
 import { 
   Users, 
   CreditCard, 
   MessageSquare, 
   BarChart3,
-  Clock,
   DollarSign,
   AlertTriangle,
   TrendingUp,
-  ArrowRight,
   Plus,
   Send,
   FileText,
-  Settings
+  Settings,
+  Database,
+  Trash2
 } from 'lucide-react'
-import { DashboardStats, PaymentTrend } from '../lib/types'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [revenueData, setRevenueData] = useState<PaymentTrend[]>([])
-  const [overdueParents, setOverdueParents] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [lastUpdated] = useState<Date | null>(new Date())
 
-  // fetchAllActivities function removed (Recent Activity section deleted)
-
-  const fetchDashboardData = async (isManualRefresh = false) => {
-    console.log('🔄 Fetching dashboard data - all sections will update...')
-    
-    if (isManualRefresh) {
-      setRefreshing(true)
-    }
-    
-    try {
-      // Fetch dashboard stats with cache-busting
-      const cacheBuster = Date.now()
-      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}&nocache=${Math.random()}`, {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      })
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        console.log('📊 Fresh dashboard stats received:', statsData)
-        console.log('📊 Raw API response:', JSON.stringify(statsData, null, 2))
-        
-        // Extract the actual stats from API response {success: true, data: {...}}
-        const actualStats = statsData.data || statsData
-        console.log('📈 All dashboard sections updating with stats:', actualStats)
-        
-        setStats(actualStats)
-      }
-
-      // Fetch revenue trends
-      const revenueResponse = await fetch('/api/dashboard/revenue-trends', {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024'
-        }
-      })
-      if (revenueResponse.ok) {
-        const revenueData = await revenueResponse.json()
-        console.log('📈 Revenue trends received:', revenueData)
-        // Revenue trends API returns array directly
-        setRevenueData(Array.isArray(revenueData) ? revenueData : (revenueData.trends || []))
-      }
-
-      // Recent activity API call removed (section deleted)
-
-      // Fetch overdue summary for tags
-      const overdueResponse = await fetch('/api/dashboard/overdue-summary', {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024'
-        }
-      })
-      if (overdueResponse.ok) {
-        const overdueData = await overdueResponse.json()
-        console.log('🏷️ Overdue summary received:', overdueData)
-        setOverdueParents(overdueData.data?.overdueSummary || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-      setLastUpdated(new Date())
-    }
-  }
-
-  // Manual refresh function
+  // Empty state - all dashboard data has been permanently purged
   const handleManualRefresh = () => {
-    fetchDashboardData(true)
+    console.log('Refresh clicked - but no data to refresh since all data has been purged')
+    setRefreshing(true)
+    setTimeout(() => setRefreshing(false), 1000)
   }
-
-  useEffect(() => {
-    fetchDashboardData()
-    
-    // Auto-refresh every 30 seconds for live updates
-    const interval = setInterval(() => fetchDashboardData(), 30 * 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Listen for parent deletions from other pages to refresh dashboard stats
-  useEffect(() => {
-    const handleParentDeleted = () => {
-      console.log('🔔 Dashboard received parent-deleted event, refreshing all sections...')
-      fetchDashboardData()
-    }
-    
-    console.log('🎧 Dashboard event listener registered for parent-deleted events')
-    window.addEventListener('parent-deleted', handleParentDeleted)
-    return () => {
-      console.log('🔇 Dashboard event listener removed')
-      window.removeEventListener('parent-deleted', handleParentDeleted)
-    }
-  }, [])
 
   const quickActions = [
     {
       title: 'Add New Parent',
       description: 'Register a new parent in the system',
       icon: Users,
-      href: '/parents/new',
+      href: '/parents',
       color: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
       iconColor: 'text-blue-600'
     },
@@ -156,48 +58,19 @@ export default function DashboardPage() {
       title: 'Send Communication',
       description: 'Send emails or SMS to parents',
       icon: Send,
-      href: '/communication/send',
+      href: '/communication',
       color: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
       iconColor: 'text-purple-600'
     },
     {
-      title: 'View Analytics',
-      description: 'Detailed analytics and insights',
-      icon: BarChart3,
-      href: '/analytics',
+      title: 'Manage Contracts',
+      description: 'Upload and manage contracts',
+      icon: FileText,
+      href: '/contracts',
       color: 'bg-orange-50 text-orange-600 hover:bg-orange-100',
       iconColor: 'text-orange-600'
     }
   ]
-
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-muted-foreground">Loading your dashboard...</p>
-            </div>
-          </div>
-          
-          {/* Loading skeleton for stats cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="pb-2">
-                  <div className="h-4 bg-gray-200 rounded w-24"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 bg-gray-200 rounded w-16"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </AppLayout>
-    )
-  }
 
   return (
     <AppLayout>
@@ -211,14 +84,14 @@ export default function DashboardPage() {
             </p>
             {lastUpdated && (
               <p className="text-xs text-muted-foreground mt-1">
-                Last updated: {lastUpdated.toLocaleTimeString()}
+                All dashboard data has been permanently removed
               </p>
             )}
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
-              {refreshing ? 'Updating...' : 'Live'}
+              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-gray-400'}`}></div>
+              {refreshing ? 'Updating...' : 'No Data'}
             </div>
             <Button 
               onClick={handleManualRefresh} 
@@ -227,15 +100,59 @@ export default function DashboardPage() {
               disabled={refreshing}
             >
               <TrendingUp className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Updating...' : 'Refresh Now'}
+              {refreshing ? 'Updating...' : 'Refresh'}
             </Button>
           </div>
         </div>
 
-        {/* Dashboard Stats Cards */}
-        {stats && <StatsCards stats={stats} />}
+        {/* Empty Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Parents</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-400">—</div>
+              <p className="text-xs text-muted-foreground">No data available</p>
+            </CardContent>
+          </Card>
 
-        {/* Charts and Activity Section */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-400">—</div>
+              <p className="text-xs text-muted-foreground">No data available</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-400">—</div>
+              <p className="text-xs text-muted-foreground">No data available</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-400">—</div>
+              <p className="text-xs text-muted-foreground">No data available</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Empty Charts Section */}
         <div className="grid gap-6 md:grid-cols-3">
           {/* Revenue Chart - Takes 2 columns */}
           <div className="md:col-span-2">
@@ -250,101 +167,118 @@ export default function DashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {revenueData.slice(-6).map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.month}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          ${item.revenue.toLocaleString()}
-                        </span>
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{width: `${Math.min((item.revenue / Math.max(...revenueData.map(d => d.revenue))) * 100, 100)}%`}}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {item.payments} payments
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 font-medium">No Revenue Data</p>
+                    <p className="text-sm text-gray-400">All dashboard data has been removed</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent Activity section removed per user request */}
-        </div>
-
-        {/* Quick Actions Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon
-              return (
-                <Card key={index} className="hover:shadow-md transition-all duration-200 cursor-pointer group">
-                  <CardHeader className="pb-3">
-                    <div className={`w-12 h-12 rounded-lg ${action.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                      <Icon className={`h-6 w-6 ${action.iconColor}`} />
-                    </div>
-                    <CardTitle className="text-lg">{action.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {action.description}
-                    </p>
-                    <Button asChild className="w-full">
-                      <a href={action.href}>
-                        Get Started
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </a>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
+          {/* System Status */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  System Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Database</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="text-xs text-muted-foreground">Empty</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Analytics</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="text-xs text-muted-foreground">Disabled</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Core Functions</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs text-green-600">Active</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* System Status */}
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                System Status
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Quick Actions
+              <span className="text-sm font-normal text-muted-foreground">
+                Core functionality remains available
               </span>
-              <Badge variant="secondary" className="bg-green-50 text-green-700">
-                All Systems Operational
-              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">99.9%</div>
-                <div className="text-sm text-muted-foreground">Uptime</div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={() => router.push(action.href)}
+                  className={`p-4 rounded-lg border transition-colors text-left ${action.color} border-transparent hover:shadow-sm`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg bg-white/80`}>
+                      <action.icon className={`h-5 w-5 ${action.iconColor}`} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">{action.title}</h3>
+                      <p className="text-xs opacity-80">{action.description}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Purge Notice */}
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Trash2 className="h-5 w-5" />
+              Dashboard Data Purged
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-orange-700 mb-4">
+              All dashboard and analytics data has been permanently removed from the database. 
+              Core functionality (Communication, Payments, Contracts, Parents, Settings) remains fully operational.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-medium text-orange-800 mb-1">Removed:</p>
+                <ul className="text-orange-600 space-y-1">
+                  <li>• Dashboard statistics</li>
+                  <li>• Analytics data</li>
+                  <li>• Revenue calculations</li>
+                  <li>• Historical metrics</li>
+                </ul>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {stats?.totalParents || 0}
-                </div>
-                <div className="text-sm text-muted-foreground">Active Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {stats?.messagesSentThisMonth || 0}
-                </div>
-                <div className="text-sm text-muted-foreground">Messages This Month</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  ${stats?.totalPotentialRevenue?.toLocaleString() || '0'}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Revenue</div>
+              <div>
+                <p className="font-medium text-orange-800 mb-1">Available:</p>
+                <ul className="text-green-600 space-y-1">
+                  <li>• Parent management</li>
+                  <li>• Payment processing</li>
+                  <li>• Communication tools</li>
+                  <li>• Contract management</li>
+                </ul>
               </div>
             </div>
           </CardContent>

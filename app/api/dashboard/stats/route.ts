@@ -15,33 +15,17 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
-    console.log('🔄 Fetching SIMPLE dashboard stats (only 3 fields needed)...')
+    console.log('🔄 Dashboard stats API called - returning empty data since all data has been purged...')
     
-    // Get only the data we need for the 3 cards - USE FILTERED DATA
-    const [parentsResponse, paymentsResponse] = await Promise.all([
-      convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 }),
-      convexHttp.query(api.payments.getPayments, { page: 1, limit: 1000 })
-    ]);
-    
-    // CORRECTED CALCULATIONS - Use filtered parent count (2 real parents)
-    const totalParents = parentsResponse.parents?.length || 0;
-    const payments = paymentsResponse.payments || [];
-    const overduePayments = payments.filter(p => p.status === 'overdue').length;
-    const totalPotentialRevenue = totalParents * 1650; // Simple: Parents × $1650
-    
-    console.log(`📊 SIMPLE DASHBOARD DATA:`);
-    console.log(`   👥 Total Parents: ${totalParents}`);
-    console.log(`   💰 Total Potential Revenue: $${totalPotentialRevenue} (${totalParents} × $1650)`);
-    console.log(`   ⚠️  Overdue Payments: ${overduePayments}`);
-    
-    // Return only the 3 fields needed for the simplified dashboard
+    // ALL DASHBOARD DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty/zero values since database has been cleared
     const enhancedStats = {
-      totalParents,
-      totalPotentialRevenue,
-      overduePayments
+      totalParents: 0,
+      totalPotentialRevenue: 0,
+      overduePayments: 0
     };
     
-    console.log('✅ Simple dashboard stats:', enhancedStats);
+    console.log('📊 EMPTY DASHBOARD DATA (post-purge):', enhancedStats);
     
     const response = createSuccessResponse(enhancedStats)
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
