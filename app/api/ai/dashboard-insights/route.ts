@@ -14,43 +14,32 @@ export async function GET() {
   try {
     await requireAuth()
     
+    console.log('🔄 Dashboard insights API called - returning empty data since all data has been purged...')
 
-    // Get simple parent count first
-    const parentCountResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/parents/count`);
-    const parentCountData = await parentCountResponse.json();
-    const totalParents = parentCountData.success ? parentCountData.count : 0;
-    
-    console.log(`🔢 Dashboard Insights: Found ${totalParents} parents`);
-    
-    // Fetch comprehensive dashboard data using Convex
-    const dashboardStats = await convex.query(api.dashboard.getFixedDashboardStats)
-
-    // Get recent activity for context
-    const recentActivity = await convex.query(api.dashboard.getRecentActivity)
-
-    // Generate simple insights without AI (quota exceeded)
-    const insights = {
-      executiveSummary: `Dashboard shows ${totalParents} parent(s) with $${dashboardStats.totalRevenue.toLocaleString()} total revenue.`,
+    // ALL DASHBOARD DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty insights and zero metrics
+    const emptyInsights = {
+      executiveSummary: "Dashboard data has been permanently removed. All metrics show zero values.",
       keyInsights: [
-        `Total Parents: ${totalParents}`,
-        `Total Revenue: $${dashboardStats.totalRevenue.toLocaleString()}`,
-        `Overdue Payments: ${dashboardStats.overduePayments}`,
-        `Active Contracts: ${dashboardStats.activePaymentPlans}`
+        "Total Parents: 0",
+        "Total Revenue: $0",
+        "Overdue Payments: 0",
+        "Active Contracts: 0"
       ],
-      alerts: dashboardStats.overduePayments > 0 ? [`${dashboardStats.overduePayments} overdue payments need attention`] : [],
-      opportunities: [`${totalParents} parent(s) enrolled in the program`]
+      alerts: [],
+      opportunities: ["Core functionality (Communication, Payments, Contracts, Parents, Settings) remains available"]
     }
 
     return NextResponse.json({
       success: true,
-      insights,
+      insights: emptyInsights,
       metrics: {
-        totalParents: totalParents, // Use the simple count
-        totalRevenue: dashboardStats.totalRevenue,
-        overduePayments: dashboardStats.overduePayments,
-        upcomingDues: dashboardStats.upcomingDues,
-        activeContracts: dashboardStats.activePaymentPlans,
-        recentMessages: dashboardStats.messagesSentThisMonth
+        totalParents: 0,
+        totalRevenue: 0,
+        overduePayments: 0,
+        upcomingDues: 0,
+        activeContracts: 0,
+        recentMessages: 0
       },
       generatedAt: new Date()
     })

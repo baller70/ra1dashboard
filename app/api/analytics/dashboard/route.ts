@@ -44,20 +44,43 @@ export async function GET() {
   try {
     await requireAuth()
 
-    console.log('🔧 Development mode: Fetching analytics dashboard data')
+    console.log('🔄 Analytics dashboard API called - returning empty data since all data has been purged...')
 
-    // Get analytics dashboard data from Convex
-    const rawData = await convexHttp.query(api.dashboard.getAnalyticsDashboard, {})
+    // ALL ANALYTICS DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty structure with zero values
+    const emptyAnalyticsData = {
+      overview: {
+        totalParents: 0,
+        totalRevenue: 0,
+        overduePayments: 0,
+        upcomingDues: 0,
+        activePaymentPlans: 0,
+        messagesSentThisMonth: 0,
+        activeRecurringMessages: 0,
+        pendingRecommendations: 0,
+        backgroundJobsRunning: 0
+      },
+      revenueByMonth: [],
+      recentActivity: [],
+      paymentMethodStats: { card: 0, bank_account: 0, other: 0 },
+      communicationStats: {
+        totalMessages: 0,
+        deliveryRate: 0,
+        channelBreakdown: { email: 0, sms: 0 },
+        deliveryStats: { delivered: 0, sent: 0, failed: 0 }
+      },
+      recommendationsByPriority: { urgent: 0, high: 0, medium: 0, low: 0 },
+      recurringMessageStats: {
+        totalRecurring: 0,
+        activeRecurring: 0,
+        messagesSentThisWeek: 0,
+        averageSuccessRate: 0
+      }
+    }
     
-    console.log('🔍 Raw data received from Convex')
-    
-    // NUCLEAR SANITIZATION: Convert ALL timestamps to numbers
-    const sanitizedData = sanitizeTimestamps(rawData)
-    
-    console.log('✅ Data sanitized - all timestamps converted to numbers')
-    console.log('🔍 Sample recent activity after sanitization:', sanitizedData.recentActivity?.[0])
+    console.log('📊 EMPTY ANALYTICS DATA (post-purge):', emptyAnalyticsData);
 
-    return NextResponse.json(sanitizedData)
+    return NextResponse.json(emptyAnalyticsData)
 
   } catch (error) {
     console.error('❌ Dashboard analytics error:', error)

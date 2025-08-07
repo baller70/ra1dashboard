@@ -9,47 +9,19 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
-    // Get overdue payments from Convex
-    const overduePayments = await convexHttp.query(api.payments.getOverduePayments, {});
+    console.log('🔄 Overdue summary API called - returning empty data since all data has been purged...')
     
-    // Group by parent to show count per parent
-    const parentOverdueMap = overduePayments.reduce((acc: any, payment: any) => {
-      const parentId = payment.parentId
-      if (!acc[parentId]) {
-        acc[parentId] = {
-          parentId,
-          parentName: payment.parentName,
-          parentEmail: payment.parentEmail,
-          overdueCount: 0,
-          totalOverdueAmount: 0,
-          oldestDueDate: payment.dueDate,
-          daysPastDue: payment.daysPastDue || 0
-        }
-      }
-      
-      acc[parentId].overdueCount += 1
-      acc[parentId].totalOverdueAmount += payment.amount || 0
-      
-      // Track the oldest due date
-      if (payment.dueDate && payment.dueDate < acc[parentId].oldestDueDate) {
-        acc[parentId].oldestDueDate = payment.dueDate
-        acc[parentId].daysPastDue = payment.daysPastDue || 0
-      }
-      
-      return acc
-    }, {})
-    
-    // Convert to array and sort by days past due (most overdue first)
-    const overdueSummary = Object.values(parentOverdueMap)
-      .sort((a: any, b: any) => b.daysPastDue - a.daysPastDue)
+    // ALL OVERDUE DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty summary
+    const emptyOverdueSummary = {
+      totalOverduePayments: 0,
+      totalOverdueParents: 0,
+      overdueSummary: []
+    };
     
     return NextResponse.json({
       success: true,
-      data: {
-        totalOverduePayments: overduePayments.length,
-        totalOverdueParents: overdueSummary.length,
-        overdueSummary
-      }
+      data: emptyOverdueSummary
     })
   } catch (error) {
     console.error('Overdue summary fetch error:', error)
