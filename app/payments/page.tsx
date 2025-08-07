@@ -823,7 +823,8 @@ export default function PaymentsPage() {
     const firstInstallments = plans.reduce((s: number, plan: any) => s + Number(plan.installmentAmount || 0), 0)
     const collected = Number(summary.paid) + firstInstallments
     const pending = Math.max(totalPlanAmount - collected, 0)
-    return { totalPlanAmount, firstInstallments, collected, pending }
+    const activePlansCount = plans.length
+    return { totalPlanAmount, firstInstallments, collected, pending, activePlansCount }
   }
   const planAdj = calculatePlanAdjustments()
 
@@ -834,6 +835,9 @@ export default function PaymentsPage() {
   const uiPending = ((analytics?.pendingPayments ?? 0) > 0)
     ? Number(analytics?.pendingPayments)
     : Number(planAdj.pending)
+  const uiActivePlans = planAdj.activePlansCount || Number(analytics?.activePlans || 0)
+  const uiTotalRevenue = Number(analytics?.totalRevenue ?? planAdj.totalPlanAmount ?? summary.total)
+  const uiPendingFromTotal = Math.max(uiTotalRevenue - uiCollected, 0)
 
   // Helper function to get consistent overdue count
   const getOverdueCount = () => {
@@ -1022,7 +1026,7 @@ export default function PaymentsPage() {
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">${uiCollected.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
-                        {analytics?.activePlans || 0} active plans
+                        {uiActivePlans} active plans
                       </p>
                     </CardContent>
                   </Card>
@@ -1032,7 +1036,7 @@ export default function PaymentsPage() {
                       <Clock className="h-4 w-4 text-orange-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-orange-600">${uiPending.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-orange-600">${uiPendingFromTotal.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         Awaiting payment
                       </p>
