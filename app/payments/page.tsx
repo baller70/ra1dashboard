@@ -1,8 +1,7 @@
 // @ts-nocheck
 'use client'
 
-// Force dynamic rendering - prevent static generation
-export const dynamic = 'force-dynamic'
+// Client component; no Next.js dynamic export in client files
 
 import React, { useEffect, useState, useCallback } from 'react'
 import nextDynamic from 'next/dynamic'
