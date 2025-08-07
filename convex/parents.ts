@@ -11,39 +11,24 @@ export const getParents = query({
   handler: async (ctx, args) => {
     const { page = 1, limit = 10, search, status } = args;
 
-    console.log(`🔍 getParents called with: page=${page}, limit=${limit}, search=${search || 'none'}, status=${status || 'none'}`);
-
-    // Get parents directly from the database - NO TEST DATA
     let parentsQuery = ctx.db.query("parents");
 
     if (status) {
       parentsQuery = parentsQuery.filter((q) => q.eq(q.field("status"), status));
     }
 
-    // Get the actual parents from the database
     const parents = await parentsQuery.collect();
-    
-    console.log(`📊 getParents: Found ${parents.length} parents in database`);
-    
-    // Log each parent for debugging
-    parents.forEach((parent, index) => {
-      console.log(`   ${index + 1}. ${parent.name} (${parent.email}) - ID: ${parent._id}`);
-    });
 
-    // Apply search filter if provided
     let filteredParents = parents;
     if (search) {
       filteredParents = parents.filter((parent) =>
         parent.name?.toLowerCase().includes(search.toLowerCase()) ||
         parent.email?.toLowerCase().includes(search.toLowerCase())
       );
-      console.log(`   After search filter: ${filteredParents.length} parents match`);
     }
 
-    // Apply pagination
     const offset = (page - 1) * limit;
     const paginatedParents = filteredParents.slice(offset, offset + limit);
-    console.log(`   After pagination: Returning ${paginatedParents.length} parents (offset=${offset}, limit=${limit})`);
 
     return {
       parents: paginatedParents,
@@ -161,16 +146,5 @@ export const updateParent = mutation({
     
     // Return the updated parent record
     return await ctx.db.get(id);
-  },
-});
-
-// Get all parents without any filtering
-export const getAllParentsRaw = query({
-  args: {},
-  handler: async (ctx) => {
-    // Get all parents directly from the database with no filtering
-    const allParents = await ctx.db.query("parents").collect();
-    console.log(`getAllParentsRaw: Found ${allParents.length} parents`);
-    return allParents;
   },
 });

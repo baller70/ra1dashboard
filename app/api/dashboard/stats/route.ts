@@ -17,15 +17,14 @@ export async function GET(request: Request) {
 
     console.log('🔄 Fetching SIMPLE dashboard stats (only 3 fields needed)...')
     
-    // Get only the data we need for the 3 cards
-    // IMPORTANT: Use getAllParentsRaw to get REAL data, not test data
-    const [rawParentsResponse, paymentsResponse] = await Promise.all([
-      convexHttp.query(api.parents.getAllParentsRaw, {}),
+    // Get only the data we need for the 6 cards
+    const [parentsResponse, paymentsResponse] = await Promise.all([
+      convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 }),
       convexHttp.query(api.payments.getPayments, { page: 1, limit: 1000 })
     ]);
     
     // SIMPLE CALCULATIONS
-    const totalParents = rawParentsResponse?.length || 0;
+    const totalParents = parentsResponse.parents?.length || 0;
     const payments = paymentsResponse.payments || [];
     const overduePayments = payments.filter(p => p.status === 'overdue').length;
     const totalPotentialRevenue = totalParents * 1650; // Simple: Parents × $1650

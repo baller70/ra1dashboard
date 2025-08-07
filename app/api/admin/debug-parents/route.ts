@@ -13,47 +13,26 @@ export async function GET(request: NextRequest) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
-    console.log('🔍 DEBUG: Getting BOTH filtered and unfiltered parents from Convex...')
+    console.log('🔍 DEBUG: Getting ALL parents directly from Convex...')
     
-    // Get ALL parents (unfiltered)
-    const allParentsResponse = await convexHttp.query(api.parents.getParents, { 
+    // Get parents using the SAME query the dashboard uses
+    const parentsResponse = await convexHttp.query(api.parents.getParents, { 
       page: 1, 
       limit: 1000 
     })
     
-    // Get ACTIVE parents (filtered by status='active')
-    const activeParentsResponse = await convexHttp.query(api.parents.getParents, { 
-      page: 1, 
-      limit: 1000,
-      status: 'active'
-    })
-    
-    const allParents = allParentsResponse.parents || []
-    const activeParents = activeParentsResponse.parents || []
+    const allParents = parentsResponse.parents || []
     
     console.log(`📊 DIRECT CONVEX QUERY RESULTS:`)
-    console.log(`   Total parents (unfiltered): ${allParents.length}`)
-    console.log(`   Active parents (filtered): ${activeParents.length}`)
+    console.log(`   Total parents found: ${allParents.length}`)
     
     allParents.forEach((parent: any, index: number) => {
       console.log(`   ${index + 1}. ${parent.name} (${parent.email}) - ID: ${parent._id}`)
     })
 
     return createSuccessResponse({
-      // Both counts for comparison
       totalParents: allParents.length,
-      activeParents: activeParents.length,
-      
-      // Both lists for comparison
-      allParents: allParents.map((p: any) => ({
-        _id: p._id,
-        name: p.name,
-        email: p.email,
-        status: p.status,
-        createdAt: p.createdAt
-      })),
-      
-      activeParentsList: activeParents.map((p: any) => ({
+      parents: allParents.map((p: any) => ({
         _id: p._id,
         name: p.name,
         email: p.email,
