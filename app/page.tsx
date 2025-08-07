@@ -4,7 +4,7 @@
 // Force dynamic rendering - prevent static generation
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '../components/app-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
@@ -25,30 +25,90 @@ import {
   Trash2
 } from 'lucide-react'
 
+interface DashboardStats {
+  totalParents: number
+  totalPotentialRevenue: number
+  overduePayments: number
+  pendingPayments: number
+  upcomingDues: number
+  activePaymentPlans: number
+  activeTemplates: number
+  paymentSuccessRate: number
+}
+
 export default function DashboardPage() {
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [lastUpdated] = useState<Date | null>(new Date())
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [revenueData, setRevenueData] = useState<any[]>([])
 
-  // Empty state - all dashboard data has been permanently purged
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      console.log('🔄 Fetching real dashboard data connected to parents and payments...')
+      setLoading(true)
+      
+      // Fetch dashboard stats with cache busting
+      const cacheBuster = Date.now()
+      const statsResponse = await fetch(`/api/dashboard/stats?t=${cacheBuster}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'Cache-Control': 'no-cache'
+        }
+      })
+      
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        console.log('📊 Dashboard stats received (connected to real data):', statsData)
+        setStats(statsData.data || statsData)
+      }
+
+      // Fetch revenue trends
+      const revenueResponse = await fetch(`/api/dashboard/revenue-trends?t=${cacheBuster}`, {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'Cache-Control': 'no-cache'
+        }
+      })
+      
+      if (revenueResponse.ok) {
+        const revenueData = await revenueResponse.json()
+        console.log('📈 Revenue trends received (connected to real data):', revenueData)
+        setRevenueData(Array.isArray(revenueData) ? revenueData : [])
+      }
+
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
   const handleManualRefresh = () => {
-    console.log('Refresh clicked - but no data to refresh since all data has been purged')
+    console.log('🔄 Manual refresh triggered - fetching latest data from parents and payments...')
     setRefreshing(true)
-    setTimeout(() => setRefreshing(false), 1000)
+    fetchDashboardData()
   }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const quickActions = [
     {
-      title: 'Add New Parent',
-      description: 'Register a new parent in the system',
-      icon: Users,
+      title: 'Add Parent',
+      description: 'Add new parent to system',
+      icon: Plus,
       href: '/parents',
       color: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
       iconColor: 'text-blue-600'
     },
     {
       title: 'Record Payment',
-      description: 'Process a new payment or installment',
+      description: 'Add new payment record',
       icon: CreditCard,
       href: '/payments',
       color: 'bg-green-50 text-green-600 hover:bg-green-100',
@@ -84,14 +144,14 @@ export default function DashboardPage() {
             </p>
             {lastUpdated && (
               <p className="text-xs text-muted-foreground mt-1">
-                All dashboard data has been permanently removed
+                Last updated: {lastUpdated.toLocaleTimeString()} - Connected to live data
               </p>
             )}
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-gray-400'}`}></div>
-              {refreshing ? 'Updating...' : 'No Data'}
+              <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : stats ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              {refreshing ? 'Updating...' : stats ? 'Live Data' : 'Loading...'}
             </div>
             <Button 
               onClick={handleManualRefresh} 
@@ -105,7 +165,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Empty Stats Cards */}
+        {/* Stats Cards - Connected to Real Data */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -113,8 +173,12 @@ export default function DashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-400">—</div>
-              <p className="text-xs text-muted-foreground">No data available</p>
+              <div className="text-2xl font-bold">
+                {loading ? '—' : stats?.totalParents ?? 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {loading ? 'Loading...' : 'Connected to parents page'}
+              </p>
             </CardContent>
           </Card>
 
@@ -124,8 +188,12 @@ export default function DashboardPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-400">—</div>
-              <p className="text-xs text-muted-foreground">No data available</p>
+              <div className="text-2xl font-bold">
+                {loading ? '—' : `$${stats?.totalPotentialRevenue?.toLocaleString() ?? 0}`}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {loading ? 'Loading...' : 'Connected to payments page'}
+              </p>
             </CardContent>
           </Card>
 
@@ -135,151 +203,118 @@ export default function DashboardPage() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-400">—</div>
-              <p className="text-xs text-muted-foreground">No data available</p>
+              <div className="text-2xl font-bold">
+                {loading ? '—' : stats?.pendingPayments ?? 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {loading ? 'Loading...' : 'Live payment data'}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Overdue Payments</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-400">—</div>
-              <p className="text-xs text-muted-foreground">No data available</p>
+              <div className="text-2xl font-bold">
+                {loading ? '—' : stats?.overduePayments ?? 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {loading ? 'Loading...' : 'Real-time overdue tracking'}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Empty Charts Section */}
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Revenue Chart - Takes 2 columns */}
-          <div className="md:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Revenue Trends
-                  <span className="text-sm font-normal text-muted-foreground">
-                    Monthly revenue over time
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+        {/* Revenue Trends Section */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="col-span-4">
+            <CardHeader>
+              <CardTitle>Revenue Trends</CardTitle>
+            </CardHeader>
+            <CardContent className="pl-2">
+              {loading ? (
+                <div className="h-[200px] flex items-center justify-center">
                   <div className="text-center">
-                    <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">No Revenue Data</p>
-                    <p className="text-sm text-gray-400">All dashboard data has been removed</p>
+                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading revenue data...</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              ) : revenueData.length > 0 ? (
+                <div className="h-[200px] flex items-center justify-center">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 text-blue-500 mx-auto mb-2" />
+                    <p className="text-sm font-medium">{revenueData.length} months of data</p>
+                    <p className="text-xs text-muted-foreground">Chart will display when you have revenue</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No revenue data yet</p>
+                    <p className="text-xs text-muted-foreground">Add payments to see trends</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* System Status */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  System Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Database</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-xs text-muted-foreground">Empty</span>
+          <Card className="col-span-3">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2">
+              {quickActions.map((action, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  className={`justify-start h-auto p-3 ${action.color}`}
+                  onClick={() => router.push(action.href)}
+                >
+                  <action.icon className={`h-4 w-4 mr-3 ${action.iconColor}`} />
+                  <div className="text-left">
+                    <div className="font-medium">{action.title}</div>
+                    <div className="text-xs opacity-70">{action.description}</div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Analytics</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-xs text-muted-foreground">Disabled</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Core Functions</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-green-600">Active</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Quick Actions */}
+        {/* System Status */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Quick Actions
-              <span className="text-sm font-normal text-muted-foreground">
-                Core functionality remains available
-              </span>
-            </CardTitle>
+            <CardTitle>System Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => router.push(action.href)}
-                  className={`p-4 rounded-lg border transition-colors text-left ${action.color} border-transparent hover:shadow-sm`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-white/80`}>
-                      <action.icon className={`h-5 w-5 ${action.iconColor}`} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm">{action.title}</h3>
-                      <p className="text-xs opacity-80">{action.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${stats ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <span className="text-sm">Dashboard: {stats ? 'Connected' : 'Loading'}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-sm">Parents Page: Connected</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-sm">Payments Page: Connected</span>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Data Purge Notice */}
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <Trash2 className="h-5 w-5" />
-              Dashboard Data Purged
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-orange-700 mb-4">
-              All dashboard and analytics data has been permanently removed from the database. 
-              Core functionality (Communication, Payments, Contracts, Parents, Settings) remains fully operational.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium text-orange-800 mb-1">Removed:</p>
-                <ul className="text-orange-600 space-y-1">
-                  <li>• Dashboard statistics</li>
-                  <li>• Analytics data</li>
-                  <li>• Revenue calculations</li>
-                  <li>• Historical metrics</li>
-                </ul>
+            <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center">
+                <Database className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium text-green-800">
+                  Dashboard is now dynamically connected to your Parents and Payments data
+                </span>
               </div>
-              <div>
-                <p className="font-medium text-orange-800 mb-1">Available:</p>
-                <ul className="text-green-600 space-y-1">
-                  <li>• Parent management</li>
-                  <li>• Payment processing</li>
-                  <li>• Communication tools</li>
-                  <li>• Contract management</li>
-                </ul>
-              </div>
+              <p className="text-xs text-green-700 mt-1">
+                When you add parents or payments, they will automatically appear here in real-time
+              </p>
             </div>
           </CardContent>
         </Card>

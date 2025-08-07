@@ -10,17 +10,17 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
-    console.log('🔄 Revenue trends API called - returning empty data since all data has been purged...')
+    console.log('🔄 Revenue trends API called - fetching REAL revenue data...')
     
-    // ALL REVENUE DATA HAS BEEN PERMANENTLY PURGED
-    // Return empty trends array
-    const emptyTrends = [];
+    // Get real revenue trends from Convex using existing function
+    const revenueTrends = await convexHttp.query(api.dashboard.getRevenueTrends, {});
+    console.log('📈 REAL REVENUE TRENDS from Convex:', revenueTrends);
     
-    return NextResponse.json(emptyTrends)
+    return NextResponse.json(revenueTrends)
   } catch (error) {
     console.error('Revenue trends error:', error)
     
-    // Return empty data since all data has been purged
+    // Return empty trends if error occurs
     return NextResponse.json([])
   }
 }

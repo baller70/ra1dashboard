@@ -11,39 +11,118 @@ async function safeGetParent(ctx: any, parentId: any) {
   }
 }
 
-// Dashboard stats function - RETURNS EMPTY DATA (post-purge) - RENAMED TO FORCE CACHE CLEAR
-export const getCleanDashboardStats = query({
+// Dashboard stats function - DYNAMICALLY CONNECTED TO REAL DATA
+export const getDashboardStats = query({
   args: {},
   handler: async (ctx) => {
-    console.log('🔄 Convex getCleanDashboardStats called - returning GUARANTEED empty data since all data has been purged...')
+    console.log('🔄 Convex getDashboardStats called - fetching REAL data from parents and payments...')
     
-    // ALL DASHBOARD DATA HAS BEEN PERMANENTLY PURGED
-    // Return empty/zero values since database has been cleared
+    // Get all parents from database
+    const parents = await ctx.db.query("parents").collect();
+    const totalParents = parents.length;
+    console.log(`📊 Found ${totalParents} parents in database`);
     
-    return {
-      totalParents: 0,
-      totalRevenue: 0,
-      overduePayments: 0,
-      pendingPayments: 0,
-      upcomingDues: 0,
-      activePaymentPlans: 0,
-      messagesSentThisMonth: 0,
-      activeTemplates: 0,
-      paymentSuccessRate: 0,
-      averagePaymentTime: 0
+    // Get all payments from database
+    const payments = await ctx.db.query("payments").collect();
+    console.log(`💰 Found ${payments.length} payments in database`);
+    
+    // Calculate total revenue from all payments (paid + pending)
+    const totalRevenue = payments
+      .filter(payment => payment.status === 'paid' || payment.status === 'pending')
+      .reduce((sum, payment) => sum + (payment.amount || 0), 0);
+    
+    // Count overdue payments
+    const now = Date.now();
+    const overduePayments = payments.filter(payment => {
+      if (payment.status === 'overdue') return true;
+      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) return true;
+      return false;
+    }).length;
+    
+    // Count pending payments
+    const pendingPayments = payments.filter(payment => payment.status === 'pending').length;
+    
+    // Get payment plans
+    const paymentPlans = await ctx.db.query("paymentPlans").collect();
+    const activePaymentPlans = paymentPlans.filter(plan => plan.status === 'active').length;
+    
+    // Get templates
+    const templates = await ctx.db.query("templates").collect();
+    const activeTemplates = templates.filter(template => template.isActive).length;
+    
+    const stats = {
+      totalParents,
+      totalRevenue,
+      overduePayments,
+      pendingPayments,
+      upcomingDues: pendingPayments, // Upcoming dues are pending payments
+      activePaymentPlans,
+      messagesSentThisMonth: 0, // Will be calculated from message logs if needed
+      activeTemplates,
+      paymentSuccessRate: payments.length > 0 ? (payments.filter(p => p.status === 'paid').length / payments.length) * 100 : 0,
+      averagePaymentTime: 0 // Can be calculated if needed
     };
+    
+    console.log('📊 REAL DASHBOARD STATS:', stats);
+    return stats;
   },
 });
 
-// Revenue trends function - RETURNS EMPTY DATA (post-purge)
+// Revenue trends function - DYNAMICALLY CONNECTED TO REAL DATA
 export const getRevenueTrends = query({
   args: {},
   handler: async (ctx) => {
-    console.log('🔄 Convex getRevenueTrends called - returning empty data since all data has been purged...')
+    console.log('🔄 Convex getRevenueTrends called - fetching REAL revenue data...')
     
-    // ALL REVENUE DATA HAS BEEN PERMANENTLY PURGED
-    // Return empty trends array
-    return [];
+    // Get all payments from database
+    const payments = await ctx.db.query("payments").collect();
+    console.log(`💰 Found ${payments.length} payments for revenue trends`);
+    
+    // If no payments, return empty trends for next 6 months
+    if (payments.length === 0) {
+      const trends = [];
+      const currentDate = new Date();
+      for (let i = 0; i < 6; i++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+        trends.push({
+          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          revenue: 0,
+          payments: 0
+        });
+      }
+      return trends;
+    }
+    
+    // Group payments by month
+    const monthlyData: { [key: string]: { revenue: number, payments: number } } = {};
+    
+    payments.forEach(payment => {
+      if (payment.status === 'paid' && payment.paidAt) {
+        const date = new Date(payment.paidAt);
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        const monthLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { revenue: 0, payments: 0 };
+        }
+        monthlyData[monthKey].revenue += payment.amount || 0;
+        monthlyData[monthKey].payments += 1;
+      }
+    });
+    
+    // Convert to array format for charts
+    const trends = Object.entries(monthlyData).map(([key, data]) => {
+      const [year, month] = key.split('-');
+      const date = new Date(parseInt(year), parseInt(month), 1);
+      return {
+        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        revenue: data.revenue,
+        payments: data.payments
+      };
+    }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+    
+    console.log('📈 REAL REVENUE TRENDS:', trends);
+    return trends;
   },
 });
 
