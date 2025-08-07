@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { 
   DollarSign, 
   Users, 
-  AlertTriangle, 
+  AlertTriangle,
   TrendingUp
 } from 'lucide-react'
 
@@ -29,9 +29,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     }).format(amount)
   }
 
-  // Calculate revenue trend (simple mock for now)
-  const revenueTrend = stats?.totalParents > 0 ? '+12.5%' : '0%'
-  const trendColor = stats?.totalParents > 0 ? 'text-green-600' : 'text-gray-500'
+  // Revenue trend calculation removed (Revenue Trends card deleted)
 
   // The 6 cards you requested
   const dashboardCards = [
@@ -43,8 +41,8 @@ export function StatsCards({ stats }: StatsCardsProps) {
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       description: `${stats?.totalParents ?? 0} parents × $1,650`,
-      trend: revenueTrend,
-      trendColor: trendColor,
+      trend: stats?.totalParents > 0 ? '+12.5%' : '0%',
+      trendColor: stats?.totalParents > 0 ? 'text-green-600' : 'text-gray-500',
       size: 'large'
     },
     // 2. Overdue Payments
@@ -67,16 +65,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       description: 'Registered parents',
       size: 'medium'
     },
-    // 4. Revenue Trends (Simple trend indicator)
-    {
-      title: 'Revenue Trends',
-      value: revenueTrend,
-      icon: TrendingUp,
-      color: trendColor.replace('text-', 'text-'),
-      bgColor: stats?.totalParents > 0 ? 'bg-green-50' : 'bg-gray-50',
-      description: 'Monthly growth rate',
-      size: 'medium'
-    },
+    // Revenue Trends card removed per user request
     // Cards 5 & 6 removed per user request
   ]
 
