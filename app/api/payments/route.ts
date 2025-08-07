@@ -1,37 +1,4 @@
 export const dynamic = "force-dynamic";
-
-import { NextResponse } from 'next/server'
-import { requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
-import { api } from '../../../convex/_generated/api'
-
-export async function GET(request: Request) {
-  try {
-    await requireAuthWithApiKeyBypass(request)
-
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status') || undefined
-    const page = Number(searchParams.get('page') || '1')
-    const limit = Number(searchParams.get('limit') || '50')
-
-    const result = await convexHttp.query(api.payments.getPayments as any, {
-      status,
-      page,
-      limit
-    })
-
-    return NextResponse.json({ success: true, data: result })
-  } catch (error) {
-    console.error('Payments list error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch payments' },
-      { status: 500 }
-    )
-  }
-}
-
-
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -59,7 +26,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '50');
     const status = searchParams.get('status');
     const parentId = searchParams.get('parentId');
 
@@ -98,7 +65,7 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     });
 
-    return NextResponse.json(payment, { status: 201 });
+    return NextResponse.json({ success: true, data: { _id: payment } }, { status: 201 });
   } catch (error) {
     console.error('Error creating payment:', error);
     if (error instanceof z.ZodError) {
