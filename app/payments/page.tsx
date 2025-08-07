@@ -61,7 +61,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { PaymentWithRelations, PaymentStats, PaymentAnalytics } from '../../lib/types'
-import { toast } from '../../components/ui/use-toast'
+import { useToast } from '../../components/ui/use-toast'
+import { Toaster } from '../../components/ui/toaster'
 import { ParentCreationModal } from '../../components/ui/parent-creation-modal'
 
 // Program configuration
@@ -81,6 +82,7 @@ const PROGRAMS = [
 const Recharts = nextDynamic(() => import('recharts'), { ssr: false, loading: () => <div>Loading chart...</div> })
 
 export default function PaymentsPage() {
+  const { toast } = useToast()
   const [activeProgram, setActiveProgram] = useState('yearly-program')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -1741,7 +1743,7 @@ export default function PaymentsPage() {
         }}
       />
 
-
+      <Toaster />
     </div>
   </AppLayout>
   )
