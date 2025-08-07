@@ -127,8 +127,13 @@ export async function POST(request: Request) {
     
     const parentId = await convexHttp.mutation(api.parents.createParent, createData);
 
-    // Return minimal created parent info for UI feedback
-    return createSuccessResponse({ _id: parentId, name: sanitizedData.name, email: sanitizedData.email });
+    // Fetch full created parent for UI/state consistency
+    let createdParent: any = null
+    try {
+      createdParent = await convexHttp.query(api.parents.getParent, { id: parentId as any })
+    } catch {}
+
+    return createSuccessResponse(createdParent || { _id: parentId, name: sanitizedData.name, email: sanitizedData.email });
   } catch (error) {
     console.error('Parent creation error:', error)
     
