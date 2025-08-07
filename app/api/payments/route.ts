@@ -1,3 +1,35 @@
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from 'next/server'
+import { requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
+import { convexHttp } from '../../../lib/db'
+import { api } from '../../../convex/_generated/api'
+
+export async function GET(request: Request) {
+  try {
+    await requireAuthWithApiKeyBypass(request)
+
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status') || undefined
+    const page = Number(searchParams.get('page') || '1')
+    const limit = Number(searchParams.get('limit') || '50')
+
+    const result = await convexHttp.query(api.payments.getPayments as any, {
+      status,
+      page,
+      limit
+    })
+
+    return NextResponse.json({ success: true, data: result })
+  } catch (error) {
+    console.error('Payments list error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch payments' },
+      { status: 500 }
+    )
+  }
+}
+
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
