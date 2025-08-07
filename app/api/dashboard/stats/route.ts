@@ -15,16 +15,21 @@ export async function GET(request: Request) {
     const headers = { 'x-api-key': 'ra1-dashboard-api-key-2024' }
 
     // CALL THE EXACT SAME APIs THAT THE PAGES USE
-    const [parentsRes, paymentsRes, templatesRes] = await Promise.allSettled([
+    const [parentsRes, paymentsRes, templatesRes, messagesRes] = await Promise.allSettled([
       fetch(`${baseUrl}/api/parents`, { headers }),
       fetch(`${baseUrl}/api/payments/analytics`, { headers }),
-      fetch(`${baseUrl}/api/templates`, { headers })
+      fetch(`${baseUrl}/api/templates`, { headers }),
+      // Use communication history endpoint to derive total messages count
+      fetch(`${baseUrl}/api/communication/history?limit=1&page=1`, { headers })
     ])
 
     let totalParents = 0
     let totalPotentialRevenue = 0
     let overduePayments = 0
     let activeTemplates = 0
+    let pendingPayments = 0
+    let activePaymentPlans = 0
+    let totalMessages = 0
 
     // Parents data from Parent page API
     if (parentsRes.status === 'fulfilled' && parentsRes.value.ok) {
@@ -37,7 +42,12 @@ export async function GET(request: Request) {
       const paymentsData = await paymentsRes.value.json()
       if (paymentsData.success && paymentsData.data) {
         totalPotentialRevenue = paymentsData.data.totalRevenue || 0
+        // Dashboard cards: overduePayments shows count
         overduePayments = paymentsData.data.overdueCount || 0
+        // Pending payments card expects amount ($)
+        pendingPayments = paymentsData.data.pendingPayments || 0
+        // Active payment plans
+        activePaymentPlans = paymentsData.data.activePlans || 0
       }
     }
 
@@ -47,16 +57,35 @@ export async function GET(request: Request) {
       activeTemplates = Array.isArray(templatesData) ? templatesData.length : 0
     }
 
+    // Messages (communication history) total
+    if (messagesRes.status === 'fulfilled' && messagesRes.value.ok) {
+      const messagesData = await messagesRes.value.json()
+      // The endpoint returns { messages: [], pagination: { total } }
+      totalMessages = messagesData?.pagination?.total || messagesData?.summary?.totalMessages || 0
+    }
+
+    // Compute a simple success rate: collected / (collected + pending) if available
+    let paymentSuccessRate = 0
+    try {
+      if (paymentsRes.status === 'fulfilled' && paymentsRes.value.ok) {
+        const paymentsData = await paymentsRes.value.json()
+        const collected = paymentsData?.data?.collectedPayments || 0
+        const pendingAmt = paymentsData?.data?.pendingPayments || 0
+        const denom = collected + pendingAmt
+        paymentSuccessRate = denom > 0 ? Math.round((collected / denom) * 100) : 0
+      }
+    } catch {}
+
     const dashboardStats = {
       totalParents,
       totalPotentialRevenue,
-      overduePayments,
-      pendingPayments: 0,
+      overduePayments,            // count
+      pendingPayments,            // amount ($)
       upcomingDues: overduePayments,
-      activePaymentPlans: 0,
+      activePaymentPlans,
       activeTemplates,
-      totalMessages: 0, // Messages API is broken due to Resend
-      paymentSuccessRate: 0
+      totalMessages,
+      paymentSuccessRate
     }
 
     console.log('📊 Dashboard data from actual page APIs:', dashboardStats)
