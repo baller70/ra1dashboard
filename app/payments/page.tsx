@@ -1367,9 +1367,9 @@ export default function PaymentsPage() {
                                     <span>No Payment Plan</span>
                                   </Badge>
                                 ) : (
-                                  <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1">
+                                  <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1 capitalize">
                                     {getStatusIcon(payment.status)}
-                                    <span>{payment.status}</span>
+                                    <span>{payment.status === 'pending' ? 'active' : payment.status}</span>
                                   </Badge>
                                 )}
                                 {payment.paymentPlan && (
