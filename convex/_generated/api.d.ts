@@ -34,6 +34,7 @@ import type * as scheduledMessages from "../scheduledMessages.js";
 import type * as systemSettings from "../systemSettings.js";
 import type * as teams from "../teams.js";
 import type * as templates from "../templates.js";
+import type * as totalCleanup from "../totalCleanup.js";
 import type * as totalDataPurge from "../totalDataPurge.js";
 import type * as users from "../users.js";
 
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   systemSettings: typeof systemSettings;
   teams: typeof teams;
   templates: typeof templates;
+  totalCleanup: typeof totalCleanup;
   totalDataPurge: typeof totalDataPurge;
   users: typeof users;
 }>;

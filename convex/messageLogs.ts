@@ -631,4 +631,33 @@ export const getRecentMessages = query({
 
     return messages;
   },
+});
+
+export const deleteAllMessages = mutation({
+  args: {
+    confirmDelete: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.confirmDelete) {
+      throw new Error("Delete not confirmed");
+    }
+
+    console.log("🗑️ Deleting all message logs...");
+    
+    const messages = await ctx.db.query("messageLogs").collect();
+    let deletedCount = 0;
+    
+    for (const message of messages) {
+      await ctx.db.delete(message._id);
+      deletedCount++;
+    }
+    
+    console.log(`✅ Deleted ${deletedCount} message logs`);
+    
+    return {
+      success: true,
+      deletedCount,
+      message: `Deleted ${deletedCount} message logs`
+    };
+  },
 }); 

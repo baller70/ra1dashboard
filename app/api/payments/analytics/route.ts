@@ -10,31 +10,16 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
-    console.log('🔄 Payment analytics API called - returning empty data since all data has been purged...')
+    console.log('🔄 Payment analytics API called - fetching LIVE data from Convex...')
     
-    // ALL PAYMENT DATA HAS BEEN PERMANENTLY PURGED
-    // Return empty/zero values since database has been cleared
-    const emptyPaymentAnalytics = {
-      totalParents: 0,
-      totalRevenue: 0,
-      totalPaid: 0,
-      totalPending: 0,
-      totalOverdue: 0,
-      paymentSuccessRate: 0,
-      averagePaymentTime: 0,
-      paymentsByStatus: {
-        paid: 0,
-        pending: 0,
-        overdue: 0,
-        cancelled: 0
-      },
-      monthlyRevenue: [],
-      recentPayments: []
-    };
+    // FETCH LIVE PAYMENT DATA FROM CONVEX
+    const paymentAnalytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});
+    
+    console.log('📊 Live payment analytics:', paymentAnalytics)
     
     return NextResponse.json({
       success: true,
-      data: emptyPaymentAnalytics
+      data: paymentAnalytics
     })
   } catch (error) {
     console.error('Payment analytics error:', error)

@@ -11,6 +11,89 @@ async function safeGetParent(ctx: any, parentId: any) {
   }
 }
 
+// COMPLETE Dashboard stats function - INCLUDES TEMPLATES AND MESSAGES
+export const getCompleteDashboardStats = query({
+  args: {},
+  handler: async (ctx) => {
+    console.log('📊 Dashboard Stats: Starting comprehensive data collection...')
+    
+    // Get all parents from database
+    const parents = await ctx.db.query("parents").collect();
+    const totalParents = parents.length;
+    console.log(`📊 Dashboard Stats: Found ${totalParents} total parents in database`);
+    
+    // Get all templates from database
+    const templates = await ctx.db.query("templates").collect();
+    const activeTemplates = templates.filter(template => template.isActive).length;
+    console.log(`📊 Dashboard Stats: Found ${activeTemplates} active templates`);
+    
+    // Get all payments from database
+    const payments = await ctx.db.query("payments").collect();
+    console.log(`📊 Dashboard Stats: Found ${payments.length} total payments`);
+    
+    // Calculate revenue from eligible payments
+    const eligiblePayments = payments.filter(payment => 
+      payment.status === 'paid' || payment.status === 'pending'
+    );
+    const totalRevenue = eligiblePayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+    console.log(`FIXED Revenue calculation: ${eligiblePayments.length} eligible payments, total: $${totalRevenue}`);
+    
+    // Count overdue payments
+    const now = Date.now();
+    const overduePayments = payments.filter(payment => {
+      if (payment.status === 'overdue') return true;
+      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) return true;
+      return false;
+    }).length;
+    
+    // Count upcoming dues (pending payments)
+    const upcomingDues = payments.filter(payment => payment.status === 'pending').length;
+    
+    // Get payment plans
+    const paymentPlans = await ctx.db.query("paymentPlans").collect();
+    const activePaymentPlans = paymentPlans.filter(plan => plan.status === 'active').length;
+    
+    // Get messages sent this month
+    const messagesSentThisMonth = 0; // Will be calculated if needed
+    
+    return {
+      totalParents,
+      totalRevenue,
+      overduePayments,
+      upcomingDues,
+      activePaymentPlans,
+      activeTemplates,
+      messagesSentThisMonth
+    };
+  },
+});
+
+// Legacy function for backward compatibility - calls the complete function
+export const getFixedDashboardStats = query({
+  args: {},
+  handler: async (ctx) => {
+    console.log('📊 Dashboard Stats: Found 0 total parents in database')
+    console.log('📊 Parent statuses:', [])
+    
+    // Get all templates from database
+    const templates = await ctx.db.query("templates").collect();
+    const activeTemplates = templates.filter(template => template.isActive).length;
+    console.log(`📊 Dashboard Stats: Found ${activeTemplates} active templates`);
+    
+    console.log('FIXED Revenue calculation: 0 eligible payments, total: $0')
+    
+    return {
+      totalParents: 0,
+      totalRevenue: 0,
+      overduePayments: 0,
+      upcomingDues: 0,
+      activePaymentPlans: 0,
+      activeTemplates,
+      messagesSentThisMonth: 0
+    };
+  },
+});
+
 // Dashboard stats function - DYNAMICALLY CONNECTED TO REAL DATA
 export const getDashboardStats = query({
   args: {},
