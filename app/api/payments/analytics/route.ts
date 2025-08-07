@@ -13,14 +13,32 @@ export async function GET(request: Request) {
     console.log('🔄 Payment analytics API called - fetching LIVE data from Convex...')
     
     // FETCH LIVE PAYMENT DATA FROM CONVEX
-    const paymentAnalytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});
+    let paymentAnalytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});
+
+    // Post-process to enforce business rules:
+    // - First installment for each active plan counts as collected
+    // - Pending is plan totals minus collected
+    try {
+      const activePlansArr: any[] = await convexHttp.query(api.payments.getPaymentPlans as any, { status: 'active' });
+      const plansTotal = Array.isArray(activePlansArr) ? activePlansArr.reduce((s, p: any) => s + (p.totalAmount || 0), 0) : 0;
+      const firstInstallments = Array.isArray(activePlansArr) ? activePlansArr.reduce((s, p: any) => s + (p.installmentAmount || 0), 0) : 0;
+      const collected = (paymentAnalytics?.collectedPayments || 0) + firstInstallments;
+      const totalRevenue = paymentAnalytics?.totalRevenue && paymentAnalytics.totalRevenue > 0 ? paymentAnalytics.totalRevenue : plansTotal;
+      const pending = Math.max((totalRevenue || 0) - collected, 0);
+      paymentAnalytics = {
+        ...paymentAnalytics,
+        totalRevenue,
+        collectedPayments: collected,
+        pendingPayments: pending,
+        activePlans: new Set((activePlansArr || []).map((p: any) => p.parentId)).size,
+      };
+    } catch (ppErr) {
+      console.warn('Post-process analytics adjustment failed:', ppErr);
+    }
     
-    console.log('📊 Live payment analytics:', paymentAnalytics)
+    console.log('📊 Live payment analytics (adjusted):', paymentAnalytics)
     
-    return NextResponse.json({
-      success: true,
-      data: paymentAnalytics
-    })
+    return NextResponse.json({ success: true, data: paymentAnalytics })
   } catch (error) {
     console.error('Payment analytics error:', error)
     // Robust fallback so dashboard doesn't break if primary query fails
