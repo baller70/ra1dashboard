@@ -93,17 +93,28 @@ export async function DELETE(
   try {
     await requireAuth()
     
-    // Soft delete by setting isActive to false
-    await convexHttp.mutation(api.templates.updateTemplate, {
-      id: params.id as any,
-      isActive: false
+    console.log('DELETE request for template ID:', params.id)
+    
+    // Hard delete using the deleteTemplate mutation
+    const result = await convexHttp.mutation(api.templates.deleteTemplate, {
+      id: params.id as any
     });
 
-    return NextResponse.json({ success: true, message: 'Template deleted successfully' })
+    console.log('Template deleted successfully:', result)
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Template deleted successfully',
+      data: result 
+    })
   } catch (error) {
     console.error('Template deletion error:', error)
     return NextResponse.json(
-      { error: 'Failed to delete template' },
+      { 
+        success: false,
+        error: 'Failed to delete template',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

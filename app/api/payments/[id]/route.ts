@@ -78,13 +78,28 @@ export async function DELETE(
   try {
     await requireAuth()
 
-    // Delete payment in Convex (need to implement this mutation)
-    // For now, return success
-    return NextResponse.json({ message: 'Payment deleted successfully' })
+    console.log('DELETE request for payment ID:', params.id)
+
+    // Delete payment in Convex using the deletePayment mutation
+    const result = await convexHttp.mutation(api.payments.deletePayment, {
+      id: params.id as any
+    });
+
+    console.log('Payment deleted successfully:', result)
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Payment deleted successfully',
+      data: result 
+    })
   } catch (error) {
     console.error('Payment deletion error:', error)
     return NextResponse.json(
-      { error: 'Failed to delete payment' },
+      { 
+        success: false,
+        error: 'Failed to delete payment', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      },
       { status: 500 }
     )
   }

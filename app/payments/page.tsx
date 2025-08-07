@@ -302,6 +302,63 @@ export default function PaymentsPage() {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [paymentDeleteLoading, setPaymentDeleteLoading] = useState<string | null>(null)
+
+  // Delete individual payment function
+  const handleDeletePayment = async (paymentId: string, paymentAmount: number) => {
+    if (!confirm(`Are you sure you want to delete this payment of $${paymentAmount}? This action cannot be undone.`)) {
+      return
+    }
+
+    setPaymentDeleteLoading(paymentId)
+    console.log('🗑️ Starting delete process for payment:', paymentId)
+    
+    try {
+      const response = await fetch(`/api/payments/${paymentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
+
+      console.log('📡 Payment delete response status:', response.status)
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Payment deleted successfully:', result)
+        
+        toast({
+          title: '✅ Payment Deleted',
+          description: `Payment of $${paymentAmount} has been deleted successfully.`,
+          duration: 5000,
+        })
+
+        // Refresh the payments data
+        await fetchData(true)
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Payment delete failed:', errorData)
+        
+        toast({
+          title: '❌ Delete Failed',
+          description: errorData.details || errorData.error || 'Failed to delete payment',
+          variant: 'destructive',
+          duration: 7000,
+        })
+      }
+    } catch (error) {
+      console.error('❌ Payment delete error:', error)
+      toast({
+        title: '❌ Delete Error',
+        description: 'An unexpected error occurred while deleting the payment.',
+        variant: 'destructive',
+        duration: 7000,
+      })
+    } finally {
+      setPaymentDeleteLoading(null)
+    }
+  }
 
   // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
@@ -1428,15 +1485,33 @@ export default function PaymentsPage() {
                                       Mark Paid
                                     </Button>
                                   )}
+                                  {/* Delete individual payment button */}
+                                  {!payment.isMockEntry && payment.status !== 'paid' && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleDeletePayment(payment._id, payment.amount)}
+                                      disabled={paymentDeleteLoading === payment._id}
+                                      title="Delete this payment"
+                                      className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                    >
+                                      {paymentDeleteLoading === payment._id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  )}
                                 </>
                               )}
-                              {/* Delete button for all entries (both mock and real) */}
+                              {/* Delete parent button for all entries (both mock and real) */}
                               <Button 
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
                                 disabled={deleteLoading === payment.parentId}
-                                title="Delete this parent"
+                                title="Delete entire parent (including all payments)"
+                                className="text-red-800 hover:text-red-900"
                               >
                                 {deleteLoading === payment.parentId ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
