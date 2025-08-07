@@ -126,6 +126,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // DELETE TEST PAYMENT PLANS (CRITICAL - this is where the wrong calculations come from!)
+    try {
+      const paymentPlansResponse = await convexHttp.query(api.paymentPlans.getPaymentPlans, { 
+        page: 1, 
+        limit: 1000 
+      })
+      const allPaymentPlans = paymentPlansResponse.paymentPlans || []
+      
+      const testPaymentPlans = allPaymentPlans.filter((plan: any) => {
+        const hasTestDescription = plan.description?.toLowerCase().includes('test') ||
+          plan.description?.toLowerCase().includes('debug') ||
+          plan.description?.toLowerCase().includes('api test') ||
+          plan.description?.toLowerCase().includes('browser test') ||
+          plan.description?.toLowerCase().includes('final test') ||
+          plan.description?.toLowerCase().includes('demo') ||
+          plan.description?.toLowerCase().includes('verification')
+        
+        // Also delete plans for deleted test parents
+        const parentWasDeleted = !realParentIds.has(plan.parentId)
+        
+        return hasTestDescription || parentWasDeleted
+      })
+
+      console.log(`🗑️ Deleting ${testPaymentPlans.length} test payment plans...`)
+      for (const plan of testPaymentPlans) {
+        try {
+          await convexHttp.mutation(api.paymentPlans.deletePaymentPlan, {
+            id: plan._id
+          })
+          deletedCount.paymentPlans++
+          console.log(`   ✅ Deleted payment plan: ${plan.description || 'No description'}`)
+        } catch (error) {
+          console.warn(`   ⚠️ Failed to delete payment plan ${plan._id}:`, error)
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Payment plans cleanup failed:', error)
+    }
+
     // DELETE TEST TEMPLATES (optional - only if they exist)
     try {
       const templatesResponse = await convexHttp.query(api.templates.getTemplates, { 
