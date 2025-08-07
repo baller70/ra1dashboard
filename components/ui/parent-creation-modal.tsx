@@ -60,7 +60,13 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
         title: "Parent created successfully!",
         description: `Parent ${result.data.name} has been added.`,
       })
-      
+      // Ensure latest list is fetched after creation
+      if (typeof window !== 'undefined') {
+        try {
+          await fetch(`/api/parents?_t=${Date.now()}`, { cache: 'no-store' })
+        } catch {}
+      }
+
       onParentCreated?.(result.data) // Pass the newly created parent data
       onOpenChange(false)
     } catch (error: any) {

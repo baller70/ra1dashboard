@@ -165,8 +165,14 @@ export default function ParentsPage() {
 
   const fetchParents = async () => {
     try {
-      console.log('Fetching parents from /api/parents...')
-      const response = await fetch('/api/parents')
+      console.log('Fetching parents from /api/parents with cache-busting...')
+      const cacheBuster = Date.now()
+      const response = await fetch(`/api/parents?_t=${cacheBuster}` , {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      })
       console.log('Response status:', response.status, response.ok)
       if (response.ok) {
         const data = await response.json()
