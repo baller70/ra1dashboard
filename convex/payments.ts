@@ -193,20 +193,30 @@ export const getPaymentAnalytics = query({
     // paymentPlans already fetched above for totalRevenue calculation
     
     // FIXED: Count unique parents with active plans to match dashboard
-    const uniqueParentsWithPlans = new Set(activePaymentPlans.map(p => p.parentId)).size;
+    const uniqueParentsWithPlans = new Set(
+      paymentPlans
+        .filter(p => p.status === 'active')
+        .map(p => p.parentId)
+    ).size;
 
     const result = {
-      totalRevenue, // Now sum of all active payment plan totalAmounts
+      totalRevenue, // used by dashboard as potential revenue; collected used for Total Revenue card
       collectedPayments,
       pendingPayments,
       overduePayments,
-      overdueCount: uniqueParentsWithOverduePayments, // Now shows unique parents
-      activePlans: uniqueParentsWithPlans, // Now shows unique parents with plans
-      avgPaymentTime: overduePaymentsList.length > 0 ? Math.round(overduePaymentsList.reduce((sum, p) => {
-        const daysPastDue = p.dueDate ? Math.max(0, Math.floor((Date.now() - p.dueDate) / (1000 * 60 * 60 * 24))) : 0;
-        return sum + daysPastDue;
-      }, 0) / overduePaymentsList.length) : 0,
-    };
+      overdueCount: uniqueParentsWithOverduePayments,
+      activePlans: uniqueParentsWithPlans,
+      avgPaymentTime: overduePaymentsList.length > 0
+        ? Math.round(
+            overduePaymentsList.reduce((sum, p) => {
+              const daysPastDue = p.dueDate
+                ? Math.max(0, Math.floor((Date.now() - p.dueDate) / (1000 * 60 * 60 * 24)))
+                : 0;
+              return sum + daysPastDue;
+            }, 0) / overduePaymentsList.length
+          )
+        : 0,
+    } as const;
     
     console.log(`📊 Payment Analytics FINAL RESULT: totalRevenue = $${result.totalRevenue}`);
     return result;
