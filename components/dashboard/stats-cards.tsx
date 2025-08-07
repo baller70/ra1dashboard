@@ -1,18 +1,11 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Badge } from '../ui/badge'
-import { Button } from '../ui/button'
 import { 
   DollarSign, 
   Users, 
   AlertTriangle, 
-  TrendingUp,
-  Zap,
-  CheckCircle,
-  Plus,
-  MessageSquare,
-  FileText
+  TrendingUp
 } from 'lucide-react'
 
 interface DashboardStats {
@@ -84,27 +77,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       description: 'Monthly growth rate',
       size: 'medium'
     },
-    // 5. Quick Actions (Action buttons)
-    {
-      title: 'Quick Actions',
-      value: '4',
-      icon: Zap,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      description: 'Available actions',
-      size: 'medium',
-      isActionCard: true
-    },
-    // 6. System Status
-    {
-      title: 'System Status',
-      value: 'Online',
-      icon: CheckCircle,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      description: 'All systems operational',
-      size: 'medium'
-    }
+    // Cards 5 & 6 removed per user request
   ]
 
   const largeCards = dashboardCards.filter(card => card.size === 'large')
@@ -170,24 +143,6 @@ export function StatsCards({ stats }: StatsCardsProps) {
                 <p className="text-xs text-muted-foreground mb-2">
                   {card.description}
                 </p>
-                
-                {/* Quick Actions Card - Add Action Buttons */}
-                {card.isActionCard && (
-                  <div className="flex flex-col space-y-1 mt-2">
-                    <Button size="sm" variant="outline" className="text-xs h-7">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Parent
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7">
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      Send Message
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7">
-                      <FileText className="h-3 w-3 mr-1" />
-                      New Template
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )
