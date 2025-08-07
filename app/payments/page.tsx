@@ -807,6 +807,26 @@ export default function PaymentsPage() {
 
   const summary = calculateSummary()
 
+  // Compute first-installment-collected and pending from plan totals when analytics isn't reflecting it yet
+  const calculatePlanAdjustments = () => {
+    // Unique plans by planId or by parentId if missing
+    const plansByKey = new Map<string, any>()
+    for (const p of deduplicatedPayments) {
+      const plan = p.paymentPlan
+      if (plan) {
+        const key = plan._id || `parent-${p.parentId}`
+        if (!plansByKey.has(key)) plansByKey.set(key, plan)
+      }
+    }
+    const plans = Array.from(plansByKey.values())
+    const totalPlanAmount = plans.reduce((s: number, plan: any) => s + Number(plan.totalAmount || 0), 0)
+    const firstInstallments = plans.reduce((s: number, plan: any) => s + Number(plan.installmentAmount || 0), 0)
+    const collected = Number(summary.paid) + firstInstallments
+    const pending = Math.max(totalPlanAmount - collected, 0)
+    return { totalPlanAmount, firstInstallments, collected, pending }
+  }
+  const planAdj = calculatePlanAdjustments()
+
   // Helper function to get consistent overdue count
   const getOverdueCount = () => {
     const now = Date.now()
@@ -992,7 +1012,9 @@ export default function PaymentsPage() {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">${analytics?.collectedPayments?.toLocaleString() || summary.paid.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-green-600">${
+                        (analytics?.collectedPayments ?? planAdj.collected).toLocaleString()
+                      }</div>
                       <p className="text-xs text-muted-foreground">
                         {analytics?.activePlans || 0} active plans
                       </p>
@@ -1004,7 +1026,9 @@ export default function PaymentsPage() {
                       <Clock className="h-4 w-4 text-orange-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-orange-600">${analytics?.pendingPayments?.toLocaleString() || summary.pending.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-orange-600">${
+                        (analytics?.pendingPayments ?? planAdj.pending).toLocaleString()
+                      }</div>
                       <p className="text-xs text-muted-foreground">
                         Awaiting payment
                       </p>
@@ -1022,16 +1046,7 @@ export default function PaymentsPage() {
                       </p>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Avg Payment Time</CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{analytics?.avgPaymentTime || 0}</div>
-                      <p className="text-xs text-muted-foreground">days after due</p>
-                    </CardContent>
-                  </Card>
+                  {/* Removed Avg Payment Time card per requirements */}
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Active Plans</CardTitle>
