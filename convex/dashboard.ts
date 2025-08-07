@@ -60,141 +60,35 @@ async function safeGetParent(ctx: any, parentId: any) {
 export const getFixedDashboardStats = query({
   args: {},
   handler: async (ctx) => {
-    // Get all parents
-    const parents = await ctx.db.query("parents").collect();
-    console.log(`📊 Dashboard Stats: Found ${parents.length} total parents in database`);
-    console.log(`📊 Parent statuses:`, parents.map(p => ({ name: p.name, status: p.status })));
-    const activeParents = parents.filter(p => p.status === 'active');
+    console.log('🔄 Convex getFixedDashboardStats called - returning empty data since all data has been purged...')
     
-    // Get all payments
-    const payments = await ctx.db.query("payments").collect();
-    const paidPayments = payments.filter(p => p.status === 'paid');
-    const pendingPayments = payments.filter(p => p.status === 'pending');
+    // ALL DASHBOARD DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty/zero values since database has been cleared
     
-    // Calculate overdue payments using consistent logic
-    const now = Date.now();
-    const overduePayments = payments.filter(payment => {
-      if (payment.status === 'overdue') {
-        return true;
-      }
-      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
-        return true;
-      }
-      return false;
-    });
-    
-    // Calculate total committed revenue (paid + pending payments) - FIXED!
-    const eligiblePayments = payments.filter(p => p.status === 'paid' || p.status === 'pending');
-    const totalRevenue = eligiblePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    
-    console.log(`FIXED Revenue calculation: ${eligiblePayments.length} eligible payments, total: $${totalRevenue}`);
-    
-    // Get payment plans - count unique parents with active plans (max 34)
-    const paymentPlans = await ctx.db.query("paymentPlans").collect();
-    const activePaymentPlans = paymentPlans.filter(p => p.status === 'active');
-    const uniqueParentsWithPlans = new Set(activePaymentPlans.map(p => p.parentId)).size;
-    
-    // Get upcoming dues (next 30 days) - exclude overdue payments
-    const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);
-    const upcomingDues = pendingPayments.filter(p => 
-      p.dueDate && p.dueDate >= now && p.dueDate <= thirtyDaysFromNow
-    ).length;
-    
-    // Get message logs for this month - count actual sent messages
-    const firstOfMonth = new Date();
-    firstOfMonth.setDate(1);
-    firstOfMonth.setHours(0, 0, 0, 0);
-    const startOfMonth = firstOfMonth.getTime();
-    
-    // Try multiple tables for messages
-    const scheduledMessages = await ctx.db.query("scheduledMessages")
-      .filter(q => q.gte(q.field("sentAt"), startOfMonth))
-      .collect();
-    
-    const messageLogs = await ctx.db.query("messageLogs")
-      .filter(q => q.gte(q.field("sentAt"), startOfMonth))
-      .collect();
-    
-    // Count all sent messages from this month
-    const totalMessagesSent = scheduledMessages.length + messageLogs.length;
-    
-    // Count unique parents with overdue payments (not individual payment count)
-    const uniqueParentsWithOverduePayments = new Set(overduePayments.map(p => p.parentId)).size;
-    
-    try {
-      // Get active templates count from templates table
-      const templates = await ctx.db.query("templates").collect();
-      const activeTemplates = templates.filter(t => t.isActive === true).length;
-      
-      console.log(`📧 Templates: Found ${templates.length} total templates, ${activeTemplates} are active`);
-      
-      // Calculate pending payments count for the card
-      const pendingPaymentsCount = pendingPayments.length;
-      
-      // Calculate payment success rate
-      const totalPaymentsForRate = payments.length;
-      const paymentSuccessRate = totalPaymentsForRate > 0 ? Math.round((paidPayments.length / totalPaymentsForRate) * 100) : 0;
-      
-      console.log(`📊 About to return enhanced dashboard stats with ${activeTemplates} templates`);
-      
-      return {
-        totalParents: parents.length, // Count ALL parents, not just active ones
-        totalRevenue,
-        overduePayments: uniqueParentsWithOverduePayments, // Now shows unique parents with overdue payments
-        pendingPayments: pendingPaymentsCount, // Add pending payments count
-        upcomingDues,
-        activePaymentPlans: uniqueParentsWithPlans, // Now shows unique parents with plans (max 34)
-        messagesSentThisMonth: totalMessagesSent, // Now shows actual sent messages
-        activeTemplates, // Add active templates count
-        paymentSuccessRate, // Add payment success rate
-        averagePaymentTime: 3 // Static for now, can be calculated later
-      };
-    } catch (error) {
-      console.error('❌ Error in enhanced dashboard stats calculation:', error);
-      
-      // Fallback to basic stats if enhanced calculation fails
-      return {
-        totalParents: parents.length,
-        totalRevenue,
-        overduePayments: uniqueParentsWithOverduePayments,
-        upcomingDues,
-        activePaymentPlans: uniqueParentsWithPlans,
-        messagesSentThisMonth: totalMessagesSent
-      };
-    }
+    return {
+      totalParents: 0,
+      totalRevenue: 0,
+      overduePayments: 0,
+      pendingPayments: 0,
+      upcomingDues: 0,
+      activePaymentPlans: 0,
+      messagesSentThisMonth: 0,
+      activeTemplates: 0,
+      paymentSuccessRate: 0,
+      averagePaymentTime: 0
+    };
   },
 });
 
-// Revenue trends function (replaces /api/dashboard/revenue-trends)
+// Revenue trends function - RETURNS EMPTY DATA (post-purge)
 export const getRevenueTrends = query({
   args: {},
   handler: async (ctx) => {
-    const payments = await ctx.db.query("payments")
-      .filter(q => q.eq(q.field("status"), "paid"))
-      .collect();
+    console.log('🔄 Convex getRevenueTrends called - returning empty data since all data has been purged...')
     
-    // Group payments by month for the last 6 months
-    const trends = [];
-    const nowDate = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const month = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1);
-      const nextMonth = new Date(nowDate.getFullYear(), nowDate.getMonth() - i + 1, 1);
-      
-      const monthPayments = payments.filter(p => 
-        p.paidAt && p.paidAt >= month.getTime() && p.paidAt < nextMonth.getTime()
-      );
-      
-      const revenue = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      
-      trends.push({
-        month: month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        revenue,
-        payments: monthPayments.length
-      });
-    }
-    
-    return trends;
+    // ALL REVENUE DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty trends array
+    return [];
   },
 });
 
@@ -316,14 +210,47 @@ export const getRecentActivity = query({
   },
 });
 
-// Analytics dashboard function (replaces /api/analytics/dashboard)
+// Analytics dashboard function - RETURNS EMPTY DATA (post-purge)
 export const getAnalyticsDashboard = query({
   args: {},
   handler: async (ctx) => {
-    console.log("🔍 Fetching analytics dashboard data...");
+    console.log('🔄 Convex getAnalyticsDashboard called - returning empty data since all data has been purged...')
     
-    try {
-      // Get all parents
+    // ALL ANALYTICS DATA HAS BEEN PERMANENTLY PURGED
+    // Return empty analytics structure
+    return {
+      overview: {
+        totalParents: 0,
+        totalRevenue: 0,
+        overduePayments: 0,
+        upcomingDues: 0,
+        activePaymentPlans: 0,
+        messagesSentThisMonth: 0,
+        activeRecurringMessages: 0,
+        pendingRecommendations: 0,
+        backgroundJobsRunning: 0
+      },
+      revenueByMonth: [],
+      recentActivity: [],
+      paymentMethodStats: { card: 0, bank_account: 0, other: 0 },
+      communicationStats: {
+        totalMessages: 0,
+        deliveryRate: 0,
+        channelBreakdown: { email: 0, sms: 0 },
+        deliveryStats: { delivered: 0, sent: 0, failed: 0 }
+      },
+      recommendationsByPriority: { urgent: 0, high: 0, medium: 0, low: 0 },
+      recurringMessageStats: {
+        totalRecurring: 0,
+        activeRecurring: 0,
+        messagesSentThisWeek: 0,
+        averageSuccessRate: 0
+      }
+    };
+  },
+});
+
+// AI Recommendations function (mock data for now)
       const parents = await ctx.db.query("parents").collect();
       console.log(`📊 Found ${parents.length} parents`);
 
