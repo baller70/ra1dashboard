@@ -1005,6 +1005,21 @@ export default function PaymentsPage() {
 
                 {/* Analytics Cards */}
                 <div className="grid gap-4 md:grid-cols-6">
+                  {/* Total Parents (moved from dashboard; unchanged markup/text) */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Parents</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {loading ? '—' : allParents.length}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {loading ? 'Loading...' : 'Connected to parents page'}
+                      </p>
+                    </CardContent>
+                  </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
