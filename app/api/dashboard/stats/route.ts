@@ -15,12 +15,14 @@ export async function GET(request: Request) {
     const headers = { 'x-api-key': 'ra1-dashboard-api-key-2024' }
 
     // CALL THE EXACT SAME APIs THAT THE PAGES USE
+    const cacheBust = Date.now()
+    const requestInit: RequestInit = { headers, cache: 'no-store' }
     const [parentsRes, paymentsRes, templatesRes, messagesRes] = await Promise.allSettled([
-      fetch(`${baseUrl}/api/parents`, { headers }),
-      fetch(`${baseUrl}/api/payments/analytics`, { headers }),
-      fetch(`${baseUrl}/api/templates`, { headers }),
+      fetch(`${baseUrl}/api/parents?_t=${cacheBust}`, requestInit),
+      fetch(`${baseUrl}/api/payments/analytics?_t=${cacheBust}`, requestInit),
+      fetch(`${baseUrl}/api/templates?_t=${cacheBust}`, requestInit),
       // Use communication history endpoint to derive total messages count
-      fetch(`${baseUrl}/api/communication/history?limit=1&page=1`, { headers })
+      fetch(`${baseUrl}/api/communication/history?limit=1&page=1&_t=${cacheBust}`, requestInit)
     ])
 
     let totalParents = 0
