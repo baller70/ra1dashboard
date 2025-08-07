@@ -371,12 +371,24 @@ export default function PaymentsPage() {
         const errorData = await response.json()
         console.error('❌ Delete failed:', errorData)
         console.log('🍞 About to show error toast...')
-        toast({
-          title: '❌ Delete Failed',
-          description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
-          variant: 'destructive',
-          duration: 5000,
-        })
+        
+        // Check if parent was already deleted (404) or doesn't exist
+        if (response.status === 404 || (errorData.details && errorData.details.includes('not found'))) {
+          toast({
+            title: '✅ Already Deleted',
+            description: `${parentName} was already deleted. Refreshing the page...`,
+            duration: 3000,
+          })
+          // Refresh data since parent was already deleted
+          await fetchData(true)
+        } else {
+          toast({
+            title: '❌ Delete Failed',
+            description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
+            variant: 'destructive',
+            duration: 5000,
+          })
+        }
         console.log('❌ Error toast shown!')
       }
     } catch (error) {
