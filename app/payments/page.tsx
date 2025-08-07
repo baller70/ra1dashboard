@@ -827,6 +827,14 @@ export default function PaymentsPage() {
   }
   const planAdj = calculatePlanAdjustments()
 
+  // Choose displayed values: if API returns > 0 use it, otherwise use plan-based fallback
+  const uiCollected = ((analytics?.collectedPayments ?? 0) > 0)
+    ? Number(analytics?.collectedPayments)
+    : Number(planAdj.collected)
+  const uiPending = ((analytics?.pendingPayments ?? 0) > 0)
+    ? Number(analytics?.pendingPayments)
+    : Number(planAdj.pending)
+
   // Helper function to get consistent overdue count
   const getOverdueCount = () => {
     const now = Date.now()
@@ -1012,9 +1020,7 @@ export default function PaymentsPage() {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">${
-                        (analytics?.collectedPayments ?? planAdj.collected).toLocaleString()
-                      }</div>
+                      <div className="text-2xl font-bold text-green-600">${uiCollected.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         {analytics?.activePlans || 0} active plans
                       </p>
@@ -1026,9 +1032,7 @@ export default function PaymentsPage() {
                       <Clock className="h-4 w-4 text-orange-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-orange-600">${
-                        (analytics?.pendingPayments ?? planAdj.pending).toLocaleString()
-                      }</div>
+                      <div className="text-2xl font-bold text-orange-600">${uiPending.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         Awaiting payment
                       </p>
