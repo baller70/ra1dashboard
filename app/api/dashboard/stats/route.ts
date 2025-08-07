@@ -15,55 +15,33 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
-    console.log('🔄 Fetching dashboard stats from Convex getFixedDashboardStats function...')
+    console.log('🔄 Fetching SIMPLE dashboard stats (only 3 fields needed)...')
     
-    // Use the centralized Convex dashboard stats function to ensure consistency
-    const dashboardStats = await convexHttp.query(api.dashboard.getFixedDashboardStats);
-    
-    console.log('📊 Dashboard stats from Convex:', dashboardStats);
-    
-    // Get the actual live data for missing fields
-    const [templatesResponse, parentsResponse, paymentsResponse] = await Promise.all([
-      convexHttp.query(api.templates.getTemplates, { page: 1, limit: 1000 }),
+    // Get only the data we need for the 6 cards
+    const [parentsResponse, paymentsResponse] = await Promise.all([
       convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 }),
       convexHttp.query(api.payments.getPayments, { page: 1, limit: 1000 })
     ]);
     
-    const activeTemplates = templatesResponse.templates?.filter(t => t.isActive === true).length || 0;
+    // SIMPLE CALCULATIONS
     const totalParents = parentsResponse.parents?.length || 0;
     const payments = paymentsResponse.payments || [];
+    const overduePayments = payments.filter(p => p.status === 'overdue').length;
+    const totalPotentialRevenue = totalParents * 1650; // Simple: Parents × $1650
     
-    console.log(`📊 LIVE DATA CHECK: ${totalParents} parents, ${activeTemplates} templates, ${payments.length} payments`);
-    console.log(`📊 Parent IDs:`, parentsResponse.parents?.map(p => ({ id: p._id, name: p.name })));
+    console.log(`📊 SIMPLE DASHBOARD DATA:`);
+    console.log(`   👥 Total Parents: ${totalParents}`);
+    console.log(`   💰 Total Potential Revenue: $${totalPotentialRevenue} (${totalParents} × $1650)`);
+    console.log(`   ⚠️  Overdue Payments: ${overduePayments}`);
     
-    // Calculate real payment stats
-    const activePayments = payments.filter(p => p.status === 'active');
-    const pendingPayments = payments.filter(p => p.status === 'pending');
-    const overduePayments = payments.filter(p => p.status === 'overdue');
-    
-    // SIMPLE: Total Potential Revenue = Number of Parents × $1650 per parent
-    const totalRevenue = totalParents * 1650;
-    
-    console.log(`💰 SIMPLE CALCULATION: ${totalParents} parents × $1650 = $${totalRevenue} total potential revenue`);
-    console.log(`💰 Payment breakdown: ${activePayments.length} active, ${pendingPayments.length} pending, ${overduePayments.length} overdue`);
-    
-    // Add missing fields that the dashboard cards expect using REAL LIVE DATA
+    // Return only the 3 fields needed for the simplified dashboard
     const enhancedStats = {
-      ...dashboardStats,
-      // Override with actual live data
-      totalParents, // Use actual parent count from parents API
-      totalRevenue, // Use calculated revenue from real payments
-      activeTemplates, // Use actual active template count
-      activePaymentPlans: totalParents, // Total payment plans = total parents (5)
-      pendingPayments: pendingPayments.length, // Use actual pending payments count
-      overduePayments: overduePayments.length, // Use actual overdue payments count
-      upcomingDues: pendingPayments.length, // Pending payments are upcoming dues
-      // Add calculated fields
-      paymentSuccessRate: payments.length > 0 ? Math.round((activePayments.length / payments.length) * 100) : 0,
-      averagePaymentTime: 3 // Static for now
+      totalParents,
+      totalPotentialRevenue,
+      overduePayments
     };
     
-    console.log('📊 Enhanced dashboard stats:', enhancedStats);
+    console.log('✅ Simple dashboard stats:', enhancedStats);
     
     const response = createSuccessResponse(enhancedStats)
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')

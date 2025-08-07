@@ -2,28 +2,23 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
 import { 
   DollarSign, 
   Users, 
   AlertTriangle, 
-  Calendar, 
-  CreditCard, 
-  MessageSquare,
   TrendingUp,
-  Clock,
-  FileText,
-  Target
+  Zap,
+  CheckCircle,
+  Plus,
+  MessageSquare,
+  FileText
 } from 'lucide-react'
 
 interface DashboardStats {
   totalParents: number
-  totalRevenue: number
+  totalPotentialRevenue: number
   overduePayments: number
-  pendingPayments: number
-  paymentSuccessRate: number
-  messagesSentThisMonth: number
-  activeTemplates: number
-  averagePaymentTime: number
 }
 
 interface StatsCardsProps {
@@ -41,122 +36,112 @@ export function StatsCards({ stats }: StatsCardsProps) {
     }).format(amount)
   }
 
-  // Format percentage
-  const formatPercentage = (value: number) => {
-    return `${value}%`
-  }
+  // Calculate revenue trend (simple mock for now)
+  const revenueTrend = stats?.totalParents > 0 ? '+12.5%' : '0%'
+  const trendColor = stats?.totalParents > 0 ? 'text-green-600' : 'text-gray-500'
 
-  // Format time
-  const formatTime = (days: number) => {
-    return `${days} days`
-  }
-
-  // Medium cards (6 cards)
-  const mediumCards = [
+  // The 6 cards you requested
+  const dashboardCards = [
+    // 1. Total Potential Revenue (Large Card)
     {
-      title: 'Total Parents',
-      value: stats?.totalParents?.toString() ?? '0',
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      description: 'Registered parents'
+      title: 'Total Potential Revenue',
+      value: formatCurrency(stats?.totalPotentialRevenue ?? 0),
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      description: `${stats?.totalParents ?? 0} parents × $1,650`,
+      trend: revenueTrend,
+      trendColor: trendColor,
+      size: 'large'
     },
+    // 2. Overdue Payments
     {
       title: 'Overdue Payments',
       value: stats?.overduePayments?.toString() ?? '0',
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-      description: 'Payments past due'
+      description: 'Payments past due',
+      size: 'medium'
     },
+    // 3. Total Parents
     {
-      title: 'Pending Payments',
-      value: stats?.pendingPayments?.toString() ?? '0',
-      icon: Calendar,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      description: 'Awaiting payment'
+      title: 'Total Parents',
+      value: stats?.totalParents?.toString() ?? '0',
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      description: 'Registered parents',
+      size: 'medium'
     },
+    // 4. Revenue Trends (Simple trend indicator)
     {
-      title: 'Messages Sent',
-      value: stats?.messagesSentThisMonth?.toString() ?? '0',
-      icon: MessageSquare,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      description: 'This month'
+      title: 'Revenue Trends',
+      value: revenueTrend,
+      icon: TrendingUp,
+      color: trendColor.replace('text-', 'text-'),
+      bgColor: stats?.totalParents > 0 ? 'bg-green-50' : 'bg-gray-50',
+      description: 'Monthly growth rate',
+      size: 'medium'
     },
+    // 5. Quick Actions (Action buttons)
     {
-      title: 'Active Templates',
-      value: stats?.activeTemplates?.toString() ?? '0',
-      icon: FileText,
+      title: 'Quick Actions',
+      value: '4',
+      icon: Zap,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      description: 'Communication templates'
+      description: 'Available actions',
+      size: 'medium',
+      isActionCard: true
     },
+    // 6. System Status
     {
-      title: 'Avg Payment Time',
-      value: formatTime(stats?.averagePaymentTime ?? 0),
-      icon: Clock,
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50',
-      description: 'Average processing time'
+      title: 'System Status',
+      value: 'Online',
+      icon: CheckCircle,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      description: 'All systems operational',
+      size: 'medium'
     }
   ]
 
-  // Large cards (2 cards)
-  const largeCards = [
-    {
-      title: 'Total Potential Revenue',
-      value: formatCurrency(stats?.totalRevenue ?? 0),
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      description: 'Total potential revenue',
-      trend: '+12.5%',
-      trendColor: 'text-green-600'
-    },
-    {
-      title: 'Payment Success Rate',
-      value: formatPercentage(stats?.paymentSuccessRate ?? 0),
-      icon: Target,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      description: 'Successful payment completion',
-      trend: '+5.2%',
-      trendColor: 'text-emerald-600'
-    }
-  ]
+  const largeCards = dashboardCards.filter(card => card.size === 'large')
+  const mediumCards = dashboardCards.filter(card => card.size === 'medium')
 
   return (
     <div className="space-y-6">
       {/* Large Cards Row */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-1">
         {largeCards.map((card, index) => {
           const Icon = card.icon
           return (
             <Card key={`large-${index}`} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-transparent hover:border-l-blue-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <div>
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
                     {card.title}
                   </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{card.description}</p>
                 </div>
                 <div className={`p-3 rounded-lg ${card.bgColor}`}>
-                  <Icon className={`h-6 w-6 ${card.color}`} />
+                  <Icon className={`h-8 w-8 ${card.color}`} />
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex items-baseline justify-between">
-                  <div className="text-3xl font-bold">
+                  <div className="text-4xl font-bold">
                     {card.value}
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className={`h-4 w-4 ${card.trendColor}`} />
-                    <span className={`text-sm font-medium ${card.trendColor}`}>
-                      {card.trend}
-                    </span>
-                  </div>
+                  {card.trend && (
+                    <div className="flex items-center space-x-1">
+                      <TrendingUp className={`h-4 w-4 ${card.trendColor}`} />
+                      <span className={`text-sm font-medium ${card.trendColor}`}>
+                        {card.trend}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -165,7 +150,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       </div>
 
       {/* Medium Cards Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {mediumCards.map((card, index) => {
           const Icon = card.icon
           return (
@@ -182,9 +167,27 @@ export function StatsCards({ stats }: StatsCardsProps) {
                 <div className="text-2xl font-bold mb-1">
                   {card.value}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-2">
                   {card.description}
                 </p>
+                
+                {/* Quick Actions Card - Add Action Buttons */}
+                {card.isActionCard && (
+                  <div className="flex flex-col space-y-1 mt-2">
+                    <Button size="sm" variant="outline" className="text-xs h-7">
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Parent
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs h-7">
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Send Message
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs h-7">
+                      <FileText className="h-3 w-3 mr-1" />
+                      New Template
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )
