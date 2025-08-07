@@ -13,7 +13,7 @@ import { StatsCards } from '../components/dashboard/stats-cards'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog'
+// Dialog imports removed (Recent Activity modal deleted)
 import { 
   Users, 
   CreditCard, 
@@ -35,27 +35,12 @@ export default function DashboardPage() {
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [revenueData, setRevenueData] = useState<PaymentTrend[]>([])
-  const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [overdueParents, setOverdueParents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false)
-  const [allActivities, setAllActivities] = useState<any[]>([])
 
-  const fetchAllActivities = async () => {
-    try {
-      const response = await fetch('/api/notifications', {
-        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
-      })
-      const data = await response.json()
-      if (data.success) {
-        setAllActivities(data.data.activities || [])
-      }
-    } catch (error) {
-      console.error('Error fetching all activities:', error)
-    }
-  }
+  // fetchAllActivities function removed (Recent Activity section deleted)
 
   const fetchDashboardData = async (isManualRefresh = false) => {
     console.log('🔄 Fetching dashboard data - all 8 analytics cards will update...')
@@ -107,20 +92,7 @@ export default function DashboardPage() {
         setRevenueData(Array.isArray(revenueData) ? revenueData : (revenueData.trends || []))
       }
 
-      // Fetch recent activity with cache busting
-      const activityResponse = await fetch(`/api/dashboard/recent-activity?t=${cacheBuster}`, {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      })
-      if (activityResponse.ok) {
-        const activityData = await activityResponse.json()
-        console.log('🕒 Recent activity received:', activityData)
-        setRecentActivity(activityData.data?.activities || [])
-      }
+      // Recent activity API call removed (section deleted)
 
       // Fetch overdue summary for tags
       const overdueResponse = await fetch('/api/dashboard/overdue-summary', {
@@ -310,141 +282,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Recent Activity - Takes 1 column */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {recentActivity.length > 0 ? (
-                recentActivity.slice(0, 5).map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      {activity.type === 'payment' && (
-                        <div className="p-1 bg-green-50 rounded-full">
-                          <DollarSign className="h-3 w-3 text-green-600" />
-                        </div>
-                      )}
-                      {activity.type === 'parent' && (
-                        <div className="p-1 bg-blue-50 rounded-full">
-                          <Users className="h-3 w-3 text-blue-600" />
-                        </div>
-                      )}
-                      {activity.type === 'message' && (
-                        <div className="p-1 bg-purple-50 rounded-full">
-                          <MessageSquare className="h-3 w-3 text-purple-600" />
-                        </div>
-                      )}
-                      {activity.type === 'alert' && (
-                        <div className="p-1 bg-red-50 rounded-full">
-                          <AlertTriangle className="h-3 w-3 text-red-600" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {activity.title || activity.description}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {activity.time || (activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'Unknown time')}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 mb-2">
-                    <MessageSquare className="h-8 w-8 mx-auto" />
-                  </div>
-                  <p className="text-sm text-gray-500">No recent activity</p>
-                  <p className="text-xs text-gray-400">Activity will appear here as you use the system</p>
-                </div>
-              )}
-              
-              <div className="pt-2">
-                <Dialog open={showAllActivitiesModal} onOpenChange={setShowAllActivitiesModal}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-full justify-center"
-                      onClick={async (e) => {
-                        e.preventDefault()
-                        console.log('View All Activity button clicked')
-                        await fetchAllActivities()
-                        setShowAllActivitiesModal(true)
-                      }}
-                    >
-                      View All Activity
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>All Recent Activities</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {allActivities.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">No activities found</p>
-                      ) : (
-                        allActivities.map((activity) => (
-                          <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                            <div className={`p-2 rounded-full ${
-                              activity.priority === 'urgent' ? 'bg-red-100 text-red-600' :
-                              activity.priority === 'high' ? 'bg-orange-100 text-orange-600' :
-                              activity.priority === 'medium' ? 'bg-blue-100 text-blue-600' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {activity.icon === 'alert-triangle' && <AlertTriangle className="h-4 w-4" />}
-                              {activity.icon === 'check-circle' && <div className="h-4 w-4 rounded-full bg-green-500" />}
-                              {activity.icon === 'clock' && <Clock className="h-4 w-4" />}
-                              {activity.icon === 'bell' && <div className="h-4 w-4 rounded-full bg-yellow-500" />}
-                              {activity.icon === 'file-text' && <FileText className="h-4 w-4" />}
-                              {activity.icon === 'user' && <Users className="h-4 w-4" />}
-                              {activity.icon === 'mail' && <MessageSquare className="h-4 w-4" />}
-                              {activity.icon === 'message-square' && <MessageSquare className="h-4 w-4" />}
-                              {!activity.icon && <div className="h-4 w-4 rounded-full bg-gray-400" />}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-sm">{activity.title}</h4>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(activity.timestamp).toLocaleDateString()} {new Date(activity.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1">{activity.message}</p>
-                              {activity.parentName && (
-                                <p className="text-xs text-gray-500 mt-1">Parent: {activity.parentName}</p>
-                              )}
-                              {activity.amount && (
-                                <p className="text-xs font-medium text-green-600 mt-1">${activity.amount}</p>
-                              )}
-                              {activity.actionUrl && activity.actionText && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="mt-2"
-                                  onClick={() => {
-                                    setShowAllActivitiesModal(false)
-                                    router.push(activity.actionUrl)
-                                  }}
-                                >
-                                  {activity.actionText}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Recent Activity section removed per user request */}
         </div>
 
         {/* 4 Quick Action Cards */}
