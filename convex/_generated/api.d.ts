@@ -15,13 +15,11 @@ import type {
 } from "convex/server";
 import type * as actualCleanup from "../actualCleanup.js";
 import type * as aiRecommendations from "../aiRecommendations.js";
-import type * as analytics from "../analytics.js";
 import type * as backgroundJobs from "../backgroundJobs.js";
 import type * as cleanupTestData from "../cleanupTestData.js";
 import type * as comprehensiveCleanup from "../comprehensiveCleanup.js";
 import type * as contracts from "../contracts.js";
 import type * as dashboard from "../dashboard.js";
-import type * as dashboardStats from "../dashboardStats.js";
 import type * as dataCleanup from "../dataCleanup.js";
 import type * as emailReminders from "../emailReminders.js";
 import type * as liveCounters from "../liveCounters.js";
@@ -49,13 +47,11 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   actualCleanup: typeof actualCleanup;
   aiRecommendations: typeof aiRecommendations;
-  analytics: typeof analytics;
   backgroundJobs: typeof backgroundJobs;
   cleanupTestData: typeof cleanupTestData;
   comprehensiveCleanup: typeof comprehensiveCleanup;
   contracts: typeof contracts;
   dashboard: typeof dashboard;
-  dashboardStats: typeof dashboardStats;
   dataCleanup: typeof dataCleanup;
   emailReminders: typeof emailReminders;
   liveCounters: typeof liveCounters;
