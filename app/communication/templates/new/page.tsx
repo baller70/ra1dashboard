@@ -53,7 +53,7 @@ export default function NewTemplatePage() {
 
       if (response.ok) {
         toast.success('Template created successfully')
-        router.push('/communication')
+        window.location.href = '/communication'
       } else {
         const error = await response.json()
         toast.error(error.error || 'Failed to create template')
