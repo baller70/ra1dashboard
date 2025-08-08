@@ -328,12 +328,29 @@ export default function DashboardPage() {
                   })()}
                 </div>
               ) : (
-                <div className="h-[200px] flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No revenue data yet</p>
-                    <p className="text-xs text-muted-foreground">Add payments to see trends</p>
-                  </div>
+                // Fallback client-side: render last 6 months at zero so the card is never empty
+                <div className="h-[220px]">
+                  {(() => {
+                    const now = new Date()
+                    const last6 = Array.from({ length: 6 }).map((_, idx) => {
+                      const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1)
+                      return { month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), revenue: 0, payments: 0 }
+                    })
+                    const max = 1
+                    return (
+                      <div className="flex items-end gap-3 h-[160px]">
+                        {last6.map((d: any, i: number) => (
+                          <div key={i} className="flex flex-col items-center w-10">
+                            <div title={`$0 (0 payments)`} className="w-8 bg-blue-200 rounded-sm" style={{ height: `4px` }} />
+                            <div className="mt-2 text-[10px] text-muted-foreground text-center leading-tight">
+                              {String(d.month || '').split(' ')[0]}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                  <div className="mt-3 text-xs text-muted-foreground">Showing last 6 months</div>
                 </div>
               )}
             </CardContent>
