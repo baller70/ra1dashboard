@@ -1,0 +1,37 @@
+
+> ra1-basketball-dashboard@1.0.0 dev
+> NODE_OPTIONS="--max-old-space-size=6144" next dev --turbo
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+ ⚠ Port 3001 is in use, trying 3002 instead.
+  ▲ Next.js 14.2.28 (turbo)
+  - Local:        http://localhost:3002
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled in 130ms
+ ✓ Ready in 1256ms
+ ⚠ Webpack is configured while Turbopack is not, which may cause problems.
+ ⚠ See instructions if you need to configure Turbopack:
+  https://nextjs.org/docs/app/api-reference/next-config-js/turbo
+
+ ○ Compiling /payments/[id] ...
+(node:51806) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Compiled /payments/[id] in 2.5s
+ ⨯ Error: Invalid revalidate value "function() {
+    throw new Error("Attempted to call revalidate() from the server but revalidate is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.");
+}" on "/payments/jx73ta83j1q51b6sxwjk8bqgvd7n81aa", must be a non-negative number or "false"
+    at async Promise.all (index 0)
+    at async Promise.all (index 0)
+    at async Promise.all (index 0)
+digest: "2509641331"
+ ⨯ Error: Invalid revalidate value "function() {
+    throw new Error("Attempted to call revalidate() from the server but revalidate is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.");
+}" on "/payments/jx73ta83j1q51b6sxwjk8bqgvd7n81aa", must be a non-negative number or "false"
+    at async Promise.all (index 0)
+    at async Promise.all (index 0)
+    at async Promise.all (index 0)
+digest: "2509641331"
+ GET /payments/jx73ta83j1q51b6sxwjk8bqgvd7n81aa 500 in 2986ms
+ ✓ Compiled in 635ms

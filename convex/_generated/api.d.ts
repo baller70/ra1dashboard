@@ -29,6 +29,7 @@ import type * as notifications from "../notifications.js";
 import type * as nukeDashboardData from "../nukeDashboardData.js";
 import type * as parents from "../parents.js";
 import type * as paymentInstallments from "../paymentInstallments.js";
+import type * as payment_plans from "../payment_plans.js";
 import type * as payments from "../payments.js";
 import type * as scheduledMessages from "../scheduledMessages.js";
 import type * as systemSettings from "../systemSettings.js";
@@ -63,6 +64,7 @@ declare const fullApi: ApiFromModules<{
   nukeDashboardData: typeof nukeDashboardData;
   parents: typeof parents;
   paymentInstallments: typeof paymentInstallments;
+  payment_plans: typeof payment_plans;
   payments: typeof payments;
   scheduledMessages: typeof scheduledMessages;
   systemSettings: typeof systemSettings;
