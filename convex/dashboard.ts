@@ -176,7 +176,7 @@ export const getRevenueTrends = query({
     }
     
     // Convert to array format for charts
-    const trends = Object.entries(monthlyData).map(([key, data]) => {
+    let trends = Object.entries(monthlyData).map(([key, data]) => {
       const [year, month] = key.split('-');
       const date = new Date(parseInt(year), parseInt(month), 1);
       return {
@@ -185,6 +185,21 @@ export const getRevenueTrends = query({
         payments: data.payments
       };
     }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+    
+    // Fallback: if no collected data yet, return last 6 months with zeros so UI always renders
+    if (trends.length === 0) {
+      const fallback: { month: string; revenue: number; payments: number }[] = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        fallback.push({
+          month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          revenue: 0,
+          payments: 0,
+        });
+      }
+      trends = fallback;
+    }
     
     console.log('📈 REAL REVENUE TRENDS (collected):', trends);
     return trends;
