@@ -46,7 +46,11 @@ export default function TemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('/api/templates')
+      const response = await fetch('/api/templates', {
+        headers: {
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
@@ -111,7 +115,7 @@ export default function TemplatesPage() {
     }
   }
 
-  const categories = ['all', 'general', 'welcome', 'reminder', 'overdue', 'confirmation', 'payment']
+  const categories = ['all', 'welcome', 'payments', 'reminder', 'overdue', 'confirmation', 'announcement', 'receipt']
   const channels = ['all', 'email', 'sms', 'both']
 
   if (loading) {
