@@ -115,6 +115,16 @@ export default function NewPaymentPlanPage() {
   const [customInstallments, setCustomInstallments] = useState(3)
   const [customMonths, setCustomMonths] = useState(9)
   const [paymentReference, setPaymentReference] = useState('')
+
+  // State for check payments
+  const [checkInstallments, setCheckInstallments] = useState<number>(1)
+  const [checkFrequencyMonths, setCheckFrequencyMonths] = useState<number>(1)
+  const [individualCheckNumbers, setIndividualCheckNumbers] = useState<string[]>([''])
+  const [checkDetails, setCheckDetails] = useState({
+    checkNumbers: [] as string[],
+    startDate: '',
+    customAmount: '',
+  })
   
   // Credit card form states
   const [creditCardForm, setCreditCardForm] = useState({
@@ -169,6 +179,13 @@ export default function NewPaymentPlanPage() {
   useEffect(() => {
     fetchParents()
   }, [])
+
+  useEffect(() => {
+    const newCheckNumbers = Array(checkInstallments).fill('').map((_, index) =>
+      individualCheckNumbers[index] || ''
+    );
+    setIndividualCheckNumbers(newCheckNumbers);
+  }, [checkInstallments]);
 
   const fetchParents = async () => {
     try {
@@ -904,16 +921,115 @@ export default function NewPaymentPlanPage() {
             )}
 
             {/* Method-specific fields */}
-            {(selectedPaymentOption === 'check' || selectedPaymentOption === 'cash') && (
+            {selectedPaymentOption === 'check' && (
+              <div className="space-y-6 p-6 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-green-900">Check Payment Details</h3>
+                </div>
+
+                {/* Installments and Payment Period */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Number of Installments</Label>
+                    <Select value={String(checkInstallments)} onValueChange={(v) => setCheckInstallments(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select installments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(val => (
+                          <SelectItem key={val} value={String(val)}>{val}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Payment Period (Months)</Label>
+                    <Select value={String(checkFrequencyMonths)} onValueChange={(v) => setCheckFrequencyMonths(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(val => (
+                          <SelectItem key={val} value={String(val)}>{val} month(s)</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {/* Custom Amount */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Amount per Check</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      type="number"
+                      placeholder="e.g., 183.33"
+                      value={checkDetails.customAmount}
+                      onChange={(e) => setCheckDetails(prev => ({ ...prev, customAmount: e.target.value }))}
+                      className="pl-10 bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Check Numbers */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">Check Numbers</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {individualCheckNumbers.map((checkNumber, index) => (
+                      <Input
+                        key={index}
+                        placeholder={`Check #${index + 1}`}
+                        value={checkNumber}
+                        onChange={(e) => {
+                          const newCheckNumbers = [...individualCheckNumbers]
+                          newCheckNumbers[index] = e.target.value
+                          setIndividualCheckNumbers(newCheckNumbers)
+                        }}
+                        className="bg-white"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Summary */}
+                {checkDetails.customAmount && (
+                  <div className="p-4 bg-white border border-green-300 rounded-lg">
+                    <h4 className="font-medium text-green-900 mb-3">Payment Summary</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Amount:</span>
+                        <span className="font-semibold text-green-800">
+                          ${(parseFloat(checkDetails.customAmount || '0') * checkInstallments).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Per Payment:</span>
+                        <span className="font-semibold text-green-800">
+                          ${parseFloat(checkDetails.customAmount || '0').toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Installments:</span>
+                        <span className="font-semibold text-green-800">{checkInstallments}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {(selectedPaymentOption === 'cash') && (
               <div className="space-y-3">
                 <Label htmlFor="paymentReference">
-                  {selectedPaymentOption === 'check' ? 'Check Number' : 'Receipt Number'}
+                  Receipt Number
                 </Label>
                 <Input
                   id="paymentReference"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
-                  placeholder={selectedPaymentOption === 'check' ? 'Enter check number' : 'Enter receipt number'}
+                  placeholder={'Enter receipt number'}
                 />
               </div>
             )}
