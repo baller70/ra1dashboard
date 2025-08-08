@@ -34,7 +34,7 @@ export async function GET(
     // If this payment has a payment plan, get installments from the installments table
     let installments: any[] = []
     
-    if (payment.paymentPlanId) {
+    if (payment.paymentPlanId || payment.paymentMethod === 'check') {
       try {
         console.log(`🔍 Looking for installments for payment ID: ${params.id}`)
         
