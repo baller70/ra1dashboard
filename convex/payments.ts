@@ -132,6 +132,22 @@ export const getPayment = query({
 
     const parent = await safeGetParent(ctx, payment.parentId);
 
+    // Fetch parent's contracts to expose contract status/details on payment detail page
+    let parentContracts: any[] = [];
+    try {
+      if (parent?._id) {
+        parentContracts = await ctx.db
+          .query("contracts")
+          .withIndex("by_parent", (q) => q.eq("parentId", parent._id as Id<"parents">))
+          .collect();
+        parentContracts.sort(
+          (a, b) => (b.uploadedAt || b.createdAt || 0) - (a.uploadedAt || a.createdAt || 0)
+        );
+      }
+    } catch (_) {
+      // ignore contract fetch errors; UI will fallback gracefully
+    }
+
     let paymentPlan = null;
     try {
       if (payment.paymentPlanId && typeof payment.paymentPlanId === 'string' && payment.paymentPlanId.length > 25) {
@@ -143,7 +159,20 @@ export const getPayment = query({
 
     return {
       ...payment,
-      parent,
+      parent: parent
+        ? {
+            ...parent,
+            // Attach a simplified contracts array expected by the UI
+            contracts: parentContracts.map((c) => ({
+              id: c._id,
+              originalName: c.originalName,
+              status: c.status,
+              uploadedAt: c.uploadedAt || c.createdAt,
+              expiresAt: c.expiresAt,
+              fileUrl: c.fileUrl,
+            })),
+          }
+        : parent,
       paymentPlan,
     };
   },
