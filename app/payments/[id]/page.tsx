@@ -1632,6 +1632,16 @@ The Basketball Factory Inc.`
                   </Button>
                   <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-xs">
                     <strong>DEBUG:</strong> paymentOptionsOpen = {String(paymentOptionsOpen)}
+                    <br />
+                    <button 
+                      className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded"
+                      onClick={() => {
+                        console.log('🔥 FORCE OPEN CLICKED')
+                        setPaymentOptionsOpen(true)
+                      }}
+                    >
+                      Force Open Dialog
+                    </button>
                   </div>
                 </div>
 
@@ -1761,6 +1771,11 @@ The Basketball Factory Inc.`
       />
 
       {/* Enhanced Payment Options Dialog */}
+      {/* Debug: Dialog is rendering */}
+      <div className="fixed bottom-4 right-4 bg-yellow-100 p-2 text-xs border border-yellow-300 rounded z-50">
+        Dialog Component Loaded: {paymentOptionsOpen ? 'OPEN' : 'CLOSED'}
+      </div>
+      
       <Dialog 
         open={paymentOptionsOpen} 
         onOpenChange={(open) => {
