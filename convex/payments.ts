@@ -879,4 +879,39 @@ export const cleanupTestPaymentPlans = mutation({
   },
 });
 
-// Get payments with parent and payment plan info
+    // Get payments with parent and payment plan info
+    
+    export const checkForUpcomingPayments = mutation({
+        handler: async (ctx) => {
+            const now = new Date();
+            const upcomingPayments = await ctx.db
+                .query("payments")
+                .filter((q) => q.eq(q.field("status"), "pending"))
+                .collect();
+    
+            for (const payment of upcomingPayments) {
+                if (payment.dueDate) {
+                    const dueDate = new Date(payment.dueDate);
+                    const diffTime = dueDate.getTime() - now.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+                    if (diffDays <= 7 && diffDays > 0) {
+                        const parent = await ctx.db.get(payment.parentId as Id<"parents">);
+                        if (parent) {
+                            await ctx.db.insert("notifications", {
+                                parentId: parent._id,
+                                title: "Upcoming Payment Reminder",
+                                message: `Your payment of $${payment.amount} is due on ${dueDate.toLocaleDateString()}.`,
+                                type: "payment_reminder",
+                                priority: "medium",
+                                isRead: false,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now(),
+                            });
+                        }
+                    }
+                }
+            }
+        },
+    });
+    
