@@ -378,10 +378,14 @@ export default function PaymentDetailPage() {
 
   const fetchPaymentDetails = async () => {
     try {
+      console.log('🔍 Starting fetchPaymentDetails for ID:', params.id)
       setLoading(true)
       const response = await fetch(`/api/payments/${params.id}`)
       
+      console.log('🔍 Fetch response status:', response.status)
+      
       if (!response.ok) {
+        console.log('🚨 Response not ok:', response.status, response.statusText)
         if (response.status === 404) {
           setError('Payment not found')
         } else {
@@ -391,11 +395,14 @@ export default function PaymentDetailPage() {
       }
 
       const data = await response.json()
+      console.log('🔍 Payment data received:', data ? 'SUCCESS' : 'NO DATA')
       setPayment(data)
+      console.log('🔍 Payment state set successfully')
     } catch (error) {
-      console.error('Error fetching payment:', error)
+      console.error('🚨 Error fetching payment:', error)
       setError('Failed to load payment details')
     } finally {
+      console.log('🔍 Setting loading to false')
       setLoading(false)
     }
   }
@@ -838,10 +845,14 @@ The Basketball Factory Inc.`
   }
 
   if (loading) {
+    console.log('🔄 Page is in loading state')
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          <div className="ml-4 text-sm text-gray-600">
+            Loading payment details... (Check console for debug info)
+          </div>
         </div>
       </div>
     )
