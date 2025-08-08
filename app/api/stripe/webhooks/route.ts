@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { convexHttp } from '../../../../lib/db';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
@@ -32,9 +34,9 @@ export async function POST(request: NextRequest) {
           const parentId = subscription.metadata.parentId;
           
           if (parentId) {
-            const paymentPlan = await convexHttp.query(api.payments.getPaymentPlanByParentId, { parentId });
+            const paymentPlan = await convex.query(api.payments.getPaymentPlanByParentId, { parentId });
             if (paymentPlan) {
-              await convexHttp.mutation(api.payments.createPayment, {
+              await convex.mutation(api.payments.createPayment, {
                 parentId,
                 paymentPlanId: paymentPlan._id,
                 amount: invoice.amount_paid / 100,
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
       
       case 'customer.subscription.created':
         const subscription = event.data.object as Stripe.Subscription;
-        await convexHttp.mutation(api.parents.updateParent, {
+        await convex.mutation(api.parents.updateParent, {
           id: subscription.metadata.parentId as any,
           stripeSubscriptionId: subscription.id,
         });
