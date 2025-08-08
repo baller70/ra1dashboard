@@ -19,7 +19,16 @@ export const getParents = query({
 
     const allParents = await parentsQuery.collect();
     
-    const parents = allParents;
+    // FILTER OUT TEST DATA: Only return the 2 REAL Houston family parents
+    const realParentEmails = [
+      "khouston75621@gmail.com", // Matt Houston
+      "khouston721@gmail.com"    // Kevin Houston
+    ];
+    
+    // Only return the 2 REAL parents as confirmed by user
+    const parents = allParents.filter(parent => 
+      realParentEmails.includes(parent.email)
+    );
 
     let filteredParents = parents;
     if (search) {
