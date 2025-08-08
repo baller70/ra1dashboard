@@ -1616,7 +1616,9 @@ The Basketball Factory Inc.`
                   </p>
                   <Button variant="outline" size="sm" className="w-full" onClick={() => {
                     console.log('Payment options button clicked!')
+                    console.log('Current paymentOptionsOpen state:', paymentOptionsOpen)
                     setPaymentOptionsOpen(true)
+                    console.log('Setting paymentOptionsOpen to true')
                   }}>
                     Choose payment option...
                   </Button>
@@ -1748,6 +1750,7 @@ The Basketball Factory Inc.`
       />
 
       {/* Enhanced Payment Options Dialog */}
+      {console.log('Rendering payment dialog, paymentOptionsOpen:', paymentOptionsOpen)}
       <Dialog open={paymentOptionsOpen} onOpenChange={(open) => {
         console.log('Dialog state changed:', open)
         setPaymentOptionsOpen(open)
