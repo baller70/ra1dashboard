@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { ConvexClient } from 'convex/server';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
 
-const convex = new ConvexClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-convex.setAdminAuth(process.env.CONVEX_ADMIN_KEY!);
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
