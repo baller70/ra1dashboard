@@ -881,6 +881,16 @@ export const cleanupTestPaymentPlans = mutation({
 
     // Get payments with parent and payment plan info
     
+    export const markPaymentAsPaid = mutation({
+        args: { paymentId: v.id("payments") },
+        handler: async (ctx, args) => {
+            await ctx.db.patch(args.paymentId, {
+                status: "paid",
+                paidAt: Date.now(),
+            });
+        },
+    });
+
     export const checkForUpcomingPayments = mutation({
         handler: async (ctx) => {
             const now = new Date();

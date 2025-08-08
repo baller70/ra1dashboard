@@ -55,12 +55,21 @@ export default function NotificationsPage() {
   const markAllAsRead = useMutation(api.notifications.markAllAsRead)
   const deleteNotification = useMutation(api.notifications.deleteNotification)
   const generateSampleNotifications = useMutation(api.notifications.generateSampleNotifications)
+  const markPaymentAsPaid = useMutation(api.payments.markPaymentAsPaid)
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markAsRead({ notificationId: notificationId as any })
     } catch (error) {
       console.error('Failed to mark notification as read:', error)
+    }
+  }
+
+  const handleMarkPaymentAsPaid = async (paymentId: string) => {
+    try {
+      await markPaymentAsPaid({ paymentId: paymentId as any })
+    } catch (error) {
+      console.error('Failed to mark payment as paid:', error)
     }
   }
 
@@ -328,6 +337,17 @@ export default function NotificationsPage() {
                                 <Link href={notification.actionUrl}>
                                   {notification.actionText}
                                 </Link>
+                              </Button>
+                            </div>
+                          )}
+                          {notification.type === 'payment_reminder' && (
+                            <div className="mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkPaymentAsPaid(notification.paymentId)}
+                              >
+                                Mark as Paid
                               </Button>
                             </div>
                           )}
