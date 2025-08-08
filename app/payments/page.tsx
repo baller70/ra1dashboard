@@ -1453,7 +1453,13 @@ export default function PaymentsPage() {
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
                                     {payment.paymentPlan && (
                                       <Badge className={getPaymentMethodColor(payment.paymentPlan.paymentMethod || 'unknown')}>
-                                        {payment.paymentPlan.paymentMethod?.replace('stripe_card', 'Card') || 'Unknown'}
+                                        {
+                                          {
+                                            'stripe_card': 'Credit Card',
+                                            'check': 'Check',
+                                            'cash': 'Cash',
+                                          }[payment.paymentPlan.paymentMethod || ''] || 'Unknown'
+                                        }
                                       </Badge>
                                     )}
                                   {!payment.isMockEntry && payment.status === 'overdue' && (
