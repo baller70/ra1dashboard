@@ -1744,6 +1744,19 @@ The Basketball Factory Inc.`
         onSendReminder={handleSendReminder}
       />
 
+      {/* TEST DIALOG - ALWAYS OPEN */}
+      <Dialog open={true} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Test Dialog</DialogTitle>
+            <DialogDescription>This is a test dialog to see if Dialog works</DialogDescription>
+          </DialogHeader>
+          <div className="p-4">
+            <p>If you see this, Dialog component works!</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Enhanced Payment Options Dialog */}
       <Dialog open={paymentOptionsOpen} onOpenChange={setPaymentOptionsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
