@@ -28,14 +28,14 @@ export async function POST(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request);
     const body = await request.json();
-    const { parentId, totalAmount, type, installments, startDate, description, installmentAmount } = body;
+    const { parentId, totalAmount, type, installments, startDate, description, installmentAmount, paymentMethod } = body;
 
     if (!parentId || !totalAmount || !type || !installments || !startDate || !installmentAmount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     console.log(`🔄 Creating payment plan for parent ${parentId}`)
-    console.log(`📋 Plan details: Type=${type}, Total=${totalAmount}, Installments=${installments}, Amount=${installmentAmount}`)
+    console.log(`📋 Plan details: Type=${type}, Total=${totalAmount}, Installments=${installments}, Amount=${installmentAmount}, Method=${paymentMethod}`)
 
     const errors: string[] = []; // Initialize errors array
 
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       status: 'active',
       description,
       installmentAmount,
+      paymentMethod,
     });
 
     console.log(`✅ Created payment plan: ${paymentPlanId}`)

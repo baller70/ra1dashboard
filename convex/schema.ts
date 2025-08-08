@@ -54,6 +54,7 @@ export default defineSchema({
     nextDueDate: v.optional(v.any()),
     stripePriceId: v.optional(v.any()),
     stripeSubscriptionId: v.optional(v.any()),
+    paymentMethod: v.optional(v.string()),
   })
     .index("by_parent", ["parentId"])
     .index("by_status", ["status"])

@@ -502,6 +502,7 @@ export const createPaymentPlan = mutation({
     startDate: v.number(),
     status: v.string(),
     description: v.optional(v.string()),
+    paymentMethod: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -518,6 +519,7 @@ export const createPaymentPlan = mutation({
       stripeSubscriptionId: undefined,
       stripePriceId: undefined,
       description: args.description,
+      paymentMethod: args.paymentMethod,
       createdAt: now,
       updatedAt: now,
     });
@@ -550,6 +552,7 @@ export const getPaymentPlans = query({
         return {
           ...plan,
           parent,
+          paymentMethod: plan.paymentMethod,
         };
       })
     );
