@@ -1618,10 +1618,17 @@ The Basketball Factory Inc.`
                     variant="outline" 
                     size="sm" 
                     className="w-full" 
-                    onClick={() => setPaymentOptionsOpen(true)}
+                    onClick={() => {
+                      console.log('🔥 BUTTON CLICKED!')
+                      alert('Button clicked! Opening dialog...')
+                      setPaymentOptionsOpen(true)
+                    }}
                   >
                     Choose payment option...
                   </Button>
+                  <div className="mt-2 text-xs text-red-600">
+                    DEBUG: paymentOptionsOpen = {String(paymentOptionsOpen)}
+                  </div>
                 </div>
 
                 
