@@ -272,6 +272,60 @@ export default function DashboardPage() {
                   <div className="mt-3 text-xs text-muted-foreground">
                     Showing last {Math.min(6, revenueData.length)} months
                   </div>
+
+                  {/* Detailed summary */}
+                  {(() => {
+                    const last6 = revenueData.slice(-6)
+                    const sum = (arr: any[]) => arr.reduce((s, d) => s + Number(d.revenue || 0), 0)
+                    const thisMonthLabel = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    const thisMonth = last6.find((d: any) => d.month === thisMonthLabel)
+                    const prevMonth = last6.find((d: any) => d.month === lastMonth)
+                    const sixMonthTotal = sum(last6)
+                    return (
+                      <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                        <div className="rounded-md border p-3">
+                          <div className="text-muted-foreground text-xs">This Month</div>
+                          <div className="font-semibold">${Number(thisMonth?.revenue || 0).toLocaleString()}</div>
+                        </div>
+                        <div className="rounded-md border p-3">
+                          <div className="text-muted-foreground text-xs">Last Month</div>
+                          <div className="font-semibold">${Number(prevMonth?.revenue || 0).toLocaleString()}</div>
+                        </div>
+                        <div className="rounded-md border p-3">
+                          <div className="text-muted-foreground text-xs">6-Month Total</div>
+                          <div className="font-semibold">${sixMonthTotal.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Last 6 months table */}
+                  {(() => {
+                    const last6 = revenueData.slice(-6)
+                    return (
+                      <div className="mt-4 overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-left text-muted-foreground">
+                              <th className="py-2 pr-2">Month</th>
+                              <th className="py-2 pr-2">Revenue</th>
+                              <th className="py-2">Payments</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {last6.map((d: any, i: number) => (
+                              <tr key={i} className="border-t">
+                                <td className="py-2 pr-2">{d.month}</td>
+                                <td className="py-2 pr-2">${Number(d.revenue||0).toLocaleString()}</td>
+                                <td className="py-2">{d.payments || 0}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  })()}
                 </div>
               ) : (
                 <div className="h-[200px] flex items-center justify-center">
