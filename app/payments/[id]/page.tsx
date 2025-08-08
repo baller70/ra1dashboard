@@ -323,6 +323,13 @@ export default function PaymentDetailPage() {
   const [lastActionTime, setLastActionTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
+  // When check is chosen, force schedule to custom so the check UI/flow is enabled
+  useEffect(() => {
+    if (selectedPaymentOption === 'check') {
+      setSelectedPaymentSchedule('custom')
+    }
+  }, [selectedPaymentOption])
+
   useEffect(() => {
     console.log('🔍 useEffect triggered with params.id:', params.id)
     if (params.id) {
@@ -782,10 +789,9 @@ The Basketball Factory Inc.`
       } else {
         // Handle check and cash payments
         if (selectedPaymentOption === 'check' && selectedPaymentSchedule === 'custom') {
-          // Build check numbers array (comma or newline separated)
-          const numbers = checkDetails.checkNumbers
-            .split(/\n|,/) 
-            .map(s => s.trim())
+          // Build check numbers array from UI list
+          const numbers = (individualCheckNumbers || [])
+            .map(s => String(s).trim())
             .filter(Boolean)
 
           // Use customAmount if provided; otherwise fallback to per-installment amount
