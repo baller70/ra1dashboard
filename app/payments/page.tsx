@@ -90,6 +90,7 @@ export default function PaymentsPage() {
   const [analytics, setAnalytics] = useState<any>(null)
   const [teamsData, setTeamsData] = useState<any>(null)
   const [allParentsData, setAllParentsData] = useState<any>(null)
+  const [plansTotals, setPlansTotals] = useState<{ total: number, activeParents: number } | null>(null)
 
   // Define fetchData as a standalone function
   const fetchData = useCallback(async (isManualRefresh = false) => {
@@ -111,7 +112,7 @@ export default function PaymentsPage() {
         sessionStorage.removeItem('payments-cache')
       }
 
-      const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
+      const [paymentsRes, analyticsRes, teamsRes, parentsRes, plansRes] = await Promise.all([
         fetch(`/api/payments?program=${activeProgram}&limit=1000&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
@@ -130,14 +131,22 @@ export default function PaymentsPage() {
         fetch(`/api/parents?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        }),
+        fetch(`/api/payment-plans?_cache=${cacheKey}&_t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
         })
       ])
 
-      const [paymentsResult, analyticsResult, teamsResult, parentsResult] = await Promise.all([
+      const [paymentsResult, analyticsResult, teamsResult, parentsResult, plansResult] = await Promise.all([
         paymentsRes.json(),
         analyticsRes.json(), 
         teamsRes.json(),
-        parentsRes.json()
+        parentsRes.json(),
+        plansRes.ok ? plansRes.json() : []
       ])
       
       console.log('📊 Data fetched:', {
@@ -150,6 +159,33 @@ export default function PaymentsPage() {
       if (paymentsResult.success) setPaymentsData(paymentsResult.data)
       if (analyticsResult.success) setAnalytics(analyticsResult.data)
       if (teamsResult.success) setTeamsData(teamsResult.data)
+      // Compute authoritative plans total (sum of largest plan per parent),
+      // filtered to parents currently present on the Parents page
+      try {
+        const plansArr: any[] = Array.isArray(plansResult) ? plansResult : []
+        const allowedParentIds = new Set<string>(
+          Array.isArray(parentsResult?.data?.parents)
+            ? parentsResult.data.parents.map((p: any) => String(p._id || p.id || ''))
+            : []
+        )
+        const countable = plansArr.filter((p: any) => {
+          const status = String(p.status || '').toLowerCase()
+          return status === 'active' || status === 'pending'
+        })
+        const planByParent: Record<string, any> = {}
+        for (const plan of countable) {
+          const parentKey = String(plan.parentId || '')
+          const current = planByParent[parentKey]
+          if (!current || Number(plan.totalAmount || 0) > Number(current.totalAmount || 0)) {
+            planByParent[parentKey] = plan
+          }
+        }
+        // Only include plans for parents that exist on the Parents page
+        const uniquePlans = (Object.values(planByParent) as any[])
+          .filter((p: any) => allowedParentIds.size === 0 || allowedParentIds.has(String(p.parentId || '')))
+        const plansTotal = uniquePlans.reduce((s: number, p: any) => s + Number(p.totalAmount || 0), 0)
+        setPlansTotals({ total: plansTotal, activeParents: uniquePlans.length })
+      } catch {}
       if (parentsResult.success) {
         setAllParentsData(parentsResult.data)
         
@@ -808,21 +844,23 @@ export default function PaymentsPage() {
 
   // Compute first-installment-collected and pending from plan totals when analytics isn't reflecting it yet
   const calculatePlanAdjustments = () => {
-    // Unique plans by planId or by parentId if missing
-    const plansByKey = new Map<string, any>()
-    for (const p of deduplicatedPayments) {
-      const plan = p.paymentPlan
-      if (plan) {
-        const key = plan._id || `parent-${p.parentId}`
-        if (!plansByKey.has(key)) plansByKey.set(key, plan)
+    // Deduplicate by parent: keep the largest totalAmount plan per parent
+    const planByParent: Record<string, any> = {}
+    for (const payment of deduplicatedPayments) {
+      const plan = payment.paymentPlan
+      if (!plan) continue
+      const parentKey = String(payment.parentId || '')
+      const current = planByParent[parentKey]
+      if (!current || Number(plan.totalAmount || 0) > Number(current.totalAmount || 0)) {
+        planByParent[parentKey] = plan
       }
     }
-    const plans = Array.from(plansByKey.values())
-    const totalPlanAmount = plans.reduce((s: number, plan: any) => s + Number(plan.totalAmount || 0), 0)
-    const firstInstallments = plans.reduce((s: number, plan: any) => s + Number(plan.installmentAmount || 0), 0)
+    const uniquePlans = Object.values(planByParent)
+    const totalPlanAmount = uniquePlans.reduce((s: number, plan: any) => s + Number((plan as any).totalAmount || 0), 0)
+    const firstInstallments = uniquePlans.reduce((s: number, plan: any) => s + Number((plan as any).installmentAmount || 0), 0)
     const collected = Number(summary.paid) + firstInstallments
     const pending = Math.max(totalPlanAmount - collected, 0)
-    const activePlansCount = plans.length
+    const activePlansCount = uniquePlans.length
     return { totalPlanAmount, firstInstallments, collected, pending, activePlansCount }
   }
   const planAdj = calculatePlanAdjustments()
@@ -835,8 +873,12 @@ export default function PaymentsPage() {
     ? Number(analytics?.pendingPayments)
     : Number(planAdj.pending)
   const uiActivePlans = planAdj.activePlansCount || Number(analytics?.activePlans || 0)
-  const uiTotalRevenue = Number(analytics?.totalRevenue ?? planAdj.totalPlanAmount ?? summary.total)
-  const uiPendingFromTotal = Math.max(uiTotalRevenue - uiCollected, 0)
+  // Total Revenue should reflect potential revenue from plans; prefer authoritative plansTotals
+  const uiTotalRevenue = Number((plansTotals?.total ?? analytics?.totalRevenue) ?? planAdj.totalPlanAmount ?? summary.total)
+  // Pending should be computed from potential (plan totals) minus collected
+  const uiPendingFromTotal = Math.max(Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0) - uiCollected, 0)
+  // Potential revenue is simply the sum of all unique active/pending plan totals
+  const uiPotentialRevenue = Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
 
   // Helper function to get consistent overdue count
   const getOverdueCount = () => {
@@ -1025,11 +1067,34 @@ export default function PaymentsPage() {
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">${analytics?.totalRevenue?.toLocaleString() || summary.total.toLocaleString()}</div>
+                      <div className="text-2xl font-bold">${uiTotalRevenue.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         <TrendingUp className="h-3 w-3 inline mr-1" />
                         All time
                       </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Potential Revenue</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">${uiPotentialRevenue.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">
+                        <TrendingUp className="h-3 w-3 inline mr-1" />
+                        Sum of all plan totals
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Potential Revenue</CardTitle>
+                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">${uiPotentialRevenue.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">Projected from active plans</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -1330,7 +1395,7 @@ export default function PaymentsPage() {
                   <CardHeader>
                     <CardTitle>Latest Payments by Parent</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Showing the most recent payment for each parent. Click "View Details & History" to see all payments for a parent.
+                      Showing the most recent payment for each parent. Click &quot;View Details &amp; History&quot; to see all payments for a parent.
                     </p>
                   </CardHeader>
                   <CardContent>
@@ -1404,7 +1469,7 @@ export default function PaymentsPage() {
                                     <span>No Payment Plan</span>
                                   </Badge>
                                 ) : (
-                                  {payment.paymentPlan && payment.status === 'pending' ? (
+                                  payment.paymentPlan && payment.status === 'pending' ? (
                                     <Badge className="flex items-center space-x-1 capitalize bg-green-600 text-white">
                                       <CheckCircle className="h-4 w-4" />
                                       <span>Active</span>
@@ -1414,7 +1479,7 @@ export default function PaymentsPage() {
                                       {getStatusIcon(payment.status)}
                                       <span>{payment.status}</span>
                                     </Badge>
-                                  )}
+                                  )
                                 )}
                                 {payment.paymentPlan && (
                                   <Badge variant="outline" className="capitalize">
