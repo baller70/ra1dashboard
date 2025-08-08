@@ -161,18 +161,41 @@ export const getRevenueTrends = query({
     const payments = await ctx.db.query("payments").collect();
     console.log(`💰 Found ${payments.length} payments for revenue trends`);
     
-    // If no payments, return empty trends for next 6 months
+    // If no payments, derive trends from paymentInstallments (scheduled amounts)
     if (payments.length === 0) {
-      const trends = [];
-      const currentDate = new Date();
-      for (let i = 0; i < 6; i++) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
-        trends.push({
-          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          revenue: 0,
-          payments: 0
-        });
+      const installments = await ctx.db.query("paymentInstallments").collect();
+      if (installments.length === 0) {
+        const trends = [] as { month: string; revenue: number; payments: number }[];
+        const currentDate = new Date();
+        for (let i = 0; i < 6; i++) {
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+          trends.push({
+            month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            revenue: 0,
+            payments: 0
+          });
+        }
+        return trends;
       }
+      const monthly: { [key: string]: { revenue: number; payments: number } } = {};
+      for (const inst of installments) {
+        const base = (inst as any).paidAt || inst.dueDate;
+        if (!base) continue;
+        const d = new Date(base);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        if (!monthly[key]) monthly[key] = { revenue: 0, payments: 0 };
+        monthly[key].revenue += Number(inst.amount || 0);
+        monthly[key].payments += 1;
+      }
+      const trends = Object.entries(monthly).map(([key, data]) => {
+        const [year, month] = key.split('-');
+        const date = new Date(parseInt(year), parseInt(month), 1);
+        return {
+          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          revenue: data.revenue,
+          payments: data.payments,
+        };
+      }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
       return trends;
     }
     
