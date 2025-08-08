@@ -1614,7 +1614,10 @@ The Basketball Factory Inc.`
                   <p className="text-xs text-gray-600 mb-2">
                     Link to open secure payment form
                   </p>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setPaymentOptionsOpen(true)}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => {
+                    console.log('Payment options button clicked!')
+                    setPaymentOptionsOpen(true)
+                  }}>
                     Choose payment option...
                   </Button>
                 </div>
@@ -1745,8 +1748,12 @@ The Basketball Factory Inc.`
       />
 
       {/* Enhanced Payment Options Dialog */}
-      <Dialog open={paymentOptionsOpen} onOpenChange={setPaymentOptionsOpen}>
+      <Dialog open={paymentOptionsOpen} onOpenChange={(open) => {
+        console.log('Dialog state changed:', open)
+        setPaymentOptionsOpen(open)
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {console.log('Dialog content rendered, paymentOptionsOpen:', paymentOptionsOpen)}
           <DialogHeader className="pb-6">
             <DialogTitle className="flex items-center gap-3 text-2xl">
               <CreditCard className="h-6 w-6 text-orange-600" />
