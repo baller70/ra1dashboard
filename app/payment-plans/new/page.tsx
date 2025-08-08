@@ -402,59 +402,81 @@ export default function NewPaymentPlanPage() {
 
   // Apply payment options from dialog - CREATE PAYMENT PLAN AND REDIRECT TO CHECKOUT
   const handleApplyPaymentOptions = async () => {
-    setLoading(true)
-    setShowPaymentOptions(false)
-    
-    try {
-      // Get selected schedule details
-      const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule)
-      const installmentAmount = selectedScheduleDetails?.value === 'pay-in-full' ? 1650 : 183.33
-      const installments = selectedScheduleDetails?.value === 'pay-in-full' ? 1 : 9
+    setLoading(true);
+    setShowPaymentOptions(false);
+
+    let paymentData: any = {
+      parentId: formData.parentId,
+      startDate: new Date().toISOString().split('T')[0],
+      paymentMethod: selectedPaymentOption,
+      type: selectedPaymentSchedule,
+    };
+
+    if (selectedPaymentOption === 'check') {
+      const totalAmount = parseFloat(checkDetails.customAmount || '0') * checkInstallments;
+      paymentData = {
+        ...paymentData,
+        totalAmount: totalAmount,
+        installmentAmount: parseFloat(checkDetails.customAmount || '0'),
+        installments: checkInstallments,
+        description: `Check payment plan - ${checkInstallments} installments`,
+        checkNumbers: individualCheckNumbers,
+        frequency: checkFrequencyMonths,
+      };
+    } else {
+      const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule);
+      const installmentAmount = selectedScheduleDetails?.installmentAmount || 0;
+      const installments = selectedScheduleDetails?.installments || 1;
+      const totalAmount = installmentAmount * installments;
       
-      // Create payment plan
+      paymentData = {
+        ...paymentData,
+        totalAmount: totalAmount,
+        installmentAmount: installmentAmount,
+        installments: installments,
+        description: `Payment plan - ${selectedScheduleDetails?.label}`,
+      };
+    }
+
+    try {
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-api-key': 'ra1-dashboard-api-key-2024'
         },
-        body: JSON.stringify({
-          parentId: formData.parentId,
-          totalAmount: 1650,
-          installmentAmount: installmentAmount,
-          installments: installments,
-          startDate: new Date().toISOString().split('T')[0],
-          description: `Payment plan - ${selectedScheduleDetails?.label}`,
-          paymentMethod: selectedPaymentOption,
-          type: selectedPaymentSchedule
-        })
-      })
-      
+        body: JSON.stringify(paymentData)
+      });
+
       if (response.ok) {
-        const result = await response.json()
-        
+        const result = await response.json();
         toast({
           title: "✅ Payment Plan Created!",
           description: "Payment plan has been set up successfully.",
           duration: 3000,
-        })
+        });
         
+        const paymentId = result.mainPaymentId || result.paymentIds?.[0];
+        if (paymentId) {
+          router.push(`/payments/${paymentId}`);
+        }
+
       } else {
-        const error = await response.json()
+        const error = await response.json();
         toast({
           title: "❌ Creation Failed",
           description: error.error || 'Failed to create payment plan',
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
       toast({
         title: "❌ Error",
         description: 'Error creating payment plan. Please try again.',
         variant: "destructive",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
