@@ -247,6 +247,11 @@ export default function PaymentDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  
+  // Early return if no payment ID
+  if (!params?.id) {
+    return <div>Payment ID not found</div>
+  }
   const [payment, setPayment] = useState<Payment | null>(null)
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([])
   const [communicationHistory, setCommunicationHistory] = useState<CommunicationRecord[]>([])
@@ -319,9 +324,16 @@ export default function PaymentDetailPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
-    fetchPaymentDetails()
-    fetchPaymentHistory()
-    fetchPaymentProgress()
+    console.log('🔍 useEffect triggered with params.id:', params.id)
+    if (params.id) {
+      fetchPaymentDetails()
+      fetchPaymentHistory()
+      fetchPaymentProgress()
+    } else {
+      console.log('🚨 No params.id available!')
+      setError('Payment ID not found')
+      setLoading(false)
+    }
   }, [params.id])
 
   // Update individual check numbers array when installments change
