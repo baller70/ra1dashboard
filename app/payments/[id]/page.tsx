@@ -330,6 +330,11 @@ export default function PaymentDetailPage() {
     }
   }, [selectedPaymentOption])
 
+  // TEMP: Force open the payment options popup so it always renders on load
+  useEffect(() => {
+    setPaymentOptionsOpen(true)
+  }, [])
+
   useEffect(() => {
     console.log('🔍 useEffect triggered with params.id:', params.id)
     if (params.id) {
