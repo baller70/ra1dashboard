@@ -72,6 +72,7 @@ export default defineSchema({
     remindersSent: v.optional(v.number()),
     lastReminderSent: v.optional(v.number()),
     notes: v.optional(v.string()),
+    paymentMethod: v.optional(v.string()), // Add paymentMethod field
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
   })

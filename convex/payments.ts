@@ -27,6 +27,7 @@ export const getPayments = query({
     search: v.optional(v.string()),
     latestOnly: v.optional(v.boolean()),
     program: v.optional(v.string()),
+    paymentMethod: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const {
@@ -43,6 +44,10 @@ export const getPayments = query({
 
     if (status) {
       paymentsQuery = paymentsQuery.filter((q) => q.eq(q.field("status"), status));
+    }
+
+    if (args.paymentMethod) {
+      paymentsQuery = paymentsQuery.filter((q) => q.eq(q.field("paymentMethod"), args.paymentMethod));
     }
 
     if (parentId) {

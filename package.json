@@ -93,7 +93,6 @@
     "csv-parser": "^3.2.0",
     "date-fns": "3.6.0",
     "dayjs": "1.11.13",
-    "dotenv": "16.5.0",
     "embla-carousel-react": "8.3.0",
     "express-rate-limit": "^8.0.1",
     "formik": "2.4.5",
