@@ -1618,31 +1618,10 @@ The Basketball Factory Inc.`
                     variant="outline" 
                     size="sm" 
                     className="w-full" 
-                    onClick={() => {
-                      console.log('🔥 BUTTON CLICKED - Current paymentOptionsOpen:', paymentOptionsOpen)
-                      setPaymentOptionsOpen(true)
-                      console.log('🔥 Setting paymentOptionsOpen to TRUE')
-                      // Add a small delay to see if state updates
-                      setTimeout(() => {
-                        console.log('🔥 After timeout - paymentOptionsOpen should be:', paymentOptionsOpen)
-                      }, 100)
-                    }}
+                    onClick={() => setPaymentOptionsOpen(true)}
                   >
-                    Choose payment option... [DEBUG]
+                    Choose payment option...
                   </Button>
-                  <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-xs">
-                    <strong>DEBUG:</strong> paymentOptionsOpen = {String(paymentOptionsOpen)}
-                    <br />
-                    <button 
-                      className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded"
-                      onClick={() => {
-                        console.log('🔥 FORCE OPEN CLICKED')
-                        setPaymentOptionsOpen(true)
-                      }}
-                    >
-                      Force Open Dialog
-                    </button>
-                  </div>
                 </div>
 
                 
@@ -1771,18 +1750,7 @@ The Basketball Factory Inc.`
       />
 
       {/* Enhanced Payment Options Dialog */}
-      {/* Debug: Dialog is rendering */}
-      <div className="fixed bottom-4 right-4 bg-yellow-100 p-2 text-xs border border-yellow-300 rounded z-50">
-        Dialog Component Loaded: {paymentOptionsOpen ? 'OPEN' : 'CLOSED'}
-      </div>
-      
-      <Dialog 
-        open={paymentOptionsOpen} 
-        onOpenChange={(open) => {
-          console.log('🔥 Dialog onOpenChange triggered with value:', open)
-          setPaymentOptionsOpen(open)
-        }}
-      >
+      <Dialog open={paymentOptionsOpen} onOpenChange={setPaymentOptionsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-6">
             <DialogTitle className="flex items-center gap-3 text-2xl">
@@ -1909,138 +1877,82 @@ The Basketball Factory Inc.`
               </div>
             )}
 
-            {/* Enhanced Check Payment Fields */}
+            {/* Check Payment Fields - Simple Dropdowns and Text Boxes */}
             {selectedPaymentOption === 'check' && (
-              <div className="space-y-6 p-6 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="h-5 w-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-green-900">Check Payment Details</h3>
-                </div>
-
-                {/* Installments and Payment Period */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Number of Installments</Label>
+              <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-medium text-green-900 mb-3">Check Payment Details</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Number of Installments Dropdown */}
+                  <div>
+                    <Label className="text-sm font-medium">Installments</Label>
                     <Select value={String(checkInstallments)} onValueChange={(v) => setCheckInstallments(Number(v))}>
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Select installments" />
+                      <SelectTrigger>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
-                          <SelectItem key={num} value={String(num)}>
-                            {num} installment{num > 1 ? 's' : ''}
-                          </SelectItem>
+                          <SelectItem key={num} value={String(num)}>{num}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500">Choose between 1-12 installments</p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Payment Period</Label>
+                  {/* Payment Period Dropdown */}
+                  <div>
+                    <Label className="text-sm font-medium">Period (Months)</Label>
                     <Select value={String(checkFrequencyMonths)} onValueChange={(v) => setCheckFrequencyMonths(Number(v))}>
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Select period" />
+                      <SelectTrigger>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
-                          <SelectItem key={num} value={String(num)}>
-                            {num} month{num > 1 ? 's' : ''}
-                          </SelectItem>
+                          <SelectItem key={num} value={String(num)}>{num}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500">Choose between 1-12 months</p>
                   </div>
                 </div>
 
-                {/* Custom Amount */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Custom Amount (per installment)</Label>
+                {/* Custom Amount Text Box */}
+                <div>
+                  <Label className="text-sm font-medium">Amount per Check</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type="number"
-                      min="0"
-                      step="0.01"
                       placeholder="0.00"
                       value={checkDetails.customAmount}
                       onChange={(e) => setCheckDetails(prev => ({ ...prev, customAmount: e.target.value }))}
-                      className="pl-10 bg-white"
+                      className="pl-10"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">Enter the amount for each installment</p>
                 </div>
 
-                {/* Start Date */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Start Date</Label>
-                  <Input
-                    type="date"
-                    value={checkDetails.startDate}
-                    onChange={(e) => setCheckDetails(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="bg-white"
-                  />
-                  <p className="text-xs text-gray-500">When should the first payment be due?</p>
-                </div>
-
-                {/* Dynamic Check Numbers */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Check Numbers ({checkInstallments} check{checkInstallments > 1 ? 's' : ''} required)
-                  </Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Dynamic Check Number Text Boxes */}
+                <div>
+                  <Label className="text-sm font-medium">Check Numbers ({checkInstallments} required)</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
                     {individualCheckNumbers.map((checkNumber, index) => (
-                      <div key={index} className="space-y-1">
-                        <Label className="text-xs text-gray-600">
-                          Check #{index + 1} {index === 0 && '(First Payment)'}
-                        </Label>
-                        <Input
-                          placeholder={`Check number ${index + 1}`}
-                          value={checkNumber}
-                          onChange={(e) => {
-                            const newCheckNumbers = [...individualCheckNumbers]
-                            newCheckNumbers[index] = e.target.value
-                            setIndividualCheckNumbers(newCheckNumbers)
-                            setCheckDetails(prev => ({ 
-                              ...prev, 
-                              checkNumbers: newCheckNumbers 
-                            }))
-                          }}
-                          className="bg-white"
-                        />
-                      </div>
+                      <Input
+                        key={index}
+                        placeholder={`Check #${index + 1}`}
+                        value={checkNumber}
+                        onChange={(e) => {
+                          const newCheckNumbers = [...individualCheckNumbers]
+                          newCheckNumbers[index] = e.target.value
+                          setIndividualCheckNumbers(newCheckNumbers)
+                        }}
+                      />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Enter the check number for each installment payment
-                  </p>
                 </div>
 
-                {/* Payment Summary */}
-                {checkDetails.customAmount && checkInstallments > 0 && (
-                  <div className="p-4 bg-white border border-green-200 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-2">Payment Summary</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Amount per check:</span>
-                        <span className="font-medium">${parseFloat(checkDetails.customAmount || '0').toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Number of checks:</span>
-                        <span className="font-medium">{checkInstallments}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Payment period:</span>
-                        <span className="font-medium">{checkFrequencyMonths} month{checkFrequencyMonths > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex justify-between pt-2 border-t border-green-200">
-                        <span className="font-medium">Total amount:</span>
-                        <span className="font-bold text-green-700">
-                          ${(parseFloat(checkDetails.customAmount || '0') * checkInstallments).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                {/* Simple Summary */}
+                {checkDetails.customAmount && (
+                  <div className="text-sm bg-white p-3 rounded border">
+                    <strong>Total: ${(parseFloat(checkDetails.customAmount || '0') * checkInstallments).toFixed(2)}</strong>
+                    <span className="text-gray-600 ml-2">({checkInstallments} × ${parseFloat(checkDetails.customAmount || '0').toFixed(2)})</span>
                   </div>
                 )}
               </div>
