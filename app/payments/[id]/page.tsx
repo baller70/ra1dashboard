@@ -314,7 +314,14 @@ export default function PaymentDetailPage() {
   const [checkInstallments, setCheckInstallments] = useState<number>(1)
   const [checkFrequencyMonths, setCheckFrequencyMonths] = useState<number>(1)
   const [individualCheckNumbers, setIndividualCheckNumbers] = useState<string[]>([''])
-  const [cashDetails, setCashDetails] = useState({ receiptNumber: "", paidDate: "" })
+  const [cashDetails, setCashDetails] = useState({ 
+    receiptNumber: "", 
+    paidDate: "",
+    customAmount: ""
+  })
+  const [cashInstallments, setCashInstallments] = useState<number>(1)
+  const [cashFrequencyMonths, setCashFrequencyMonths] = useState<number>(1)
+
 
   // Collapsible state
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false)
@@ -326,7 +333,7 @@ export default function PaymentDetailPage() {
 
   // When check is chosen, force schedule to custom so the check UI/flow is enabled
   useEffect(() => {
-    if (selectedPaymentOption === 'check') {
+    if (selectedPaymentOption === 'check' || selectedPaymentOption === 'cash') {
       setSelectedPaymentSchedule('custom')
     }
   }, [selectedPaymentOption])
@@ -800,9 +807,9 @@ The Basketball Factory Inc.`
             .filter(Boolean)
 
           // Use customAmount if provided; otherwise fallback to per-installment amount
-          const perInstallment = customAmount ? Number(customAmount) : paymentAmount
+          const perInstallment = checkDetails.customAmount ? Number(checkDetails.customAmount) : paymentAmount
 
-          const resp = await fetch(`/api/payments/${payment.id}/check-schedule`, {
+          const resp = await fetch(`/api/payments/${payment.id}/custom-schedule`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -811,10 +818,27 @@ The Basketball Factory Inc.`
               installmentAmount: perInstallment,
               startDate: checkDetails.startDate || new Date().toISOString().slice(0,10),
               checkNumbers: numbers,
+              paymentMethod: 'check'
             })
           })
           if (!resp.ok) throw new Error('Failed to create check schedule')
           toast({ title: '✅ Check Schedule Saved', description: `Created ${checkInstallments || customInstallments} installments.` })
+          await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
+        } else if (selectedPaymentOption === 'cash' && selectedPaymentSchedule === 'custom') {
+          const perInstallment = cashDetails.customAmount ? Number(cashDetails.customAmount) : paymentAmount
+          const resp = await fetch(`/api/payments/${payment.id}/custom-schedule`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              installments: cashInstallments || customInstallments || installmentCount,
+              frequency: cashFrequencyMonths || customPaymentFrequency || 1,
+              installmentAmount: perInstallment,
+              startDate: new Date().toISOString().slice(0,10),
+              paymentMethod: 'cash'
+            })
+          })
+          if (!resp.ok) throw new Error('Failed to create cash schedule')
+          toast({ title: '✅ Cash Schedule Saved', description: `Created ${cashInstallments || customInstallments} installments.` })
           await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
         } else {
           const response = await fetch(`/api/payments/${payment.id}`, {
@@ -1998,6 +2022,81 @@ The Basketball Factory Inc.`
                 )}
               </div>
             )}
+
+            {/* Cash Payment Fields */}
+            {selectedPaymentOption === 'cash' && (
+              <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h4 className="font-medium text-yellow-900 mb-3">Cash Payment Details</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Number of Installments Dropdown */}
+                  <div>
+                    <Label className="text-sm font-medium">Installments</Label>
+                    <Select value={String(cashInstallments)} onValueChange={(v) => setCashInstallments(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                          <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Payment Period Dropdown */}
+                  <div>
+                    <Label className="text-sm font-medium">Period (Months)</Label>
+                    <Select value={String(cashFrequencyMonths)} onValueChange={(v) => setCashFrequencyMonths(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                          <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Custom Amount Text Box */}
+                <div>
+                  <Label className="text-sm font-medium">Amount per Payment</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={cashDetails.customAmount}
+                      onChange={(e) => setCashDetails(prev => ({ ...prev, customAmount: e.target.value }))}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Cash Payment Labels */}
+                <div>
+                  <Label className="text-sm font-medium">Cash Payments ({cashInstallments} required)</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {Array.from({ length: cashInstallments }).map((_, index) => (
+                      <div key={index} className="flex items-center p-2 bg-white border rounded-md">
+                        <span className="text-sm">Cash Payment #{index + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Simple Summary */}
+                {cashDetails.customAmount && (
+                  <div className="text-sm bg-white p-3 rounded border">
+                    <strong>Total: ${(parseFloat(cashDetails.customAmount || '0') * cashInstallments).toFixed(2)}</strong>
+                    <span className="text-gray-600 ml-2">({cashInstallments} × ${parseFloat(cashDetails.customAmount || '0').toFixed(2)})</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {selectedPaymentOption === 'cash' && (
               <div className="space-y-3">
                 <Label htmlFor="paymentReference">Receipt Number</Label>

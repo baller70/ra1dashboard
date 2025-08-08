@@ -25,6 +25,7 @@ export const createPaymentPlan = mutation({
       description: args.description,
       status: "active",
       frequency: args.frequency?.toString(),
+      paymentMethod: args.paymentMethod,
     });
 
     const mainPaymentId = await ctx.db.insert("payments", {

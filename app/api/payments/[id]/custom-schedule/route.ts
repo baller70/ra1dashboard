@@ -17,6 +17,7 @@ export async function POST(
     const installmentAmount = Number(body.installmentAmount)
     const startDateIso: string | undefined = body.startDate
     const checkNumbers: string[] = Array.isArray(body.checkNumbers) ? body.checkNumbers : []
+    const paymentMethod: 'check' | 'cash' = body.paymentMethod || 'check'
 
     if (!installments || installments < 1 || installments > 12) {
       return NextResponse.json({ error: 'installments must be between 1 and 12' }, { status: 400 })
@@ -27,7 +28,7 @@ export async function POST(
     if (!installmentAmount || installmentAmount <= 0) {
       return NextResponse.json({ error: 'installmentAmount must be > 0' }, { status: 400 })
     }
-    if (checkNumbers.length > 0 && checkNumbers.length !== installments) {
+    if (paymentMethod === 'check' && checkNumbers.length > 0 && checkNumbers.length !== installments) {
       return NextResponse.json({ error: 'checkNumbers length must match installments count' }, { status: 400 })
     }
 
@@ -49,6 +50,7 @@ export async function POST(
       totalInstallments: installments,
       frequency,
       startDate: startDateMs,
+      paymentMethod,
     })
 
     // Persist check numbers on the parent payment notes as JSON for retrieval
@@ -57,21 +59,23 @@ export async function POST(
       const existingParsed = (() => { try { return JSON.parse(existingNotes) } catch { return {} } })()
       const newNotes = JSON.stringify({
         ...existingParsed,
-        checkSchedule: {
+        customSchedule: {
+          paymentMethod,
           installments,
           frequency,
           installmentAmount,
-          checkNumbers,
+          checkNumbers: paymentMethod === 'check' ? checkNumbers : undefined,
         }
       })
 
       await convexHttp.mutation(api.payments.updatePayment as any, {
         id: (payment as any)._id || params.id,
         notes: newNotes,
+        paymentMethod,
       })
     } catch (e) {
       // Non-fatal
-      console.warn('Failed to update payment notes with check numbers:', e)
+      console.warn('Failed to update payment notes with schedule details:', e)
     }
 
     return NextResponse.json({
@@ -80,8 +84,8 @@ export async function POST(
       schedule: { installments, frequency, installmentAmount },
     })
   } catch (error) {
-    console.error('check-schedule error:', error)
-    return NextResponse.json({ success: false, error: 'Failed to create check schedule' }, { status: 500 })
+    console.error('custom-schedule error:', error)
+    return NextResponse.json({ success: false, error: 'Failed to create custom schedule' }, { status: 500 })
   }
 }
 

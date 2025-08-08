@@ -115,7 +115,7 @@ export default function NewPaymentPlanPage() {
   const [customInstallments, setCustomInstallments] = useState(3)
   const [customMonths, setCustomMonths] = useState(9)
   const [paymentReference, setPaymentReference] = useState('')
-
+  
   // State for check payments
   const [checkInstallments, setCheckInstallments] = useState<number>(1)
   const [checkFrequencyMonths, setCheckFrequencyMonths] = useState<number>(1)
@@ -123,6 +123,11 @@ export default function NewPaymentPlanPage() {
   const [checkDetails, setCheckDetails] = useState({
     checkNumbers: [] as string[],
     startDate: '',
+    customAmount: '',
+  })
+  const [cashInstallments, setCashInstallments] = useState<number>(1)
+  const [cashFrequencyMonths, setCashFrequencyMonths] = useState<number>(1)
+  const [cashDetails, setCashDetails] = useState({
     customAmount: '',
   })
   
@@ -186,6 +191,12 @@ export default function NewPaymentPlanPage() {
     );
     setIndividualCheckNumbers(newCheckNumbers);
   }, [checkInstallments]);
+
+  useEffect(() => {
+    if (selectedPaymentOption === "cash") {
+      setSelectedPaymentSchedule("custom");
+    }
+  }, [selectedPaymentOption]);
 
   const fetchParents = async () => {
     try {
@@ -423,6 +434,16 @@ export default function NewPaymentPlanPage() {
         checkNumbers: individualCheckNumbers,
         frequency: checkFrequencyMonths,
       };
+    } else if (selectedPaymentOption === 'cash') {
+      const totalAmount = parseFloat(cashDetails.customAmount || '0') * cashInstallments;
+      paymentData = {
+        ...paymentData,
+        totalAmount: totalAmount,
+        installmentAmount: parseFloat(cashDetails.customAmount || '0'),
+        installments: cashInstallments,
+        description: `Cash payment plan - ${cashInstallments} installments`,
+        frequency: cashFrequencyMonths,
+      };
     } else {
       const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule);
       const installmentAmount = selectedScheduleDetails?.installmentAmount || 0;
@@ -441,13 +462,13 @@ export default function NewPaymentPlanPage() {
     try {
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
           'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify(paymentData)
       });
-
+      
       if (response.ok) {
         const result = await response.json();
         toast({
@@ -460,7 +481,7 @@ export default function NewPaymentPlanPage() {
         if (paymentId) {
           router.push(`/payments/${paymentId}`);
         }
-
+        
       } else {
         const error = await response.json();
         toast({
@@ -1035,6 +1056,98 @@ export default function NewPaymentPlanPage() {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Installments:</span>
                         <span className="font-semibold text-green-800">{checkInstallments}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Cash Payment Fields */}
+            {selectedPaymentOption === 'cash' && (
+              <div className="space-y-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                  <h3 className="text-lg font-semibold text-yellow-900">Cash Payment Details</h3>
+                </div>
+
+                {/* Installments and Payment Period */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Number of Installments</Label>
+                    <Select value={String(cashInstallments)} onValueChange={(v) => setCashInstallments(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select installments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(val => (
+                          <SelectItem key={val} value={String(val)}>{val}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Payment Period (Months)</Label>
+                    <Select value={String(cashFrequencyMonths)} onValueChange={(v) => setCashFrequencyMonths(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(val => (
+                          <SelectItem key={val} value={String(val)}>{val} month(s)</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {/* Custom Amount */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Amount per Payment</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      type="number"
+                      placeholder="e.g., 183.33"
+                      value={cashDetails.customAmount}
+                      onChange={(e) => setCashDetails(prev => ({ ...prev, customAmount: e.target.value }))}
+                      className="pl-10 bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Cash Payment Labels */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">Cash Payments</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: cashInstallments }).map((_, index) => (
+                      <div key={index} className="flex items-center p-3 bg-white border rounded-md">
+                        <span className="text-sm">Cash Payment #{index + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Summary */}
+                {cashDetails.customAmount && (
+                  <div className="p-4 bg-white border border-yellow-300 rounded-lg">
+                    <h4 className="font-medium text-yellow-900 mb-3">Payment Summary</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Amount:</span>
+                        <span className="font-semibold text-yellow-800">
+                          ${(parseFloat(cashDetails.customAmount || '0') * cashInstallments).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Per Payment:</span>
+                        <span className="font-semibold text-yellow-800">
+                          ${parseFloat(cashDetails.customAmount || '0').toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Installments:</span>
+                        <span className="font-semibold text-yellow-800">{cashInstallments}</span>
                       </div>
                     </div>
                   </div>
