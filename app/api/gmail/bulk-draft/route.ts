@@ -4,8 +4,10 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 import { gmailService } from '../../../../lib/gmail'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     // Get parent information for personalization from Convex
-    const parentsResponse = await convexHttp.query(api.parents.getParents, {});
+    const parentsResponse = await convex.query(api.parents.getParents, {});
     const allParents = parentsResponse.parents;
     
     const parents = allParents.filter(parent => parentIds.includes(parent._id));
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
       try {
         const successfulCount = results.filter(r => r.success).length;
         for (let i = 0; i < successfulCount; i++) {
-          await convexHttp.mutation(api.templates.incrementTemplateUsage, {
+          await convex.mutation(api.templates.incrementTemplateUsage, {
             id: templateId as any
           });
         }

@@ -3,9 +3,11 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api'
 import { Id } from '../../../convex/_generated/dataModel'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +21,7 @@ export async function GET(request: Request) {
     const priority = searchParams.get('priority')
     const status = searchParams.get('status')
 
-    const result = await convexHttp.query(api.aiRecommendations.getAiRecommendations, {
+    const result = await convex.query(api.aiRecommendations.getAiRecommendations, {
       page,
       limit,
       parentId: parentId ? parentId as Id<"parents"> : undefined,
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const recommendationId = await convexHttp.mutation(api.aiRecommendations.createAiRecommendation, {
+    const recommendationId = await convex.mutation(api.aiRecommendations.createAiRecommendation, {
       parentId: parentId ? parentId as Id<"parents"> : undefined,
       paymentId: paymentId ? paymentId as Id<"payments"> : undefined,
       contractId: contractId ? contractId as Id<"contracts"> : undefined,

@@ -2,8 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // mark paid
-    await convexHttp.mutation(api.payments.updatePayment as any, {
+    await convex.mutation(api.payments.updatePayment as any, {
       id,
       status: 'paid',
       paidAt: Date.now()
@@ -27,4 +29,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: 'Failed to mark as paid' }, { status: 500 })
   }
 }
-

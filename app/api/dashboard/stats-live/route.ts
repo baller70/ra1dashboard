@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function GET(request: Request) {
     console.log('🔥 LIVE COUNTERS: Direct Convex queries with NO caching...')
     
     // LIVE COUNTER 1: Total Parents (this works correctly)
-    const parents = await convexHttp.query(api.parents.getParents, { 
+    const parents = await convex.query(api.parents.getParents, { 
       page: 1, 
       limit: 10000 // Get all parents
     });
@@ -21,7 +23,7 @@ export async function GET(request: Request) {
     console.log('✅ Total Parents (LIVE):', totalParents);
     
     // LIVE COUNTER 2: Active Templates (DIRECT Convex query - no pagination)
-    const allTemplatesRaw = await convexHttp.query(api.templates.getTemplates, { 
+    const allTemplatesRaw = await convex.query(api.templates.getTemplates, { 
       page: 1, 
       limit: 1000 // Get all templates without pagination issues
     });
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
     console.log('📋 Active Template Names:', allTemplatesRaw.templates?.filter(t => t.isActive).map(t => t.name));
     
     // LIVE COUNTER 3: Messages Sent (DIRECT query)
-    const allMessages = await convexHttp.query(api.messageLogs.getMessageLogs, { 
+    const allMessages = await convex.query(api.messageLogs.getMessageLogs, { 
       page: 1, 
       limit: 10000 // Get all messages
     });
@@ -41,7 +43,7 @@ export async function GET(request: Request) {
     // Get other stats
     let totalRevenue = 0;
     try {
-      const payments = await convexHttp.query(api.payments.getPaymentAnalytics, {});
+      const payments = await convex.query(api.payments.getPaymentAnalytics, {});
       totalRevenue = payments.totalRevenue || 0;
     } catch (error) {
       console.error('Error fetching payments:', error);

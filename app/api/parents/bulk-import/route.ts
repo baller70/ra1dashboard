@@ -4,9 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { BulkUploadParent, BulkImportResult } from '../../../../lib/types'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all existing parents to check for duplicates
-    const existingParentsResponse = await convexHttp.query(api.parents.getParents, { limit: 1000 });
+    const existingParentsResponse = await convex.query(api.parents.getParents, { limit: 1000 });
     // Convex returns { parents: [...] } directly
     const parentsList = existingParentsResponse.parents || [];
     const existingEmails = new Set(parentsList.map((p: any) => p.email.toLowerCase()));
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create parent record in Convex
-        const createdParentId = await convexHttp.mutation(api.parents.createParent, {
+        const createdParentId = await convex.mutation(api.parents.createParent, {
           name: parentData.name.trim(),
           email: parentData.email.toLowerCase().trim(),
           phone: parentData.phone?.trim() || undefined,

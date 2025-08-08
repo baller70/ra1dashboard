@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   request: Request,
@@ -14,7 +16,7 @@ export async function GET(
     await requireAuth()
     
     // Get payment plan from Convex
-    const paymentPlan = await convexHttp.query(api.payments.getPaymentPlan, {
+    const paymentPlan = await convex.query(api.payments.getPaymentPlan, {
       id: params.id as any
     });
 
@@ -52,7 +54,7 @@ export async function PUT(
     } = body
 
     // Update payment plan in Convex
-    await convexHttp.mutation(api.payments.updatePaymentPlan, {
+    await convex.mutation(api.payments.updatePaymentPlan, {
       id: params.id as any,
       type,
       totalAmount,
@@ -65,7 +67,7 @@ export async function PUT(
     });
 
     // Get updated payment plan
-    const updatedPaymentPlan = await convexHttp.query(api.payments.getPaymentPlan, {
+    const updatedPaymentPlan = await convex.query(api.payments.getPaymentPlan, {
       id: params.id as any
     });
 
@@ -87,7 +89,7 @@ export async function DELETE(
     await requireAuth()
     
     // Delete payment plan using Convex mutation
-    await convexHttp.mutation(api.payments.deletePaymentPlan, {
+    await convex.mutation(api.payments.deletePaymentPlan, {
       id: params.id as any
     });
 

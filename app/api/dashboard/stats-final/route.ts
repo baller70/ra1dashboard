@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -31,13 +33,13 @@ export async function GET(request: Request) {
     let messagesSent = 0;
     
     try {
-      const parents = await convexHttp.query(api.parents.getParents, { page: 1, limit: 1000 });
+      const parents = await convex.query(api.parents.getParents, { page: 1, limit: 1000 });
       totalParents = parents.parents?.length || 0;
       
-      const payments = await convexHttp.query(api.payments.getPaymentAnalytics, {});
+      const payments = await convex.query(api.payments.getPaymentAnalytics, {});
       totalRevenue = payments.totalRevenue || 0;
       
-      const messages = await convexHttp.query(api.messageLogs.getMessageLogs, { page: 1, limit: 1000 });
+      const messages = await convex.query(api.messageLogs.getMessageLogs, { page: 1, limit: 1000 });
       messagesSent = messages.messages?.length || 0;
     } catch (error) {
       console.error('Error fetching other stats:', error);

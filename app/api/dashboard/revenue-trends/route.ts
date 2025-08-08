@@ -4,8 +4,10 @@ export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +16,7 @@ export async function GET(request: Request) {
     console.log('🔄 Revenue trends API called - computing from PAYMENT PLANS (parent-created) ...')
 
     // Fetch all payment plans (do not filter by status)
-    const plans: any[] = await convexHttp.query(api.payments.getPaymentPlans as any, {});
+    const plans: any[] = await convex.query(api.payments.getPaymentPlans as any, {});
     console.log(`📄 Plans fetched for trends: ${Array.isArray(plans) ? plans.length : 0}`)
 
     // Bucket by year-month based on createdAt/startDate

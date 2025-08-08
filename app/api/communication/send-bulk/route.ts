@@ -3,10 +3,11 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { convexHttp } from '../../../../lib/db';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
 import { Resend } from 'resend';
 
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 // Safe default to allow builds when env var is not set
 const resend = new Resend(process.env.RESEND_API_KEY || 'dev_test_key');
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get parent information from Convex
-    const parentsResponse = await convexHttp.query(api.parents.getParents, {});
+    const parentsResponse = await convex.query(api.parents.getParents, {});
     const allParents = parentsResponse.parents;
     
     const parents = allParents.filter(parent => parentIds.includes(parent._id));
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
     let template = null;
     if (templateId) {
       try {
-        template = await convexHttp.query(api.templates.getTemplate, {
+        template = await convex.query(api.templates.getTemplate, {
           id: templateId as any
         });
       } catch (error) {
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Save message log to Convex database
-        const messageLogId = await convexHttp.mutation(api.messageLogs.createMessageLog, {
+        const messageLogId = await convex.mutation(api.messageLogs.createMessageLog, {
           parentId: parent._id,
           templateId: templateId || undefined,
           subject: personalizedSubject,
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
       try {
         const successfulCount = results.filter(r => r.success).length;
         for (let i = 0; i < successfulCount; i++) {
-          await convexHttp.mutation(api.templates.incrementTemplateUsage, {
+          await convex.mutation(api.templates.incrementTemplateUsage, {
             id: template._id
           });
         }

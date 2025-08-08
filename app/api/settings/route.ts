@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { getUserContext, requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -31,13 +33,13 @@ export async function GET(request: Request) {
     let settingsData;
     try {
       // Find user by email
-      const user = await convexHttp.query(api.users.getUserByEmail, { 
+      const user = await convex.query(api.users.getUserByEmail, { 
         email: 'dev@thebasketballfactoryinc.com' 
       });
 
       if (user) {
         // Get user session data which contains settings
-        const sessionData = await convexHttp.query(api.users.getUserSession, { 
+        const sessionData = await convex.query(api.users.getUserSession, { 
           userId: user._id 
         });
         
@@ -194,13 +196,13 @@ export async function POST(request: Request) {
       }
 
       // Find or create user and save settings
-      let user = await convexHttp.query(api.users.getUserByEmail, { 
+      let user = await convex.query(api.users.getUserByEmail, { 
         email: 'dev@thebasketballfactoryinc.com' 
       });
 
       if (!user) {
         // Create user if doesn't exist
-        user = await convexHttp.mutation(api.users.getOrCreateUser, {
+        user = await convex.mutation(api.users.getOrCreateUser, {
           email: 'dev@thebasketballfactoryinc.com',
           name: 'Development User'
         });
@@ -208,7 +210,7 @@ export async function POST(request: Request) {
 
       // Save settings using the working createUserSession approach
       if (user) {
-        await convexHttp.mutation(api.users.createUserSession, {
+        await convex.mutation(api.users.createUserSession, {
           userId: user._id,
           sessionData: {
             ...((user as any).sessionData || {}),

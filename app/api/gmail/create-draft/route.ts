@@ -4,8 +4,10 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 import { gmailService } from '../../../../lib/gmail'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
     // Update template usage count if template was used
     if (templateId) {
       try {
-        await convexHttp.mutation(api.templates.incrementTemplateUsage, {
+        await convex.mutation(api.templates.incrementTemplateUsage, {
           id: templateId as any
         });
       } catch (error) {

@@ -2,13 +2,15 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { 
   requireAuthWithApiKeyBypass, 
   createErrorResponse, 
   createSuccessResponse 
 } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +22,7 @@ export async function GET(request: Request) {
     let activeTemplates = 0;
     
     try {
-      const templates = await convexHttp.query(api.templates.getTemplates, {
+      const templates = await convex.query(api.templates.getTemplates, {
         page: 1,
         limit: 1000,
         isActive: true

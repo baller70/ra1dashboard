@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
     console.log('🧪 TEST: Creating new template to test Active Templates counter...')
     
     // Create a new test template
-    const newTemplate = await convexHttp.mutation(api.templates.createTemplate, {
+    const newTemplate = await convex.mutation(api.templates.createTemplate, {
       name: `Test Counter Template ${Date.now()}`,
       subject: "Test Subject",
       body: "Test body content",
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
     console.log('✅ Created test template:', newTemplate);
     
     // Check the new count
-    const templates = await convexHttp.query(api.templates.getTemplates, { 
+    const templates = await convex.query(api.templates.getTemplates, { 
       page: 1, 
       limit: 10000,
       isActive: true

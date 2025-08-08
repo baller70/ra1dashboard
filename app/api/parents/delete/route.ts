@@ -3,8 +3,10 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
     console.log('DELETE request for parent ID via POST:', parentId)
 
     // Delete parent using direct Convex client
-    await convexHttp.mutation(api.parents.deleteParent, {
+    await convex.mutation(api.parents.deleteParent, {
       id: parentId as any
     });
 
@@ -59,7 +61,7 @@ export async function DELETE(request: NextRequest) {
     console.log('DELETE request for parent ID via query param:', parentId)
 
     // Delete parent using direct Convex client
-    await convexHttp.mutation(api.parents.deleteParent, {
+    await convex.mutation(api.parents.deleteParent, {
       id: parentId as any
     });
 

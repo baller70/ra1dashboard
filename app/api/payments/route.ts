@@ -3,8 +3,10 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { convexHttp } from '../../../lib/db';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api';
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const createPaymentSchema = z.object({
   parentId: z.string(),
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
     const parentId = searchParams.get('parentId');
 
     // Get payments from Convex
-    const result = await convexHttp.query(api.payments.getPayments, {
+    const result = await convex.query(api.payments.getPayments, {
       page,
       limit,
       status: status || undefined,
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
     const validatedData = createPaymentSchema.parse(body);
 
     // Create payment in Convex
-    const payment = await convexHttp.mutation(api.payments.createPayment, {
+    const payment = await convex.mutation(api.payments.createPayment, {
       parentId: validatedData.parentId as any,
       paymentPlanId: validatedData.paymentPlanId as any,
       amount: validatedData.amount,

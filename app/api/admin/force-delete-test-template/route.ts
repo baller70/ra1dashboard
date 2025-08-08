@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +18,7 @@ export async function POST(request: Request) {
     
     // Try to delete the template
     try {
-      const result = await convexHttp.mutation(api.templates.deleteTemplate, {
+      const result = await convex.mutation(api.templates.deleteTemplate, {
         id: templateId as any
       });
       console.log('✅ Delete result:', result);
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
       // If delete fails, try to mark as inactive
       try {
         console.log('🔄 Trying to mark as inactive instead...');
-        const updateResult = await convexHttp.mutation(api.templates.updateTemplate, {
+        const updateResult = await convex.mutation(api.templates.updateTemplate, {
           id: templateId as any,
           isActive: false
         });
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
     }
     
     // Verify the result
-    const templates = await convexHttp.query(api.templates.getTemplates, {
+    const templates = await convex.query(api.templates.getTemplates, {
       page: 1,
       limit: 1000,
       isActive: true

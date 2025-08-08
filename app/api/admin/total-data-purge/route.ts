@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { 
   requireAuthWithApiKeyBypass, 
@@ -10,13 +10,15 @@ import {
   ApiErrors 
 } from '../../../../lib/api-utils'
 
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
 export async function POST(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
     console.log('🔥 TOTAL DATA PURGE - Permanently deleting ALL dashboard and analytics data...')
     
-    const result = await convexHttp.mutation(api.totalDataPurge.purgeAllDashboardAnalyticsData, {})
+    const result = await convex.mutation(api.totalDataPurge.purgeAllDashboardAnalyticsData, {})
     
     console.log('✅ Data purge completed:', result)
     
@@ -38,7 +40,7 @@ export async function GET(request: Request) {
 
     console.log('🔍 AUDITING remaining data after purge...')
     
-    const auditResult = await convexHttp.mutation(api.totalDataPurge.auditRemainingData, {})
+    const auditResult = await convex.mutation(api.totalDataPurge.auditRemainingData, {})
     
     console.log('📊 Audit completed:', auditResult)
     

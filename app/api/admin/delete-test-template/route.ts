@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -13,14 +15,14 @@ export async function POST(request: Request) {
     console.log('🗑️ DELETING: "Test Test Template" completely...')
     
     // Delete the specific template completely
-    const result = await convexHttp.mutation(api.templates.deleteTemplate, {
+    const result = await convex.mutation(api.templates.deleteTemplate, {
       id: "js7djhh2zer4g6jze84qfasxnx7n1ech" as any
     });
     
     console.log('✅ Template deleted:', result);
     
     // Verify the fix
-    const templates = await convexHttp.query(api.templates.getTemplates, {
+    const templates = await convex.query(api.templates.getTemplates, {
       page: 1,
       limit: 1000,
       isActive: true

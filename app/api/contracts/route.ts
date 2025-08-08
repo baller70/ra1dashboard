@@ -3,9 +3,11 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api'
 import { Id } from '../../../convex/_generated/dataModel'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
     const parentId = searchParams.get('parentId')
     const templateType = searchParams.get('templateType')
 
-    const result = await convexHttp.query(api.contracts.getContracts, {
+    const result = await convex.query(api.contracts.getContracts, {
       page,
       limit,
       status: status || undefined,
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
       expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
     })
 
-    const contractId = await convexHttp.mutation(api.contracts.createContract, {
+    const contractId = await convex.mutation(api.contracts.createContract, {
       parentId: parentId as Id<"parents">,
       fileName,
       originalName: originalName || fileName,

@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(
   request: Request,
@@ -14,7 +16,7 @@ export async function GET(
     await requireAuth()
     
     // Get template from Convex
-    const template = await convexHttp.query(api.templates.getTemplate, {
+    const template = await convex.query(api.templates.getTemplate, {
       id: params.id as any
     });
 
@@ -60,7 +62,7 @@ export async function PUT(
     } = body
 
     // Update template in Convex
-    await convexHttp.mutation(api.templates.updateTemplate, {
+    await convex.mutation(api.templates.updateTemplate, {
       id: params.id as any,
       name,
       subject,
@@ -72,7 +74,7 @@ export async function PUT(
     });
 
     // Get updated template
-    const updatedTemplate = await convexHttp.query(api.templates.getTemplate, {
+    const updatedTemplate = await convex.query(api.templates.getTemplate, {
       id: params.id as any
     });
 
@@ -96,7 +98,7 @@ export async function DELETE(
     console.log('DELETE request for template ID:', params.id)
     
     // Hard delete using the deleteTemplate mutation
-    const result = await convexHttp.mutation(api.templates.deleteTemplate, {
+    const result = await convex.mutation(api.templates.deleteTemplate, {
       id: params.id as any
     });
 

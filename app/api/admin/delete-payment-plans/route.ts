@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import {
   requireAuthWithApiKeyBypass,
@@ -10,6 +10,8 @@ import {
   createSuccessResponse,
   ApiErrors
 } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
     // DELETE TEST PAYMENT PLANS using direct Convex mutation
     for (const plan of testPaymentPlans) {
       try {
-        await convexHttp.mutation(api.payments.deletePaymentPlan, {
+        await convex.mutation(api.payments.deletePaymentPlan, {
           id: plan._id
         })
         deletedCount++

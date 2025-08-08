@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
     console.log('🧪 TEST: Creating new message log to test Messages Sent counter...')
     
     // Create a new test message log
-    const newMessage = await convexHttp.mutation(api.messageLogs.create, {
+    const newMessage = await convex.mutation(api.messageLogs.create, {
       parentId: "test-parent-id",
       parentName: "Test Parent",
       parentEmail: "test@example.com",
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
     console.log('✅ Created test message:', newMessage);
     
     // Check the new count
-    const messages = await convexHttp.query(api.messageLogs.getMessageLogs, { 
+    const messages = await convex.query(api.messageLogs.getMessageLogs, { 
       page: 1, 
       limit: 10000
     });

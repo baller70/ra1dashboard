@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import {
   requireAuthWithApiKeyBypass,
@@ -11,6 +11,8 @@ import {
   ApiErrors
 } from '../../../../lib/api-utils'
 
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
 export async function POST(request: NextRequest) {
   try {
     await requireAuthWithApiKeyBypass(request)
@@ -18,14 +20,14 @@ export async function POST(request: NextRequest) {
     console.log('🧹 STARTING TEST DATA CLEANUP...')
 
     // Get all parents to identify test data
-    const parentsResponse = await convexHttp.query(api.parents.getParents, { 
+    const parentsResponse = await convex.query(api.parents.getParents, { 
       page: 1, 
       limit: 1000 
     })
     const allParents = parentsResponse.parents || []
 
     // Get all payments to identify test data
-    const paymentsResponse = await convexHttp.query(api.payments.getPayments, { 
+    const paymentsResponse = await convex.query(api.payments.getPayments, { 
       page: 1, 
       limit: 1000 
     })
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
     console.log('🗑️ Deleting test payments...')
     for (const payment of testPayments) {
       try {
-        await convexHttp.mutation(api.payments.deletePayment, {
+        await convex.mutation(api.payments.deletePayment, {
           id: payment._id
         })
         deletedCount.payments++
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
     console.log('🗑️ Deleting test parents...')
     for (const parent of testParents) {
       try {
-        await convexHttp.mutation(api.parents.deleteParent, {
+        await convex.mutation(api.parents.deleteParent, {
           id: parent._id
         })
         deletedCount.parents++
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     // DELETE TEST PAYMENT PLANS (CRITICAL - this is where the wrong calculations come from!)
     try {
-      const paymentPlansResponse = await convexHttp.query(api.paymentPlans.getPaymentPlans, { 
+      const paymentPlansResponse = await convex.query(api.paymentPlans.getPaymentPlans, { 
         page: 1, 
         limit: 1000 
       })
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
       console.log(`🗑️ Deleting ${testPaymentPlans.length} test payment plans...`)
       for (const plan of testPaymentPlans) {
         try {
-          await convexHttp.mutation(api.paymentPlans.deletePaymentPlan, {
+          await convex.mutation(api.paymentPlans.deletePaymentPlan, {
             id: plan._id
           })
           deletedCount.paymentPlans++
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     // DELETE TEST TEMPLATES (optional - only if they exist)
     try {
-      const templatesResponse = await convexHttp.query(api.templates.getTemplates, { 
+      const templatesResponse = await convex.query(api.templates.getTemplates, { 
         page: 1, 
         limit: 1000 
       })
@@ -182,7 +184,7 @@ export async function POST(request: NextRequest) {
       console.log(`🗑️ Deleting ${testTemplates.length} test templates...`)
       for (const template of testTemplates) {
         try {
-          await convexHttp.mutation(api.templates.deleteTemplate, {
+          await convex.mutation(api.templates.deleteTemplate, {
             id: template._id
           })
           deletedCount.templates++
@@ -196,11 +198,11 @@ export async function POST(request: NextRequest) {
     }
 
     // FINAL VERIFICATION
-    const finalParentsResponse = await convexHttp.query(api.parents.getParents, { 
+    const finalParentsResponse = await convex.query(api.parents.getParents, { 
       page: 1, 
       limit: 1000 
     })
-    const finalPaymentsResponse = await convexHttp.query(api.payments.getPayments, { 
+    const finalPaymentsResponse = await convex.query(api.payments.getPayments, { 
       page: 1, 
       limit: 1000 
     })

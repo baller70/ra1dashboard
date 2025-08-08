@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET() {
   try {
@@ -12,7 +14,7 @@ export async function GET() {
     // await requireAuth()
     
     // Get overdue payments from Convex
-    const overduePayments = await convexHttp.query(api.payments.getOverduePayments, {});
+    const overduePayments = await convex.query(api.payments.getOverduePayments, {});
 
     // Format response to match expected structure
     const overdueList = overduePayments.map(payment => ({
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
       case 'markPaid':
         // Mark payments as paid
         for (const paymentId of paymentIds) {
-          await convexHttp.mutation(api.payments.updatePayment, {
+          await convex.mutation(api.payments.updatePayment, {
             id: paymentId as any,
             status: 'paid',
             paidAt: Date.now()

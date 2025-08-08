@@ -2,8 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { convexHttp } from '../../../lib/db';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api';
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Team name is required'),
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
     const includeParents = searchParams.get('includeParents') === 'true';
 
     // Get teams from Convex
-    const teams = await convexHttp.query(api.teams.getTeams, {
+    const teams = await convex.query(api.teams.getTeams, {
       includeParents,
       limit: 100
     });
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { name, description, color } = createTeamSchema.parse(body);
 
     // Check if team name already exists by getting all teams
-    const existingTeams = await convexHttp.query(api.teams.getTeams, {});
+    const existingTeams = await convex.query(api.teams.getTeams, {});
     const existingTeam = existingTeams.find(team => team.name === name);
 
     if (existingTeam) {
@@ -59,14 +61,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create team in Convex
-    const teamId = await convexHttp.mutation(api.teams.createTeam, {
+    const teamId = await convex.mutation(api.teams.createTeam, {
       name,
       description,
       color
     });
 
     // Get the created team
-    const teams = await convexHttp.query(api.teams.getTeams, {});
+    const teams = await convex.query(api.teams.getTeams, {});
     const createdTeam = teams.find(team => team._id === teamId);
 
     return NextResponse.json(createdTeam, { status: 201 });
@@ -103,7 +105,7 @@ export async function PUT(request: NextRequest) {
 
     // If updating name, check for uniqueness
     if (validatedData.name) {
-      const existingTeams = await convexHttp.query(api.teams.getTeams, {});
+      const existingTeams = await convex.query(api.teams.getTeams, {});
       const existingTeam = existingTeams.find(team => team.name === validatedData.name && team._id !== id);
 
       if (existingTeam) {
@@ -115,7 +117,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update team in Convex
-    await convexHttp.mutation(api.teams.updateTeam, {
+    await convex.mutation(api.teams.updateTeam, {
       teamId: id as any,
       name: validatedData.name,
       description: validatedData.description,
@@ -123,7 +125,7 @@ export async function PUT(request: NextRequest) {
     });
 
     // Get updated team
-    const teams = await convexHttp.query(api.teams.getTeams, {});
+    const teams = await convex.query(api.teams.getTeams, {});
     const updatedTeam = teams.find(team => team._id === id);
 
     return NextResponse.json(updatedTeam);
@@ -157,7 +159,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get team with parents to check if it can be deleted
-    const teams = await convexHttp.query(api.teams.getTeams, { includeParents: true });
+    const teams = await convex.query(api.teams.getTeams, { includeParents: true });
     const team = teams.find(t => t._id === id);
 
     if (!team) {
@@ -175,7 +177,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete team in Convex
-    await convexHttp.mutation(api.teams.deleteTeam, {
+    await convex.mutation(api.teams.deleteTeam, {
       teamId: id as any
     });
 
@@ -187,4 +189,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

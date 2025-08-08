@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
-import { api } from '../../../../convex/_generated/api'
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../../../../convex/_generated/api';
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function GET(request: Request) {
     console.log('🔄 Payment analytics API called - fetching LIVE data from Convex...')
     
     // FETCH LIVE PAYMENT DATA FROM CONVEX
-    let paymentAnalytics = await convexHttp.query(api.payments.getPaymentAnalytics, {});
+    let paymentAnalytics = await convex.query(api.payments.getPaymentAnalytics, {});
 
     // Post-process using authoritative plans list (never infer from parents)
     try {
@@ -64,20 +66,20 @@ export async function GET(request: Request) {
     try {
       console.log('⚠️ Falling back to derived analytics...')
       // Parents count → potential revenue
-      const parentsRes: any = await convexHttp.query(api.parents.getParents as any, { page: 1, limit: 1 })
+      const parentsRes: any = await convex.query(api.parents.getParents as any, { page: 1, limit: 1 })
       const parentsTotal = parentsRes?.pagination?.total || 0
 
       // Pending and paid payments sums
-      const pendingRes: any = await convexHttp.query(api.payments.getPayments as any, { status: 'pending', page: 1, limit: 1000 })
-      const paidRes: any = await convexHttp.query(api.payments.getPayments as any, { status: 'paid', page: 1, limit: 1000 })
+      const pendingRes: any = await convex.query(api.payments.getPayments as any, { status: 'pending', page: 1, limit: 1000 })
+      const paidRes: any = await convex.query(api.payments.getPayments as any, { status: 'paid', page: 1, limit: 1000 })
       const pendingPayments = Array.isArray(pendingRes?.payments) ? pendingRes.payments.reduce((s: number, p: any) => s + (p.amount || 0), 0) : 0
       const collectedPayments = Array.isArray(paidRes?.payments) ? paidRes.payments.reduce((s: number, p: any) => s + (p.amount || 0), 0) : 0
 
       // Overdue count
-      const overdueCount: number = await convexHttp.query(api.payments.getOverduePaymentsCount as any, {})
+      const overdueCount: number = await convex.query(api.payments.getOverduePaymentsCount as any, {})
 
       // Active plans (count unique parents)
-      const activePlansArr: any[] = await convexHttp.query(api.payments.getPaymentPlans as any, { status: 'active' })
+      const activePlansArr: any[] = await convex.query(api.payments.getPaymentPlans as any, { status: 'active' })
       const activePlans = new Set((activePlansArr || []).map((p: any) => p.parentId)).size
 
       const fallback = {

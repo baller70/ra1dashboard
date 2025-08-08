@@ -4,10 +4,12 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import { BulkUploadParent, ValidationError, BulkUploadValidation } from '../../../../lib/types'
 import * as XLSX from 'xlsx'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest) {
     const errors: ValidationError[] = []
     
     // Get existing emails from Convex for duplicate checking
-    const existingParentsResponse = await convexHttp.query(api.parents.getParents, { limit: 1000 });
+    const existingParentsResponse = await convex.query(api.parents.getParents, { limit: 1000 });
     const existingEmails = new Set(existingParentsResponse.parents.map((p: any) => p.email.toLowerCase()));
 
     // Track email duplicates within the file

@@ -2,8 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { convexHttp } from '../../../../lib/db';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const assignParentsSchema = z.object({
   teamId: z.string().nullable().optional(),
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { teamId, parentIds } = assignParentsSchema.parse(body);
 
     // Use the Convex assignParentsToTeam mutation
-    const result = await convexHttp.mutation(api.teams.assignParentsToTeam, {
+    const result = await convex.mutation(api.teams.assignParentsToTeam, {
       teamId: teamId as any,
       parentIds: parentIds as any[]
     });
@@ -69,7 +71,7 @@ export async function PUT(request: NextRequest) {
     const results = [];
     for (const assignment of assignments) {
       try {
-        const result = await convexHttp.mutation(api.teams.assignParentsToTeam, {
+        const result = await convex.mutation(api.teams.assignParentsToTeam, {
           teamId: assignment.teamId as any,
           parentIds: [assignment.parentId] as any[]
         });
@@ -104,4 +106,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

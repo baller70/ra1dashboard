@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api'
 import { 
   requireAuth, 
@@ -17,6 +17,8 @@ import {
   sanitizeParentData 
 } from '../../../lib/validation'
 
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
 export async function GET(request: Request) {
   try {
     // Temporarily disabled for testing: await requireAuth()
@@ -28,7 +30,7 @@ export async function GET(request: Request) {
     const page = Math.floor(parseInt(searchParams.get('offset') || '0') / limit) + 1
 
     // Get parents from Convex
-    const result = await convexHttp.query(api.parents.getParents, {
+    const result = await convex.query(api.parents.getParents, {
       page,
       limit,
       search: search || undefined,
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
     const sanitizedData = sanitizeParentData(validatedData)
 
     // Check if email already exists - get all parents and check
-    const existingParents = await convexHttp.query(api.parents.getParents, {
+    const existingParents = await convex.query(api.parents.getParents, {
       page: 1,
       limit: 1000, // Get all to check for duplicates
     });
@@ -125,12 +127,12 @@ export async function POST(request: Request) {
       notes: sanitizedData.notes || undefined,
     };
     
-    const parentId = await convexHttp.mutation(api.parents.createParent, createData);
+    const parentId = await convex.mutation(api.parents.createParent, createData);
 
     // Fetch full created parent for UI/state consistency
     let createdParent: any = null
     try {
-      createdParent = await convexHttp.query(api.parents.getParent, { id: parentId as any })
+      createdParent = await convex.query(api.parents.getParent, { id: parentId as any })
     } catch {}
 
     return createSuccessResponse(createdParent || { _id: parentId, name: sanitizedData.name, email: sanitizedData.email });

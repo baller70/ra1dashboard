@@ -3,11 +3,12 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api'
 import { Id } from '../../../convex/_generated/dataModel'
 import { Resend } from 'resend'
 
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const resend = new Resend(process.env.RESEND_API_KEY || 'dev_test_key')
 
 export async function GET(request: Request) {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
 
-    const result = await convexHttp.query(api.messageLogs.getMessageLogs, {
+    const result = await convex.query(api.messageLogs.getMessageLogs, {
       page,
       limit,
       parentId: parentId ?? undefined,
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     // Get parent information for sending
-    const parent = await convexHttp.query(api.parents.getParent, { id: parentId as Id<"parents"> })
+    const parent = await convex.query(api.parents.getParent, { id: parentId as Id<"parents"> })
     if (!parent) {
       return NextResponse.json(
         { error: 'Parent not found' },
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
     }
 
     // Create message log entry
-    const messageId = await convexHttp.mutation(api.messageLogs.createMessageLog, {
+    const messageId = await convex.mutation(api.messageLogs.createMessageLog, {
       parentId,
       templateId,
       subject: finalSubject,
@@ -127,14 +128,14 @@ export async function POST(request: Request) {
         })
 
         // Update message status to sent
-        await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+        await convex.mutation(api.messageLogs.updateMessageStatus, {
           id: messageId,
           status: 'sent',
           deliveredAt: Date.now(),
         })
 
         // Create analytics entry
-        await convexHttp.mutation(api.messageLogs.createMessageAnalytics, {
+        await convex.mutation(api.messageLogs.createMessageAnalytics, {
           messageLogId: messageId,
           parentId: parentId as Id<"parents">,
           channel: finalChannel,
@@ -149,7 +150,7 @@ export async function POST(request: Request) {
         })
         
         // Update message status
-        await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+        await convex.mutation(api.messageLogs.updateMessageStatus, {
           id: messageId,
           status: 'sent',
           deliveredAt: Date.now(),
@@ -164,7 +165,7 @@ export async function POST(request: Request) {
       console.error('Message sending error:', sendError)
       
       // Update message status to failed
-      await convexHttp.mutation(api.messageLogs.updateMessageStatus, {
+      await convex.mutation(api.messageLogs.updateMessageStatus, {
         id: messageId,
         status: 'failed',
         failureReason: sendError instanceof Error ? sendError.message : 'Unknown error',

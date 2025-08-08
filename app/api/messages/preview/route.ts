@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: Request) {
   try {
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
     let parent = null;
     if (recipients && recipients.length > 0) {
       try {
-        parent = await convexHttp.query(api.parents.getParent, {
+        parent = await convex.query(api.parents.getParent, {
           id: recipients[0] as any
         });
       } catch (error) {

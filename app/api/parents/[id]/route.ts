@@ -5,8 +5,10 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
 import { cachedConvex, batchQueries } from '../../../../lib/db-cache'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -111,7 +113,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     console.log('DELETE request for parent ID:', parentId)
 
     // Delete parent using direct Convex client to avoid cache issues
-    await convexHttp.mutation(api.parents.deleteParent, {
+    await convex.mutation(api.parents.deleteParent, {
       id: parentId as any
     });
 

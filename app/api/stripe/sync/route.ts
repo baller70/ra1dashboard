@@ -3,9 +3,11 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import Stripe from 'stripe'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
     // Basic validation - check if parent exists if parentId provided
     if (parentId) {
       try {
-        const parent = await convexHttp.query(api.parents.getParent, {
+        const parent = await convex.query(api.parents.getParent, {
           id: parentId as any
         });
         
@@ -87,7 +89,7 @@ export async function GET(request: Request) {
     console.log('Stripe sync requested for parent:', parentId);
 
     try {
-      const parent = await convexHttp.query(api.parents.getParent, {
+      const parent = await convex.query(api.parents.getParent, {
         id: parentId as any
       });
       

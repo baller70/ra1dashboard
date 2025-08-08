@@ -3,15 +3,17 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
-import { convexHttp } from '../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
 
     // Get templates from Convex
-    const result = await convexHttp.query(api.templates.getTemplates, {
+    const result = await convex.query(api.templates.getTemplates, {
       page: 1,
       limit: 100,
       isActive: true
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
     } = body
 
     // Create template in Convex
-    const templateId = await convexHttp.mutation(api.templates.createTemplate, {
+    const templateId = await convex.mutation(api.templates.createTemplate, {
       name,
       subject,
       body: templateBody,
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     });
 
     // Get the created template
-    const template = await convexHttp.query(api.templates.getTemplate, {
+    const template = await convex.query(api.templates.getTemplate, {
       id: templateId as any
     });
 

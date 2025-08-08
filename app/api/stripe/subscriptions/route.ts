@@ -1,9 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
-import { convexHttp } from '../../../../lib/db';
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
 import Stripe from 'stripe';
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get parent from Convex
-    const parent = await convexHttp.query(api.parents.getParent, {
+    const parent = await convex.query(api.parents.getParent, {
       id: parentId as any
     });
 
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update parent with Stripe customer ID in Convex
-        await convexHttp.mutation(api.parents.updateParent, {
+        await convex.mutation(api.parents.updateParent, {
           id: parent._id,
           stripeCustomerId: stripeCustomer.id
         });
@@ -150,4 +152,4 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

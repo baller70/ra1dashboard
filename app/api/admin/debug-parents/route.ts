@@ -2,12 +2,14 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
 import {
   requireAuthWithApiKeyBypass,
   createSuccessResponse
 } from '../../../../lib/api-utils'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
     console.log('🔍 DEBUG: Getting ALL parents directly from Convex...')
     
     // Get parents using the SAME query the dashboard uses
-    const parentsResponse = await convexHttp.query(api.parents.getParents, { 
+    const parentsResponse = await convex.query(api.parents.getParents, { 
       page: 1, 
       limit: 1000 
     })

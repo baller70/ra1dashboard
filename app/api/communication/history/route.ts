@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
-import { convexHttp } from '../../../../lib/db'
+import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +21,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1')
 
     // Fetch message logs from Convex
-    const messageLogsResponse = await convexHttp.query(api.messageLogs.getMessageLogs, {
+    const messageLogsResponse = await convex.query(api.messageLogs.getMessageLogs, {
       parentId: parentId || undefined,
       channel: channel || undefined,
       status: status || undefined,
