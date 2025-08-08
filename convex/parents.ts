@@ -84,7 +84,40 @@ export const deleteParent = mutation({
       throw new Error("Parent not found");
     }
     
-    // Delete the parent
+    // Cascade delete related data:
+    // 1) Delete payment plans and their non-paid payments
+    const plans = await ctx.db.query("paymentPlans").filter(q => q.eq(q.field("parentId"), args.id)).collect();
+    for (const plan of plans) {
+      // Delete payments under this plan
+      const payments = await ctx.db.query("payments").filter(q => q.eq(q.field("paymentPlanId"), plan._id)).collect();
+      for (const payment of payments) {
+        // Allow deleting all payments for this parent when cascading
+        await ctx.db.delete(payment._id);
+      }
+      // Delete installments under this plan
+      const installments = await ctx.db.query("paymentInstallments").withIndex("by_parent", q => q.eq("parentId", args.id)).collect();
+      for (const inst of installments) {
+        await ctx.db.delete(inst._id);
+      }
+      // Finally delete the plan
+      await ctx.db.delete(plan._id);
+    }
+
+    // 2) Delete any remaining payments directly tied to the parent (without a plan)
+    const directPayments = await ctx.db.query("payments").filter(q => q.eq(q.field("parentId"), args.id)).collect();
+    for (const dp of directPayments) {
+      await ctx.db.delete(dp._id);
+    }
+
+    // 3) Delete message logs for this parent
+    const messages = await ctx.db.query("messageLogs").collect();
+    for (const m of messages) {
+      if ((m as any).parentId === args.id) {
+        await ctx.db.delete(m._id);
+      }
+    }
+
+    // Finally delete the parent
     await ctx.db.delete(args.id);
     
     return { success: true, deletedId: args.id };
