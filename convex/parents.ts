@@ -175,6 +175,7 @@ export const updateParent = mutation({
     contractStatus: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
+    stripePaymentMethodId: v.optional(v.string()),
     teamId: v.optional(v.string()),
     notes: v.optional(v.string()),
   },

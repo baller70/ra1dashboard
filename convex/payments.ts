@@ -893,7 +893,28 @@ export const cleanupTestPaymentPlans = mutation({
             for (const payment of duePayments) {
                 const parent = await ctx.db.get(payment.parentId as Id<"parents">);
                 if (parent && parent.stripeCustomerId) {
-                    // TODO: Implement Stripe payment processing
+                    try {
+                        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+                        const paymentIntents = await stripe.paymentIntents.create({
+                            amount: payment.amount * 100,
+                            currency: "usd",
+                            customer: parent.stripeCustomerId,
+                            payment_method: parent.stripePaymentMethodId,
+                            off_session: true,
+                            confirm: true,
+                        });
+                        await ctx.db.patch(payment._id, {
+                            status: "paid",
+                            paidAt: Date.now(),
+                            stripePaymentId: paymentIntents.id,
+                        });
+                    } catch (error) {
+                        console.error("Stripe payment processing error:", error);
+                        await ctx.db.patch(payment._id, {
+                            status: "failed",
+                            failureReason: (error as Error).message,
+                        });
+                    }
                 }
             }
         },
