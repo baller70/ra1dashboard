@@ -52,49 +52,68 @@ export async function POST(request: Request) {
       }
     ]
 
-    // Call the LLM API without streaming
-    const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: messages,
-        stream: false, // Changed to false
-        max_tokens: 1000,
-        response_format: { type: "json_object" }
-      }),
-    })
+    console.log("Attempting to generate AI template with prompt:", prompt);
+    try {
+      // Call the LLM API without streaming
+      const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-mini',
+          messages: messages,
+          stream: false,
+          max_tokens: 1000,
+          response_format: { type: "json_object" }
+        }),
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('LLM API error:', response.status, errorBody);
-      throw new Error('Failed to generate template from LLM API')
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('LLM API error:', response.status, errorBody);
+        throw new Error(`LLM API failed with status ${response.status}: ${errorBody}`);
+      }
+
+      const result = await response.json();
+      const templateContentString = result.choices[0].message.content;
+      
+      let templateContent;
+      try {
+        templateContent = JSON.parse(templateContentString);
+      } catch (e) {
+        console.error('Failed to parse LLM response JSON:', templateContentString);
+        throw new Error('Failed to parse JSON from LLM response.');
+      }
+
+      // Create the template in Convex
+      const templateId = await convex.mutation(api.templates.createTemplate, {
+        name: templateContent.name,
+        subject: templateContent.subject || '',
+        body: templateContent.body,
+        category: templateContent.category || category,
+        channel: templateContent.channel || channel,
+        variables: templateContent.variables || [],
+        isAiGenerated: true,
+        isActive: true
+      });
+
+      // Fetch the created template
+      const newTemplate = await convex.query(api.templates.getTemplate, {
+        id: templateId
+      });
+
+      console.log("Successfully created AI template:", newTemplate._id);
+      return NextResponse.json(newTemplate);
+
+    } catch (error: any) {
+      console.error('Detailed error in AI template generation:', error.message);
+      return NextResponse.json(
+        { error: `Failed to generate template: ${error.message}` },
+        { status: 500 }
+      );
     }
-
-    const result = await response.json();
-    const templateContent = JSON.parse(result.choices[0].message.content);
-
-    // Create the template in Convex
-    const templateId = await convex.mutation(api.templates.createTemplate, {
-      name: templateContent.name,
-      subject: templateContent.subject || '',
-      body: templateContent.body,
-      category: templateContent.category || category,
-      channel: templateContent.channel || channel,
-      variables: templateContent.variables || [],
-      isAiGenerated: true,
-      isActive: true
-    });
-
-    // Fetch the created template
-    const newTemplate = await convex.query(api.templates.getTemplate, {
-      id: templateId
-    });
-
-    return NextResponse.json(newTemplate);
 
   } catch (error) {
     console.error('Template generation error:', error)
