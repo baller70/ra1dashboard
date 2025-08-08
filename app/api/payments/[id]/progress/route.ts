@@ -33,6 +33,7 @@ export async function GET(
 
     // If this payment has a payment plan, get installments from the installments table
     let installments: any[] = []
+    console.log(`[Progress API] Payment Method: ${payment.paymentMethod}`);
     
     if (payment.paymentPlanId || payment.paymentMethod === 'check') {
       try {
@@ -43,6 +44,7 @@ export async function GET(
           parentPaymentId: params.id as any
         });
         
+        console.log(`[Progress API] paymentInstallments query result:`, paymentInstallments);
         console.log(`📊 Found ${paymentInstallments?.length || 0} installments for payment ${params.id}`)
         
         if (paymentInstallments && paymentInstallments.length > 0) {

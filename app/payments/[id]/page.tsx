@@ -473,6 +473,7 @@ export default function PaymentDetailPage() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('[Payment Page] Progress API response:', data);
         setPaymentProgress(data)
       }
     } catch (error) {
