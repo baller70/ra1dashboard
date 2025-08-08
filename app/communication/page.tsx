@@ -65,9 +65,9 @@ export default function CommunicationPage() {
   }
 
   const handleGenerateTemplate = async () => {
-    if (!aiPrompt.trim()) return
+    if (!aiPrompt.trim()) return;
 
-    setGenerating(true)
+    setGenerating(true);
     try {
       const response = await fetch('/api/templates/generate', {
         method: 'POST',
@@ -80,23 +80,31 @@ export default function CommunicationPage() {
           category: 'general',
           channel: 'email'
         }),
-      })
+      });
 
       if (response.ok) {
         const newTemplate = await response.json();
-        setTemplates(prev => [newTemplate, ...prev]);
-        toast.success('AI template generated successfully!');
-        setAiPrompt('');
-        setShowAIGenerator(false);
+        if (newTemplate && newTemplate._id) {
+          setTemplates(prev => [newTemplate, ...prev]);
+          toast.success('AI template generated successfully!');
+          setAiPrompt('');
+          setShowAIGenerator(false);
+        } else {
+          console.error("Received unexpected response:", newTemplate);
+          toast.error('Received an invalid response from the server.');
+        }
       } else {
-        toast.error('Failed to generate AI template.');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
+        console.error('API Error:', errorData);
+        toast.error(`Failed to generate AI template: ${errorData.error || response.statusText}`);
       }
     } catch (error) {
-      console.error('Failed to generate template:', error)
+      console.error('Fetch Error:', error);
+      toast.error('A network error occurred. Please try again.');
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }
+  };
 
   const handleQuickDraft = async (template: any) => {
     try {
