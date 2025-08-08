@@ -7,7 +7,8 @@ import { convexHttp } from '../../../../lib/db';
 import { api } from '../../../../convex/_generated/api';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Safe default to allow builds when env var is not set
+const resend = new Resend(process.env.RESEND_API_KEY || 'dev_test_key');
 
 const bulkSendSchema = z.object({
   parentIds: z.array(z.string()),

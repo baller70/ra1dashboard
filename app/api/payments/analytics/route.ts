@@ -24,9 +24,22 @@ export async function GET(request: Request) {
         cache: 'no-store'
       })
       const plansArr: any[] = plansRes.ok ? await plansRes.json() : []
-      const countablePlans = (plansArr || []).filter((p: any) => ['active', 'pending'].includes(p.status))
-      const plansTotal = countablePlans.reduce((s: number, p: any) => s + (p.totalAmount || 0), 0)
-      const activePlans = new Set(countablePlans.map((p: any) => p.parentId)).size
+      const countablePlans = (plansArr || []).filter((p: any) => {
+        const status = String(p.status || '').toLowerCase()
+        return status === 'active' || status === 'pending'
+      })
+      // Deduplicate multiple plans per parent using the largest totalAmount
+      const planByParent: Record<string, any> = {}
+      for (const plan of countablePlans) {
+        const parentKey = String(plan.parentId || '')
+        const current = planByParent[parentKey]
+        if (!current || Number(plan.totalAmount || 0) > Number(current.totalAmount || 0)) {
+          planByParent[parentKey] = plan
+        }
+      }
+      const uniquePlans = Object.values(planByParent) as any[]
+      const plansTotal = uniquePlans.reduce((s: number, p: any) => s + Number(p.totalAmount || 0), 0)
+      const activePlans = new Set(uniquePlans.map((p: any) => p.parentId)).size
 
       // Keep collected from backend (paid + first installments), recompute pending from authoritative totals
       const collected = Number(paymentAnalytics?.collectedPayments || 0)

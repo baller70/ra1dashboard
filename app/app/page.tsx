@@ -41,6 +41,10 @@ export default function DashboardPage() {
   const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false)
   const [allActivities, setAllActivities] = useState<any[]>([])
 
+  // Recharts (client-side) for the visible /app route
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } = require('recharts')
+
   const fetchAllActivities = async () => {
     try {
       const response = await fetch('/api/notifications', {
@@ -240,27 +244,31 @@ export default function DashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {revenueData.slice(-6).map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.month}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          ${item.revenue.toLocaleString()}
-                        </span>
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{width: `${Math.min((item.revenue / Math.max(...revenueData.map(d => d.revenue))) * 100, 100)}%`}}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {item.payments} payments
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="h-[220px]">
+                  {/* @ts-ignore */}
+                  <ResponsiveContainer width="100%" height="100%">
+                    {/* @ts-ignore */}
+                    <ComposedChart data={revenueData.slice(-6)} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      {/* @ts-ignore */}
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      {/* @ts-ignore */}
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
+                      {/* @ts-ignore */}
+                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} tickFormatter={(v: any) => `$${Number(v).toLocaleString()}`} />
+                      {/* @ts-ignore */}
+                      <Tooltip formatter={(v: any, k: any) => {
+                        if (k === 'revenue') return [`$${Number(v).toLocaleString()}`, 'Revenue']
+                        if (k === 'payments') return [Number(v).toLocaleString(), 'Payments']
+                        return [v, k]
+                      }} labelFormatter={(l: any) => `Month: ${l}`} />
+                      {/* @ts-ignore */}
+                      <Bar dataKey="revenue" fill="#3B82F6" radius={[3,3,0,0]} />
+                      {/* @ts-ignore */}
+                      <Line type="monotone" dataKey="payments" stroke="#10B981" strokeWidth={2} dot={{ r: 2 }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
+                <div className="mt-3 text-xs text-muted-foreground">Showing last {Math.min(6, revenueData.length)} months</div>
               </CardContent>
             </Card>
           </div>

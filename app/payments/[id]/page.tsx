@@ -300,7 +300,14 @@ export default function PaymentDetailPage() {
   const [customAmount, setCustomAmount] = useState<string>("")
   const [customInstallmentCount, setCustomInstallmentCount] = useState<number>(1)
   const [customPaymentFrequency, setCustomPaymentFrequency] = useState<number>(1)
-  const [checkDetails, setCheckDetails] = useState({ checkNumbers: "", startDate: "" })
+  const [checkDetails, setCheckDetails] = useState({ 
+    checkNumbers: [], 
+    startDate: "",
+    customAmount: ""
+  })
+  const [checkInstallments, setCheckInstallments] = useState<number>(1)
+  const [checkFrequencyMonths, setCheckFrequencyMonths] = useState<number>(1)
+  const [individualCheckNumbers, setIndividualCheckNumbers] = useState<string[]>([''])
   const [cashDetails, setCashDetails] = useState({ receiptNumber: "", paidDate: "" })
 
   // Collapsible state
@@ -316,6 +323,14 @@ export default function PaymentDetailPage() {
     fetchPaymentHistory()
     fetchPaymentProgress()
   }, [params.id])
+
+  // Update individual check numbers array when installments change
+  useEffect(() => {
+    const newCheckNumbers = Array(checkInstallments).fill('').map((_, index) => 
+      individualCheckNumbers[index] || ''
+    )
+    setIndividualCheckNumbers(newCheckNumbers)
+  }, [checkInstallments])
 
   // Auto-refresh data every 30 seconds if there are pending payments
   useEffect(() => {
@@ -747,30 +762,47 @@ The Basketball Factory Inc.`
         
       } else {
         // Handle check and cash payments
-        const response = await fetch(`/api/payments/${payment.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            paymentMethod: selectedPaymentOption,
-            paymentReference: paymentReference,
-            amount: paymentAmount,
-            schedule: selectedPaymentSchedule,
-            installments: installmentCount,
-            status: 'pending'
+        if (selectedPaymentOption === 'check' && selectedPaymentSchedule === 'custom') {
+          // Build check numbers array (comma or newline separated)
+          const numbers = checkDetails.checkNumbers
+            .split(/\n|,/) 
+            .map(s => s.trim())
+            .filter(Boolean)
+
+          // Use customAmount if provided; otherwise fallback to per-installment amount
+          const perInstallment = customAmount ? Number(customAmount) : paymentAmount
+
+          const resp = await fetch(`/api/payments/${payment.id}/check-schedule`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              installments: checkInstallments || customInstallments || installmentCount,
+              frequency: checkFrequencyMonths || customPaymentFrequency || 1,
+              installmentAmount: perInstallment,
+              startDate: checkDetails.startDate || new Date().toISOString().slice(0,10),
+              checkNumbers: numbers,
+            })
           })
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to process payment')
+          if (!resp.ok) throw new Error('Failed to create check schedule')
+          toast({ title: '✅ Check Schedule Saved', description: `Created ${checkInstallments || customInstallments} installments.` })
+          await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
+        } else {
+          const response = await fetch(`/api/payments/${payment.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              paymentMethod: selectedPaymentOption,
+              paymentReference: paymentReference,
+              amount: paymentAmount,
+              schedule: selectedPaymentSchedule,
+              installments: installmentCount,
+              status: 'pending'
+            })
+          })
+          if (!response.ok) throw new Error('Failed to process payment')
+          toast({ title: '✅ Payment Processed', description: `${selectedPaymentOption === 'check' ? 'Check' : 'Cash'} payment of $${paymentAmount.toFixed(2)} has been recorded.` })
+          await Promise.all([fetchPaymentDetails(), fetchPaymentHistory()])
         }
-
-        toast({
-          title: '✅ Payment Processed',
-          description: `${selectedPaymentOption === 'check' ? 'Check' : 'Cash'} payment of $${paymentAmount.toFixed(2)} has been recorded.`,
-        })
-        
-        fetchPaymentDetails()
-        fetchPaymentHistory()
       }
       
       // Close the dialog
@@ -1840,18 +1872,146 @@ The Basketball Factory Inc.`
               </div>
             )}
 
-            {/* Method-specific fields */}
-            {(selectedPaymentOption === 'check' || selectedPaymentOption === 'cash') && (
+            {/* Enhanced Check Payment Fields */}
+            {selectedPaymentOption === 'check' && (
+              <div className="space-y-6 p-6 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-green-900">Check Payment Details</h3>
+                </div>
+
+                {/* Installments and Payment Period */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Number of Installments</Label>
+                    <Select value={String(checkInstallments)} onValueChange={(v) => setCheckInstallments(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select installments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                          <SelectItem key={num} value={String(num)}>
+                            {num} installment{num > 1 ? 's' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">Choose between 1-12 installments</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Payment Period</Label>
+                    <Select value={String(checkFrequencyMonths)} onValueChange={(v) => setCheckFrequencyMonths(Number(v))}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                          <SelectItem key={num} value={String(num)}>
+                            {num} month{num > 1 ? 's' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">Choose between 1-12 months</p>
+                  </div>
+                </div>
+
+                {/* Custom Amount */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Custom Amount (per installment)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={checkDetails.customAmount}
+                      onChange={(e) => setCheckDetails(prev => ({ ...prev, customAmount: e.target.value }))}
+                      className="pl-10 bg-white"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">Enter the amount for each installment</p>
+                </div>
+
+                {/* Start Date */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Start Date</Label>
+                  <Input
+                    type="date"
+                    value={checkDetails.startDate}
+                    onChange={(e) => setCheckDetails(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="bg-white"
+                  />
+                  <p className="text-xs text-gray-500">When should the first payment be due?</p>
+                </div>
+
+                {/* Dynamic Check Numbers */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Check Numbers ({checkInstallments} check{checkInstallments > 1 ? 's' : ''} required)
+                  </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {individualCheckNumbers.map((checkNumber, index) => (
+                      <div key={index} className="space-y-1">
+                        <Label className="text-xs text-gray-600">
+                          Check #{index + 1} {index === 0 && '(First Payment)'}
+                        </Label>
+                        <Input
+                          placeholder={`Check number ${index + 1}`}
+                          value={checkNumber}
+                          onChange={(e) => {
+                            const newCheckNumbers = [...individualCheckNumbers]
+                            newCheckNumbers[index] = e.target.value
+                            setIndividualCheckNumbers(newCheckNumbers)
+                            setCheckDetails(prev => ({ 
+                              ...prev, 
+                              checkNumbers: newCheckNumbers 
+                            }))
+                          }}
+                          className="bg-white"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Enter the check number for each installment payment
+                  </p>
+                </div>
+
+                {/* Payment Summary */}
+                {checkDetails.customAmount && checkInstallments > 0 && (
+                  <div className="p-4 bg-white border border-green-200 rounded-lg">
+                    <h4 className="font-medium text-green-900 mb-2">Payment Summary</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Amount per check:</span>
+                        <span className="font-medium">${parseFloat(checkDetails.customAmount || '0').toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Number of checks:</span>
+                        <span className="font-medium">{checkInstallments}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Payment period:</span>
+                        <span className="font-medium">{checkFrequencyMonths} month{checkFrequencyMonths > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-green-200">
+                        <span className="font-medium">Total amount:</span>
+                        <span className="font-bold text-green-700">
+                          ${(parseFloat(checkDetails.customAmount || '0') * checkInstallments).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {selectedPaymentOption === 'cash' && (
               <div className="space-y-3">
-                <Label htmlFor="paymentReference">
-                  {selectedPaymentOption === 'check' ? 'Check Number' : 'Receipt Number'}
-                </Label>
-                <Input
-                  id="paymentReference"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value)}
-                  placeholder={selectedPaymentOption === 'check' ? 'Enter check number' : 'Enter receipt number'}
-                />
+                <Label htmlFor="paymentReference">Receipt Number</Label>
+                <Input id="paymentReference" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
               </div>
             )}
 

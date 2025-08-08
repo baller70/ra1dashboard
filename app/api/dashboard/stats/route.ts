@@ -53,8 +53,8 @@ export async function GET(request: Request) {
         pendingPayments = paymentsData.data.pendingPayments || 0
         // Active payment plans
         activePaymentPlans = paymentsData.data.activePlans || 0
-        // Collected revenue for "Total Revenue" card
-        totalRevenue = paymentsData.data.collectedPayments || 0
+        // Keep collected revenue only for success rate; Total Revenue will reflect potential revenue from plans
+        // totalRevenue will be set after plans are processed
       }
     }
 
@@ -63,14 +63,30 @@ export async function GET(request: Request) {
       try {
         const plans = await plansRes.value.json()
         if (Array.isArray(plans)) {
-          const countable = plans.filter((p: any) => ['active', 'pending'].includes(p.status))
-          const plansTotal = countable.reduce((s: number, p: any) => s + (p.totalAmount || 0), 0)
-          const uniqueParents = new Set(countable.map((p: any) => p.parentId)).size
+          const countable = plans.filter((p: any) => {
+            const status = String(p.status || '').toLowerCase()
+            return status === 'active' || status === 'pending'
+          })
+          // Deduplicate multiple plans per parent using the largest totalAmount
+          const planByParent: Record<string, any> = {}
+          for (const plan of countable) {
+            const parentKey = String(plan.parentId || '')
+            const current = planByParent[parentKey]
+            if (!current || Number(plan.totalAmount || 0) > Number(current.totalAmount || 0)) {
+              planByParent[parentKey] = plan
+            }
+          }
+          const uniquePlans = Object.values(planByParent) as any[]
+          const plansTotal = uniquePlans.reduce((s: number, p: any) => s + Number(p.totalAmount || 0), 0)
+          const uniqueParents = new Set(uniquePlans.map((p: any) => p.parentId)).size
           totalPotentialRevenue = plansTotal
           activePaymentPlans = uniqueParents
         }
       } catch {}
     }
+
+    // Ensure Total Revenue reflects potential revenue (sum of plan totals)
+    totalRevenue = totalPotentialRevenue
 
     // Templates data from Templates page API
     if (templatesRes.status === 'fulfilled' && templatesRes.value.ok) {

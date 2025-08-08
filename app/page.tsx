@@ -44,6 +44,10 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [revenueData, setRevenueData] = useState<any[]>([])
+  
+  // Recharts imports used inline below
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } = require('recharts')
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -230,45 +234,46 @@ export default function DashboardPage() {
         </div>
 
         {/* Revenue Trends Section */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 items-stretch">
+          <Card className="col-span-4 h-full">
             <CardHeader>
               <CardTitle>Revenue Trends</CardTitle>
             </CardHeader>
-            <CardContent className="pl-2">
+            <CardContent className="pl-2 h-full flex flex-col">
               {loading ? (
-                <div className="h-[200px] flex items-center justify-center">
+                <div className="flex-1 min-h-[200px] flex items-center justify-center">
                   <div className="text-center">
                     <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">Loading revenue data...</p>
                   </div>
                 </div>
               ) : revenueData.length > 0 ? (
-                <div className="h-[220px]">
-                  {/* Lightweight inline bar chart (no extra deps) */}
-                  {(() => {
-                    const last6 = revenueData.slice(-6)
-                    const max = Math.max(1, ...last6.map((d: any) => Number(d.revenue || 0)))
-                    return (
-                      <div className="flex items-end gap-3 h-[160px]">
-                        {last6.map((d: any, i: number) => {
-                          const h = Math.max(4, Math.round((Number(d.revenue || 0) / max) * 140))
-                          return (
-                            <div key={i} className="flex flex-col items-center w-10">
-                              <div
-                                title={`$${Number(d.revenue||0).toLocaleString()} (${d.payments||0} payments)`}
-                                className="w-8 bg-blue-500 rounded-sm"
-                                style={{ height: `${h}px` }}
-                              />
-                              <div className="mt-2 text-[10px] text-muted-foreground text-center leading-tight">
-                                {String(d.month || '').split(' ')[0]}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })()}
+                <div className="flex-1 flex flex-col">
+                  {/* Recharts ComposedChart (bars + line) sized to current space */}
+                  <div className="h-[220px]">
+                    {/* @ts-ignore */}
+                    <ResponsiveContainer width="100%" height="100%">
+                      {/* @ts-ignore */}
+                      <ComposedChart data={revenueData.slice(-6)} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                        {/* @ts-ignore */}
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                        {/* @ts-ignore */}
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
+                        {/* @ts-ignore */}
+                        <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} tickFormatter={(v: any) => `$${Number(v).toLocaleString()}`} />
+                        {/* @ts-ignore */}
+                        <Tooltip formatter={(v: any, k: any) => {
+                          if (k === 'revenue') return [`$${Number(v).toLocaleString()}`, 'Revenue']
+                          if (k === 'payments') return [Number(v).toLocaleString(), 'Payments']
+                          return [v, k]
+                        }} labelFormatter={(l: any) => `Month: ${l}`} />
+                        {/* @ts-ignore */}
+                        <Bar dataKey="revenue" fill="#3B82F6" radius={[3,3,0,0]} />
+                        {/* @ts-ignore */}
+                        <Line type="monotone" dataKey="payments" stroke="#10B981" strokeWidth={2} dot={{ r: 2 }} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
                   <div className="mt-3 text-xs text-muted-foreground">
                     Showing last {Math.min(6, revenueData.length)} months
                   </div>
@@ -329,14 +334,13 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 // Fallback client-side: render last 6 months at zero so the card is never empty
-                <div className="h-[220px]">
+                <div className="flex-1 flex flex-col">
                   {(() => {
                     const now = new Date()
                     const last6 = Array.from({ length: 6 }).map((_, idx) => {
                       const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1)
                       return { month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), revenue: 0, payments: 0 }
                     })
-                    const max = 1
                     return (
                       <div className="flex items-end gap-3 h-[160px]">
                         {last6.map((d: any, i: number) => (
@@ -356,7 +360,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-3">
+          <Card className="col-span-3 h-full">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>

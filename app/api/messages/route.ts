@@ -8,7 +8,7 @@ import { api } from '../../../convex/_generated/api'
 import { Id } from '../../../convex/_generated/dataModel'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY || 'dev_test_key')
 
 export async function GET(request: Request) {
   try {

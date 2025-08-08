@@ -88,7 +88,8 @@ export function PaymentProgress({
     switch (status) {
       case 'paid': return 'default'
       case 'overdue': return 'destructive'
-      case 'pending': return 'secondary'
+      // Do not show a special badge style for pending; treat as neutral
+      case 'pending': return 'outline'
       case 'failed': return 'outline'
       default: return 'outline'
     }
@@ -260,11 +261,13 @@ export function PaymentProgress({
                       )}
                     </div>
                     
-                    <Badge variant={getStatusBadgeVariant(installment.status)}>
-                      {installment.status === 'paid' && <CheckCircle className="mr-1 h-3 w-3" />}
-                      {installment.status === 'overdue' && <AlertTriangle className="mr-1 h-3 w-3" />}
-                      {installment.status.charAt(0).toUpperCase() + installment.status.slice(1)}
-                    </Badge>
+                    {installment.status !== 'pending' && (
+                      <Badge variant={getStatusBadgeVariant(installment.status)}>
+                        {installment.status === 'paid' && <CheckCircle className="mr-1 h-3 w-3" />}
+                        {installment.status === 'overdue' && <AlertTriangle className="mr-1 h-3 w-3" />}
+                        {installment.status.charAt(0).toUpperCase() + installment.status.slice(1)}
+                      </Badge>
+                    )}
 
                     <div className="flex gap-2">
                       {installment.status === 'pending' && (

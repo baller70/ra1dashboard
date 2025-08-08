@@ -153,27 +153,39 @@ export const getPaymentAnalytics = query({
 
     // Fetch payment plans only; do NOT derive from parents
     const paymentPlans = await ctx.db.query("paymentPlans").collect();
-    // Include newly created plans that are not yet fully active
-    const countablePlans = paymentPlans.filter(p => ['active', 'pending'].includes((p as any).status));
+    // Include newly created plans that are not yet fully active (case-insensitive)
+    const countablePlans = paymentPlans.filter((p: any) => {
+      const status = String(p.status || '').toLowerCase();
+      return status === 'active' || status === 'pending';
+    });
 
-    // Potential revenue: sum of active plans' totalAmount (no parents fallback)
-    const totalRevenue = countablePlans.reduce((sum, p: any) => sum + (p.totalAmount || 0), 0);
+    // Deduplicate multiple plans per parent: take the plan with the largest totalAmount per parent
+    const planByParent: Record<string, any> = {};
+    for (const plan of countablePlans) {
+      const parentKey = String((plan as any).parentId || '');
+      const current = planByParent[parentKey];
+      if (!current || Number(plan.totalAmount || 0) > Number(current.totalAmount || 0)) {
+        planByParent[parentKey] = plan;
+      }
+    }
+    const uniquePlans = Object.values(planByParent) as any[];
 
-    // Collected: explicit paid payments + first installment of every active plan (first payment always made)
-    const explicitPaid = payments
+    // Potential revenue: sum of unique plans' totalAmount
+    const totalRevenue = uniquePlans.reduce((sum, p: any) => sum + Number(p.totalAmount || 0), 0);
+
+    // Collected: only explicit paid payments (no automatic assumptions)
+    const collectedPayments = payments
       .filter(p => p.status === 'paid')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    const firstInstallments = countablePlans.reduce((sum, p: any) => sum + (p.installmentAmount || 0), 0);
-    const collectedPayments = explicitPaid + firstInstallments;
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-    // Pending: remainder of plan totals after first installment per plan
+    // Pending: remainder of plan totals after collected payments
     const pendingFromPlans = Math.max(totalRevenue - collectedPayments, 0);
 
     // Overdue: not automatic on payment creation; only count when a due is missed
     // Treat a plan as overdue only if its nextDueDate is clearly in the past BEYOND the first installment window
     const now = Date.now();
     const MILLIS_IN_DAY = 24 * 60 * 60 * 1000;
-    const computedOverduePlans = countablePlans.filter((plan: any) => {
+    const computedOverduePlans = uniquePlans.filter((plan: any) => {
       const baseDue = plan.nextDueDate || plan.startDate;
       if (!baseDue) return false;
       // Assume monthly plans; advance one period for the first installment which is considered paid
@@ -190,9 +202,9 @@ export const getPaymentAnalytics = query({
     const overdueCount = new Set(computedOverduePlans.map((p: any) => p.parentId)).size;
     const overduePayments = payments
       .filter(p => p.status === 'overdue')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-    const uniqueParentsWithPlans = new Set(countablePlans.map((p: any) => p.parentId)).size;
+    const uniqueParentsWithPlans = new Set(uniquePlans.map((p: any) => p.parentId)).size;
 
     const result = {
       totalRevenue,
@@ -204,7 +216,7 @@ export const getPaymentAnalytics = query({
       avgPaymentTime: 0,
     } as const;
 
-    console.log(`📊 Payment Analytics FINAL RESULT: potential=$${result.totalRevenue}, collected=$${result.collectedPayments}, pending=$${result.pendingPayments}`);
+    console.log(`📊 Payment Analytics FINAL RESULT: plans=${countablePlans.length}, potential=$${result.totalRevenue}, collected=$${result.collectedPayments}, pending=$${result.pendingPayments}`);
     return result;
   },
 });

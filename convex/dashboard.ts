@@ -155,61 +155,77 @@ export const getDashboardStats = query({
 export const getRevenueTrends = query({
   args: {},
   handler: async (ctx) => {
-    console.log('🔄 Convex getRevenueTrends called - computing from PAID installments only...')
-    
-    // Use paymentInstallments as the source of truth for collected revenue
-    const installments = await ctx.db.query("paymentInstallments").collect();
-    console.log(`📄 Found ${installments.length} installments`);
-    
-    const monthlyData: { [key: string]: { revenue: number, payments: number } } = {};
-    const paidByPlan = new Set<string>();
-    for (const inst of installments) {
-      // Only count revenue when actually collected
-      if ((inst as any).status === 'paid') {
-        const base = (inst as any).paidAt || inst.dueDate;
-        if (!base) continue;
-        const date = new Date(base);
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        if (!monthlyData[key]) monthlyData[key] = { revenue: 0, payments: 0 };
-        monthlyData[key].revenue += Number((inst as any).amount || 0);
-        monthlyData[key].payments += 1;
-        if ((inst as any).paymentPlanId) {
-          paidByPlan.add(String((inst as any).paymentPlanId));
-        }
+    console.log('🔄 Convex getRevenueTrends called - computing revenue trends with robust fallbacks...')
+
+    const payments = await ctx.db.query("payments").collect();
+    console.log(`📄 Payments total: ${payments.length}`);
+
+    const toArray = (bucket: Record<string, { revenue: number; payments: number }>) =>
+      Object.entries(bucket)
+        .map(([key, data]) => {
+          const [year, month] = key.split('-');
+          const date = new Date(parseInt(year), parseInt(month), 1);
+          return {
+            month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            revenue: data.revenue,
+            payments: data.payments,
+          };
+        })
+        .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+
+    // 1) Preferred: Paid payments by paidAt
+    const paidBucket: Record<string, { revenue: number; payments: number }> = {};
+    for (const pay of payments) {
+      if ((pay as any).status !== 'paid') continue;
+      const ts = (pay as any).paidAt || (pay as any).dueDate || (pay as any).createdAt;
+      if (!ts) continue;
+      const d = new Date(ts);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      paidBucket[key] ||= { revenue: 0, payments: 0 };
+      paidBucket[key].revenue += Number((pay as any).amount || 0);
+      paidBucket[key].payments += 1;
+    }
+    let trends = toArray(paidBucket);
+
+    // 2) Fallback: Pending payments by dueDate (planned revenue)
+    if (trends.length === 0) {
+      const pendingBucket: Record<string, { revenue: number; payments: number }> = {};
+      for (const pay of payments) {
+        if ((pay as any).status !== 'pending') continue;
+        const ts = (pay as any).dueDate || (pay as any).createdAt;
+        if (!ts) continue;
+        const d = new Date(ts);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        pendingBucket[key] ||= { revenue: 0, payments: 0 };
+        pendingBucket[key].revenue += Number((pay as any).amount || 0);
+        pendingBucket[key].payments += 1;
       }
+      trends = toArray(pendingBucket);
     }
 
-    // SAFETY NET: If first installment auto-pay didn't persist yet, synthesize it from paymentPlans
-    // This ensures a new plan shows revenue in the start month immediately
-    const plans = await ctx.db.query("paymentPlans").collect();
-    for (const plan of plans) {
-      // Skip if we already saw a paid installment for this plan
-      if (paidByPlan.has(String((plan as any)._id))) continue;
-      // Only count active/pending plans
-      const status = String((plan as any).status || '').toLowerCase();
-      if (status !== 'active' && status !== 'pending') continue;
-      const start = (plan as any).startDate || (plan as any).createdAt;
-      const amount = Number((plan as any).installmentAmount || 0);
-      if (!start || !amount) continue;
-      const d = new Date(start);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      if (!monthlyData[key]) monthlyData[key] = { revenue: 0, payments: 0 };
-      monthlyData[key].revenue += amount;
-      monthlyData[key].payments += 1;
+    // 3) Last resort: Plans totals by created month (potential revenue)
+    if (trends.length === 0) {
+      const plans = await ctx.db.query("paymentPlans").collect();
+      console.log(`📄 Plans total: ${plans.length}`);
+      const planBucket: Record<string, { revenue: number; payments: number }> = {};
+      for (const plan of plans) {
+        const p: any = plan as any;
+        if (!p.parentId) continue;
+        const status = String(p.status || '').toLowerCase();
+        if (status && status !== 'active' && status !== 'pending') continue;
+        const ts = p.createdAt || p.startDate;
+        if (!ts) continue;
+        const d = new Date(ts);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        planBucket[key] ||= { revenue: 0, payments: 0 };
+        const total = Number(p.totalAmount ?? 0) || (Number(p.installmentAmount ?? 0) * Number(p.installments ?? 0)) || Number(p.installmentAmount ?? 0) || 0;
+        planBucket[key].revenue += total;
+        planBucket[key].payments += 1;
+      }
+      trends = toArray(planBucket);
     }
-    
-    // Convert to array format for charts
-    let trends = Object.entries(monthlyData).map(([key, data]) => {
-      const [year, month] = key.split('-');
-      const date = new Date(parseInt(year), parseInt(month), 1);
-      return {
-        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        revenue: data.revenue,
-        payments: data.payments
-      };
-    }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-    
-    // Fallback: if still no data, return last 6 months with zeros so UI always renders
+
+    // Final safety: ensure chart renders
     if (trends.length === 0) {
       const fallback: { month: string; revenue: number; payments: number }[] = [];
       const now = new Date();
@@ -223,8 +239,8 @@ export const getRevenueTrends = query({
       }
       trends = fallback;
     }
-    
-    console.log('📈 REAL REVENUE TRENDS (collected):', trends);
+
+    console.log('📈 REVENUE TRENDS (robust):', trends);
     return trends;
   },
 });
