@@ -8,38 +8,6 @@ import { api } from '../../../../convex/_generated/api'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-export async function GET() {
-  try {
-    // DEVELOPMENT: Skip authentication for now
-    // await requireAuth()
-    
-    // Get overdue payments from Convex
-    const overduePayments = await convex.query(api.payments.getOverduePayments, {});
-
-    // Format response to match expected structure
-    const overdueList = overduePayments.map(payment => ({
-      id: payment._id,
-      parentId: payment.parentId,
-      parentName: payment.parentName,
-      parentEmail: payment.parentEmail,
-      amount: Number(payment.amount),
-      dueDate: new Date(payment.dueDate || 0),
-      daysPastDue: payment.daysPastDue,
-      remindersSent: 0, // Field not available in current schema
-      lastReminderSent: null, // Field not available in current schema
-      paymentPlanType: null // Would need to fetch payment plan separately
-    }));
-
-    return NextResponse.json(overdueList)
-  } catch (error) {
-    console.error('Overdue payments fetch error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch overdue payments' },
-      { status: 500 }
-    )
-  }
-}
-
 export async function POST(request: Request) {
   try {
     await requireAuth()
@@ -62,10 +30,8 @@ export async function POST(request: Request) {
       case 'markPaid':
         // Mark payments as paid
         for (const paymentId of paymentIds) {
-          await convex.mutation(api.payments.updatePayment, {
-            id: paymentId as any,
-            status: 'paid',
-            paidAt: Date.now()
+          await convex.mutation(api.payments.markPaymentAsPaid, {
+            paymentId: paymentId as any,
           });
         }
 

@@ -25,6 +25,9 @@ export async function POST(request: Request) {
       case 'assess_parent_risks':
         results = await assessParentRisks(parentIds)
         break
+      case 'generate_payment_reminders':
+        results = await generatePaymentReminders(parentIds, parameters)
+        break
       case 'optimize_payment_schedules':
         results = await optimizePaymentSchedules(parentIds, parameters)
         break
@@ -52,6 +55,31 @@ export async function POST(request: Request) {
       { error: 'Failed to execute bulk operation', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
+  }
+}
+
+async function generatePaymentReminders(parentIds: string[], parameters: any) {
+  const { tone, urgency } = parameters
+
+  const parentsResult = await convex.query(api.parents.getParents, {})
+  const parents = parentsResult.parents || []
+
+  const reminders = []
+  for (const parent of parents) {
+    // For now, simplified implementation
+    reminders.push({
+      parentId: parent._id,
+      parentName: parent.name,
+      reminder: `This is a ${tone} reminder for ${parent.name} about their upcoming payment. Urgency: ${urgency}.`,
+      tone: tone
+    })
+  }
+
+  return {
+    totalProcessed: parents.length,
+    successfullyGenerated: reminders.filter(r => r.reminder).length,
+    failed: reminders.filter(r => !r.reminder).length,
+    reminders: reminders
   }
 }
 
