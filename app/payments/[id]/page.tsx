@@ -1619,13 +1619,20 @@ The Basketball Factory Inc.`
                     size="sm" 
                     className="w-full" 
                     onClick={() => {
-                      console.log('Button clicked - setting paymentOptionsOpen to true')
+                      console.log('🔥 BUTTON CLICKED - Current paymentOptionsOpen:', paymentOptionsOpen)
                       setPaymentOptionsOpen(true)
-                      console.log('paymentOptionsOpen state should now be:', true)
+                      console.log('🔥 Setting paymentOptionsOpen to TRUE')
+                      // Add a small delay to see if state updates
+                      setTimeout(() => {
+                        console.log('🔥 After timeout - paymentOptionsOpen should be:', paymentOptionsOpen)
+                      }, 100)
                     }}
                   >
-                    Choose payment option...
+                    Choose payment option... [DEBUG]
                   </Button>
+                  <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-xs">
+                    <strong>DEBUG:</strong> paymentOptionsOpen = {String(paymentOptionsOpen)}
+                  </div>
                 </div>
 
                 
@@ -1754,7 +1761,13 @@ The Basketball Factory Inc.`
       />
 
       {/* Enhanced Payment Options Dialog */}
-      <Dialog open={paymentOptionsOpen} onOpenChange={setPaymentOptionsOpen}>
+      <Dialog 
+        open={paymentOptionsOpen} 
+        onOpenChange={(open) => {
+          console.log('🔥 Dialog onOpenChange triggered with value:', open)
+          setPaymentOptionsOpen(open)
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-6">
             <DialogTitle className="flex items-center gap-3 text-2xl">
