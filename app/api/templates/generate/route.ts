@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       }
     ]
 
-    // Call the LLM API with streaming
+    // Call the LLM API without streaming
     const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -62,97 +62,39 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: 'gpt-4.1-mini',
         messages: messages,
-        stream: true,
+        stream: false, // Changed to false
         max_tokens: 1000,
         response_format: { type: "json_object" }
       }),
     })
 
     if (!response.ok) {
-      throw new Error('Failed to generate template')
+      const errorBody = await response.text();
+      console.error('LLM API error:', response.status, errorBody);
+      throw new Error('Failed to generate template from LLM API')
     }
 
-    // Create a readable stream to handle the response
-    const encoder = new TextEncoder()
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          const reader = response.body?.getReader()
-          if (!reader) {
-            throw new Error('No response reader available')
-          }
+    const result = await response.json();
+    const templateContent = JSON.parse(result.choices[0].message.content);
 
-          const decoder = new TextDecoder()
-          let buffer = ''
+    // Create the template in Convex
+    const templateId = await convex.mutation(api.templates.createTemplate, {
+      name: templateContent.name,
+      subject: templateContent.subject || '',
+      body: templateContent.body,
+      category: templateContent.category || category,
+      channel: templateContent.channel || channel,
+      variables: templateContent.variables || [],
+      isAiGenerated: true,
+      isActive: true
+    });
 
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
+    // Fetch the created template
+    const newTemplate = await convex.query(api.templates.getTemplate, {
+      id: templateId
+    });
 
-            const chunk = decoder.decode(value)
-            const lines = chunk.split('\n')
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6)
-                if (data === '[DONE]') {
-                  // Process the complete JSON response
-                  try {
-                    const templateData = JSON.parse(buffer)
-                    
-                    // Create the template in Convex
-                    const templateId = await convex.mutation(api.templates.createTemplate, {
-                      name: templateData.name,
-                      subject: templateData.subject || '',
-                      body: templateData.body,
-                      category: templateData.category || category,
-                      channel: templateData.channel || channel,
-                      variables: templateData.variables || [],
-                      isAiGenerated: true,
-                      isActive: true
-                    });
-
-                    // Fetch the created template
-                    const template = await convex.query(api.templates.getTemplate, {
-                      id: templateId
-                    });
-
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ template })}\n\n`))
-                  } catch (e) {
-                    console.error('Error parsing final JSON:', e)
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Failed to parse generated template' })}\n\n`))
-                  }
-
-                  controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-                  controller.close()
-                  return
-                }
-
-                try {
-                  const parsed = JSON.parse(data)
-                  buffer += parsed.content || ''
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: parsed.content || '' })}\n\n`))
-                } catch (e) {
-                  // Skip invalid JSON chunks
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Streaming error:', error)
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Generation failed' })}\n\n`))
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-          controller.close()
-        }
-      }
-    })
-
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-      },
-    })
+    return NextResponse.json(newTemplate);
 
   } catch (error) {
     console.error('Template generation error:', error)

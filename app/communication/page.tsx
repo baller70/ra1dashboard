@@ -83,44 +83,13 @@ export default function CommunicationPage() {
       })
 
       if (response.ok) {
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            
-            const chunk = decoder.decode(value)
-            const lines = chunk.split('\n')
-            
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6)
-                if (data === '[DONE]') {
-                  try {
-                    const finalTemplate = JSON.parse(buffer)
-                    // Add the new template to the list
-                    toast.success('AI template generated successfully!')
-                    fetchTemplates()
-                    setAiPrompt('')
-                    setShowAIGenerator(false)
-                    return
-                  } catch (e) {
-                    console.error('Failed to parse final template:', e)
-                  }
-                }
-                try {
-                  const parsed = JSON.parse(data)
-                  buffer += parsed.content
-                } catch (e) {
-                  // Skip invalid JSON
-                }
-              }
-            }
-          }
-        }
+        const newTemplate = await response.json();
+        setTemplates(prev => [newTemplate, ...prev]);
+        toast.success('AI template generated successfully!');
+        setAiPrompt('');
+        setShowAIGenerator(false);
+      } else {
+        toast.error('Failed to generate AI template.');
       }
     } catch (error) {
       console.error('Failed to generate template:', error)
