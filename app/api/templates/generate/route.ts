@@ -54,6 +54,7 @@ export async function POST(request: Request) {
 
     console.log("Attempting to generate AI template with prompt:", prompt);
     try {
+      // Re-deploying to ensure Vercel picks up the new OpenAI API Key
       // Call the OpenAI API
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
