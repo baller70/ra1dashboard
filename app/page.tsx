@@ -244,11 +244,33 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ) : revenueData.length > 0 ? (
-                <div className="h-[200px] flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-blue-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">{revenueData.length} months of data</p>
-                    <p className="text-xs text-muted-foreground">Chart will display when you have revenue</p>
+                <div className="h-[220px]">
+                  {/* Lightweight inline bar chart (no extra deps) */}
+                  {(() => {
+                    const last6 = revenueData.slice(-6)
+                    const max = Math.max(1, ...last6.map((d: any) => Number(d.revenue || 0)))
+                    return (
+                      <div className="flex items-end gap-3 h-[160px]">
+                        {last6.map((d: any, i: number) => {
+                          const h = Math.max(4, Math.round((Number(d.revenue || 0) / max) * 140))
+                          return (
+                            <div key={i} className="flex flex-col items-center w-10">
+                              <div
+                                title={`$${Number(d.revenue||0).toLocaleString()} (${d.payments||0} payments)`}
+                                className="w-8 bg-blue-500 rounded-sm"
+                                style={{ height: `${h}px` }}
+                              />
+                              <div className="mt-2 text-[10px] text-muted-foreground text-center leading-tight">
+                                {String(d.month || '').split(' ')[0]}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    Showing last {Math.min(6, revenueData.length)} months
                   </div>
                 </div>
               ) : (
