@@ -819,6 +819,15 @@ export default function PaymentsPage() {
     }
   }
 
+  const getPaymentMethodColor = (method: string) => {
+    switch (method) {
+      case 'stripe_card': return 'bg-blue-100 text-blue-800'
+      case 'check': return 'bg-green-100 text-green-800'
+      case 'cash': return 'bg-yellow-100 text-yellow-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
   const calculateSummary = () => {
     const now = Date.now()
     
@@ -1442,8 +1451,10 @@ export default function PaymentsPage() {
                               <div>
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                    {payment.paymentPlan && payment.status !== 'overdue' && (
-                                      <Badge className="text-xs font-bold bg-green-600 text-white">ACTIVE</Badge>
+                                    {payment.paymentPlan && (
+                                      <Badge className={getPaymentMethodColor(payment.paymentPlan.paymentMethod || 'unknown')}>
+                                        {payment.paymentPlan.paymentMethod?.replace('stripe_card', 'Card') || 'Unknown'}
+                                      </Badge>
                                     )}
                                   {!payment.isMockEntry && payment.status === 'overdue' && (
                                     <Badge variant="destructive" className="text-xs font-bold">
