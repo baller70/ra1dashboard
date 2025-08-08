@@ -54,15 +54,15 @@ export async function POST(request: Request) {
 
     console.log("Attempting to generate AI template with prompt:", prompt);
     try {
-      // Call the LLM API without streaming
-      const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
+      // Call the OpenAI API
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'gpt-4.1-mini',
+          model: 'gpt-4o-mini',
           messages: messages,
           stream: false,
           max_tokens: 1000,
