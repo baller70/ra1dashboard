@@ -288,22 +288,21 @@ export default function NewPaymentPlanPage() {
         if (paymentId) {
           console.log(`Redirecting to payment detail page: /payments/${paymentId}`)
           
-          // Redirect to payment details
+          // Redirect to the parent's profile page with a refresh indicator
           setTimeout(() => {
-            router.push(`/payments/${paymentId}`)
-          }, 1500)
-          
+            router.push(`/parents/${formData.parentId}?planCreated=true`);
+          }, 1500);
         } else {
-          console.log('⚠️ No payment ID found in result, redirecting to payments page')
+          console.log('⚠️ No payment ID found in result, redirecting to parent profile page');
           toast({
             title: "⚠️ Payment Plan Created",
-            description: "Payment plan created successfully. Redirecting to payments page.",
+            description: "Payment plan created successfully. Redirecting to parent profile.",
             variant: "default",
-          })
+          });
           
           setTimeout(() => {
-            router.push('/payments')
-          }, 2000)
+            router.push(`/parents/${formData.parentId}?planCreated=true`);
+          }, 2000);
         }
         
       } else {
@@ -479,7 +478,7 @@ export default function NewPaymentPlanPage() {
         
         const paymentId = result.mainPaymentId || result.paymentIds?.[0];
         if (paymentId) {
-          router.push(`/payments/${paymentId}`);
+          router.push(`/parents/${formData.parentId}?planCreated=true`);
         }
         
       } else {

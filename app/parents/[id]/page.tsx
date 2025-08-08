@@ -115,8 +115,17 @@ export default function ParentDetailPage() {
         setLoading(true)
         console.log('Fetching parent data for ID:', parentId)
 
+        // Check if we are returning from a plan creation
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('planCreated')) {
+          // Remove the query param to clean up the URL
+          router.replace(`/parents/${parentId}`, undefined, { shallow: true });
+          // The refresh will be triggered by the dependency array change, 
+          // but we can also explicitly call it.
+          refreshParentData();
+        }
+
         // Check if we're returning from an edit (look for updated parameter)
-        const urlParams = new URLSearchParams(window.location.search)
         const isUpdated = urlParams.get('updated')
         if (isUpdated) {
           console.log('Detected return from edit, forcing fresh data fetch')
