@@ -76,6 +76,7 @@ export const getPayments = query({
           ...payment,
           parent,
           paymentPlan,
+          paymentMethod: paymentPlan?.paymentMethod || payment.paymentMethod,
           // Add fallback parent name if parent fetch failed
           parentName: parent?.name || 'Unknown Parent',
           parentEmail: parent?.email || 'No email'

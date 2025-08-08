@@ -1451,17 +1451,15 @@ export default function PaymentsPage() {
                               <div>
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                    {payment.paymentPlan && (
-                                      <Badge className={getPaymentMethodColor(payment.paymentPlan.paymentMethod || 'unknown')}>
+                                      <Badge className={getPaymentMethodColor(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'unknown')}>
                                         {
                                           {
                                             'stripe_card': 'Credit Card',
                                             'check': 'Check',
                                             'cash': 'Cash',
-                                          }[payment.paymentPlan.paymentMethod || ''] || 'Unknown'
+                                          }[payment.paymentMethod || payment.paymentPlan?.paymentMethod || ''] || 'Unknown'
                                         }
                                       </Badge>
-                                    )}
                                   {!payment.isMockEntry && payment.status === 'overdue' && (
                                     <Badge variant="destructive" className="text-xs font-bold">
                                       OVERDUE
