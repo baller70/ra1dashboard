@@ -162,6 +162,7 @@ export const getRevenueTrends = query({
     console.log(`📄 Found ${installments.length} installments`);
     
     const monthlyData: { [key: string]: { revenue: number, payments: number } } = {};
+    const paidByPlan = new Set<string>();
     for (const inst of installments) {
       // Only count revenue when actually collected
       if ((inst as any).status === 'paid') {
@@ -172,7 +173,29 @@ export const getRevenueTrends = query({
         if (!monthlyData[key]) monthlyData[key] = { revenue: 0, payments: 0 };
         monthlyData[key].revenue += Number((inst as any).amount || 0);
         monthlyData[key].payments += 1;
+        if ((inst as any).paymentPlanId) {
+          paidByPlan.add(String((inst as any).paymentPlanId));
+        }
       }
+    }
+
+    // SAFETY NET: If first installment auto-pay didn't persist yet, synthesize it from paymentPlans
+    // This ensures a new plan shows revenue in the start month immediately
+    const plans = await ctx.db.query("paymentPlans").collect();
+    for (const plan of plans) {
+      // Skip if we already saw a paid installment for this plan
+      if (paidByPlan.has(String((plan as any)._id))) continue;
+      // Only count active/pending plans
+      const status = String((plan as any).status || '').toLowerCase();
+      if (status !== 'active' && status !== 'pending') continue;
+      const start = (plan as any).startDate || (plan as any).createdAt;
+      const amount = Number((plan as any).installmentAmount || 0);
+      if (!start || !amount) continue;
+      const d = new Date(start);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!monthlyData[key]) monthlyData[key] = { revenue: 0, payments: 0 };
+      monthlyData[key].revenue += amount;
+      monthlyData[key].payments += 1;
     }
     
     // Convert to array format for charts
@@ -186,7 +209,7 @@ export const getRevenueTrends = query({
       };
     }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
     
-    // Fallback: if no collected data yet, return last 6 months with zeros so UI always renders
+    // Fallback: if still no data, return last 6 months with zeros so UI always renders
     if (trends.length === 0) {
       const fallback: { month: string; revenue: number; payments: number }[] = [];
       const now = new Date();
