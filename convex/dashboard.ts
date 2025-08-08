@@ -176,19 +176,23 @@ export const getRevenueTrends = query({
       return trends;
     }
     
-    // Group payments by month
+    // Group payments by month (paid use paidAt; pending/overdue use dueDate)
     const monthlyData: { [key: string]: { revenue: number, payments: number } } = {};
     
     payments.forEach(payment => {
+      let useDate: number | undefined;
       if (payment.status === 'paid' && payment.paidAt) {
-        const date = new Date(payment.paidAt);
+        useDate = payment.paidAt;
+      } else if ((payment.status === 'pending' || payment.status === 'overdue') && payment.dueDate) {
+        useDate = payment.dueDate;
+      }
+      if (useDate) {
+        const date = new Date(useDate);
         const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-        const monthLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        
         if (!monthlyData[monthKey]) {
           monthlyData[monthKey] = { revenue: 0, payments: 0 };
         }
-        monthlyData[monthKey].revenue += payment.amount || 0;
+        monthlyData[monthKey].revenue += Number(payment.amount || 0);
         monthlyData[monthKey].payments += 1;
       }
     });
