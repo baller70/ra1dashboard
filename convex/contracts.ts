@@ -171,7 +171,7 @@ export const createContract = mutation({
       fileUrl: args.fileUrl,
       fileSize: args.fileSize,
       mimeType: args.mimeType,
-      status: "pending",
+      status: "Completed",
       templateType: args.templateType,
       notes: args.notes,
       expiresAt: args.expiresAt,

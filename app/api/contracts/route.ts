@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     // Update parent's contract status
     await convex.mutation(api.parents.updateParent, {
       id: parentId as Id<"parents">,
-      contractStatus: 'Signed'
+      contractStatus: 'Completed'
     });
 
     console.log('✅ Contract created with ID:', contractId)
