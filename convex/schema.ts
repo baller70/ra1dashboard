@@ -28,6 +28,7 @@ export default defineSchema({
     contractUploadedAt: v.optional(v.number()),
     contractExpiresAt: v.optional(v.number()),
     stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
     teamId: v.optional(v.string()),
     notes: v.optional(v.string()),
     createdAt: v.optional(v.number()),

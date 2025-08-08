@@ -728,6 +728,17 @@ export const deletePaymentPlan = mutation({
   },
 });
 
+export const getPaymentPlanByParentId = query({
+  args: { parentId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("paymentPlans")
+      .filter((q) => q.eq(q.field("parentId"), args.parentId))
+      .first();
+  },
+});
+
+
 // Activate a single payment plan
 export const activatePaymentPlan = mutation({
   args: { id: v.id("paymentPlans") },
