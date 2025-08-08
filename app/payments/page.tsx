@@ -880,32 +880,6 @@ export default function PaymentsPage() {
   // Potential revenue is simply the sum of all unique active/pending plan totals
   const uiPotentialRevenue = Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
 
-  // Helper function to get consistent overdue count
-  const getOverdueCount = () => {
-    const now = Date.now()
-    return deduplicatedPayments.filter(payment => {
-      if (payment.status === 'overdue') {
-        return true
-      }
-      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
-        return true
-      }
-      return false
-    }).length
-  }
-
-  // Helper function to check if a parent has overdue payments
-  const isParentOverdue = (payment: any) => {
-    const now = Date.now()
-    if (payment.status === 'overdue') {
-      return true
-    }
-    if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
-      return true
-    }
-    return false
-  }
-
   // AI Functions
 
   const generateAIReminders = async () => {
@@ -996,7 +970,7 @@ export default function PaymentsPage() {
             <Button asChild variant="outline">
               <Link href="/payments/overdue">
                 <AlertTriangle className="mr-2 h-4 w-4" />
-                Overdue ({analytics?.overdueCount || getOverdueCount()})
+                Overdue ({analytics?.overdueCount || 0})
               </Link>
             </Button>
             <Button asChild variant="outline">
@@ -1468,10 +1442,10 @@ export default function PaymentsPage() {
                               <div>
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                    {payment.paymentPlan && !isParentOverdue(payment) && (
+                                    {payment.paymentPlan && payment.status !== 'overdue' && (
                                       <Badge className="text-xs font-bold bg-green-600 text-white">ACTIVE</Badge>
                                     )}
-                                  {!payment.isMockEntry && isParentOverdue(payment) && (
+                                  {!payment.isMockEntry && payment.status === 'overdue' && (
                                     <Badge variant="destructive" className="text-xs font-bold">
                                       OVERDUE
                                     </Badge>

@@ -586,75 +586,6 @@ export const debugPaymentData = query({
   },
 });
 
-// Get overdue payments with consistent logic across all pages
-export const getOverduePayments = query({
-  args: {},
-  handler: async (ctx) => {
-    const now = Date.now();
-    const payments = await ctx.db.query("payments").collect();
-    
-    // Get payments that are either:
-    // 1. Already marked as 'overdue' 
-    // 2. 'pending' but past their due date
-    const overduePayments = payments.filter(payment => {
-      if (payment.status === 'overdue') {
-        return true;
-      }
-      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
-        return true;
-      }
-      return false;
-    });
-
-    // Enrich with parent data
-    const enrichedOverduePayments = await Promise.all(
-      overduePayments.map(async (payment) => {
-        const parent = await safeGetParent(ctx, payment.parentId);
-
-        // Calculate days past due
-        const daysPastDue = payment.dueDate 
-          ? Math.max(0, Math.floor((now - payment.dueDate) / (1000 * 60 * 60 * 24)))
-          : 0;
-
-        return {
-          ...payment,
-          parent,
-          parentName: parent?.name || 'Unknown Parent',
-          parentEmail: parent?.email || 'No email',
-          daysPastDue
-        };
-      })
-    );
-
-    // Sort by due date (oldest first)
-    return enrichedOverduePayments.sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
-  },
-});
-
-// Get count of overdue payments (for consistent use across dashboard and other pages)
-export const getOverduePaymentsCount = query({
-  args: {},
-  handler: async (ctx) => {
-    const now = Date.now();
-    const payments = await ctx.db.query("payments").collect();
-    
-    // Count payments that are either:
-    // 1. Already marked as 'overdue' 
-    // 2. 'pending' but past their due date
-    const overdueCount = payments.filter(payment => {
-      if (payment.status === 'overdue') {
-        return true;
-      }
-      if (payment.status === 'pending' && payment.dueDate && payment.dueDate < now) {
-        return true;
-      }
-      return false;
-    }).length;
-
-    return overdueCount;
-  },
-});
-
 // Delete payments with invalid parent IDs (cleanup function)
 export const deletePaymentsWithInvalidParentIds = mutation({
   args: {},
@@ -867,6 +798,23 @@ export const getPaymentsByPlanId = query({
     return payments.sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
   },
 });
+
+export const updatePaymentStatuses = mutation({
+  handler: async (ctx) => {
+    const now = Date.now();
+    const pendingPayments = await ctx.db
+      .query("payments")
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+
+    for (const payment of pendingPayments) {
+      if (payment.dueDate && payment.dueDate < now) {
+        await ctx.db.patch(payment._id, { status: "overdue" });
+      }
+    }
+  },
+});
+
 
 // Clean up test payment plans - keep only real Houston family
 export const cleanupTestPaymentPlans = mutation({
