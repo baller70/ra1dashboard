@@ -1,5 +1,6 @@
 import { cronJobs } from "@convex-dev/cron";
 import { internal } from "./_generated/api";
+import Stripe from "stripe";
 
 const crons = cronJobs();
 
@@ -12,7 +13,8 @@ crons.interval(
 crons.interval(
   "process due payments",
   { minutes: 1 }, // Run every minute
-  internal.payments.processDuePayments
+  internal.payments.processDuePayments,
+  { stripe: new Stripe(process.env.STRIPE_SECRET_KEY!) }
 );
 
 export default crons;

@@ -882,7 +882,8 @@ export const cleanupTestPaymentPlans = mutation({
     // Get payments with parent and payment plan info
     
     export const processDuePayments = mutation({
-        handler: async (ctx) => {
+        args: { stripe: v.any() },
+        handler: async (ctx, args) => {
             const now = new Date();
             const duePayments = await ctx.db
                 .query("payments")
@@ -894,8 +895,7 @@ export const cleanupTestPaymentPlans = mutation({
                 const parent = await ctx.db.get(payment.parentId as Id<"parents">);
                 if (parent && parent.stripeCustomerId) {
                     try {
-                        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-                        const paymentIntents = await stripe.paymentIntents.create({
+                        const paymentIntents = await args.stripe.paymentIntents.create({
                             amount: payment.amount * 100,
                             currency: "usd",
                             customer: parent.stripeCustomerId,
