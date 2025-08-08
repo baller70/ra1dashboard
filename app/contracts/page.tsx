@@ -223,6 +223,34 @@ export default function ContractsPage() {
     }
   }
 
+  const handleDeleteContract = async (contractId: string) => {
+    if (window.confirm('Are you sure you want to delete this contract? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/contracts/${contractId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          toast({
+            title: "✅ Contract Deleted",
+            description: "The contract has been successfully deleted.",
+          })
+          fetchContracts(); // Refresh the list
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete contract');
+        }
+      } catch (error) {
+        console.error('Delete contract failed:', error);
+        toast({
+          title: "❌ Delete Failed",
+          description: error instanceof Error ? error.message : 'Failed to delete the contract.',
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'signed':
@@ -529,6 +557,13 @@ export default function ContractsPage() {
                           </Link>
                         </Button>
                       )}
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDeleteContract(contract._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))
