@@ -102,7 +102,8 @@ export default function CommunicationPage() {
                   try {
                     const finalTemplate = JSON.parse(buffer)
                     // Add the new template to the list
-                    // setTemplates(prev => [finalTemplate, ...prev]) // This line is removed as templates are now managed by Convex
+                    toast.success('AI template generated successfully!')
+                    fetchTemplates()
                     setAiPrompt('')
                     setShowAIGenerator(false)
                     return

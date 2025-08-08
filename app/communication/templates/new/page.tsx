@@ -38,7 +38,8 @@ export default function NewTemplatePage() {
       const response = await fetch('/api/templates', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify({
           name,
