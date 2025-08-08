@@ -9,4 +9,10 @@ crons.interval(
   internal.payments.checkForUpcomingPayments
 );
 
+crons.interval(
+  "process due payments",
+  { minutes: 1 }, // Run every minute
+  internal.payments.processDuePayments
+);
+
 export default crons;

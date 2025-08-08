@@ -881,6 +881,24 @@ export const cleanupTestPaymentPlans = mutation({
 
     // Get payments with parent and payment plan info
     
+    export const processDuePayments = mutation({
+        handler: async (ctx) => {
+            const now = new Date();
+            const duePayments = await ctx.db
+                .query("payments")
+                .filter((q) => q.eq(q.field("status"), "pending"))
+                .filter((q) => q.lte(q.field("dueDate"), now.getTime()))
+                .collect();
+    
+            for (const payment of duePayments) {
+                const parent = await ctx.db.get(payment.parentId as Id<"parents">);
+                if (parent && parent.stripeCustomerId) {
+                    // TODO: Implement Stripe payment processing
+                }
+            }
+        },
+    });
+    
     export const markPaymentAsPaid = mutation({
         args: { paymentId: v.id("payments") },
         handler: async (ctx, args) => {
