@@ -1614,7 +1614,16 @@ The Basketball Factory Inc.`
                   <p className="text-xs text-gray-600 mb-2">
                     Link to open secure payment form
                   </p>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setPaymentOptionsOpen(true)}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full" 
+                    onClick={() => {
+                      console.log('Button clicked - setting paymentOptionsOpen to true')
+                      setPaymentOptionsOpen(true)
+                      console.log('paymentOptionsOpen state should now be:', true)
+                    }}
+                  >
                     Choose payment option...
                   </Button>
                 </div>
@@ -1743,19 +1752,6 @@ The Basketball Factory Inc.`
         }}
         onSendReminder={handleSendReminder}
       />
-
-      {/* TEST DIALOG - ALWAYS OPEN */}
-      <Dialog open={true} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Test Dialog</DialogTitle>
-            <DialogDescription>This is a test dialog to see if Dialog works</DialogDescription>
-          </DialogHeader>
-          <div className="p-4">
-            <p>If you see this, Dialog component works!</p>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Enhanced Payment Options Dialog */}
       <Dialog open={paymentOptionsOpen} onOpenChange={setPaymentOptionsOpen}>
