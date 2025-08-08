@@ -91,6 +91,12 @@ export async function POST(request: Request) {
       expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
     })
 
+    // Update parent's contract status
+    await convex.mutation(api.parents.updateParent, {
+      id: parentId as Id<"parents">,
+      contractStatus: 'Signed'
+    });
+
     console.log('✅ Contract created with ID:', contractId)
 
     return NextResponse.json({
