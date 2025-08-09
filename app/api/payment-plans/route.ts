@@ -27,16 +27,9 @@ export async function GET(request: Request) {
 
     // Get payment plans from Convex with optional filters
     const convex = getConvex()
-<<<<<<< HEAD
     const paymentPlans = await convex.query(api.payments.getPaymentPlans, {
       parentId: parentId as any,
       status: status as any,
-=======
-    const { searchParams } = new URL(request.url)
-    const parentId = searchParams.get('parentId') || undefined
-    const paymentPlans = await convex.query(api.payments.getPaymentPlans, {
-      parentId: parentId as any,
->>>>>>> e4c55eb (Parent page: filter payment plans by parentId; robust plan rendering to avoid showing zero when plans exist)
     } as any);
 
     return NextResponse.json(paymentPlans)

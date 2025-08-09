@@ -165,12 +165,8 @@ export default function ParentDetailPage() {
         if (plansResponse.ok) {
           const plansData = await plansResponse.json()
           console.log('Payment plans data received:', plansData)
-<<<<<<< HEAD
           const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
           setPaymentPlans(arr)
-=======
-          setPaymentPlans(Array.isArray(plansData) ? plansData : (plansData.data || []))
->>>>>>> f127b35 (Parent page: fix payment plans count by parsing API response reliably; show count in title)
         } else {
           console.warn('Failed to fetch payment plans:', plansResponse.status)
         }
@@ -206,12 +202,8 @@ export default function ParentDetailPage() {
       if (plansResponse.ok) {
         const plansData = await plansResponse.json()
         console.log('Refreshed payment plans data:', plansData)
-<<<<<<< HEAD
         const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
         setPaymentPlans(arr)
-=======
-        setPaymentPlans(Array.isArray(plansData) ? plansData : (plansData.data || []))
->>>>>>> f127b35 (Parent page: fix payment plans count by parsing API response reliably; show count in title)
       }
 
       toast({
