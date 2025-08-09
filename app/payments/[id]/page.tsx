@@ -1700,11 +1700,11 @@ The Basketball Factory Inc.`
                     </h4>
                     {payment.parent?.contracts && payment.parent.contracts.length > 0 ? (
                       <Badge variant={
-                        payment.parent.contracts[0].status === 'signed' || payment.parent.contracts[0].status === 'Completed' ? 'default' :
+                        payment.parent.contracts[0].status === 'signed' ? 'default' :
                         payment.parent.contracts[0].status === 'pending' ? 'secondary' :
                         'destructive'
                       }>
-                        {payment.parent.contracts[0].status === 'Completed' ? 'Contract' : payment.parent.contracts[0].status}
+                        {payment.parent.contracts[0].status}
                       </Badge>
                     ) : (
                       <Badge variant="outline">Not Uploaded</Badge>

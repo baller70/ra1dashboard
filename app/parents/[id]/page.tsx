@@ -131,6 +131,8 @@ export default function ParentDetailPage() {
           console.log('Detected return from edit, forcing fresh data fetch')
           // Clear the URL parameter to clean up the URL
           window.history.replaceState({}, document.title, window.location.pathname)
+          // Trigger refresh of related data
+          await refreshParentData()
         }
 
         // Add cache-busting timestamp to ensure fresh data
@@ -163,7 +165,8 @@ export default function ParentDetailPage() {
         if (plansResponse.ok) {
           const plansData = await plansResponse.json()
           console.log('Payment plans data received:', plansData)
-          setPaymentPlans(plansData.data || [])
+          const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
+          setPaymentPlans(arr)
         } else {
           console.warn('Failed to fetch payment plans:', plansResponse.status)
         }
@@ -199,7 +202,8 @@ export default function ParentDetailPage() {
       if (plansResponse.ok) {
         const plansData = await plansResponse.json()
         console.log('Refreshed payment plans data:', plansData)
-        setPaymentPlans(plansData.data || [])
+        const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
+        setPaymentPlans(arr)
       }
 
       toast({

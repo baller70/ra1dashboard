@@ -127,7 +127,12 @@ function ContractUploadPageContent() {
           title: "✅ Contract Uploaded",
           description: "Contract uploaded successfully",
         })
-        router.push('/contracts')
+        // Redirect back to the parent profile so status updates are visible immediately
+        if (selectedParentId) {
+          router.push(`/parents/${selectedParentId}?updated=1`)
+        } else {
+          router.push('/contracts')
+        }
       } else {
         const error = await response.json()
         toast({
