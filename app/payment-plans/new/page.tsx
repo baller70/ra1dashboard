@@ -259,6 +259,49 @@ export default function NewPaymentPlanPage() {
       console.log('🚀 Sending API request with body:', requestBody)
       console.log('🔑 Using API key: ra1-dashboard-api-key-2024')
       
+      // Special case: one-time credit card payment should not create a plan
+      if ((requestBody.type === 'full' || requestBody.type === 'one_time') && requestBody.paymentMethod === 'stripe_card') {
+        try {
+          // Create a standalone payment, then redirect to its detail for card processing
+          const createPaymentRes = await fetch('/api/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId: requestBody.parentId,
+              amount: requestBody.totalAmount,
+              dueDate: new Date().toISOString(),
+              notes: 'Created from Full Payment (Card) on New Payment Plan form'
+            })
+          })
+          if (!createPaymentRes.ok) {
+            const err = await createPaymentRes.json().catch(() => ({}))
+            throw new Error(err.error || 'Failed to create payment record')
+          }
+          const created = await createPaymentRes.json()
+          const paymentId = created?.data?._id || created?._id || created?.id
+          if (!paymentId) throw new Error('Payment ID missing after creation')
+
+          toast({
+            title: 'Proceed to Card Payment',
+            description: 'Redirecting to process the one-time card payment...',
+          })
+
+          // Redirect to payment detail; user can click "Choose payment option" to complete
+          router.push(`/payments/${paymentId}`)
+          return
+        } catch (cardErr: any) {
+          console.error('❌ One-time card payment setup failed:', cardErr)
+          toast({
+            title: '❌ Creation Failed',
+            description: cardErr?.message || 'Failed to initialize one-time card payment',
+            variant: 'destructive',
+          })
+          return
+        } finally {
+          setLoading(false)
+        }
+      }
+      
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
         headers: { 
