@@ -1452,13 +1452,20 @@ export default function PaymentsPage() {
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
                                       <Badge className={getPaymentMethodColor(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'unknown')}>
-                                        {
-                                          {
+                                        {(() => {
+                                          const method = payment.paymentMethod || payment.paymentPlan?.paymentMethod || '';
+                                          console.log('Payment method debug:', { 
+                                            paymentId: payment._id, 
+                                            paymentMethod: payment.paymentMethod,
+                                            paymentPlanMethod: payment.paymentPlan?.paymentMethod,
+                                            finalMethod: method 
+                                          });
+                                          return {
                                             'stripe_card': 'Credit Card',
                                             'check': 'Check',
                                             'cash': 'Cash',
-                                          }[payment.paymentMethod || payment.paymentPlan?.paymentMethod || ''] || 'Unknown'
-                                        }
+                                          }[method] || 'Unknown'
+                                        })()}
                                       </Badge>
                                   {!payment.isMockEntry && payment.status === 'overdue' && (
                                     <Badge variant="destructive" className="text-xs font-bold">
