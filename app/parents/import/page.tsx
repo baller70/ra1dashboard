@@ -2,7 +2,7 @@
 'use client'
 
 // Force dynamic rendering - prevent static generation
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
@@ -48,6 +48,49 @@ export default function BulkImportPage() {
   const [loading, setLoading] = useState(false)
   const [showErrorsOnly, setShowErrorsOnly] = useState(false)
   const [importProgress, setImportProgress] = useState(0)
+
+  // Local validators to allow fixing errors inline and re-validating
+  const normalize = (s: string) => (s || '').trim().toLowerCase()
+  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const validatePhone = (phone: string) => {
+    if (!phone || phone.trim() === '') return true
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+    return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))
+  }
+
+  // Compute duplicates within the editable table based on email+name combo
+  const duplicateCombos = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const p of editableData) {
+      const key = `${normalize(p.email)}|${normalize(p.name)}`
+      counts[key] = (counts[key] || 0) + 1
+    }
+    return counts
+  }, [editableData])
+
+  const validateRow = (p: EditableParent) => {
+    const errors: { field: keyof BulkUploadParent; message: string }[] = []
+    if (!p.name || p.name.trim() === '') {
+      errors.push({ field: 'name', message: 'Name is required' })
+    }
+    if (!p.email || p.email.trim() === '') {
+      errors.push({ field: 'email', message: 'Email is required' })
+    } else if (!validateEmail(p.email)) {
+      errors.push({ field: 'email', message: 'Invalid email format' })
+    }
+    if (p.phone && !validatePhone(p.phone)) {
+      errors.push({ field: 'phone', message: 'Invalid phone number format' })
+    }
+    if (p.emergencyPhone && !validatePhone(p.emergencyPhone)) {
+      errors.push({ field: 'emergencyPhone', message: 'Invalid emergency phone number format' })
+    }
+    // Duplicate within current file (same email+name)
+    const combo = `${normalize(p.email)}|${normalize(p.name)}`
+    if (duplicateCombos[combo] > 1) {
+      errors.push({ field: 'email', message: 'Duplicate in file (same email and name)' })
+    }
+    return errors
+  }
 
   // File handling
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -152,12 +195,16 @@ export default function BulkImportPage() {
       console.log('Validation result:', validation)
       setValidationData(validation)
 
-      // Create editable data with row numbers and error flags
-      const editable: EditableParent[] = validation.data.map((parent, index) => ({
-        ...parent,
-        rowNumber: index + 2, // +2 because array is 0-indexed and we skip header
-        hasErrors: validation.errors.some(err => err.row === index + 2)
-      }))
+      // Create editable data with row numbers and compute local error flags
+      const editable: EditableParent[] = validation.data.map((parent, index) => {
+        const draft: EditableParent = {
+          ...parent,
+          rowNumber: index + 2,
+          hasErrors: false,
+        }
+        draft.hasErrors = validateRow(draft).length > 0
+        return draft
+      })
 
       setEditableData(editable)
       setCurrentStep('preview')
@@ -209,7 +256,10 @@ export default function BulkImportPage() {
   const updateParentData = (index: number, field: keyof BulkUploadParent, value: string) => {
     setEditableData(prev => {
       const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: value }
+      const next = { ...updated[index], [field]: value } as EditableParent
+      // Recompute error state for this row after edit
+      next.hasErrors = validateRow(next).length > 0
+      updated[index] = next
       return updated
     })
   }
@@ -221,11 +271,8 @@ export default function BulkImportPage() {
   const proceedWithImport = async () => {
     if (!validationData || editableData.length === 0) return
 
-    // Filter out parents with errors (unless user has fixed them)
-    const validParents = editableData.filter(parent => {
-      return parent.name.trim() && parent.email.trim() && 
-             parent.email.includes('@') && parent.email.includes('.')
-    })
+    // Filter out parents with current (post-edit) errors
+    const validParents = editableData.filter(parent => validateRow(parent).length === 0)
 
     if (validParents.length === 0) {
       toast({
@@ -289,7 +336,10 @@ export default function BulkImportPage() {
   }
 
   const getErrorsForRow = (rowNumber: number): ValidationError[] => {
-    return validationData?.errors.filter(err => err.row === rowNumber) || []
+    const p = editableData.find(x => x.rowNumber === rowNumber)
+    if (!p) return []
+    const errs = validateRow(p)
+    return errs.map(e => ({ row: rowNumber, field: e.field as any, message: e.message, value: (p as any)[e.field] }))
   }
 
   const filteredData = showErrorsOnly 
@@ -618,10 +668,10 @@ export default function BulkImportPage() {
                   </Button>
                   <Button 
                     onClick={proceedWithImport}
-                    disabled={validationData.stats.validRows === 0}
+                    disabled={editableData.filter(p => validateRow(p).length === 0).length === 0}
                   >
                     <Users className="mr-2 h-4 w-4" />
-                    Import {editableData.filter(p => !p.hasErrors).length} Parents
+                    Import {editableData.filter(p => validateRow(p).length === 0).length} Parents
                   </Button>
                 </div>
               </CardContent>
