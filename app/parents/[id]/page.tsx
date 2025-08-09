@@ -234,6 +234,7 @@ export default function ParentDetailPage() {
   const [editing, setEditing] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [messageInstructions, setMessageInstructions] = useState('')
   const [showMessageDialog, setShowMessageDialog] = useState(false)
   const [messageContent, setMessageContent] = useState('')
   const [aiAnalysis, setAiAnalysis] = useState<any>(null)
@@ -330,60 +331,31 @@ export default function ParentDetailPage() {
   }
 
   const generateAIMessage = async () => {
-    if (!parentId || !parent) return
-
+    if (!parent) return
     setSendingMessage(true)
     try {
-      // Generate AI message based on parent data and analysis
       const response = await fetch('/api/ai/generate-message', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          parentId,
-          parentName: parent.name,
           context: {
-            riskLevel: aiAnalysis?.riskLevel || 'unknown',
-            riskScore: aiAnalysis?.riskScore || 0,
-            paymentStatus: payments?.length > 0 ? 'has_payments' : 'no_payments',
-            overduePayments: payments?.filter(p => new Date(p.dueDate) < new Date()).length || 0,
-            contractStatus: parent.contractStatus,
-            recentCommunications: payments?.length || 0,
-            keyInsights: aiAnalysis?.keyInsights || [],
-            recommendations: aiAnalysis?.recommendations || []
+            parentId: parent._id,
+            messageType: 'follow_up',
+            tone: 'friendly',
           },
-          messageType: 'personalized_check_in'
+          customInstructions: messageInstructions || undefined,
+          includePersonalization: true
         })
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.message) {
-          // Handle the message structure (it has subject and body)
-          const messageText = data.message.body || data.message
-          setMessageContent(messageText)
-          setShowMessageDialog(true)
-          toast({
-            title: 'AI message generated',
-            description: 'Personalized message created based on parent analysis',
-          })
-        } else {
-          throw new Error('No message generated')
-        }
-      } else {
-        throw new Error('Failed to generate AI message')
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to generate message')
+      const msg = data?.message
+      if (msg) {
+        setMessageContent(`${msg.body || msg.content || ''}`.trim())
       }
     } catch (error) {
       console.error('Failed to generate AI message:', error)
-      toast({
-        title: 'Failed to generate message',
-        description: 'Could not generate AI message. Opening empty dialog instead.',
-        variant: 'destructive',
-      })
-      // Fallback to empty dialog
-      setMessageContent('')
-      setShowMessageDialog(true)
+      toast({ title: 'AI generation failed', description: 'Please try again.' , variant: 'destructive'})
     } finally {
       setSendingMessage(false)
     }
@@ -1191,6 +1163,15 @@ export default function ParentDetailPage() {
             </p>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="instructions">Tell the AI what this message should cover</Label>
+              <Input
+                id="instructions"
+                value={messageInstructions}
+                onChange={(e) => setMessageInstructions(e.target.value)}
+                placeholder="e.g. Ask about overdue payment and offer help, confirm practice schedule, etc."
+              />
+            </div>
             <Label htmlFor="message">Message Content</Label>
             <Textarea
               id="message"
