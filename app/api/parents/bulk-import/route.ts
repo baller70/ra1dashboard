@@ -28,11 +28,15 @@ export async function POST(request: NextRequest) {
       successfulParents: []
     }
 
-    // Get all existing parents to check for duplicates
+    // Get all existing parents to check for duplicates (email + name pair)
     const existingParentsResponse = await convex.query(api.parents.getParents, { limit: 1000 });
-    // Convex returns { parents: [...] } directly
     const parentsList = existingParentsResponse.parents || [];
-    const existingEmails = new Set(parentsList.map((p: any) => p.email.toLowerCase()));
+    const normalize = (s: string) => (s || '').trim().toLowerCase();
+    const existingCombos = new Set(
+      parentsList.map((p: any) => `${normalize(p.email)}|${normalize(p.name)}`)
+    );
+    // Track duplicates within the same upload batch (same email + same name)
+    const seenCombos = new Set<string>();
 
     // Process each parent individually since Convex doesn't have transactions
     for (let i = 0; i < parents.length; i++) {
@@ -40,13 +44,23 @@ export async function POST(request: NextRequest) {
       const rowNum = i + 1
 
       try {
-        // Check for existing email
-        if (existingEmails.has(parentData.email.toLowerCase())) {
+        // Allow duplicate emails as long as the name is different
+        const combo = `${normalize(parentData.email)}|${normalize(parentData.name)}`
+        if (existingCombos.has(combo)) {
           result.failed++
           result.errors.push({
             row: rowNum,
             email: parentData.email,
-            message: 'Email already exists in database'
+            message: 'A parent with the same email and name already exists'
+          })
+          continue
+        }
+        if (seenCombos.has(combo)) {
+          result.failed++
+          result.errors.push({
+            row: rowNum,
+            email: parentData.email,
+            message: 'Duplicate row in this file (same email and name)'
           })
           continue
         }
@@ -63,8 +77,8 @@ export async function POST(request: NextRequest) {
           status: 'active'
         });
 
-        // Add to existing emails set to prevent duplicates in the same batch
-        existingEmails.add(parentData.email.toLowerCase());
+        // Add to seen combos to prevent duplicates in the same batch
+        seenCombos.add(combo);
 
         result.created++
         result.successfulParents.push({

@@ -99,17 +99,18 @@ export async function POST(request: Request) {
     const validatedData = validateData(CreateParentSchema, normalizedBody)
     const sanitizedData = sanitizeParentData(validatedData)
 
-    // Check if email already exists - get all parents and check
+    // Allow duplicate emails as long as the name is different
     const existingParents = await convex.query(api.parents.getParents, {
       page: 1,
-      limit: 1000, // Get all to check for duplicates
+      limit: 1000,
     });
-
-    const existingParent = existingParents.parents.find(p => p.email === sanitizedData.email);
-
-    if (existingParent) {
+    const normalize = (s: string) => (s || '').trim().toLowerCase();
+    const existsSameCombo = existingParents.parents.some(
+      (p: any) => normalize(p.email) === normalize(sanitizedData.email) && normalize(p.name) === normalize(sanitizedData.name)
+    );
+    if (existsSameCombo) {
       return NextResponse.json(
-        { error: 'A parent with this email already exists' },
+        { error: 'A parent with the same email and name already exists' },
         { status: 409 }
       )
     }

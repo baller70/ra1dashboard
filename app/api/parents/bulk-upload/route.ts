@@ -124,12 +124,15 @@ export async function POST(request: NextRequest) {
     const data: BulkUploadParent[] = []
     const errors: ValidationError[] = []
     
-    // Get existing emails from Convex for duplicate checking
+    // Get existing parents from Convex for duplicate checking (email+name pair)
     const existingParentsResponse = await convex.query(api.parents.getParents, { limit: 1000 });
-    const existingEmails = new Set(existingParentsResponse.parents.map((p: any) => p.email.toLowerCase()));
+    const normalize = (s: string) => (s || '').trim().toLowerCase();
+    const existingCombos = new Set(
+      existingParentsResponse.parents.map((p: any) => `${normalize(p.email)}|${normalize(p.name)}`)
+    );
 
-    // Track email duplicates within the file
-    const emailCounts: { [email: string]: number[] } = {}
+    // Track email+name duplicates within the file
+    const comboCounts: { [combo: string]: number[] } = {}
 
     parsedData.forEach((row, index) => {
       const rowNum = index + 2 // +2 because array is 0-indexed and we skip header row
@@ -176,12 +179,12 @@ export async function POST(request: NextRequest) {
           value: parentData.email
         })
       } else {
-        // Track email duplicates
-        const emailLower = parentData.email.toLowerCase()
-        if (!emailCounts[emailLower]) {
-          emailCounts[emailLower] = []
+        // Track email+name duplicates (allow same email with different names)
+        const combo = `${normalize(parentData.email)}|${normalize(parentData.name)}`
+        if (!comboCounts[combo]) {
+          comboCounts[combo] = []
         }
-        emailCounts[emailLower].push(rowNum)
+        comboCounts[combo].push(rowNum)
       }
 
       // Validate phone numbers
@@ -206,31 +209,31 @@ export async function POST(request: NextRequest) {
       data.push(parentData)
     })
 
-    // Find duplicates
-    const duplicates = Object.entries(emailCounts)
-      .filter(([email, rows]) => rows.length > 1 || existingEmails.has(email))
-      .map(([email, rows]) => ({
-        email,
+    // Find duplicates: only block if exact same email+name exists in DB or repeats in file
+    const duplicates = Object.entries(comboCounts)
+      .filter(([combo, rows]) => rows.length > 1 || existingCombos.has(combo))
+      .map(([combo, rows]) => ({
+        combo,
         rows,
-        existsInDb: existingEmails.has(email)
+        existsInDb: existingCombos.has(combo)
       }))
 
-    // Add duplicate errors
+    // Add duplicate errors (email+name)
     duplicates.forEach(duplicate => {
       duplicate.rows.forEach(row => {
         if (duplicate.existsInDb) {
           errors.push({
             row,
             field: 'email',
-            message: 'Email already exists in database',
-            value: duplicate.email
+            message: 'A parent with the same email and name already exists',
+            value: duplicate.combo
           })
         } else if (duplicate.rows.length > 1) {
           errors.push({
             row,
             field: 'email',
-            message: 'Duplicate email in file',
-            value: duplicate.email
+            message: 'Duplicate row in file (same email and name)',
+            value: duplicate.combo
           })
         }
       })
