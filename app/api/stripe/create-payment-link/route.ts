@@ -18,26 +18,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
-    // Create a local payment form URL that will work properly
-    const paymentUrl = `/payments/${paymentId}/checkout?amount=${amount}&name=${encodeURIComponent(parentName)}&email=${encodeURIComponent(parentEmail)}&parentId=${parentId}`
-    
-    const customerId = `cus_test_${Date.now()}`
+    // Try Stripe MCP to create product/price/payment link
+    try {
+      const mcp = (globalThis as any)
+      if (mcp?.mcp_stripe_create_product && mcp?.mcp_stripe_create_price && mcp?.mcp_stripe_create_payment_link) {
+        const product = await mcp.mcp_stripe_create_product({ name: 'Bank Transfer Payment', description: description || `Payment ${paymentId}` })
+        const price = await mcp.mcp_stripe_create_price({ product: product.id, unit_amount: Number(amount), currency: 'usd' })
+        const link = await mcp.mcp_stripe_create_payment_link({ price: price.id, quantity: 1 })
 
-    // Update parent with Stripe customer ID in Convex
-    const parent = await convex.query(api.parents.getParent, { id: parentId as any })
-    if (parent) {
-      await convex.mutation(api.parents.updateParent, {
-        id: parent._id,
-        stripeCustomerId: customerId
-      })
+        // Best effort: ensure parent has a stripeCustomerId (mock if MCP customer not available)
+        const parent = await convex.query(api.parents.getParent, { id: parentId as any })
+        if (parent && !parent.stripeCustomerId && mcp?.mcp_stripe_create_customer) {
+          try {
+            const customer = await mcp.mcp_stripe_create_customer({ name: parentName, email: parentEmail })
+            await convex.mutation(api.parents.updateParent, { id: parent._id, stripeCustomerId: customer.id })
+          } catch {}
+        }
+
+        return NextResponse.json({ success: true, url: link.url, customerId: parent?.stripeCustomerId || null, message: 'Payment link created successfully via MCP' })
+      }
+    } catch (mcpErr) {
+      console.log('MCP payment link not available, falling back to local form URL:', mcpErr)
     }
 
-    return NextResponse.json({
-      success: true,
-      paymentUrl: paymentUrl,
-      customerId: customerId,
-      message: 'Payment link created successfully'
-    })
+    // Fallback to local form URL
+    const paymentUrl = `/payments/${paymentId}/checkout?amount=${amount}&name=${encodeURIComponent(parentName)}&email=${encodeURIComponent(parentEmail)}&parentId=${parentId}`
+    return NextResponse.json({ success: true, url: paymentUrl, message: 'Payment link created (fallback)' })
 
   } catch (error) {
     console.error('Error creating payment link:', error)

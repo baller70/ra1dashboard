@@ -17,6 +17,36 @@ async function safeGetParent(ctx: any, parentId: any) {
   }
 }
 
+// Heuristic to determine payment method from payment/plan/notes
+function guessPaymentMethodToken(payment: any, paymentPlan?: any): 'stripe_card' | 'check' | 'cash' {
+  // Explicit payment field first
+  const direct = (payment && payment.paymentMethod) ? String(payment.paymentMethod) : ''
+  const plan = (paymentPlan && paymentPlan.paymentMethod) ? String(paymentPlan.paymentMethod) : ''
+  const notes = String(payment?.notes || '').toLowerCase()
+
+  const norm = (val: string) => {
+    const v = (val || '').toLowerCase().trim()
+    if (v === 'credit_card' || v === 'card' || v === 'stripe' || v === 'stripe_card') return 'stripe_card'
+    if (v === 'check' || v === 'cheque' || v === 'cheques') return 'check'
+    if (v === 'cash') return 'cash'
+    return ''
+  }
+
+  const directNorm = norm(direct)
+  if (directNorm) return directNorm as any
+
+  const planNorm = norm(plan)
+  if (planNorm) return planNorm as any
+
+  // Infer from notes or Stripe fields
+  if (notes.includes('stripe') || notes.includes('paid via') || notes.includes('****')) return 'stripe_card'
+  if (notes.includes('check')) return 'check'
+  if (notes.includes('cash')) return 'cash'
+
+  // Fallback: assume card unless proven otherwise
+  return 'stripe_card'
+}
+
 export const getPayments = query({
   args: {
     page: v.optional(v.number()),
@@ -72,11 +102,12 @@ export const getPayments = query({
           console.log('Could not fetch payment plan for payment:', payment._id);
         }
 
+        const methodToken = guessPaymentMethodToken(payment, paymentPlan)
         return {
           ...payment,
           parent,
           paymentPlan,
-          paymentMethod: paymentPlan?.paymentMethod || payment.paymentMethod,
+          paymentMethod: methodToken,
           // Add fallback parent name if parent fetch failed
           parentName: parent?.name || 'Unknown Parent',
           parentEmail: parent?.email || 'No email'
@@ -162,7 +193,6 @@ export const getPayment = query({
       parent: parent
         ? {
             ...parent,
-            // Attach a simplified contracts array expected by the UI
             contracts: parentContracts.map((c) => ({
               id: c._id,
               originalName: c.originalName,
@@ -174,6 +204,8 @@ export const getPayment = query({
           }
         : parent,
       paymentPlan,
+      // Normalize to a known token for UI badges
+      paymentMethod: guessPaymentMethodToken(payment, paymentPlan),
     };
   },
 });
@@ -266,6 +298,7 @@ export const createPayment = mutation({
     subscriptionId: v.optional(v.string()),
     installmentNumber: v.optional(v.number()),
     totalInstallments: v.optional(v.number()),
+    paymentMethod: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -276,6 +309,7 @@ export const createPayment = mutation({
       dueDate: args.dueDate,
       amount: args.amount,
       status: args.status,
+      paymentMethod: args.paymentMethod,
       stripeInvoiceId: undefined,
       stripePaymentId: undefined,
       paidAt: undefined,
@@ -297,6 +331,7 @@ export const updatePayment = mutation({
     status: v.optional(v.string()),
     paidAt: v.optional(v.number()),
     notes: v.optional(v.string()),
+    paymentMethod: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
@@ -418,6 +453,7 @@ export const getPaymentHistory = query({
 
       // Installment payment events
       if (installment.paidAt) {
+        const installmentMethod = (installment as any).paymentMethod || guessPaymentMethodToken(payment, paymentPlan)
         history.push({
           id: `installment-paid-${installment._id}`,
           type: "installment_paid",
@@ -427,7 +463,7 @@ export const getPaymentHistory = query({
             installmentNumber: installment.installmentNumber,
             amount: installment.amount,
             paidAt: installment.paidAt,
-            paymentMethod: (installment as any).paymentMethod || "Unknown",
+            paymentMethod: installmentMethod,
             transactionId: (installment as any).transactionId,
             status: "paid"
           },
@@ -466,10 +502,10 @@ export const getPaymentHistory = query({
         type: "paid",
         title: "Payment Completed",
         description: `Full payment of $${payment.amount} received`,
-        details: {
+          details: {
           amount: payment.amount,
           paidAt: payment.paidAt,
-          paymentMethod: (payment as any).paymentMethod || "Unknown",
+          paymentMethod: guessPaymentMethodToken(payment, paymentPlan),
           transactionId: (payment as any).transactionId,
           status: "paid",
           completedInstallments: installments.filter(i => i.status === 'paid').length,

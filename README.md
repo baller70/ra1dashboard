@@ -1,3 +1,32 @@
+# RA1 Dashboard – Production Readiness Notes
+
+This project is deployed to Vercel. The following configuration is expected in production.
+
+## Environment variables (Vercel)
+
+Required
+- NEXT_PUBLIC_CONVEX_URL: Convex URL (browser + server)
+- CONVEX_URL: (optional) explicit server URL if used
+- API_SECRET_KEY: Shared API key for server-to-server calls (default fallback used in dev)
+- STRIPE_SECRET_KEY: Stripe secret (restricted)
+- STRIPE_WEBHOOK_SECRET: Stripe webhook signing secret
+- NEXT_PUBLIC_BASE_URL: Base URL of the deployment (e.g. https://app-*.vercel.app)
+
+Optional
+- USE_STRIPE_MCP: 'true' to enable MCP pathways if configured
+
+## Healthcheck
+
+GET `/api/health` returns JSON with database and stripe connectivity. Status 200 indicates healthy.
+
+## Auth (temporary dev mode)
+
+Most API routes accept an `x-api-key` header using `API_SECRET_KEY`. Full Clerk auth lockdown can be enabled later by removing the bypass usage and enforcing `requireAuth`.
+
+## Stripe Webhooks
+
+Set Stripe dashboard endpoint to `/api/stripe/webhooks` and ensure `STRIPE_WEBHOOK_SECRET` matches the value in Vercel.
+
 # RA1 Dashboard - Basketball Program Management System
 
 A comprehensive dashboard system for managing basketball programs, built with Next.js, Convex, and modern web technologies.

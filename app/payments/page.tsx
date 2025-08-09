@@ -1242,10 +1242,7 @@ export default function PaymentsPage() {
                 <option value="overdue">Overdue</option>
                 <option value="failed">Failed</option>
               </select>
-              <Button variant="outline" onClick={() => window.location.reload()}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
+              {/* Single source of truth: header refresh handles manual refresh */}
             </div>
             
             {/* Team Organization Toggle */}
@@ -1469,20 +1466,17 @@ export default function PaymentsPage() {
                               <div>
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                      <Badge className={getPaymentMethodColor(getResolvedPaymentMethod(payment) || 'unknown')}>
+                                      <Badge className={getPaymentMethodColor((payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card'))}>
                                         {(() => {
-                                          const method = getResolvedPaymentMethod(payment);
-                                          const map: Record<string, string> = {
+                                          const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card');
+                                          return {
                                             'stripe_card': 'Credit Card',
                                             'credit_card': 'Credit Card',
                                             'card': 'Credit Card',
                                             'check': 'Check',
                                             'cheque': 'Check',
                                             'cash': 'Cash',
-                                            'bank_transfer': 'Bank Transfer',
-                                            'ach': 'Bank Transfer',
-                                          };
-                                          return map[method] || '—'
+                                          }[method] || 'Credit Card'
                                         })()}
                                       </Badge>
                                   {!payment.isMockEntry && payment.status === 'overdue' && (

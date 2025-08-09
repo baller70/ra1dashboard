@@ -453,6 +453,18 @@ export default function NewPaymentPlanPage() {
     }
   }
 
+  // Detect Stripe redirect success and show a toast
+  useEffect(() => {
+    try {
+      const usp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+      const status = usp.get('status')
+      const sessionId = usp.get('session_id')
+      if (status === 'success' && sessionId) {
+        toast({ title: '✅ Payment Completed', description: 'Stripe checkout completed successfully.' })
+      }
+    } catch {}
+  }, [])
+
   // Apply payment options from dialog - CREATE PAYMENT PLAN AND REDIRECT TO CHECKOUT
   const handleApplyPaymentOptions = async () => {
     setLoading(true);
@@ -487,50 +499,108 @@ export default function NewPaymentPlanPage() {
         frequency: cashFrequencyMonths,
       };
     } else {
-      const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule);
-      const installmentAmount = selectedScheduleDetails?.installmentAmount || 0;
-      const installments = selectedScheduleDetails?.installments || 1;
-      const totalAmount = installmentAmount * installments;
-      
-      paymentData = {
-        ...paymentData,
-        totalAmount: totalAmount,
-        installmentAmount: installmentAmount,
-        installments: installments,
-        description: `Payment plan - ${selectedScheduleDetails?.label}`,
-      };
+      if (selectedPaymentSchedule === 'custom') {
+        // Use the user-entered custom values already reflected in formData
+        const installments = Number(formData.installments || customInstallments)
+        const installmentAmount = Number(formData.installmentAmount || (1650 / installments))
+        const totalAmount = Number(formData.totalAmount || (installmentAmount * installments))
+
+        paymentData = {
+          ...paymentData,
+          totalAmount,
+          installmentAmount,
+          installments,
+          description: `Payment plan - Custom (${installments} installments)`,
+        }
+      } else {
+        const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule)
+        const installmentAmount = Number(selectedScheduleDetails?.installmentAmount || 0)
+        const installments = Number(selectedScheduleDetails?.installments || 1)
+        const totalAmount = installmentAmount * installments
+        
+        paymentData = {
+          ...paymentData,
+          totalAmount,
+          installmentAmount,
+          installments,
+          description: `Payment plan - ${selectedScheduleDetails?.label}`,
+        }
+      }
     }
 
     try {
+      // 1:1 behavior with payment detail page for full + card: process payment FIRST, then plan (non-blocking)
+      if (selectedPaymentOption === 'stripe_card' && selectedPaymentSchedule === 'full') {
+        const totalAmountNum = Number(paymentData.totalAmount) || 0
+        // Create a pending payment record (since new page has no existing payment)
+        const createResp = await fetch('/api/payments/create-one-time', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parentId: formData.parentId, amount: totalAmountNum, dueDate: Date.now() })
+        })
+        if (!createResp.ok) {
+          const e = await createResp.json().catch(() => ({}))
+          throw new Error(e.error || 'Failed to create payment record')
+        }
+        const { paymentId } = await createResp.json()
+
+        // Create PaymentIntent and complete
+        const intentResp = await fetch('/api/stripe/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parentId: formData.parentId, paymentId, amount: Math.round(totalAmountNum * 100), description: 'One-time payment at plan creation' })
+        })
+        if (!intentResp.ok) {
+          const errData = await intentResp.json().catch(() => ({}))
+          throw new Error(errData.error || 'Failed to create PaymentIntent')
+        }
+        const { clientSecret } = await intentResp.json()
+                const completeResp = await fetch(`/api/payments/${paymentId}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ paymentMethod: 'stripe_card', paymentPlan: 'full', sessionId: clientSecret, cardLast4: (creditCardForm.cardNumber || '').replace(/\s/g, '').slice(-4) })
+        })
+        if (!completeResp.ok) {
+          const err = await completeResp.json().catch(() => ({}))
+          throw new Error(err.error || 'Failed to complete payment')
+        }
+
+        // Try to create the plan AFTER successful charge (non-blocking UX)
+        ;(async () => {
+          try {
+            await fetch('/api/payment-plans', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024', 'x-request-id': Math.random().toString(36).slice(2) },
+              body: JSON.stringify(paymentData)
+            })
+          } catch {}
+        })()
+
+        toast({ title: '✅ Payment Completed', description: `Charged $${totalAmountNum.toFixed(2)} successfully.` })
+        router.push(`/parents/${formData.parentId}?planCreated=true`)
+        return
+      }
+
+      // For all other schedules/methods: create the plan first, then branch as needed
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-api-key': 'ra1-dashboard-api-key-2024'
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'x-request-id': Math.random().toString(36).slice(2)
         },
         body: JSON.stringify(paymentData)
-      });
-      
+      })
+
       if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: "✅ Payment Plan Created!",
-          description: "Payment plan has been set up successfully.",
-          duration: 3000,
-        });
-        
-        const paymentId = result.mainPaymentId || result.paymentIds?.[0];
-        if (paymentId) {
-          router.push(`/parents/${formData.parentId}?planCreated=true`);
-        }
-        
+        const result = await response.json()
+        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
+        toast({ title: '✅ Payment Plan Created!', description: 'Payment plan has been set up successfully.', duration: 3000 })
+        if (paymentId) router.push(`/parents/${formData.parentId}?planCreated=true`)
       } else {
-        const error = await response.json();
-        toast({
-          title: "❌ Creation Failed",
-          description: error.error || 'Failed to create payment plan',
-          variant: "destructive",
-        });
+        let error: any = {}
+        try { error = await response.json() } catch (_) { try { const text = await response.text(); error = { error: text } } catch {} }
+        toast({ title: '❌ Creation Failed', description: `${error.error || 'Failed to create payment plan'}${error.stage ? ` (stage: ${error.stage})` : ''}`, variant: 'destructive' })
       }
     } catch (error) {
       toast({

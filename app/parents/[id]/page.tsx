@@ -165,8 +165,12 @@ export default function ParentDetailPage() {
         if (plansResponse.ok) {
           const plansData = await plansResponse.json()
           console.log('Payment plans data received:', plansData)
+<<<<<<< HEAD
           const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
           setPaymentPlans(arr)
+=======
+          setPaymentPlans(Array.isArray(plansData) ? plansData : (plansData.data || []))
+>>>>>>> f127b35 (Parent page: fix payment plans count by parsing API response reliably; show count in title)
         } else {
           console.warn('Failed to fetch payment plans:', plansResponse.status)
         }
@@ -202,8 +206,12 @@ export default function ParentDetailPage() {
       if (plansResponse.ok) {
         const plansData = await plansResponse.json()
         console.log('Refreshed payment plans data:', plansData)
+<<<<<<< HEAD
         const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
         setPaymentPlans(arr)
+=======
+        setPaymentPlans(Array.isArray(plansData) ? plansData : (plansData.data || []))
+>>>>>>> f127b35 (Parent page: fix payment plans count by parsing API response reliably; show count in title)
       }
 
       toast({
@@ -981,7 +989,7 @@ export default function ParentDetailPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Payment Plans
+                Payment Plans {Array.isArray(paymentPlans) ? `(${paymentPlans.length})` : ''}
               </CardTitle>
               <Button
                 variant="ghost"
@@ -996,11 +1004,11 @@ export default function ParentDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {paymentPlans && paymentPlans.length > 0 ? (
+            {Array.isArray(paymentPlans) && paymentPlans.length > 0 ? (
               <div className="space-y-3">
                 {paymentPlans.map((plan) => (
                   <Link 
-                    key={plan._id || plan.id} 
+                    key={String(plan._id || plan.id)} 
                     href="#"
                     className="block"
                     onClick={(e) => { e.preventDefault(); openPlanDetail(plan) }}
@@ -1010,29 +1018,31 @@ export default function ParentDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <p className="font-medium group-hover:text-orange-600 transition-colors">
-                              {plan.type} Payment Plan
+                               {(plan as any).type || 'Installment'} Payment Plan
                             </p>
                             <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
                               <ExternalLink className="h-4 w-4 text-gray-400" />
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                           {plan.description && (
+                             <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                           )}
                           <div className="flex items-center justify-between">
                             <div className="text-right">
-                              <p className="font-semibold text-lg">${Number(plan.totalAmount).toLocaleString()}</p>
+                               <p className="font-semibold text-lg">${Number((plan as any).totalAmount || 0).toLocaleString()}</p>
                               <p className="text-sm text-muted-foreground">
-                                ${Number(plan.installmentAmount).toLocaleString()} x {plan.installments} installments
+                                ${Number((plan as any).installmentAmount || 0).toLocaleString()} x {(plan as any).installments} installments
                               </p>
                             </div>
-                            {plan.status && (
-                              <Badge variant={plan.status === 'active' ? 'default' : plan.status === 'completed' ? 'secondary' : 'outline'}>
-                                {plan.status}
+                             {(plan as any).status && (
+                              <Badge variant={(plan as any).status === 'active' ? 'default' : (plan as any).status === 'completed' ? 'secondary' : 'outline'}>
+                                {(plan as any).status}
                               </Badge>
                             )}
                           </div>
-                          {plan.nextPaymentDue && (
+                           {(plan as any).nextDueDate && (
                             <p className="text-xs text-orange-600 mt-1">
-                              Next payment due: {new Date(plan.nextPaymentDue).toLocaleDateString()}
+                               Next payment due: {new Date((plan as any).nextDueDate).toLocaleDateString()}
                             </p>
                           )}
                         </div>

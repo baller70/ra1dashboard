@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       amount: validatedData.amount,
       dueDate: new Date(validatedData.dueDate).getTime(),
       status: 'pending',
+      paymentMethod: (body && typeof body.paymentMethod === 'string') ? body.paymentMethod : undefined,
     });
 
     return NextResponse.json({ success: true, data: { _id: payment } }, { status: 201 });

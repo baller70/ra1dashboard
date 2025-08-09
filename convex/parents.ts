@@ -19,16 +19,8 @@ export const getParents = query({
 
     const allParents = await parentsQuery.collect();
     
-    // FILTER OUT TEST DATA: Only return the 2 REAL Houston family parents
-    const realParentEmails = [
-      "khouston75621@gmail.com", // Matt Houston
-      "khouston721@gmail.com"    // Kevin Houston
-    ];
-    
-    // Only return the 2 REAL parents as confirmed by user
-    const parents = allParents.filter(parent => 
-      realParentEmails.includes(parent.email)
-    );
+    // In production, return all parents (no test-data filtering)
+    const parents = allParents;
 
     let filteredParents = parents;
     if (search) {
@@ -38,11 +30,30 @@ export const getParents = query({
       );
     }
 
+    // Build payment plan counts for each parent to show on list views
+    const allPlans = await ctx.db.query("paymentPlans").collect();
+    const plansByParent = new Map<string, any[]>();
+    for (const plan of allPlans) {
+      const key = String((plan as any).parentId);
+      if (!plansByParent.has(key)) plansByParent.set(key, []);
+      plansByParent.get(key)!.push(plan);
+    }
+
     const offset = (page - 1) * limit;
     const paginatedParents = filteredParents.slice(offset, offset + limit);
 
+    // Enrich parents with a lightweight paymentPlans array for count/display
+    const enrichedParents = paginatedParents.map((p) => {
+      const key = String((p as any)._id);
+      const plans = plansByParent.get(key) || [];
+      return {
+        ...p,
+        paymentPlans: plans.map(pl => ({ _id: (pl as any)._id, status: (pl as any).status, type: (pl as any).type })),
+      } as any;
+    });
+
     return {
-      parents: paginatedParents,
+      parents: enrichedParents,
       pagination: {
         page,
         limit,

@@ -99,11 +99,12 @@ export default function PaymentPlansPage() {
   }
 
   const getPaymentMethodColor = (method: string) => {
-    switch (method) {
+    const m = (method || 'stripe_card')
+    switch (m) {
       case 'stripe_card': return 'bg-blue-100 text-blue-800'
       case 'check': return 'bg-green-100 text-green-800'
       case 'cash': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-blue-100 text-blue-800' // default to card style
     }
   }
 
@@ -243,8 +244,11 @@ export default function PaymentPlansPage() {
                           <Badge className={getTypeColor(plan.type || 'unknown')}>
                             {plan.type || 'Unknown'}
                           </Badge>
-                          <Badge className={getPaymentMethodColor(plan.paymentMethod || 'unknown')}>
-                            {plan.paymentMethod?.replace('stripe_card', 'Card') || 'Unknown'}
+                          <Badge className={getPaymentMethodColor(plan.paymentMethod || 'stripe_card')}>
+                            {(() => {
+                              const m = (plan.paymentMethod || 'stripe_card')
+                              return m === 'stripe_card' ? 'Credit Card' : m === 'check' ? 'Check' : m === 'cash' ? 'Cash' : 'Credit Card'
+                            })()}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">

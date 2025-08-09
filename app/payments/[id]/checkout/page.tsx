@@ -152,30 +152,29 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
   }
 
   const processOneTimePayment = async () => {
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Update payment status to paid
-    const response = await fetch(`/api/payments/${paymentId}/complete`, {
+    // Use Stripe Checkout for one-time full payment
+    const response = await fetch('/api/stripe/one-time', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        paymentMethod: 'credit_card',
-        cardLast4: formData.cardNumber.slice(-4),
-        paymentPlan: 'full'
+        parentId,
+        paymentId,
+        amount: Math.round(parseFloat(amount) * 100), // cents
+        description: `One-time payment for ${parentName}`,
       })
     })
 
-    if (response.ok) {
-      setLoading(false)
-      setPaymentSuccess(true)
-      toast({
-        title: 'Payment Successful!',
-        description: `Full payment of $${amount} has been processed successfully.`,
-      })
-    } else {
-      throw new Error('Failed to complete payment')
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.error || 'Failed to create checkout session')
     }
+
+    const { url } = await response.json()
+    if (url) {
+      window.location.href = url
+      return
+    }
+    throw new Error('No checkout URL returned')
   }
 
   const processSubscriptionPayment = async () => {

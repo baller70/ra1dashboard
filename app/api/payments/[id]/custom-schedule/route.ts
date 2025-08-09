@@ -50,7 +50,7 @@ export async function POST(
       totalInstallments: installments,
       frequency,
       startDate: startDateMs,
-      paymentMethod,
+      // persist method hint via notes + later badge guesser; installments table may not have field
     })
 
     // Persist check numbers on the parent payment notes as JSON for retrieval

@@ -62,7 +62,10 @@ export default function OverduePaymentsPage() {
       
       const response = await fetch('/api/payments/overdue', {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        }
       })
       
       console.log('🔍 OVERDUE PAGE: Response status:', response.status)
@@ -127,7 +130,7 @@ export default function OverduePaymentsPage() {
     try {
       const response = await fetch('/api/payments/overdue', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
         body: JSON.stringify({ paymentIds: selectedPayments })
       })
 
