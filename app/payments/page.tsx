@@ -820,11 +820,21 @@ export default function PaymentsPage() {
   }
 
   const getPaymentMethodColor = (method: string) => {
-    switch (method) {
-      case 'stripe_card': return 'bg-blue-100 text-blue-800'
-      case 'check': return 'bg-green-100 text-green-800'
-      case 'cash': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
+    switch ((method || '').toLowerCase()) {
+      case 'stripe_card':
+      case 'credit_card':
+      case 'card':
+        return 'bg-blue-100 text-blue-800'
+      case 'check':
+      case 'cheque':
+        return 'bg-green-100 text-green-800'
+      case 'cash':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'bank_transfer':
+      case 'ach':
+        return 'bg-purple-100 text-purple-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -1453,18 +1463,18 @@ export default function PaymentsPage() {
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
                                       <Badge className={getPaymentMethodColor(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'unknown')}>
                                         {(() => {
-                                          const method = payment.paymentMethod || payment.paymentPlan?.paymentMethod || '';
-                                          console.log('Payment method debug:', { 
-                                            paymentId: payment._id, 
-                                            paymentMethod: payment.paymentMethod,
-                                            paymentPlanMethod: payment.paymentPlan?.paymentMethod,
-                                            finalMethod: method 
-                                          });
-                                          return {
+                                          const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || '').toLowerCase();
+                                          const map: Record<string, string> = {
                                             'stripe_card': 'Credit Card',
+                                            'credit_card': 'Credit Card',
+                                            'card': 'Credit Card',
                                             'check': 'Check',
+                                            'cheque': 'Check',
                                             'cash': 'Cash',
-                                          }[method] || 'Unknown'
+                                            'bank_transfer': 'Bank Transfer',
+                                            'ach': 'Bank Transfer',
+                                          };
+                                          return map[method] || '—'
                                         })()}
                                       </Badge>
                                   {!payment.isMockEntry && payment.status === 'overdue' && (
