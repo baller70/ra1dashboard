@@ -659,8 +659,8 @@ export default function ParentDetailPage() {
                   <Badge variant={getStatusVariant(parent.status || 'inactive')}>
                     {parent.status || 'inactive'}
                   </Badge>
-                  <Badge variant={getContractStatusVariant(parent.contractStatus || 'draft')}>
-                    Contract: {parent.contractStatus || 'draft'}
+                  <Badge variant={getContractStatusVariant((parent.contractStatus === 'Completed' ? 'signed' : parent.contractStatus) || 'draft')}>
+                    Contract: {(parent.contractStatus === 'Completed' ? 'signed' : parent.contractStatus) || 'draft'}
                   </Badge>
                 </div>
               </div>
