@@ -357,6 +357,25 @@ export const deletePayment = mutation({
       throw new Error("Cannot delete paid payment");
     }
 
+    // Cascade delete: remove any installments tied to this payment
+    try {
+      const installments = await ctx.db
+        .query("paymentInstallments")
+        .withIndex("by_parent_payment", (q) => q.eq("parentPaymentId", args.id))
+        .collect();
+      for (const inst of installments) {
+        await ctx.db.delete(inst._id);
+      }
+    } catch (_) {
+      // If index not available, fall back to full scan by field
+      const allInst = await ctx.db.query("paymentInstallments").collect();
+      for (const inst of allInst) {
+        if ((inst as any).parentPaymentId === args.id) {
+          await ctx.db.delete(inst._id);
+        }
+      }
+    }
+
     await ctx.db.delete(args.id);
     return { success: true };
   },
@@ -797,9 +816,25 @@ export const deletePaymentPlan = mutation({
       throw new Error('Cannot delete payment plan with paid payments');
     }
 
-    // Delete all pending payments first
+    // First delete installments belonging to this plan
+    const installments = await ctx.db.query("paymentInstallments").collect();
+    for (const inst of installments) {
+      if ((inst as any).paymentPlanId === args.id) {
+        await ctx.db.delete(inst._id);
+      }
+    }
+
+    // Then delete all non-paid payments for this plan
     for (const payment of payments) {
       if (payment.status !== 'paid') {
+        // Also remove installments by parentPaymentId in case older records lack paymentPlanId
+        const tiedInstallments = await ctx.db
+          .query("paymentInstallments")
+          .withIndex("by_parent_payment", (q) => q.eq("parentPaymentId", payment._id))
+          .collect();
+        for (const inst of tiedInstallments) {
+          await ctx.db.delete(inst._id);
+        }
         await ctx.db.delete(payment._id);
       }
     }
