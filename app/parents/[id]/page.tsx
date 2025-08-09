@@ -673,7 +673,7 @@ export default function ParentDetailPage() {
               )}
               {aiLoading ? 'AI Analyzing...' : 'AI Analysis'}
             </Button>
-            <Button variant="outline" onClick={generateAIMessage} disabled={sendingMessage}>
+            <Button variant="outline" onClick={() => { setShowMessageDialog(true); /* optional: clear previous */ setMessageContent(''); }} disabled={sendingMessage}>
               {sendingMessage ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2" />
               ) : (
