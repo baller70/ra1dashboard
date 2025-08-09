@@ -1085,47 +1085,29 @@ export default function ParentDetailPage() {
             {payments && payments.length > 0 ? (
               <div className="space-y-3">
                 {payments.slice(0, 5).map((payment) => (
-                  <Link 
-                    key={payment.id} 
-                    href={`/payments/${payment.id}`}
-                    className="block"
-                  >
-                    <div className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium group-hover:text-orange-600 transition-colors">
-                            ${Number(payment.amount).toLocaleString()}
+                  <div key={payment.id} className="p-3 border rounded bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">
+                              ${Number(payment.amount).toLocaleString()}
+                            </p>
+                            <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'overdue' ? 'destructive' : 'secondary'}>
+                              {payment.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Due: {new Date(payment.dueDate).toLocaleDateString()}
                           </p>
-                          <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'overdue' ? 'destructive' : 'secondary'}>
-                            {payment.status}
-                          </Badge>
+                          {payment.paidAt && (
+                            <p className="text-xs text-green-600">
+                              Paid: {new Date(payment.paidAt).toLocaleDateString()}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Due: {new Date(payment.dueDate).toLocaleDateString()}
-                        </p>
-                        {payment.paidAt && (
-                          <p className="text-xs text-green-600">
-                            Paid: {new Date(payment.paidAt).toLocaleDateString()}
-                          </p>
-                        )}
                       </div>
-                      <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ExternalLink className="h-4 w-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-                
-                {payments.length > 5 && (
-                  <div className="pt-3 border-t">
-                    <Link href={`/payments?parentId=${parentId}`}>
-                      <Button variant="outline" size="sm" className="w-full">
-                        View All Payments ({payments.length})
-                        <ExternalLink className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
                   </div>
-                )}
+                ))}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
