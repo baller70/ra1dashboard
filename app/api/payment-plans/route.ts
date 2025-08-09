@@ -11,8 +11,15 @@ export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
-    // Get payment plans from Convex
-    const paymentPlans = await convexHttp.query(api.payments.getPaymentPlans, {});
+    const { searchParams } = new URL(request.url)
+    const parentId = searchParams.get('parentId') || undefined
+    const status = searchParams.get('status') || undefined
+
+    // Get payment plans from Convex with optional filters
+    const paymentPlans = await convexHttp.query(api.payments.getPaymentPlans, {
+      parentId: parentId as any,
+      status: status as any,
+    });
 
     return NextResponse.json(paymentPlans)
   } catch (error) {
