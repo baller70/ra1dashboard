@@ -579,10 +579,27 @@ export const getPaymentPlans = query({
     const enrichedPlans = await Promise.all(
       plans.map(async (plan) => {
         const parent = await safeGetParent(ctx, plan.parentId);
+
+        // Find the main payment record tied to this plan (if any)
+        let mainPaymentId: Id<"payments"> | undefined = undefined as any;
+        try {
+          const planPayments = await ctx.db
+            .query("payments")
+            .withIndex("by_payment_plan", (q) => q.eq("paymentPlanId", plan._id))
+            .collect();
+          if (planPayments && planPayments.length > 0) {
+            planPayments.sort((a: any, b: any) => (a.createdAt || 0) - (b.createdAt || 0));
+            mainPaymentId = planPayments[0]._id as any;
+          }
+        } catch (_) {
+          // ignore payment lookup errors
+        }
+
         return {
           ...plan,
           parent,
           paymentMethod: plan.paymentMethod,
+          mainPaymentId,
         };
       })
     );

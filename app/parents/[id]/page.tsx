@@ -1006,8 +1006,8 @@ export default function ParentDetailPage() {
               <div className="space-y-3">
                 {paymentPlans.map((plan) => (
                   <Link 
-                    key={plan.id} 
-                    href={`/payments/${plan.id}`}
+                    key={plan._id || plan.id} 
+                    href={`/payments/${plan.mainPaymentId || plan.id || plan._id}`}
                     className="block"
                   >
                     <div className="p-4 border rounded-lg hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group">
