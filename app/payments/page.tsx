@@ -838,6 +838,14 @@ export default function PaymentsPage() {
     }
   }
 
+  const getResolvedPaymentMethod = (payment: any): string => {
+    const direct = (payment?.paymentMethod || '').toLowerCase();
+    const fromPlan = (payment?.paymentPlan?.paymentMethod || '').toLowerCase();
+    const fromInstallment = (payment?.installments && payment.installments.length > 0 && (payment.installments[0].paymentMethod || '').toLowerCase()) || '';
+    const method = direct || fromPlan || fromInstallment;
+    return method;
+  }
+
   const calculateSummary = () => {
     const now = Date.now()
     
@@ -1461,9 +1469,9 @@ export default function PaymentsPage() {
                               <div>
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                      <Badge className={getPaymentMethodColor(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'unknown')}>
+                                      <Badge className={getPaymentMethodColor(getResolvedPaymentMethod(payment) || 'unknown')}>
                                         {(() => {
-                                          const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || '').toLowerCase();
+                                          const method = getResolvedPaymentMethod(payment);
                                           const map: Record<string, string> = {
                                             'stripe_card': 'Credit Card',
                                             'credit_card': 'Credit Card',
