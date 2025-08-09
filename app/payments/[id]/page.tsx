@@ -410,7 +410,7 @@ export default function PaymentDetailPage() {
     try {
       console.log('🔍 Starting fetchPaymentDetails for ID:', params.id)
       setLoading(true)
-      const response = await fetch(`/api/payments/${params.id}`)
+      const response = await fetch(`/api/payments/${params.id}?t=${Date.now()}`)
       
       console.log('🔍 Fetch response status:', response.status)
       
@@ -425,14 +425,11 @@ export default function PaymentDetailPage() {
       }
 
       const data = await response.json()
-      console.log('🔍 Payment data received:', data ? 'SUCCESS' : 'NO DATA')
       setPayment(data)
-      console.log('🔍 Payment state set successfully')
     } catch (error) {
-      console.error('🚨 Error fetching payment:', error)
+      console.error('Error fetching payment:', error)
       setError('Failed to load payment details')
     } finally {
-      console.log('🔍 Setting loading to false')
       setLoading(false)
     }
   }
@@ -1698,43 +1695,61 @@ The Basketball Factory Inc.`
                       <FileText className="h-4 w-4" />
                       CONTRACT
                     </h4>
-                    {payment.parent?.contracts && payment.parent.contracts.length > 0 ? (
-                      <Badge variant={
-                        payment.parent.contracts[0].status === 'signed' ? 'default' :
-                        payment.parent.contracts[0].status === 'pending' ? 'secondary' :
+                    {(() => {
+                      const firstContract = payment.parent?.contracts && payment.parent.contracts.length > 0 ? payment.parent.contracts[0] : null
+                      const statusText = (firstContract?.status || payment.parent?.contractStatus || 'pending') as string
+                      const badgeVariant =
+                        statusText === 'signed' ? 'default' :
+                        statusText === 'pending' ? 'secondary' :
                         'destructive'
-                      }>
-                        {payment.parent.contracts[0].status}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Not Uploaded</Badge>
-                    )}
+                      return (
+                        <Badge variant={badgeVariant as any}>{statusText === 'signed' ? 'Signed' : statusText}</Badge>
+                      )
+                    })()}
                   </div>
-                  
-                  {payment.parent?.contracts && payment.parent.contracts.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-xs text-gray-600">
-                        {payment.parent.contracts[0].originalName}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button asChild variant="outline" size="sm" className="flex-1">
-                          <Link href={`/contracts/${payment.parent.contracts[0].id}`}>
+                  {(() => {
+                    const firstContract = payment.parent?.contracts && payment.parent.contracts.length > 0 ? payment.parent.contracts[0] : null
+                    const hasContract = !!firstContract || (payment.parent?.contractStatus && payment.parent.contractStatus.toLowerCase() !== 'pending')
+                    if (hasContract && firstContract) {
+                      return (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600">{firstContract.originalName}</p>
+                          <div className="flex gap-2">
+                            <Button asChild variant="outline" size="sm" className="flex-1">
+                              <Link href={`/contracts/${firstContract.id}`}>
+                                View Contract
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    }
+                    if (hasContract) {
+                      return (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600">Contract on file</p>
+                          <div className="flex gap-2">
+                            <Button asChild variant="outline" size="sm" className="w-full">
+                              <Link href={`/contracts?parentId=${payment.parent?._id || payment.parent?.id}`}>
+                                View Contracts
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    }
+                    return (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-600">No contract uploaded yet</p>
+                        <Button asChild variant="outline" size="sm" className="w-full">
+                          <Link href={`/contracts/upload?parentId=${payment.parent?._id || payment.parent?.id}`}>
+                            <Upload className="mr-2 h-3 w-3" />
                             Upload Contract
                           </Link>
                         </Button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-xs text-gray-600">No contract uploaded yet</p>
-                      <Button asChild variant="outline" size="sm" className="w-full">
-                        <Link href={`/contracts/upload?parentId=${payment.parent?._id || payment.parent?.id}`}>
-                          <Upload className="mr-2 h-3 w-3" />
-                          Upload Contract
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
+                    )
+                  })()}
                 </div>
 
                 {/* Communication */}
