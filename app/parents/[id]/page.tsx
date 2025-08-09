@@ -626,6 +626,28 @@ export default function ParentDetailPage() {
     )
   }
 
+  const openPlanDetail = async (plan: any) => {
+    try {
+      const targetId = plan?.mainPaymentId || plan?.firstPaymentId
+      if (targetId) {
+        router.push(`/payments/${targetId}`)
+        return
+      }
+      // Fallback: fetch payments for this parent and locate by paymentPlanId
+      const res = await fetch(`/api/payments?parentId=${parentId}&limit=1000&_t=${Date.now()}`)
+      const json = await res.json()
+      const list = json?.data?.payments || []
+      const match = list.find((p: any) => String(p.paymentPlanId || '') === String(plan._id || plan.id || ''))
+      if (match?._id) {
+        router.push(`/payments/${match._id}`)
+      } else {
+        toast({ title: 'Payment not found', description: 'No payment record found for this plan yet.' })
+      }
+    } catch (e) {
+      toast({ title: 'Navigation failed', description: 'Unable to open payment detail.' })
+    }
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -1007,10 +1029,11 @@ export default function ParentDetailPage() {
                 {paymentPlans.map((plan) => (
                   <Link 
                     key={plan._id || plan.id} 
-                    href={`/payments/${plan.mainPaymentId || plan.id || plan._id}`}
+                    href="#"
                     className="block"
+                    onClick={(e) => { e.preventDefault(); openPlanDetail(plan) }}
                   >
-                    <div className="p-4 border rounded-lg hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group">
+                    <div className="p-4 border rounded-lg hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group" role="button">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
