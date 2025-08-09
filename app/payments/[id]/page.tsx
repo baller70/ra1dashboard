@@ -1728,7 +1728,7 @@ The Basketball Factory Inc.`
                     <div className="space-y-2">
                       <p className="text-xs text-gray-600">No contract uploaded yet</p>
                       <Button asChild variant="outline" size="sm" className="w-full">
-                        <Link href={`/contracts/upload?parentId=${payment.parent?.id}`}>
+                        <Link href={`/contracts/upload?parentId=${payment.parent?._id || payment.parent?.id}`}>
                           <Upload className="mr-2 h-3 w-3" />
                           Upload Contract
                         </Link>

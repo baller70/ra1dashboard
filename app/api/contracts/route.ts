@@ -91,6 +91,17 @@ export async function POST(request: Request) {
       expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
     })
 
+    // Ensure the contract is marked as signed (fallback in case backend default differs)
+    try {
+      await convex.mutation(api.contracts.updateContract, {
+        id: contractId as Id<"contracts">,
+        status: 'signed',
+        signedAt: Date.now(),
+      } as any)
+    } catch (e) {
+      console.warn('Could not force-set contract to signed:', e)
+    }
+
     // Update parent's contract status
     await convex.mutation(api.parents.updateParent, {
       id: parentId as Id<"parents">,
