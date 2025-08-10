@@ -7,7 +7,7 @@ export default function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === 'development' && request.nextUrl.pathname.startsWith('/api/debug')) {
     console.log(`🔧 Middleware processing: ${request.nextUrl.pathname}`)
   }
-  
+
   // Add security headers for production
   const response = NextResponse.next()
 
@@ -16,7 +16,7 @@ export default function middleware(request: NextRequest) {
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'origin-when-cross-origin',
-    'X-XSS-Protection': '1; mode=block'
+    'X-XSS-Protection': '1; mode=block',
   }
 
   // Apply security headers
@@ -24,12 +24,11 @@ export default function middleware(request: NextRequest) {
     response.headers.set(key, value)
   })
 
-  // CORS headers for API routes only
+  // CORS headers for API routes only (Edge-safe: avoid runtime env access)
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    const corsOrigin = process.env.NODE_ENV === 'production' 
-      ? process.env.NEXT_PUBLIC_APP_URL || '*' 
-      : '*'
-    
+    const requestOrigin = request.headers.get('origin')
+    const corsOrigin = requestOrigin || '*'
+
     response.headers.set('Access-Control-Allow-Origin', corsOrigin)
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
@@ -37,10 +36,9 @@ export default function middleware(request: NextRequest) {
 
   // Handle preflight requests efficiently
   if (request.method === 'OPTIONS') {
-    const corsOrigin = process.env.NODE_ENV === 'production' 
-      ? process.env.NEXT_PUBLIC_APP_URL || '*' 
-      : '*'
-      
+    const requestOrigin = request.headers.get('origin')
+    const corsOrigin = requestOrigin || '*'
+
     return new Response(null, {
       status: 204,
       headers: {
