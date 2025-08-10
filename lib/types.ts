@@ -177,7 +177,9 @@ export type BulkUploadValidation = {
   data: BulkUploadParent[];
   errors: ValidationError[];
   duplicates: Array<{
-    email: string;
+    // For backward compatibility: server may return `email` or `combo` (email|name)
+    email?: string;
+    combo?: string;
     rows: number[];
     existsInDb: boolean;
   }>;
