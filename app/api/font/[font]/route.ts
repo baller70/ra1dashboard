@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 
 const SOURCES: Record<string, string> = {
-  'audiowide-regular': 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/audiowide/Audiowide-Regular.ttf',
-  'saira-regular': 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/static/Saira-Regular.ttf',
-  'saira-bold': 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/static/Saira-Bold.ttf',
+  'audiowide-regular': 'https://raw.githubusercontent.com/google/fonts/main/ofl/audiowide/Audiowide-Regular.ttf',
+  'saira-regular': 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/static/Saira-Regular.ttf',
+  'saira-bold': 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/static/Saira-Bold.ttf',
 }
 
 export async function GET(_req: NextRequest, context: { params: { font: string } }) {

@@ -13,11 +13,11 @@ const targets = [
     filename: 'Audiowide-Regular.ttf',
   },
   {
-    url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/static/Saira-Regular.ttf',
+    url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/static/Saira-Regular.ttf',
     filename: 'Saira-Regular.ttf',
   },
   {
-    url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/static/Saira-Bold.ttf',
+    url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/static/Saira-Bold.ttf',
     filename: 'Saira-Bold.ttf',
   },
 ];
