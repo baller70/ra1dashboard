@@ -648,15 +648,16 @@ export default function AssessmentsPage() {
         const skill = assessmentData.skills.find(s => s.skillName === skillName)
         const rating = skill ? skill.rating : 0
 
-        // Skill name - body font
+        // Skill name - body font (wrap long names instead of truncating)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(7)
         pdf.setFont(bodyFontFamily, 'normal')
-        const shortName = truncateText(skillName, 14)
-        pdf.text(shortName, leftMargin + 5, rowTop)
+        const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(skillName, 30) : [skillName]
+        pdf.text(nameLines as any, leftMargin + 5, rowTop)
 
-        // Progress bar background
-        const barY = rowTop + Math.max(1, rowH * 0.30)
+        // Progress bar background (positioned below wrapped label)
+        const lineCount = Array.isArray(nameLines) ? nameLines.length : 1
+        const barY = rowTop + Math.max(3 + (lineCount - 1) * 3, rowH * 0.30)
         pdf.setFillColor(...colors.mediumGray)
         pdf.rect(leftMargin + 5, barY, 28, 1.5, 'F')
 
@@ -1306,25 +1307,26 @@ export default function AssessmentsPage() {
                         </div>
                       </div>
 
-                      {/* Rating Buttons */}
-                      <div className="flex items-center space-x-2 ml-4">
+                      {/* Rating Buttons (textual labels instead of numbers) */}
+                      <div className="flex flex-wrap items-center gap-2 ml-4">
                         {RATING_LABELS.map((rating) => (
                           <button
                             key={rating.value}
                             onClick={() => updateSkillRating(skill.name, rating.value)}
                             className={`
-                              w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold
-                              transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+                              px-3 py-1 rounded-full border text-xs font-medium whitespace-nowrap
+                              transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
                               ${currentRating === rating.value
-                                ? `${rating.color} text-white border-transparent shadow-lg`
-                                : `border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-600`
+                                ? `${rating.color} text-white border-transparent shadow`
+                                : `border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-700`
                               }
                             `}
                             title={`${rating.value} - ${rating.label}`}
                           >
-                            {rating.value}
+                            <span className="opacity-70 mr-1">{rating.value}</span>
+                            {rating.label}
                             {rating.value === 5 && currentRating === 5 && (
-                              <Star className="h-3 w-3 ml-0.5 fill-current" />
+                              <Star className="h-3 w-3 ml-1 fill-current inline" />
                             )}
                           </button>
                         ))}
