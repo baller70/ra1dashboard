@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Saira } from 'next/font/google'
+import { Saira, Audiowide } from 'next/font/google'
 import { Providers } from '../components/providers'
 import { ErrorBoundary } from '../components/error-boundary'
 import { ClientOnly } from '../components/client-only'
@@ -9,10 +9,17 @@ import { ClientOnly } from '../components/client-only'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const saira = Saira({ 
+const saira = Saira({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-saira',
+  display: 'swap',
+})
+
+const audiowide = Audiowide({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-audiowide',
   display: 'swap',
 })
 
@@ -28,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${saira.variable} font-saira`} suppressHydrationWarning>
+      <body className={`${saira.variable} ${audiowide.variable} font-saira`} suppressHydrationWarning>
         <ErrorBoundary>
           <ClientOnly
             fallback={
