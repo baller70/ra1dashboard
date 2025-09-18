@@ -6,7 +6,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const outDir = path.join(process.cwd(), 'public', 'fonts');
+// Write into repository public/fonts so Next.js serves at /fonts/*
+const outDir = path.join(__dirname, '..', '..', 'public', 'fonts');
 const targets = [
   {
     url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/audiowide/Audiowide-Regular.ttf',

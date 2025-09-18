@@ -15,7 +15,8 @@ try {
   process.exit(0);
 }
 
-const ROOT = path.join(__dirname, '..');
+// Repo root (two levels up from app/scripts)
+const ROOT = path.join(__dirname, '..', '..');
 const inDir = path.join(ROOT, 'public', 'fonts');
 const outDir = path.join(inDir, 'converted');
 
