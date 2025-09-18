@@ -177,6 +177,14 @@ export default function DashboardPage() {
       href: '/analytics',
       color: 'bg-orange-50 text-orange-600 hover:bg-orange-100',
       iconColor: 'text-orange-600'
+    },
+    {
+      title: 'Assessment',
+      description: 'Create player assessment report',
+      icon: FileText,
+      href: '/assessments',
+      color: 'bg-red-50 text-red-600 hover:bg-red-100',
+      iconColor: 'text-red-600'
     }
   ]
 
