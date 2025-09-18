@@ -314,7 +314,13 @@ export default function AssessmentsPage() {
           const res = await fetch(url)
           if (!res.ok) throw new Error(`Font fetch failed: ${url}`)
           const buf = await res.arrayBuffer()
-          return btoa(String.fromCharCode(...new Uint8Array(buf)))
+          const u8 = new Uint8Array(buf)
+          const CHUNK = 0x8000
+          let binary = ''
+          for (let i = 0; i < u8.length; i += CHUNK) {
+            binary += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK) as any)
+          }
+          return btoa(binary)
         }
         const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
           try {
@@ -347,8 +353,8 @@ export default function AssessmentsPage() {
             '/fonts/SairaCondensed-Regular.ttf',
             '/api/font/saira-regular'
           )
-          pdf.addFileToVFS('Saira-Regular.ttf', sr)
-          pdf.addFont('Saira-Regular.ttf', 'Saira', 'normal')
+          pdf.addFileToVFS('SairaCondensed-Regular.ttf', sr)
+          pdf.addFont('SairaCondensed-Regular.ttf', 'SairaCondensed', 'normal')
           bodyFontFamily = 'Saira'
           loadedBody = true
         } catch (e) {
@@ -361,8 +367,8 @@ export default function AssessmentsPage() {
             '/fonts/SairaCondensed-Bold.ttf',
             '/api/font/saira-bold'
           )
-          pdf.addFileToVFS('Saira-Bold.ttf', sb)
-          pdf.addFont('Saira-Bold.ttf', 'Saira', 'bold')
+          pdf.addFileToVFS('SairaCondensed-Bold.ttf', sb)
+          pdf.addFont('SairaCondensed-Bold.ttf', 'SairaCondensed', 'bold')
         } catch (e) {
           console.warn('Saira Bold unavailable; bold text will simulate weight')
         }
