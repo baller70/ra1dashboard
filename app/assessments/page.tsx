@@ -110,8 +110,12 @@ export default function AssessmentsPage() {
     gameplayAnalysis: false,
     progressSummary: false,
     pdf: false,
-    email: false
+    email: false,
+    sendEmail: false,
   })
+
+  const [parentEmail, setParentEmail] = useState<string>('')
+  const [lastPdfBase64, setLastPdfBase64] = useState<string | null>(null)
 
   const [inputPrompts, setInputPrompts] = useState({
     parentSuggestions: '',
@@ -789,8 +793,13 @@ export default function AssessmentsPage() {
       pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 60 + leftMargin, pageHeight - bottomMargin - 3)
       pdf.text('Professional Basketball Assessment System', 70, pageHeight - 10)
 
-      // Save the PDF
+      // Save the PDF and keep a copy in memory for emailing
       const fileName = `${assessmentData.playerInfo.name.replace(/\s+/g, '_')}_Assessment_Report.pdf`
+      try {
+        const dataUri = (pdf as any).output('datauristring') as string
+        const base64 = dataUri.split(',')[1]
+        setLastPdfBase64(base64)
+      } catch (_) {}
       pdf.save(fileName)
 
       alert(`Professional assessment report for ${assessmentData.playerInfo.name} has been generated and downloaded successfully!`)
@@ -1109,6 +1118,54 @@ export default function AssessmentsPage() {
       </AppLayout>
     )
   }
+
+  // Send to Parents via Resend API (server-side route)
+  const sendToParents = async () => {
+    if (!isReadyForExport()) {
+      alert(`Please complete the following: ${validationErrors.join(', ')}`)
+      return
+    }
+    if (!parentEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(parentEmail)) {
+      alert('Please enter a valid parent email address.')
+      return
+    }
+
+    if (!lastPdfBase64) {
+      alert('Please click "Export PDF" first, then Send to Parents. This ensures the attachment matches the latest edits.')
+      return
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, sendEmail: true }))
+      const assessmentUrl = `${window.location.origin}/assessments`
+      const res = await fetch('/api/send-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: parentEmail,
+          playerName: assessmentData.playerInfo.name,
+          parentName: '',
+          assessmentUrl,
+          pdfBase64: lastPdfBase64,
+          programName: assessmentData.programName,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        console.error('Send email error:', data)
+        alert(`Failed to send email: ${data?.error || 'Unknown error'}`)
+        return
+      }
+      alert('Assessment emailed to parent successfully.')
+    } catch (err) {
+      console.error('Send email error:', err)
+      alert('Failed to send email. Please try again.')
+    } finally {
+      setLoading(prev => ({ ...prev, sendEmail: false }))
+    }
+  }
+
 
   return (
     <AppLayout>
@@ -1551,11 +1608,35 @@ export default function AssessmentsPage() {
                 Clear All Data
               </Button>
 
-              <div className="flex items-center justify-center">
-                <Badge className="bg-green-100 text-green-800 border-green-300">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  System Ready
-                </Badge>
+              <div>
+                <Label htmlFor="parent-email">Parent Email</Label>
+                <div className="mt-1 flex gap-2">
+                  <Input
+                    id="parent-email"
+                    type="email"
+                    value={parentEmail}
+                    onChange={(e) => setParentEmail(e.target.value)}
+                    placeholder="parent@example.com"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={sendToParents}
+                    disabled={loading.sendEmail}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {loading.sendEmail ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send to Parents
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 
