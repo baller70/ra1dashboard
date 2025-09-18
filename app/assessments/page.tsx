@@ -240,6 +240,12 @@ export default function AssessmentsPage() {
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
 
+      // Optimized margins for maximum space utilization
+      const leftMargin = 3   // Reduced margins
+      const topMargin = 3    // Reduced margins
+      const rightMargin = 3  // Reduced margins
+      const bottomMargin = 3 // Reduced margins
+
       // Helper function to truncate text
       const truncateText = (text: string, maxLength: number) => {
         if (text.length <= maxLength) return text
@@ -259,93 +265,136 @@ export default function AssessmentsPage() {
         sectionRed: [139, 0, 0]      // Dark red for sections
       }
 
-      // Left sidebar background (like the resume)
+      // Convert logo file to data URL if available
+      let logoDataUrl: string | null = null
+      if (assessmentData.logoFile) {
+        try {
+          logoDataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (e) => resolve(e.target?.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(assessmentData.logoFile!)
+          })
+        } catch (error) {
+          console.log('Could not convert logo to data URL:', error)
+        }
+      }
+
+      // Add background watermark logo (large, centered, low opacity)
+      if (logoDataUrl) {
+        try {
+          // Calculate center position for watermark
+          const watermarkSize = 80 // Large watermark size in mm
+          const watermarkX = (pageWidth - watermarkSize) / 2
+          const watermarkY = (pageHeight - watermarkSize) / 2
+
+          // Add watermark with low opacity (simulated by light gray overlay)
+          pdf.setGState(pdf.GState({ opacity: 0.1 })) // 10% opacity
+          pdf.addImage(logoDataUrl, 'PNG', watermarkX, watermarkY, watermarkSize, watermarkSize)
+          pdf.setGState(pdf.GState({ opacity: 1.0 })) // Reset opacity
+        } catch (error) {
+          console.log('Watermark logo could not be added:', error)
+        }
+      }
+
+      // Left sidebar background (like the resume) - with reduced margins
       pdf.setFillColor(...colors.lightGray)
-      pdf.rect(0, 0, 60, pageHeight, 'F')
+      pdf.rect(leftMargin, topMargin, 55, pageHeight - topMargin - bottomMargin, 'F')
 
-      // Main content area background
+      // Main content area background - with reduced margins
       pdf.setFillColor(...colors.white)
-      pdf.rect(60, 0, pageWidth - 60, pageHeight, 'F')
+      pdf.rect(55 + leftMargin, topMargin, pageWidth - 55 - leftMargin - rightMargin, pageHeight - topMargin - bottomMargin, 'F')
 
-      // Header section with player name (like resume header)
+      // Add top left logo (small, positioned in corner)
+      if (logoDataUrl) {
+        try {
+          const logoSize = 12 // Small logo size in mm
+          pdf.addImage(logoDataUrl, 'PNG', leftMargin + 2, topMargin + 2, logoSize, logoSize)
+        } catch (error) {
+          console.log('Top left logo could not be added:', error)
+        }
+      }
+
+      // Header section with player name (like resume header) - optimized positioning
+      const headerHeight = 40 // Reduced header height for more content space
       pdf.setFillColor(...colors.black)
-      pdf.rect(60, 0, pageWidth - 60, 45, 'F')
+      pdf.rect(55 + leftMargin, topMargin, pageWidth - 55 - leftMargin - rightMargin, headerHeight, 'F')
 
       // Player name in header - Audiowide-style bold font
       pdf.setTextColor(...colors.white)
-      pdf.setFontSize(26) // Slightly larger for Audiowide effect
+      pdf.setFontSize(28) // Larger for Audiowide effect
       pdf.setFont('helvetica', 'bold')
-      pdf.text(assessmentData.playerInfo.name.toUpperCase(), 70, 25)
+      pdf.text(assessmentData.playerInfo.name.toUpperCase(), 60 + leftMargin, topMargin + 20)
 
       // Subtitle - Audiowide-style bold font
-      pdf.setFontSize(14) // Slightly larger for Audiowide effect
+      pdf.setFontSize(16) // Larger for Audiowide effect
       pdf.setFont('helvetica', 'bold')
-      pdf.text('BASKETBALL ASSESSMENT REPORT', 70, 35)
+      pdf.text('BASKETBALL ASSESSMENT REPORT', 60 + leftMargin, topMargin + 32)
 
-      // Left Sidebar Content
-      let sidebarY = 20
+      // Left Sidebar Content - optimized positioning
+      let sidebarY = topMargin + 20 // Start below top logo
 
       // Profile section header
       pdf.setTextColor(...colors.primary)
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('PROFILE', 10, sidebarY)
-      sidebarY += 12 // Reduced spacing
+      pdf.text('PROFILE', leftMargin + 5, sidebarY)
+      sidebarY += 10 // Reduced spacing for full page utilization
 
       // Player details in sidebar - Saira-style font
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(8) // Smaller for better space utilization
+      pdf.setFontSize(7) // Smaller for better space utilization
       pdf.setFont('helvetica', 'normal')
 
       const profileText = `${assessmentData.playerInfo.age} years old athlete with strong basketball fundamentals. Currently playing for ${truncateText(assessmentData.playerInfo.team, 25)} in the ${truncateText(assessmentData.programName, 30)} program.`
       const profileLines = pdf.splitTextToSize(profileText, 45)
       profileLines.forEach((line: string, index: number) => {
-        pdf.text(line, 10, sidebarY + (index * 3)) // Reduced line spacing
+        pdf.text(line, leftMargin + 5, sidebarY + (index * 2.5)) // Reduced line spacing
       })
-      sidebarY += profileLines.length * 3 + 10 // Reduced spacing
+      sidebarY += profileLines.length * 2.5 + 8 // Reduced spacing
 
-      // Contact/Info section
+      // Contact/Info section - optimized positioning
       pdf.setTextColor(...colors.black)
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('DETAILS', 10, sidebarY)
-      sidebarY += 12 // Reduced spacing
+      pdf.text('DETAILS', leftMargin + 5, sidebarY)
+      sidebarY += 10 // Reduced spacing for full page utilization
 
       // Age - italic formatting
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(8) // Smaller font
+      pdf.setFontSize(7) // Smaller font for space optimization
       pdf.setFont('helvetica', 'oblique') // Italic for Age label
-      pdf.text('Age', 10, sidebarY)
+      pdf.text('Age', leftMargin + 5, sidebarY)
       pdf.setFont('helvetica', 'normal')
-      pdf.text(assessmentData.playerInfo.age.toString(), 10, sidebarY + 4)
-      sidebarY += 14 // Reduced spacing
+      pdf.text(assessmentData.playerInfo.age.toString(), leftMargin + 5, sidebarY + 3)
+      sidebarY += 10 // Reduced spacing
 
       // Team - italic formatting
       pdf.setFont('helvetica', 'oblique') // Italic for Team label
-      pdf.text('Team', 10, sidebarY)
+      pdf.text('Team', leftMargin + 5, sidebarY)
       pdf.setFont('helvetica', 'normal')
       const teamLines = pdf.splitTextToSize(assessmentData.playerInfo.team, 45)
       teamLines.forEach((line: string, index: number) => {
-        pdf.text(line, 10, sidebarY + 4 + (index * 3)) // Reduced line spacing
+        pdf.text(line, leftMargin + 5, sidebarY + 3 + (index * 2.5)) // Reduced line spacing
       })
-      sidebarY += teamLines.length * 3 + 10 // Reduced spacing
+      sidebarY += teamLines.length * 2.5 + 8 // Reduced spacing
 
       // Assessment Date - italic formatting
       pdf.setFont('helvetica', 'oblique') // Italic for Assessment Date label
-      pdf.text('Assessment Date', 10, sidebarY)
+      pdf.text('Assessment Date', leftMargin + 5, sidebarY)
       pdf.setFont('helvetica', 'normal')
-      pdf.text(assessmentData.playerInfo.assessmentDate, 10, sidebarY + 4)
-      sidebarY += 14 // Reduced spacing
+      pdf.text(assessmentData.playerInfo.assessmentDate, leftMargin + 5, sidebarY + 3)
+      sidebarY += 10 // Reduced spacing
 
       // Program - italic formatting
       pdf.setFont('helvetica', 'oblique') // Italic for Program label
-      pdf.text('Program', 10, sidebarY)
+      pdf.text('Program', leftMargin + 5, sidebarY)
       pdf.setFont('helvetica', 'normal')
       const programLines = pdf.splitTextToSize(assessmentData.programName, 45)
       programLines.forEach((line: string, index: number) => {
-        pdf.text(line, 10, sidebarY + 4 + (index * 3))
+        pdf.text(line, leftMargin + 5, sidebarY + 3 + (index * 2.5))
       })
-      sidebarY += programLines.length * 3 + 12 // Reduced spacing
+      sidebarY += programLines.length * 2.5 + 8 // Reduced spacing
 
 
 
@@ -358,23 +407,23 @@ export default function AssessmentsPage() {
       pdf.setTextColor(...colors.black)
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('KEY SKILLS', 10, sidebarY)
-      sidebarY += 10 // Reduced spacing
+      pdf.text('KEY SKILLS', leftMargin + 5, sidebarY)
+      sidebarY += 8 // Reduced spacing for full page utilization
 
       // Overall rating circle (like resume skill circles) - Compact version
-      const centerX = 25 // Moved left for more space
-      const centerY = sidebarY + 10
-      const radius = 10 // Smaller radius
+      const centerX = leftMargin + 20 // Adjusted for new margins
+      const centerY = sidebarY + 8
+      const radius = 8 // Smaller radius for space optimization
 
       // Background circle
       pdf.setDrawColor(...colors.mediumGray)
-      pdf.setLineWidth(2)
+      pdf.setLineWidth(1.5)
       pdf.circle(centerX, centerY, radius, 'S')
 
       // Progress circle
       const percentage = (parseFloat(averageRating) / 5) * 100
       pdf.setDrawColor(...colors.primary)
-      pdf.setLineWidth(2) // Thinner line
+      pdf.setLineWidth(1.5) // Thinner line
 
       // Draw arc for progress (simplified as we can't draw perfect arcs in jsPDF)
       const steps = Math.floor((percentage / 100) * 16) // Fewer steps for smaller circle
@@ -389,22 +438,22 @@ export default function AssessmentsPage() {
 
       // Percentage text in center
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(8) // Smaller font
+      pdf.setFontSize(7) // Smaller font for space optimization
       pdf.setFont('helvetica', 'bold')
       pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 1, { align: 'center' })
 
-      pdf.setFontSize(7) // Smaller font
+      pdf.setFontSize(6) // Smaller font
       pdf.setFont('helvetica', 'normal')
-      pdf.text('Overall', centerX, centerY + 6, { align: 'center' })
+      pdf.text('Overall', centerX, centerY + 5, { align: 'center' })
 
-      sidebarY += 25 // Reduced spacing
+      sidebarY += 20 // Reduced spacing
 
       // Individual skills as progress bars - Compact version for all 8 skills
       pdf.setTextColor(...colors.black)
       pdf.setFontSize(9) // Smaller font
       pdf.setFont('helvetica', 'bold')
-      pdf.text('SKILL BREAKDOWN', 10, sidebarY)
-      sidebarY += 8 // Reduced spacing
+      pdf.text('SKILL BREAKDOWN', leftMargin + 5, sidebarY)
+      sidebarY += 6 // Reduced spacing for full page utilization
 
       // Show all 8 skills with compact spacing
       const allSkills = [
@@ -413,56 +462,56 @@ export default function AssessmentsPage() {
       ]
 
       allSkills.forEach((skillName, index) => {
-        const skillY = sidebarY + (index * 10) // Reduced spacing between skills
+        const skillY = sidebarY + (index * 8) // Reduced spacing between skills for full utilization
         const skill = assessmentData.skills.find(s => s.skillName === skillName)
         const rating = skill ? skill.rating : 0
 
         // Skill name - Saira-style font
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(7) // Smaller font for compact layout
+        pdf.setFontSize(6) // Smaller font for compact layout
         pdf.setFont('helvetica', 'normal')
-        const shortName = truncateText(skillName, 12) // Shorter names
-        pdf.text(shortName, 10, skillY)
+        const shortName = truncateText(skillName, 11) // Shorter names
+        pdf.text(shortName, leftMargin + 5, skillY)
 
         // Progress bar background
         pdf.setFillColor(...colors.mediumGray)
-        pdf.rect(10, skillY + 1, 30, 2, 'F') // Smaller progress bar
+        pdf.rect(leftMargin + 5, skillY + 1, 28, 1.5, 'F') // Smaller progress bar
 
         // Progress bar fill
-        const skillPercentage = (rating / 5) * 30
+        const skillPercentage = (rating / 5) * 28
         pdf.setFillColor(...colors.primary)
-        pdf.rect(10, skillY + 1, skillPercentage, 2, 'F')
+        pdf.rect(leftMargin + 5, skillY + 1, skillPercentage, 1.5, 'F')
 
-        // Percentage text
+        // Rating text
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(6) // Very small font
+        pdf.setFontSize(5) // Very small font for space optimization
         pdf.text(`${Math.round((skill.rating / 5) * 100)}%`, 47, skillY + 4)
       })
 
-      // Main content area (right side)
-      let mainY = 55
+      // Main content area (right side) - optimized positioning
+      let mainY = topMargin + headerHeight + 8 // Start after header with minimal spacing
 
       // Professional Experience section (adapted for basketball assessment) - Audiowide-style header
       pdf.setTextColor(...colors.black)
-      pdf.setFontSize(16) // Larger for Audiowide effect
+      pdf.setFontSize(18) // Larger for Audiowide effect and full page utilization
       pdf.setFont('helvetica', 'bold')
-      pdf.text('ASSESSMENT RESULTS', 70, mainY)
-      mainY += 18 // More space for larger header
+      pdf.text('ASSESSMENT RESULTS', 60 + leftMargin, mainY)
+      mainY += 15 // Optimized spacing for full page utilization
 
       // Overall performance summary - Saira-style font
       pdf.setTextColor(...colors.darkGray)
       pdf.setFontSize(10)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('Overall Performance Rating', 70, mainY)
-      mainY += 8
+      pdf.text('Overall Performance Rating', 60 + leftMargin, mainY)
+      mainY += 6 // Reduced spacing
 
-      pdf.setFontSize(9)
+      pdf.setFontSize(8) // Smaller for space optimization
       pdf.setFont('helvetica', 'normal') // Saira-style body text
-      pdf.text(`${assessmentData.programName}`, 70, mainY)
-      pdf.text(`Assessment Date: ${assessmentData.playerInfo.assessmentDate}`, 70, mainY + 5)
-      mainY += 12 // Reduced spacing to save room for AI content
+      pdf.text(`${assessmentData.programName}`, 60 + leftMargin, mainY)
+      pdf.text(`Assessment Date: ${assessmentData.playerInfo.assessmentDate}`, 60 + leftMargin, mainY + 4)
+      mainY += 10 // Reduced spacing to save room for AI content
 
-      // Key achievements (bullet points like resume)
+      // Key achievements (bullet points like resume) - optimized spacing
       const achievements = [
         `Achieved ${averageRating}/5.0 overall skill rating`,
         `Demonstrated ${ratedSkills.filter(s => s.rating >= 4).length} skills at advanced level`,
@@ -472,90 +521,90 @@ export default function AssessmentsPage() {
 
       achievements.forEach((achievement, index) => {
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(9)
-        pdf.text('•', 70, mainY + (index * 6))
-        pdf.text(achievement, 75, mainY + (index * 6))
+        pdf.setFontSize(8) // Smaller for space optimization
+        pdf.text('•', 60 + leftMargin, mainY + (index * 4)) // Reduced spacing
+        pdf.text(achievement, 65 + leftMargin, mainY + (index * 4))
       })
-      mainY += achievements.length * 6 + 15
+      mainY += achievements.length * 4 + 10 // Reduced spacing
 
       // AI Insights section (like Education section in resume) - Expanded for better content display
       if (assessmentData.generatedContent.parentSuggestions) {
         pdf.setTextColor(...colors.black)
-        pdf.setFontSize(16) // Larger Audiowide-style header
+        pdf.setFontSize(18) // Larger Audiowide-style header for full page utilization
         pdf.setFont('helvetica', 'bold')
-        pdf.text('DEVELOPMENT RECOMMENDATIONS', 70, mainY)
-        mainY += 20 // More space for larger header
+        pdf.text('DEVELOPMENT RECOMMENDATIONS', 60 + leftMargin, mainY)
+        mainY += 15 // Optimized spacing for full page utilization
 
         // Parent Suggestions - Expanded section
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont('helvetica', 'bold')
-        pdf.text('Parent Guidance', 70, mainY)
-        mainY += 12 // More space for section
+        pdf.text('Parent Guidance', 60 + leftMargin, mainY)
+        mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(9) // Larger Saira-style body text for better readability
+        pdf.setFontSize(8) // Saira-style body text optimized for space
         pdf.setFont('helvetica', 'normal')
 
-        // Display full optimized AI suggestions - Expanded format
+        // Display full optimized AI suggestions - Expanded format with full page utilization
         const suggestionLines = pdf.splitTextToSize(
           assessmentData.generatedContent.parentSuggestions, // Use full optimized content
-          pageWidth - 80
+          pageWidth - 65 - leftMargin - rightMargin // Utilize full available width
         )
-        suggestionLines.slice(0, 8).forEach((line: string, index: number) => { // More lines for expanded content
-          pdf.text(line, 70, mainY + (index * 5)) // More line spacing for readability
+        suggestionLines.slice(0, 10).forEach((line: string, index: number) => { // More lines for full utilization
+          pdf.text(line, 60 + leftMargin, mainY + (index * 4)) // Optimized line spacing
         })
-        mainY += suggestionLines.slice(0, 8).length * 5 + 15 // Dynamic spacing based on content
+        mainY += suggestionLines.slice(0, 10).length * 4 + 10 // Dynamic spacing optimized for space
       }
 
-      // Gameplay Analysis section - Expanded
+      // Gameplay Analysis section - Expanded with full page utilization
       if (assessmentData.generatedContent.gameplayAnalysis) {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont('helvetica', 'bold')
-        pdf.text('Technical Analysis', 70, mainY)
-        mainY += 12 // More space for section
+        pdf.text('Technical Analysis', 60 + leftMargin, mainY)
+        mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(9) // Larger Saira-style body text
+        pdf.setFontSize(8) // Saira-style body text optimized for space
         pdf.setFont('helvetica', 'normal')
 
         const analysisLines = pdf.splitTextToSize(
-          assessmentData.generatedContent.gameplayAnalysis, // Don't truncate - use full optimized content
-          pageWidth - 80
+          assessmentData.generatedContent.gameplayAnalysis, // Use full optimized content
+          pageWidth - 65 - leftMargin - rightMargin // Utilize full available width
         )
-        analysisLines.slice(0, 6).forEach((line: string, index: number) => { // More lines for expanded content
-          pdf.text(line, 70, mainY + (index * 5)) // More line spacing
+        analysisLines.slice(0, 8).forEach((line: string, index: number) => { // More lines for full utilization
+          pdf.text(line, 60 + leftMargin, mainY + (index * 4)) // Optimized line spacing
         })
-        mainY += analysisLines.slice(0, 6).length * 5 + 15 // Dynamic spacing based on content
+        mainY += analysisLines.slice(0, 8).length * 4 + 10 // Dynamic spacing optimized for space
       }
 
-      // Progress Summary section - Expanded
+      // Progress Summary section - Expanded with full page utilization
       if (assessmentData.generatedContent.progressSummary) {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont('helvetica', 'bold')
-        pdf.text('Next Steps', 70, mainY)
-        mainY += 12 // More space for section
+        pdf.text('Next Steps', 60 + leftMargin, mainY)
+        mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(9) // Larger Saira-style body text
+        pdf.setFontSize(8) // Saira-style body text optimized for space
         pdf.setFont('helvetica', 'normal')
 
         const summaryLines = pdf.splitTextToSize(
-          assessmentData.generatedContent.progressSummary, // Don't truncate - use full optimized content
-          pageWidth - 80
+          assessmentData.generatedContent.progressSummary, // Use full optimized content
+          pageWidth - 65 - leftMargin - rightMargin // Utilize full available width
         )
-        summaryLines.slice(0, 6).forEach((line: string, index: number) => { // More lines for expanded content
-          pdf.text(line, 70, mainY + (index * 5)) // More line spacing
+        summaryLines.slice(0, 8).forEach((line: string, index: number) => { // More lines for full utilization
+          pdf.text(line, 60 + leftMargin, mainY + (index * 4)) // Optimized line spacing
         })
-        mainY += summaryLines.slice(0, 6).length * 5 + 10 // Dynamic spacing
+        mainY += summaryLines.slice(0, 8).length * 4 + 8 // Dynamic spacing optimized for space
       }
 
-      // Footer
+      // Footer - optimized positioning for full page utilization
       pdf.setTextColor(...colors.mediumGray)
-      pdf.setFontSize(7)
-      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 70, pageHeight - 15)
+      pdf.setFontSize(6) // Smaller font for space optimization
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 60 + leftMargin, pageHeight - bottomMargin - 3)
       pdf.text('Professional Basketball Assessment System', 70, pageHeight - 10)
 
       // Save the PDF
