@@ -496,11 +496,6 @@ export default function AssessmentsPage() {
       // Left Sidebar Content - optimized positioning
       let sidebarY = (logoBottom ?? (topMargin + 12)) + 6 // start just below the rendered logo
 
-      // Profile section header
-      pdf.setTextColor(...colors.primary)
-      pdf.setFontSize(12)
-      pdf.setFont(headerFontFamily, 'normal')
-
       // Draw a large faded background logo inside the main content area (based on uploaded logo)
       if (logoPng) {
         try {
@@ -521,61 +516,7 @@ export default function AssessmentsPage() {
         }
       }
 
-      pdf.text('PROFILE', leftMargin + 5, sidebarY)
-      sidebarY += 10 // Reduced spacing for full page utilization
-
-      // Player details in sidebar - Saira-style font
-      pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(7) // Smaller for better space utilization
-      pdf.setFont(bodyFontFamily, 'normal')
-
-      const profileText = `${assessmentData.playerInfo.age} years old athlete with strong basketball fundamentals. Currently playing for ${truncateText(assessmentData.playerInfo.team, 25)} in the ${truncateText(assessmentData.programName, 30)} program.`
-      const profileLines = pdf.splitTextToSize(profileText, 45)
-      profileLines.forEach((line: string, index: number) => {
-        pdf.text(line, leftMargin + 5, sidebarY + (index * 2.5)) // Reduced line spacing
-      })
-      sidebarY += profileLines.length * 2.5 + 8 // Reduced spacing
-
-      // Contact/Info section - optimized positioning
-      pdf.setTextColor(...colors.black)
-      pdf.setFontSize(12)
-      pdf.setFont(headerFontFamily, 'normal')
-      pdf.text('DETAILS', leftMargin + 5, sidebarY)
-      sidebarY += 10 // Reduced spacing for full page utilization
-
-      // Age - bold and larger for readability
-      pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(9)
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Age', leftMargin + 5, sidebarY)
-      pdf.text(assessmentData.playerInfo.age.toString(), leftMargin + 5, sidebarY + 4)
-      sidebarY += 12
-
-      // Team - bold and larger for readability
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Team', leftMargin + 5, sidebarY)
-      const teamLines = pdf.splitTextToSize(assessmentData.playerInfo.team, 45)
-      teamLines.forEach((line: string, index: number) => {
-        pdf.text(line, leftMargin + 5, sidebarY + 4 + (index * 3))
-      })
-      sidebarY += teamLines.length * 3 + 10
-
-      // Assessment Date - bold and larger
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Assessment Date', leftMargin + 5, sidebarY)
-      pdf.text(assessmentData.playerInfo.assessmentDate, leftMargin + 5, sidebarY + 4)
-      sidebarY += 12
-
-      // Program Name - bold and larger
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Program', leftMargin + 5, sidebarY)
-      const programLines = pdf.splitTextToSize(assessmentData.programName, 45)
-      programLines.forEach((line: string, index: number) => {
-        pdf.text(line, leftMargin + 5, sidebarY + 4 + (index * 3))
-      })
-      sidebarY += programLines.length * 3 + 10
-
-
+      // Removed PROFILE and DETAILS sections per request. Start skills immediately to use vertical space.
 
       // Skills visualization (like the circular progress bars in resume)
       const ratedSkills = assessmentData.skills.filter(skill => skill.rating > 0)
@@ -666,11 +607,13 @@ export default function AssessmentsPage() {
         pdf.setFillColor(...colors.primary)
         pdf.rect(leftMargin + 5, barY, skillPercentage, 1.5, 'F')
 
-        // Rating label (no percentages)
+        // Rating label (aligned with each skill's bar; no percentages)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(6)
         const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
-        pdf.text(ratingLabel, 47, rowTop + Math.max(4, rowH * 0.75))
+        const labelX = leftMargin + 5 + 28 + 2
+        const labelY = barY + 1.2
+        pdf.text(ratingLabel, labelX, labelY)
       })
 
       // Main content area (right side) - optimized positioning
