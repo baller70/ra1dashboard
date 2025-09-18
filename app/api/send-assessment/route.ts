@@ -24,20 +24,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY
+    // Read and sanitize API key (trim, strip surrounding quotes, and optional 'Bearer ' prefix)
+    let RESEND_API_KEY = process.env.RESEND_API_KEY || ''
+    RESEND_API_KEY = RESEND_API_KEY.trim().replace(/^['"]|['"]$/g, '').replace(/^Bearer\s+/i, '')
     if (!RESEND_API_KEY) {
       return NextResponse.json(
         { error: 'RESEND_API_KEY is not configured on the server (check Vercel Project → Settings → Environment Variables, ensure Preview environment has this key).'},
         { status: 500 }
       )
     }
-    if (!RESEND_API_KEY.startsWith('re_')) {
-      // Resend API keys typically start with `re_` — this helps catch misconfigured values.
-      return NextResponse.json(
-        { error: 'RESEND_API_KEY appears malformed. It should start with "re_". Double-check the value in your Vercel environment.' },
-        { status: 500 }
-      )
-    }
+    // If format looks unexpected, continue but add a hint in response on failure
 
     const safeFrom = from || 'onboarding@resend.dev'
     const subject = `Basketball Assessment Results for ${playerName}`
