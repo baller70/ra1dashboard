@@ -18,6 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <a href="/payments" className="text-gray-600 hover:text-gray-900">Payments</a>
               <a href="/communication" className="text-gray-600 hover:text-gray-900">Communication</a>
               <a href="/contracts" className="text-gray-600 hover:text-gray-900">Contracts</a>
+              <a href="/assessments" className="text-gray-600 hover:text-gray-900">Assessments</a>
               <a href="/settings" className="text-gray-600 hover:text-gray-900">Settings</a>
             </nav>
           </div>
