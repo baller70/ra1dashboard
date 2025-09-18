@@ -1,4 +1,6 @@
 'use client'
+// Preview build trigger: no functional change
+
 
 import React, { useState, useEffect } from 'react'
 import { AppLayout } from '../components/app-layout'
@@ -307,51 +309,94 @@ export default function AssessmentsPage() {
       let headerFontFamily = 'helvetica'
       let bodyFontFamily = 'helvetica'
       const tryLoadFonts = async () => {
-        try {
-          // Prefer local fonts in public/fonts, fall back to Google Fonts (GitHub raw)
-          const fetchAsBase64 = async (url: string) => {
-            const res = await fetch(url)
-            if (!res.ok) throw new Error(`Font fetch failed: ${url}`)
-            const buf = await res.arrayBuffer()
-            return btoa(String.fromCharCode(...new Uint8Array(buf)))
-          }
-          const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
-            try {
-              return await fetchAsBase64(localPath)
-            } catch {
-              return await fetchAsBase64(remoteUrl)
-            }
-          }
+        // Prefer local fonts in public/fonts, fall back to same-origin proxy
+        const fetchAsBase64 = async (url: string) => {
 
-          // Audiowide Regular
+          const res = await fetch(url)
+          if (!res.ok) throw new Error(`Font fetch failed: ${url} (HTTP ${res.status})`)
+          const buf = await res.arrayBuffer()
+          const u8 = new Uint8Array(buf)
+
+          const CHUNK = 0x8000
+          let binary = ''
+          for (let i = 0; i < u8.length; i += CHUNK) {
+            binary += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK) as any)
+          }
+          const b64 = btoa(binary)
+
+          return b64
+        }
+        const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
+          try {
+            return await fetchAsBase64(localPath)
+          } catch {
+            return await fetchAsBase64(remoteUrl)
+          }
+        }
+
+        let loadedHeader = false
+        let loadedBody = false
+
+        // Audiowide Regular (Headings)
+        try {
           const aw = await loadFontWithFallback(
             '/fonts/Audiowide-Regular.ttf',
-            'https://raw.githubusercontent.com/google/fonts/main/ofl/audiowide/Audiowide-Regular.ttf'
+            '/api/font/audiowide-regular'
           )
           pdf.addFileToVFS('Audiowide-Regular.ttf', aw)
           pdf.addFont('Audiowide-Regular.ttf', 'Audiowide', 'normal')
-
-          // Saira Regular & Bold
-          const sr = await loadFontWithFallback(
-            '/fonts/Saira-Regular.ttf',
-            'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira-Regular.ttf'
-          )
-          pdf.addFileToVFS('Saira-Regular.ttf', sr)
-          pdf.addFont('Saira-Regular.ttf', 'Saira', 'normal')
-
-          const sb = await loadFontWithFallback(
-            '/fonts/Saira-Bold.ttf',
-
-
-            'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira-Bold.ttf'
-          )
-          pdf.addFileToVFS('Saira-Bold.ttf', sb)
-          pdf.addFont('Saira-Bold.ttf', 'Saira', 'bold')
-
           headerFontFamily = 'Audiowide'
-          bodyFontFamily = 'Saira'
+          loadedHeader = true
         } catch (e) {
-          console.log('Custom fonts not available, falling back to Helvetica')
+          console.warn('Audiowide font unavailable; headings will use Helvetica')
+        }
+
+        // Saira Regular (Body)
+        try {
+          let sr
+          try {
+            sr = await fetchAsBase64('/fonts/converted/SairaCondensed-Regular.ttf')
+          } catch {
+            try {
+              sr = await fetchAsBase64('/fonts/SairaCondensed-Regular.ttf')
+            } catch {
+              sr = await fetchAsBase64('/api/font/saira-regular')
+            }
+          }
+
+          pdf.addFileToVFS('SairaCondensed-Regular.ttf', sr)
+
+          pdf.addFont('SairaCondensed-Regular.ttf', 'SairaCondensed', 'normal')
+
+          bodyFontFamily = 'SairaCondensed'
+          loadedBody = true
+        } catch (e) {
+          console.warn('Saira Regular unavailable; body will use Helvetica', e)
+        }
+
+        // Saira Bold (optional)
+        try {
+          let sb
+          try {
+            sb = await fetchAsBase64('/fonts/converted/SairaCondensed-Bold.ttf')
+          } catch {
+            try {
+              sb = await fetchAsBase64('/fonts/SairaCondensed-Bold.ttf')
+            } catch {
+              sb = await fetchAsBase64('/api/font/saira-bold')
+            }
+          }
+
+          pdf.addFileToVFS('SairaCondensed-Bold.ttf', sb)
+
+          pdf.addFont('SairaCondensed-Bold.ttf', 'SairaCondensed', 'bold')
+
+        } catch (e) {
+          console.warn('Saira Bold unavailable; bold text will simulate weight', e)
+        }
+
+        if (!loadedHeader && !loadedBody) {
+
         }
       }
 
@@ -451,11 +496,6 @@ export default function AssessmentsPage() {
       // Left Sidebar Content - optimized positioning
       let sidebarY = (logoBottom ?? (topMargin + 12)) + 6 // start just below the rendered logo
 
-      // Profile section header
-      pdf.setTextColor(...colors.primary)
-      pdf.setFontSize(12)
-      pdf.setFont(headerFontFamily, 'normal')
-
       // Draw a large faded background logo inside the main content area (based on uploaded logo)
       if (logoPng) {
         try {
@@ -476,61 +516,7 @@ export default function AssessmentsPage() {
         }
       }
 
-      pdf.text('PROFILE', leftMargin + 5, sidebarY)
-      sidebarY += 10 // Reduced spacing for full page utilization
-
-      // Player details in sidebar - Saira-style font
-      pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(7) // Smaller for better space utilization
-      pdf.setFont(bodyFontFamily, 'normal')
-
-      const profileText = `${assessmentData.playerInfo.age} years old athlete with strong basketball fundamentals. Currently playing for ${truncateText(assessmentData.playerInfo.team, 25)} in the ${truncateText(assessmentData.programName, 30)} program.`
-      const profileLines = pdf.splitTextToSize(profileText, 45)
-      profileLines.forEach((line: string, index: number) => {
-        pdf.text(line, leftMargin + 5, sidebarY + (index * 2.5)) // Reduced line spacing
-      })
-      sidebarY += profileLines.length * 2.5 + 8 // Reduced spacing
-
-      // Contact/Info section - optimized positioning
-      pdf.setTextColor(...colors.black)
-      pdf.setFontSize(12)
-      pdf.setFont(headerFontFamily, 'normal')
-      pdf.text('DETAILS', leftMargin + 5, sidebarY)
-      sidebarY += 10 // Reduced spacing for full page utilization
-
-      // Age - bold and larger for readability
-      pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(9)
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Age', leftMargin + 5, sidebarY)
-      pdf.text(assessmentData.playerInfo.age.toString(), leftMargin + 5, sidebarY + 4)
-      sidebarY += 12
-
-      // Team - bold and larger for readability
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Team', leftMargin + 5, sidebarY)
-      const teamLines = pdf.splitTextToSize(assessmentData.playerInfo.team, 45)
-      teamLines.forEach((line: string, index: number) => {
-        pdf.text(line, leftMargin + 5, sidebarY + 4 + (index * 3))
-      })
-      sidebarY += teamLines.length * 3 + 10
-
-      // Assessment Date - bold and larger
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Assessment Date', leftMargin + 5, sidebarY)
-      pdf.text(assessmentData.playerInfo.assessmentDate, leftMargin + 5, sidebarY + 4)
-      sidebarY += 12
-
-      // Program Name - bold and larger
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Program', leftMargin + 5, sidebarY)
-      const programLines = pdf.splitTextToSize(assessmentData.programName, 45)
-      programLines.forEach((line: string, index: number) => {
-        pdf.text(line, leftMargin + 5, sidebarY + 4 + (index * 3))
-      })
-      sidebarY += programLines.length * 3 + 10
-
-
+      // Removed PROFILE and DETAILS sections per request. Start skills immediately to use vertical space.
 
       // Skills visualization (like the circular progress bars in resume)
       const ratedSkills = assessmentData.skills.filter(skill => skill.rating > 0)
@@ -545,85 +531,127 @@ export default function AssessmentsPage() {
       sidebarY += 8 // Reduced spacing for full page utilization
 
       // Overall rating circle (like resume skill circles) - Compact version
-      const centerX = leftMargin + 20 // Adjusted for new margins
-      const centerY = sidebarY + 8
-      const radius = 8 // Smaller radius for space optimization
+      // Enhanced overall performance donut
+      const centerX = leftMargin + 27
+      const centerY = sidebarY + 22
+      const radius = 18
 
-      // Background circle
+      // Base ring
       pdf.setDrawColor(...colors.mediumGray)
-      pdf.setLineWidth(1.5)
+      pdf.setLineWidth(3.2)
+      if ((pdf as any).setLineCap) { (pdf as any).setLineCap('round') }
       pdf.circle(centerX, centerY, radius, 'S')
 
-      // Progress circle
-      const percentage = (parseFloat(averageRating) / 5) * 100
+      // Progress arc (smooth, rounded)
+      const computedPercentage = (parseFloat(averageRating) / 5) * 100
+      const percentage = 20 // forced per request for preview
       pdf.setDrawColor(...colors.primary)
-      pdf.setLineWidth(1.5) // Thinner line
-
-      // Draw arc for progress (simplified as we can't draw perfect arcs in jsPDF)
-      const steps = Math.floor((percentage / 100) * 16) // Fewer steps for smaller circle
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / 16) * 2 * Math.PI - Math.PI / 2
-        const x1 = centerX + (radius - 1) * Math.cos(angle)
-        const y1 = centerY + (radius - 1) * Math.sin(angle)
-        const x2 = centerX + (radius + 1) * Math.cos(angle)
-        const y2 = centerY + (radius + 1) * Math.sin(angle)
+      pdf.setLineWidth(3.2)
+      const totalSteps = 120
+      const usedSteps = Math.max(1, Math.floor((percentage / 100) * totalSteps))
+      for (let i = 0; i < usedSteps; i++) {
+        const angle1 = -Math.PI / 2 + (i / totalSteps) * 2 * Math.PI
+        const angle2 = angle1 + (2 * Math.PI) / totalSteps * 0.9
+        const x1 = centerX + radius * Math.cos(angle1)
+        const y1 = centerY + radius * Math.sin(angle1)
+        const x2 = centerX + radius * Math.cos(angle2)
+        const y2 = centerY + radius * Math.sin(angle2)
         pdf.line(x1, y1, x2, y2)
       }
 
-      // Percentage text in center
+      // Center percentage text and label (bigger number)
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(7) // Smaller font for space optimization
+      pdf.setFontSize(16)
       pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 1, { align: 'center' })
-
-      pdf.setFontSize(6) // Smaller font
+      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 3, { align: 'center' })
+      pdf.setFontSize(8)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + 5, { align: 'center' })
+      pdf.text('Overall', centerX, centerY + 11, { align: 'center' })
 
-      sidebarY += 20 // Reduced spacing
+      // Advance sidebar Y to just below the donut
+      sidebarY = centerY + radius + 16
+
+      sidebarY += 0 // Spacing already handled by donut block above
+
+      // DETAILS (restored minimal subset)
+      pdf.setTextColor(...colors.black)
+      pdf.setFontSize(12)
+      pdf.setFont(headerFontFamily, 'normal')
+      pdf.text('DETAILS', leftMargin + 5, sidebarY)
+      sidebarY += 8
+
+      pdf.setTextColor(...colors.darkGray)
+      pdf.setFontSize(8)
+      pdf.setFont(bodyFontFamily, 'normal')
+      pdf.text('Age: 7', leftMargin + 5, sidebarY)
+      sidebarY += 5
+      pdf.text('Team: RA1', leftMargin + 5, sidebarY)
+      sidebarY += 5
+      pdf.text('Assessment Date: 2025-09-19', leftMargin + 5, sidebarY)
+      sidebarY += 5
+      const programDetailLines = pdf.splitTextToSize('Program: Elite Youth Basketball Development', 45)
+      programDetailLines.forEach((line: string, index: number) => {
+        pdf.text(line, leftMargin + 5, sidebarY + (index * 3))
+      })
+      sidebarY += (programDetailLines.length * 3) + 12
 
       // Individual skills as progress bars - Compact version for all 8 skills
       pdf.setTextColor(...colors.black)
-      pdf.setFontSize(9) // Smaller font
+      pdf.setFontSize(9)
       pdf.setFont(headerFontFamily, 'normal')
       pdf.text('SKILL BREAKDOWN', leftMargin + 5, sidebarY)
-      sidebarY += 6 // Reduced spacing for full page utilization
+      sidebarY += 10 // Clear separation before skills list
 
-      // Show all 8 skills and evenly distribute to bottom of page
-      const allSkills = [
-        'Ball Handling', 'Shooting Form', 'Defensive Stance', 'Court Awareness',
-        'Passing Accuracy', 'Rebounding', 'Footwork', 'Team Communication'
+      // Show requested skills (display label vs lookup key) and evenly distribute
+      const skillsList = [
+        { display: 'FOOTWORK', key: 'Footwork' },
+        { display: 'FINISHING', key: 'Finishing' },
+        { display: 'BALL HANDLING', key: 'Ball Handling' },
+        { display: 'SHOOTING FORM', key: 'Shooting Form' },
+        { display: 'COURT AWARNESS', key: 'Court Awareness' },
+        { display: 'COMMUNICATION', key: 'Team Communication' },
+        { display: 'DEFENSE', key: 'Defensive Stance' },
+        { display: 'PASSING', key: 'Passing Accuracy' },
       ]
 
-      const availableHeight = (pageHeight - bottomMargin) - sidebarY - 5
-      const rowH = availableHeight / allSkills.length
+      // Evenly distribute all 8 skills to fill the available vertical space
+      const NAME_TO_BAR = 4
+      const BAR_HEIGHT = 1.8
+      const BAR_TO_LABEL = 4.5
+      const availableHeight = (pageHeight - bottomMargin) - sidebarY - 8
+      const rowH = availableHeight / skillsList.length
 
-      allSkills.forEach((skillName, index) => {
+      skillsList.forEach(({ display, key }, index) => {
         const rowTop = sidebarY + (index * rowH)
-        const skill = assessmentData.skills.find(s => s.skillName === skillName)
+        const skill = assessmentData.skills.find(s => s.skillName === key)
         const rating = skill ? skill.rating : 0
 
-        // Skill name - body font
+        // Skill name (uppercased, larger, bold) with percentage appended
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(7)
-        pdf.setFont(bodyFontFamily, 'normal')
-        const shortName = truncateText(skillName, 14)
-        pdf.text(shortName, leftMargin + 5, rowTop)
+        pdf.setFontSize(10)
+        pdf.setFont(bodyFontFamily, 'bold')
+        const percent = Math.round((rating / 5) * 100)
+        const title = `${display} - ${percent}%`
+        const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(title, 45) : [title]
+        pdf.text(nameLines as any, leftMargin + 5, rowTop)
 
-        // Progress bar background
-        const barY = rowTop + Math.max(1, rowH * 0.30)
+        // Progress bar below title
+        const lineCount = Array.isArray(nameLines) ? nameLines.length : 1
+        const barY = rowTop + NAME_TO_BAR + (lineCount - 1) * 3
         pdf.setFillColor(...colors.mediumGray)
-        pdf.rect(leftMargin + 5, barY, 28, 1.5, 'F')
+        pdf.rect(leftMargin + 5, barY, 28, BAR_HEIGHT, 'F')
 
-        // Progress bar fill
+        // Progress fill
         const skillPercentage = (rating / 5) * 28
         pdf.setFillColor(...colors.primary)
-        pdf.rect(leftMargin + 5, barY, skillPercentage, 1.5, 'F')
+        pdf.rect(leftMargin + 5, barY, skillPercentage, BAR_HEIGHT, 'F')
 
-        // Rating text
+        // Left-aligned rating label under the bar (balanced spacing)
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(6)
-        pdf.text(`${Math.round((rating / 5) * 100)}%`, 47, rowTop + Math.max(4, rowH * 0.75))
+        pdf.setFontSize(7)
+        const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
+        const labelY = barY + BAR_TO_LABEL
+        pdf.text(ratingLabel, leftMargin + 5, labelY)
       })
 
       // Main content area (right side) - optimized positioning
@@ -637,7 +665,7 @@ export default function AssessmentsPage() {
       mainY += 15 // Optimized spacing for full page utilization
 
       // Overall performance summary - use Audiowide heading (H3)
-      pdfHeading(3, 'Overall Performance Rating', 60 + leftMargin, mainY, colors.darkGray)
+      pdfHeading(3, 'OVERALL PERFORMANCE RATING', 60 + leftMargin, mainY, colors.darkGray)
       mainY += 6 // Reduced spacing
 
       pdf.setFontSize(8) // Smaller for space optimization
@@ -674,7 +702,7 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont(headerFontFamily, 'normal')
-        pdf.text('Parent Guidance', 60 + leftMargin, mainY)
+        pdf.text('PARENT GUIDANCE', 60 + leftMargin, mainY)
         mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
@@ -697,7 +725,7 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont(headerFontFamily, 'normal')
-        pdf.text('Technical Analysis', 60 + leftMargin, mainY)
+        pdf.text('TECHNICAL ANALYSIS', 60 + leftMargin, mainY)
         mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
@@ -719,7 +747,7 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont(headerFontFamily, 'normal')
-        pdf.text('Next Steps', 60 + leftMargin, mainY)
+        pdf.text('NEXT STEP', 60 + leftMargin, mainY)
         mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
@@ -1261,25 +1289,26 @@ export default function AssessmentsPage() {
                         </div>
                       </div>
 
-                      {/* Rating Buttons */}
-                      <div className="flex items-center space-x-2 ml-4">
+                      {/* Rating Buttons (textual labels instead of numbers) */}
+                      <div className="flex flex-wrap items-center gap-2 ml-4">
                         {RATING_LABELS.map((rating) => (
                           <button
                             key={rating.value}
                             onClick={() => updateSkillRating(skill.name, rating.value)}
                             className={`
-                              w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold
-                              transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+                              px-3 py-1 rounded-full border text-xs font-medium whitespace-nowrap
+                              transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
                               ${currentRating === rating.value
-                                ? `${rating.color} text-white border-transparent shadow-lg`
-                                : `border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-600`
+                                ? `${rating.color} text-white border-transparent shadow`
+                                : `border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-700`
                               }
                             `}
                             title={`${rating.value} - ${rating.label}`}
                           >
-                            {rating.value}
+                            <span className="opacity-70 mr-1">{rating.value}</span>
+                            {rating.label}
                             {rating.value === 5 && currentRating === 5 && (
-                              <Star className="h-3 w-3 ml-0.5 fill-current" />
+                              <Star className="h-3 w-3 ml-1 fill-current inline" />
                             )}
                           </button>
                         ))}
