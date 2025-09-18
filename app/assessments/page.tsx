@@ -800,9 +800,25 @@ export default function AssessmentsPage() {
         const base64 = dataUri.split(',')[1]
         setLastPdfBase64(base64)
       } catch (_) {}
-      pdf.save(fileName)
 
-      alert(`Professional assessment report for ${assessmentData.playerInfo.name} has been generated and downloaded successfully!`)
+      // Open the PDF in a new browser tab (so the user can view and download from the viewer)
+      try {
+        const blobUrl = (pdf as any).output('bloburl') as string
+        const win = window.open(blobUrl, '_blank')
+        if (!win) {
+          // Popup blocked fallback
+          ;(pdf as any).output('dataurlnewwindow')
+        }
+      } catch (e1) {
+        try {
+          ;(pdf as any).output('dataurlnewwindow')
+        } catch (e2) {
+          // Final fallback: direct download
+          pdf.save(fileName)
+        }
+      }
+
+      alert(`Professional assessment report for ${assessmentData.playerInfo.name} has been generated and opened in a new tab. You can download it from the viewer toolbar.`)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert("Failed to generate PDF. Please try again.")
