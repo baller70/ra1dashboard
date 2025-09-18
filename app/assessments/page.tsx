@@ -1,4 +1,6 @@
 'use client'
+// Preview build trigger: no functional change
+
 
 import React, { useState, useEffect } from 'react'
 import { AppLayout } from '../components/app-layout'
