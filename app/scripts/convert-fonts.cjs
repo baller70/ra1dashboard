@@ -7,7 +7,13 @@
 
 const fs = require('fs');
 const path = require('path');
-const { Font } = require('fonteditor-core');
+let Font;
+try {
+  Font = require('fonteditor-core').Font;
+} catch (e) {
+  console.warn('[convert-fonts] fonteditor-core not installed; skipping conversion');
+  process.exit(0);
+}
 
 const ROOT = path.join(__dirname, '..');
 const inDir = path.join(ROOT, 'public', 'fonts');
