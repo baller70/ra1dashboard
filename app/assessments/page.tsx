@@ -566,7 +566,7 @@ export default function AssessmentsPage() {
       pdf.setFont(bodyFontFamily, 'normal')
       pdf.text('Overall', centerX, centerY + 5, { align: 'center' })
 
-      sidebarY += 20 // Reduced spacing
+      sidebarY += 14 // Tightened spacing between KEY SKILLS summary and DETAILS
 
       // DETAILS (restored minimal subset)
       pdf.setTextColor(...colors.black)
@@ -595,7 +595,7 @@ export default function AssessmentsPage() {
       pdf.setFontSize(9)
       pdf.setFont(headerFontFamily, 'normal')
       pdf.text('SKILL BREAKDOWN', leftMargin + 5, sidebarY)
-      sidebarY += 6 // Reduced spacing for full page utilization
+      sidebarY += 10 // Clear separation before skills list
 
       // Show all 8 skills and evenly distribute to bottom of page
       const allSkills = [
@@ -603,39 +603,45 @@ export default function AssessmentsPage() {
         'Passing Accuracy', 'Rebounding', 'Footwork', 'Team Communication'
       ]
 
-      const availableHeight = (pageHeight - bottomMargin) - sidebarY - 5
-      const rowH = availableHeight / allSkills.length
+      // Uniform, polished spacing for each skill entry
+      const blockTitleToBar = 4
+      const barHeight = 1.5
+      const barToLabel = 3
+      const blockBottomSpacing = 7
+      let skillY = sidebarY
 
-      allSkills.forEach((skillName, index) => {
-        const rowTop = sidebarY + (index * rowH)
+      allSkills.forEach((skillName) => {
         const skill = assessmentData.skills.find(s => s.skillName === skillName)
         const rating = skill ? skill.rating : 0
 
-        // Skill name - body font (wrap long names instead of truncating)
+        // Skill name (larger, bold)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(9)
         pdf.setFont(bodyFontFamily, 'bold')
         const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(skillName, 30) : [skillName]
-        pdf.text(nameLines as any, leftMargin + 5, rowTop)
+        pdf.text(nameLines as any, leftMargin + 5, skillY)
 
-        // Progress bar background (positioned below wrapped label)
+        // Bar immediately under the title
         const lineCount = Array.isArray(nameLines) ? nameLines.length : 1
-        const barY = rowTop + Math.max(3 + (lineCount - 1) * 3, rowH * 0.30)
+        const barY = skillY + blockTitleToBar + (lineCount - 1) * 3
         pdf.setFillColor(...colors.mediumGray)
-        pdf.rect(leftMargin + 5, barY, 28, 1.5, 'F')
+        pdf.rect(leftMargin + 5, barY, 28, barHeight, 'F')
 
-        // Progress bar fill
+        // Progress fill
         const skillPercentage = (rating / 5) * 28
         pdf.setFillColor(...colors.primary)
-        pdf.rect(leftMargin + 5, barY, skillPercentage, 1.5, 'F')
+        pdf.rect(leftMargin + 5, barY, skillPercentage, barHeight, 'F')
 
-        // Rating label (directly underneath the progress bar; no percentages)
+        // Label centered below the bar
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(7)
         const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
-        const labelX = leftMargin + 5 + 14 // center of the bar (28px wide)
-        const labelY = barY + 3
+        const labelX = leftMargin + 5 + 14
+        const labelY = barY + barToLabel
         pdf.text(ratingLabel, labelX, labelY, { align: 'center' })
+
+        // Advance Y for next skill, maintaining polished rhythm
+        skillY = labelY + blockBottomSpacing
       })
 
       // Main content area (right side) - optimized positioning
