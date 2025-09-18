@@ -328,7 +328,7 @@ export default function AssessmentsPage() {
           // Audiowide Regular
           const aw = await loadFontWithFallback(
             '/fonts/Audiowide-Regular.ttf',
-            'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/audiowide/Audiowide-Regular.ttf'
+            '\/api\/font\/audiowide-regular'
           )
           pdf.addFileToVFS('Audiowide-Regular.ttf', aw)
           pdf.addFont('Audiowide-Regular.ttf', 'Audiowide', 'normal')
@@ -336,7 +336,7 @@ export default function AssessmentsPage() {
           // Saira Regular & Bold
           const sr = await loadFontWithFallback(
             '/fonts/Saira-Regular.ttf',
-            'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/Saira-Regular.ttf'
+            '\/api\/font\/saira-regular'
           )
           pdf.addFileToVFS('Saira-Regular.ttf', sr)
           pdf.addFont('Saira-Regular.ttf', 'Saira', 'normal')
@@ -345,7 +345,7 @@ export default function AssessmentsPage() {
             '/fonts/Saira-Bold.ttf',
 
 
-            'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/Saira-Bold.ttf'
+            '\/api\/font\/saira-bold'
           )
           pdf.addFileToVFS('Saira-Bold.ttf', sb)
           pdf.addFont('Saira-Bold.ttf', 'Saira', 'bold')
