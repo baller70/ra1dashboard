@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
           You can review the results online using the button below, and you will also find a PDF copy attached to this email for your records.
         </p>
         <p style="margin:24px 0; text-align:center;">
-          <a class="cta" href="${ctaUrl}" target="_blank" rel="noopener noreferrer">View Assessment Online</a>
+          <a class="cta" href="${ctaUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#b91c1c;color:#ffffff !important;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;text-transform:uppercase;">VIEW ASSESSMENT ONLINE</a>
         </p>
         <p class="muted">
           If you have any questions, reply to this email and we’ll be happy to help.
