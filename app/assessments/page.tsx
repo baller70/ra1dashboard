@@ -355,10 +355,10 @@ export default function AssessmentsPage() {
           )
           pdf.addFileToVFS('SairaCondensed-Regular.ttf', sr)
           pdf.addFont('SairaCondensed-Regular.ttf', 'SairaCondensed', 'normal')
-          bodyFontFamily = 'Saira'
+          bodyFontFamily = 'SairaCondensed'
           loadedBody = true
         } catch (e) {
-          console.warn('Saira Regular unavailable; body will use Helvetica')
+          console.warn('Saira Regular unavailable; body will use Helvetica', e)
         }
 
         // Saira Bold (optional)
@@ -370,7 +370,7 @@ export default function AssessmentsPage() {
           pdf.addFileToVFS('SairaCondensed-Bold.ttf', sb)
           pdf.addFont('SairaCondensed-Bold.ttf', 'SairaCondensed', 'bold')
         } catch (e) {
-          console.warn('Saira Bold unavailable; bold text will simulate weight')
+          console.warn('Saira Bold unavailable; bold text will simulate weight', e)
         }
 
         if (!loadedHeader && !loadedBody) {
