@@ -37,7 +37,7 @@ export function Header() {
     { name: 'Payments', href: '/payments' },
     { name: 'Communication', href: '/communication' },
     { name: 'Contracts', href: '/contracts' },
-    { name: 'Assessments', href: '/assessments' },
+    { name: 'Assessment', href: '/assessments' },
     { name: 'Settings', href: '/settings' },
   ]
 
