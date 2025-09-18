@@ -10,6 +10,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         'saira': ['var(--font-saira)', 'sans-serif'],
+        'audiowide': ['var(--font-audiowide)', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

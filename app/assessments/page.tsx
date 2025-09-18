@@ -361,23 +361,8 @@ export default function AssessmentsPage() {
 
       const logoPng = logoDataUrl ? await ensurePngDataUrl(logoDataUrl) : null
 
-      // Add background watermark logo (large, centered, low opacity)
-      if (logoPng) {
-        try {
-          // Scale watermark to 60% of the smaller page dimension for strong presence
-          const base = Math.min(pageWidth, pageHeight)
-          const watermarkSize = base * 0.6
-          const watermarkX = (pageWidth - watermarkSize) / 2
-          const watermarkY = (pageHeight - watermarkSize) / 2
-
-          // Add watermark with low opacity
-          pdf.setGState(pdf.GState({ opacity: 0.12 })) // ~12% opacity
-          pdf.addImage(logoPng, 'PNG', watermarkX, watermarkY, watermarkSize, watermarkSize)
-          pdf.setGState(pdf.GState({ opacity: 1.0 })) // Reset opacity
-        } catch (error) {
-          console.log('Watermark logo could not be added:', error)
-        }
-      }
+      // Defer drawing the background watermark until after backgrounds/header are painted
+      // (we want it visible behind main content only). We'll add it later.
 
       // Left sidebar background (like the resume) - with reduced margins
       pdf.setFillColor(...colors.lightGray)
@@ -387,18 +372,25 @@ export default function AssessmentsPage() {
       pdf.setFillColor(...colors.white)
       pdf.rect(55 + leftMargin, topMargin, pageWidth - 55 - leftMargin - rightMargin, pageHeight - topMargin - bottomMargin, 'F')
 
-      // Add top-left logo at natural size (capped) in the corner
+      // Add top-left logo sized to fill the left header area (full-size like screenshot)
+      let logoBottom: number | null = null
       if (logoPng) {
         try {
           const dims = await loadImageDims(logoPng)
           const natWmm = pxToMm(dims.width)
           const natHmm = pxToMm(dims.height)
-          const maxW = 45 // cap to preserve layout
-          const maxH = 25 // cap to preserve layout
-          const scale = Math.min(1, maxW / Math.max(1, natWmm), maxH / Math.max(1, natHmm))
+          const sidebarWidth = 55
+          const headerH = 40
+          const padding = 3
+          const boxW = sidebarWidth - padding * 2
+          const boxH = headerH - padding * 2
+          const scale = Math.min(boxW / Math.max(1, natWmm), boxH / Math.max(1, natHmm))
           const drawW = natWmm * scale
           const drawH = natHmm * scale
-          pdf.addImage(logoPng, 'PNG', leftMargin + 2, topMargin + 2, drawW, drawH)
+          const drawX = leftMargin + padding + (boxW - drawW) / 2
+          const drawY = topMargin + padding + (boxH - drawH) / 2
+          pdf.addImage(logoPng, 'PNG', drawX, drawY, drawW, drawH)
+          logoBottom = drawY + drawH
         } catch (error) {
           console.log('Top left logo could not be added:', error)
         }
@@ -421,12 +413,33 @@ export default function AssessmentsPage() {
       pdf.text('BASKETBALL ASSESSMENT REPORT', 60 + leftMargin, topMargin + 32)
 
       // Left Sidebar Content - optimized positioning
-      let sidebarY = topMargin + 20 // Start below top logo
+      let sidebarY = (logoBottom ?? (topMargin + 12)) + 6 // start just below the rendered logo
 
       // Profile section header
       pdf.setTextColor(...colors.primary)
       pdf.setFontSize(12)
       pdf.setFont(headerFontFamily, 'normal')
+
+      // Draw a large faded background logo inside the main content area (based on uploaded logo)
+      if (logoPng) {
+        try {
+          const sidebarWidth = 55
+          const headerH = 40
+          const contentX =  leftMargin + sidebarWidth
+          const contentY =  topMargin + headerH
+          const contentW =  pageWidth - sidebarWidth - leftMargin - rightMargin
+          const contentH =  pageHeight - headerH - topMargin - bottomMargin
+          const size = Math.min(contentW, contentH) * 0.95
+          const drawX = contentX + (contentW - size) / 2
+          const drawY = contentY + (contentH - size) / 2
+          pdf.setGState(pdf.GState({ opacity: 0.10 })) // ~10% opacity
+          pdf.addImage(logoPng, 'PNG', drawX, drawY, size, size)
+          pdf.setGState(pdf.GState({ opacity: 1.0 }))
+        } catch (error) {
+          console.log('Watermark logo (main area) could not be added:', error)
+        }
+      }
+
       pdf.text('PROFILE', leftMargin + 5, sidebarY)
       sidebarY += 10 // Reduced spacing for full page utilization
 
