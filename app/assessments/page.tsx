@@ -344,7 +344,7 @@ export default function AssessmentsPage() {
         // Saira Regular (Body)
         try {
           const sr = await loadFontWithFallback(
-            '/fonts/Saira-Variable.ttf',
+            '/fonts/SairaCondensed-Regular.ttf',
             '/api/font/saira-regular'
           )
           pdf.addFileToVFS('Saira-Regular.ttf', sr)
@@ -358,7 +358,7 @@ export default function AssessmentsPage() {
         // Saira Bold (optional)
         try {
           const sb = await loadFontWithFallback(
-            '/fonts/Saira-Variable.ttf',
+            '/fonts/SairaCondensed-Bold.ttf',
             '/api/font/saira-bold'
           )
           pdf.addFileToVFS('Saira-Bold.ttf', sb)
