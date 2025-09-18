@@ -308,26 +308,43 @@ export default function AssessmentsPage() {
       let bodyFontFamily = 'helvetica'
       const tryLoadFonts = async () => {
         try {
-          // Expect fonts to be available under public/fonts/
-          const loadFont = async (path: string) => {
-            const res = await fetch(path)
-            if (!res.ok) throw new Error(`Font not found: ${path}`)
+          // Prefer local fonts in public/fonts, fall back to Google Fonts (GitHub raw)
+          const fetchAsBase64 = async (url: string) => {
+            const res = await fetch(url)
+            if (!res.ok) throw new Error(`Font fetch failed: ${url}`)
             const buf = await res.arrayBuffer()
-            // Convert to base64
-            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
-            return b64
+            return btoa(String.fromCharCode(...new Uint8Array(buf)))
           }
+          const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
+            try {
+              return await fetchAsBase64(localPath)
+            } catch {
+              return await fetchAsBase64(remoteUrl)
+            }
+          }
+
           // Audiowide Regular
-          const aw = await loadFont('/fonts/Audiowide-Regular.ttf')
+          const aw = await loadFontWithFallback(
+            '/fonts/Audiowide-Regular.ttf',
+            'https://raw.githubusercontent.com/google/fonts/main/ofl/audiowide/Audiowide-Regular.ttf'
+          )
           pdf.addFileToVFS('Audiowide-Regular.ttf', aw)
           pdf.addFont('Audiowide-Regular.ttf', 'Audiowide', 'normal')
 
           // Saira Regular & Bold
-          const sr = await loadFont('/fonts/Saira-Regular.ttf')
+          const sr = await loadFontWithFallback(
+            '/fonts/Saira-Regular.ttf',
+            'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira-Regular.ttf'
+          )
           pdf.addFileToVFS('Saira-Regular.ttf', sr)
           pdf.addFont('Saira-Regular.ttf', 'Saira', 'normal')
 
-          const sb = await loadFont('/fonts/Saira-Bold.ttf')
+          const sb = await loadFontWithFallback(
+            '/fonts/Saira-Bold.ttf',
+
+
+            'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira-Bold.ttf'
+          )
           pdf.addFileToVFS('Saira-Bold.ttf', sb)
           pdf.addFont('Saira-Bold.ttf', 'Saira', 'bold')
 
@@ -355,6 +372,7 @@ export default function AssessmentsPage() {
           })
         } catch (error) {
           console.log('Could not convert logo to data URL:', error)
+
         }
       }
 
@@ -363,6 +381,23 @@ export default function AssessmentsPage() {
 
       // Defer drawing the background watermark until after backgrounds/header are painted
       // (we want it visible behind main content only). We'll add it later.
+
+      // Helper: standardized heading (Audiowide) for H1–H4
+      const pdfHeading = (
+        level: 1 | 2 | 3 | 4,
+        text: string,
+        x: number,
+        y: number,
+        color?: [number, number, number]
+      ) => {
+        if (color) pdf.setTextColor(...color)
+        const size = level === 1 ? 28 : level === 2 ? 18 : level === 3 ? 12 : 12
+        pdf.setFont(headerFontFamily, 'normal')
+        pdf.setFontSize(size)
+        pdf.text(text, x, y)
+      }
+
+
 
       // Left sidebar background (like the resume) - with reduced margins
       pdf.setFillColor(...colors.lightGray)
@@ -375,6 +410,7 @@ export default function AssessmentsPage() {
       // Add top-left logo sized to fill the left header area (full-size like screenshot)
       let logoBottom: number | null = null
       if (logoPng) {
+
         try {
           const dims = await loadImageDims(logoPng)
           const natWmm = pxToMm(dims.width)
@@ -600,11 +636,8 @@ export default function AssessmentsPage() {
       pdf.text('ASSESSMENT RESULTS', 60 + leftMargin, mainY)
       mainY += 15 // Optimized spacing for full page utilization
 
-      // Overall performance summary - Saira-style font
-      pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(10)
-      pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text('Overall Performance Rating', 60 + leftMargin, mainY)
+      // Overall performance summary - use Audiowide heading (H3)
+      pdfHeading(3, 'Overall Performance Rating', 60 + leftMargin, mainY, colors.darkGray)
       mainY += 6 // Reduced spacing
 
       pdf.setFontSize(8) // Smaller for space optimization
