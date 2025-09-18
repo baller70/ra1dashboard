@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
     .card { max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(16,24,40,0.06); }
     .hdr { background:#111827; color:#fff; padding:20px 24px; font-weight:700; font-size:18px; }
     .content { padding: 20px 24px; font-size: 15px; line-height: 1.55; }
-    .cta { display:inline-block; background:#dc2626; color:#fff; text-decoration:none; padding: 12px 18px; border-radius: 8px; font-weight:600; }
+    /* RA1 brand button color */
+    .cta { display:inline-block; background:#b91c1c; color:#fff; text-decoration:none; padding: 12px 18px; border-radius: 8px; font-weight:600; }
     .muted { color:#6b7280; font-size:13px; }
     .footer { max-width: 640px; margin: 16px auto 0; text-align:center; color:#6b7280; font-size:12px; }
   </style>
@@ -76,17 +77,17 @@ export async function POST(req: NextRequest) {
         <p class="muted">
           If you have any questions, reply to this email and we’ll be happy to help.
         </p>
-        <p>Best regards,<br />${programName || 'Coaching Staff'}</p>
+        <p>Best regards,<br />Kevin Houston<br/>2025 RA1 Yearly Development Program</p>
       </div>
     </div>
     <div class="footer">
-      © ${new Date().getFullYear()} ${programName || 'Basketball Program'} · This message was sent by our assessment dashboard
+      © 2025 Rise as One AAU Basketball Club · This message was sent by our assessment dashboard
     </div>
   </div>
 </body>
 </html>`
 
-    const text = `Dear ${greetingName},\n\nWe completed the basketball skills assessment for ${playerName}.\nThe report is attached and can also be viewed online: ${assessmentUrl}\n\nBest regards,\n${programName || 'Coaching Staff'}`
+    const text = `Dear ${greetingName},\n\nWe completed the basketball skills assessment for ${playerName}.\nThe report is attached and can also be viewed online: ${assessmentUrl}\n\nBest regards,\nKevin Houston\n2025 RA1 Yearly Development Program\n\n© 2025 Rise as One AAU Basketball Club · This message was sent by our assessment dashboard`
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
