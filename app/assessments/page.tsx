@@ -309,50 +309,65 @@ export default function AssessmentsPage() {
       let headerFontFamily = 'helvetica'
       let bodyFontFamily = 'helvetica'
       const tryLoadFonts = async () => {
-        try {
-          // Prefer local fonts in public/fonts, fall back to Google Fonts (GitHub raw)
-          const fetchAsBase64 = async (url: string) => {
-            const res = await fetch(url)
-            if (!res.ok) throw new Error(`Font fetch failed: ${url}`)
-            const buf = await res.arrayBuffer()
-            return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        // Prefer local fonts in public/fonts, fall back to same-origin proxy
+        const fetchAsBase64 = async (url: string) => {
+          const res = await fetch(url)
+          if (!res.ok) throw new Error(`Font fetch failed: ${url}`)
+          const buf = await res.arrayBuffer()
+          return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        }
+        const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
+          try {
+            return await fetchAsBase64(localPath)
+          } catch {
+            return await fetchAsBase64(remoteUrl)
           }
-          const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
-            try {
-              return await fetchAsBase64(localPath)
-            } catch {
-              return await fetchAsBase64(remoteUrl)
-            }
-          }
+        }
 
-          // Audiowide Regular
+        let loadedHeader = false
+        let loadedBody = false
+
+        // Audiowide Regular (Headings)
+        try {
           const aw = await loadFontWithFallback(
             '/fonts/Audiowide-Regular.ttf',
-            '\/api\/font\/audiowide-regular'
+            '/api/font/audiowide-regular'
           )
           pdf.addFileToVFS('Audiowide-Regular.ttf', aw)
           pdf.addFont('Audiowide-Regular.ttf', 'Audiowide', 'normal')
+          headerFontFamily = 'Audiowide'
+          loadedHeader = true
+        } catch (e) {
+          console.warn('Audiowide font unavailable; headings will use Helvetica')
+        }
 
-          // Saira Regular & Bold
+        // Saira Regular (Body)
+        try {
           const sr = await loadFontWithFallback(
             '/fonts/Saira-Regular.ttf',
-            '\/api\/font\/saira-regular'
+            '/api/font/saira-regular'
           )
           pdf.addFileToVFS('Saira-Regular.ttf', sr)
           pdf.addFont('Saira-Regular.ttf', 'Saira', 'normal')
+          bodyFontFamily = 'Saira'
+          loadedBody = true
+        } catch (e) {
+          console.warn('Saira Regular unavailable; body will use Helvetica')
+        }
 
+        // Saira Bold (optional)
+        try {
           const sb = await loadFontWithFallback(
             '/fonts/Saira-Bold.ttf',
-
-
-            '\/api\/font\/saira-bold'
+            '/api/font/saira-bold'
           )
           pdf.addFileToVFS('Saira-Bold.ttf', sb)
           pdf.addFont('Saira-Bold.ttf', 'Saira', 'bold')
-
-          headerFontFamily = 'Audiowide'
-          bodyFontFamily = 'Saira'
         } catch (e) {
+          console.warn('Saira Bold unavailable; bold text will simulate weight')
+        }
+
+        if (!loadedHeader && !loadedBody) {
           console.log('Custom fonts not available, falling back to Helvetica')
         }
       }
