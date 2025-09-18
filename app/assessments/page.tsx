@@ -311,19 +311,19 @@ export default function AssessmentsPage() {
       const tryLoadFonts = async () => {
         // Prefer local fonts in public/fonts, fall back to same-origin proxy
         const fetchAsBase64 = async (url: string) => {
-          console.log('[pdf-fonts] fetching', url)
+          console.warn('[pdf-fonts] fetching', url)
           const res = await fetch(url)
           if (!res.ok) throw new Error(`Font fetch failed: ${url} (HTTP ${res.status})`)
           const buf = await res.arrayBuffer()
           const u8 = new Uint8Array(buf)
-          console.log('[pdf-fonts] fetched bytes', url, u8.length)
+          console.warn('[pdf-fonts] fetched bytes', url, u8.length)
           const CHUNK = 0x8000
           let binary = ''
           for (let i = 0; i < u8.length; i += CHUNK) {
             binary += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK) as any)
           }
           const b64 = btoa(binary)
-          console.log('[pdf-fonts] base64 size', url, b64.length)
+          console.warn('[pdf-fonts] base64 size', url, b64.length)
           return b64
         }
         const loadFontWithFallback = async (localPath: string, remoteUrl: string) => {
@@ -357,11 +357,11 @@ export default function AssessmentsPage() {
             '/fonts/SairaCondensed-Regular.ttf',
             '/api/font/saira-regular'
           )
-          console.log('[pdf-fonts] loaded SairaCondensed Regular base64 len', sr?.length)
+          console.warn('[pdf-fonts] loaded SairaCondensed Regular base64 len', sr?.length)
           pdf.addFileToVFS('SairaCondensed-Regular.ttf', sr)
-          console.log('[pdf-fonts] VFS added SairaCondensed-Regular.ttf')
+          console.warn('[pdf-fonts] VFS added SairaCondensed-Regular.ttf')
           pdf.addFont('SairaCondensed-Regular.ttf', 'SairaCondensed', 'normal')
-          console.log('[pdf-fonts] addFont success SairaCondensed normal')
+          console.warn('[pdf-fonts] addFont success SairaCondensed normal')
           bodyFontFamily = 'SairaCondensed'
           loadedBody = true
         } catch (e) {
@@ -374,11 +374,11 @@ export default function AssessmentsPage() {
             '/fonts/SairaCondensed-Bold.ttf',
             '/api/font/saira-bold'
           )
-          console.log('[pdf-fonts] loaded SairaCondensed Bold base64 len', sb?.length)
+          console.warn('[pdf-fonts] loaded SairaCondensed Bold base64 len', sb?.length)
           pdf.addFileToVFS('SairaCondensed-Bold.ttf', sb)
-          console.log('[pdf-fonts] VFS added SairaCondensed-Bold.ttf')
+          console.warn('[pdf-fonts] VFS added SairaCondensed-Bold.ttf')
           pdf.addFont('SairaCondensed-Bold.ttf', 'SairaCondensed', 'bold')
-          console.log('[pdf-fonts] addFont success SairaCondensed bold')
+          console.warn('[pdf-fonts] addFont success SairaCondensed bold')
         } catch (e) {
           console.warn('Saira Bold unavailable; bold text will simulate weight', e)
         }
