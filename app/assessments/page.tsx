@@ -559,26 +559,29 @@ export default function AssessmentsPage() {
         pdf.line(x1, y1, x2, y2)
       }
 
-      // Center fraction (current_total/200) with dynamic sizing
-      const totalPoints = assessmentData.skills.reduce((sum, s) => sum + Math.max(0, Math.min(5, (s.rating || 0))) * 5, 0)
-      const fractionText = `${totalPoints}/200`
+      // Center percentage with dynamic sizing (target ~50pt) and vertical centering
       pdf.setTextColor(...colors.darkGray)
       pdf.setFont(bodyFontFamily, 'bold')
       let targetSize = 50
+      const percentText = `${Math.round(percentage)}%`
       const maxInnerWidth = (radius * 2) - 4
       let useSize = targetSize
       if ((pdf as any).getTextWidth) {
         pdf.setFontSize(useSize)
-        const width = (pdf as any).getTextWidth(fractionText)
+        const width = (pdf as any).getTextWidth(percentText)
         if (width > maxInnerWidth) {
           useSize = Math.max(12, Math.floor(targetSize * (maxInnerWidth / width)))
         }
       }
       pdf.setFontSize(useSize)
-      pdf.text(fractionText, centerX, centerY + useSize * 0.35, { align: 'center' })
-      pdf.setFontSize(8)
+      // Try true vertical centering if supported; fallback to tuned offset
+      const textOpts: any = { align: 'center', baseline: 'middle' }
+      try { pdf.text(percentText, centerX, centerY, textOpts) }
+      catch { pdf.text(percentText, centerX, centerY + useSize * 0.35, { align: 'center' } as any) }
+      // Bigger "Overall" label below the number
+      pdf.setFontSize(11)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + useSize * 0.35 + 6, { align: 'center' })
+      pdf.text('Overall', centerX, centerY + useSize * 0.6, { align: 'center' })
 
       // Advance sidebar Y to just below the donut
       sidebarY = centerY + radius + 16
