@@ -558,14 +558,14 @@ export default function AssessmentsPage() {
         pdf.line(x1, y1, x2, y2)
       }
 
-      // Center percentage text and label
+      // Center percentage text and label (bigger number)
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(9)
+      pdf.setFontSize(16)
       pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 2, { align: 'center' })
-      pdf.setFontSize(7)
+      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 3, { align: 'center' })
+      pdf.setFontSize(8)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + 8, { align: 'center' })
+      pdf.text('Overall', centerX, centerY + 11, { align: 'center' })
 
       // Advance sidebar Y to just below the donut
       sidebarY = centerY + radius + 16
