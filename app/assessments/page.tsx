@@ -543,7 +543,8 @@ export default function AssessmentsPage() {
       pdf.circle(centerX, centerY, radius, 'S')
 
       // Progress arc (smooth, rounded)
-      const percentage = (parseFloat(averageRating) / 5) * 100
+      const computedPercentage = (parseFloat(averageRating) / 5) * 100
+      const percentage = 20 // forced per request for preview
       pdf.setDrawColor(...colors.primary)
       pdf.setLineWidth(3.2)
       const totalSteps = 120
@@ -623,8 +624,9 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(10)
         pdf.setFont(bodyFontFamily, 'bold')
-        const title = skillName.toUpperCase()
-        const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(title, 30) : [title]
+        const percent = Math.round((rating / 5) * 100)
+        const title = `${skillName.toUpperCase()} - ${percent}%`
+        const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(title, 45) : [title]
         pdf.text(nameLines as any, leftMargin + 5, rowTop)
 
         // Progress bar below title
