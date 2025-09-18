@@ -578,10 +578,14 @@ export default function AssessmentsPage() {
       const textOpts: any = { align: 'center', baseline: 'middle' }
       try { pdf.text(percentText, centerX, centerY, textOpts) }
       catch { pdf.text(percentText, centerX, centerY + useSize * 0.35, { align: 'center' } as any) }
-      // Bigger "Overall" label below the number
-      pdf.setFontSize(11)
+      // Bigger "Overall" label below the number, kept INSIDE the donut
+      const labelSize = 12
+      pdf.setFontSize(labelSize)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + useSize * 0.6, { align: 'center' })
+      const maxLabelY = centerY + (radius - 5) // keep inside inner circle
+      const preferredLabelY = centerY + useSize * 0.38
+      const labelY = Math.min(maxLabelY, preferredLabelY)
+      pdf.text('Overall', centerX, labelY, { align: 'center' })
 
       // Advance sidebar Y to just below the donut
       sidebarY = centerY + radius + 16
