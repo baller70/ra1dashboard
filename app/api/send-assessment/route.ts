@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
+import { put } from '@vercel/blob'
+
 
 
 // POST /api/send-assessment
@@ -40,6 +42,26 @@ export async function POST(req: NextRequest) {
 
     const greetingName = parentName ? parentName : 'Parent/Guardian'
 
+    // Determine CTA URL: prefer public Blob URL of the PDF; fall back to provided page URL
+    let ctaUrl: string = assessmentUrl
+    try {
+      const pdfBuffer = Buffer.from(pdfBase64, 'base64')
+      const safePlayer = (playerName || 'Assessment').replace(/\s+/g, '_')
+      const baseName = `${safePlayer}_Assessment_Report`
+      const token = process.env.BLOB_READ_WRITE_TOKEN
+      const putOptions: any = {
+        access: 'public',
+        contentType: 'application/pdf',
+        addRandomSuffix: true,
+      }
+      if (token) putOptions.token = token
+      const { url } = await put(`${baseName}.pdf`, pdfBuffer, putOptions)
+      if (url) ctaUrl = url as string
+    } catch (e) {
+      console.warn('Blob upload failed; falling back to assessment page URL', e)
+    }
+
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -72,7 +94,7 @@ export async function POST(req: NextRequest) {
           You can review the results online using the button below, and you will also find a PDF copy attached to this email for your records.
         </p>
         <p style="margin:24px 0; text-align:center;">
-          <a class="cta" href="${assessmentUrl}" target="_blank" rel="noopener noreferrer">View Assessment Online</a>
+          <a class="cta" href="${ctaUrl}" target="_blank" rel="noopener noreferrer">View Assessment Online</a>
         </p>
         <p class="muted">
           If you have any questions, reply to this email and we’ll be happy to help.
@@ -87,7 +109,7 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`
 
-    const text = `Dear ${greetingName},\n\nWe completed the basketball skills assessment for ${playerName}.\nThe report is attached and can also be viewed online: ${assessmentUrl}\n\nBest regards,\nKevin Houston\n2025 RA1 Yearly Development Program\n\n© 2025 Rise as One AAU Basketball Club · This message was sent by our assessment dashboard`
+    const text = `Dear ${greetingName},\n\nWe completed the basketball skills assessment for ${playerName}.\nThe report is attached and can also be viewed online: ${ctaUrl}\n\nBest regards,\nKevin Houston\n2025 RA1 Yearly Development Program\n\n© 2025 Rise as One AAU Basketball Club · This message was sent by our assessment dashboard`
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
