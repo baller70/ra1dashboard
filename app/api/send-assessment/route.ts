@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = 'nodejs'
+
 
 // POST /api/send-assessment
 // Body: { to: string, playerName: string, parentName?: string, assessmentUrl: string, pdfBase64: string, from?: string, programName?: string }
@@ -25,7 +27,14 @@ export async function POST(req: NextRequest) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY
     if (!RESEND_API_KEY) {
       return NextResponse.json(
-        { error: 'RESEND_API_KEY is not configured on the server' },
+        { error: 'RESEND_API_KEY is not configured on the server (check Vercel Project → Settings → Environment Variables, ensure Preview environment has this key).'},
+        { status: 500 }
+      )
+    }
+    if (!RESEND_API_KEY.startsWith('re_')) {
+      // Resend API keys typically start with `re_` — this helps catch misconfigured values.
+      return NextResponse.json(
+        { error: 'RESEND_API_KEY appears malformed. It should start with "re_". Double-check the value in your Vercel environment.' },
         { status: 500 }
       )
     }
@@ -106,7 +115,14 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json()
     if (!res.ok) {
-      return NextResponse.json({ error: data?.message || 'Failed to send email' }, { status: 502 })
+      return NextResponse.json(
+        {
+          error: data?.message || data?.error || 'Failed to send email',
+          details: data,
+          status: res.status,
+        },
+        { status: res.status === 401 ? 401 : 502 }
+      )
     }
 
     return NextResponse.json({ id: data?.id || null })
