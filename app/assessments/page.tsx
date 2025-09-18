@@ -78,10 +78,10 @@ const SKILLS = [
 
 const RATING_LABELS = [
   { value: 1, label: 'Needs Improvement', color: 'bg-red-500' },
-  { value: 2, label: 'Developing', color: 'bg-orange-500' },
-  { value: 3, label: 'Satisfactory', color: 'bg-yellow-500' },
-  { value: 4, label: 'Good', color: 'bg-blue-500' },
-  { value: 5, label: 'Excellent', color: 'bg-green-500' }
+  { value: 2, label: 'Developing', color: 'bg-red-400' },
+  { value: 3, label: 'Satisfactory', color: 'bg-gray-500' },
+  { value: 4, label: 'Good', color: 'bg-gray-700' },
+  { value: 5, label: 'Excellent', color: 'bg-red-600' }
 ]
 
 export default function AssessmentsPage() {
@@ -246,16 +246,17 @@ export default function AssessmentsPage() {
         return text.substring(0, maxLength - 3) + '...'
       }
 
-      // Color palette inspired by the professional resume
+      // Color palette - Red, Black, Grey, White theme
       const colors = {
-        primary: [139, 69, 19],      // Brown/Bronze
-        accent: [255, 140, 0],       // Orange
+        primary: [220, 20, 60],      // Crimson Red
+        accent: [255, 0, 0],         // Bright Red
+        black: [0, 0, 0],            // Black
         lightGray: [248, 249, 250],  // Light background
         mediumGray: [128, 128, 128], // Medium gray
         darkGray: [64, 64, 64],      // Dark gray
         white: [255, 255, 255],      // White
-        green: [46, 125, 50],        // Green for skills
-        blue: [25, 118, 210]         // Blue for sections
+        skillRed: [220, 20, 60],     // Red for skills
+        sectionRed: [139, 0, 0]      // Dark red for sections
       }
 
       // Left sidebar background (like the resume)
@@ -267,7 +268,7 @@ export default function AssessmentsPage() {
       pdf.rect(60, 0, pageWidth - 60, pageHeight, 'F')
 
       // Header section with player name (like resume header)
-      pdf.setFillColor(...colors.primary)
+      pdf.setFillColor(...colors.black)
       pdf.rect(60, 0, pageWidth - 60, 45, 'F')
 
       // Player name in header
@@ -304,7 +305,7 @@ export default function AssessmentsPage() {
       sidebarY += profileLines.length * 4 + 15
 
       // Contact/Info section
-      pdf.setTextColor(...colors.primary)
+      pdf.setTextColor(...colors.black)
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.text('DETAILS', 10, sidebarY)
@@ -341,7 +342,7 @@ export default function AssessmentsPage() {
         ? (ratedSkills.reduce((sum, skill) => sum + skill.rating, 0) / ratedSkills.length).toFixed(1)
         : '0.0'
 
-      pdf.setTextColor(...colors.primary)
+      pdf.setTextColor(...colors.black)
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.text('KEY SKILLS', 10, sidebarY)
@@ -359,7 +360,7 @@ export default function AssessmentsPage() {
 
       // Progress circle
       const percentage = (parseFloat(averageRating) / 5) * 100
-      pdf.setDrawColor(...colors.green)
+      pdf.setDrawColor(...colors.primary)
       pdf.setLineWidth(3)
 
       // Draw arc for progress (simplified as we can't draw perfect arcs in jsPDF)
@@ -386,7 +387,7 @@ export default function AssessmentsPage() {
       sidebarY += 35
 
       // Individual skills as progress bars (like resume additional skills)
-      pdf.setTextColor(...colors.primary)
+      pdf.setTextColor(...colors.black)
       pdf.setFontSize(10)
       pdf.setFont('helvetica', 'bold')
       pdf.text('SKILL BREAKDOWN', 10, sidebarY)
@@ -408,7 +409,7 @@ export default function AssessmentsPage() {
 
         // Progress bar fill
         const skillPercentage = (skill.rating / 5) * 35
-        pdf.setFillColor(...colors.green)
+        pdf.setFillColor(...colors.primary)
         pdf.rect(10, skillY + 2, skillPercentage, 3, 'F')
 
         // Percentage text
@@ -421,7 +422,7 @@ export default function AssessmentsPage() {
       let mainY = 55
 
       // Professional Experience section (adapted for basketball assessment)
-      pdf.setTextColor(...colors.primary)
+      pdf.setTextColor(...colors.black)
       pdf.setFontSize(14)
       pdf.setFont('helvetica', 'bold')
       pdf.text('ASSESSMENT RESULTS', 70, mainY)
@@ -458,14 +459,14 @@ export default function AssessmentsPage() {
 
       // AI Insights section (like Education section in resume)
       if (assessmentData.generatedContent.parentSuggestions) {
-        pdf.setTextColor(...colors.primary)
+        pdf.setTextColor(...colors.black)
         pdf.setFontSize(14)
         pdf.setFont('helvetica', 'bold')
         pdf.text('DEVELOPMENT RECOMMENDATIONS', 70, mainY)
         mainY += 15
 
         // Parent Suggestions
-        pdf.setTextColor(...colors.blue)
+        pdf.setTextColor(...colors.primary)
         pdf.setFontSize(10)
         pdf.setFont('helvetica', 'bold')
         pdf.text('Parent Guidance', 70, mainY)
@@ -491,7 +492,7 @@ export default function AssessmentsPage() {
 
       // Gameplay Analysis section
       if (assessmentData.generatedContent.gameplayAnalysis) {
-        pdf.setTextColor(...colors.blue)
+        pdf.setTextColor(...colors.primary)
         pdf.setFontSize(10)
         pdf.setFont('helvetica', 'bold')
         pdf.text('Technical Analysis', 70, mainY)
@@ -513,7 +514,7 @@ export default function AssessmentsPage() {
 
       // Progress Summary section
       if (assessmentData.generatedContent.progressSummary) {
-        pdf.setTextColor(...colors.blue)
+        pdf.setTextColor(...colors.primary)
         pdf.setFontSize(10)
         pdf.setFont('helvetica', 'bold')
         pdf.text('Next Steps', 70, mainY)
@@ -851,7 +852,7 @@ export default function AssessmentsPage() {
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <Circle className="h-8 w-8 animate-spin mx-auto mb-4 text-orange-600" />
+            <Circle className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" />
             <p className="text-gray-600">Loading Assessment System...</p>
           </div>
         </div>
@@ -863,7 +864,7 @@ export default function AssessmentsPage() {
     <AppLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
         {/* Header Section with Background Watermark */}
-        <div className="relative bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white p-8 rounded-xl shadow-2xl overflow-hidden">
+        <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white p-8 rounded-xl shadow-2xl overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-4 left-4">
@@ -887,7 +888,7 @@ export default function AssessmentsPage() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold mb-2 tracking-tight">Basketball Assessment Report</h1>
-                <p className="text-orange-100 text-lg">Professional player evaluation & development system</p>
+                <p className="text-red-100 text-lg">Professional player evaluation & development system</p>
                 <div className="flex items-center mt-2 space-x-4">
                   <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
                     <Brain className="h-3 w-3 mr-1" />
@@ -904,9 +905,9 @@ export default function AssessmentsPage() {
         </div>
 
         {/* Logo and Program Name Section */}
-        <Card className="shadow-md border-orange-200">
+        <Card className="shadow-md border-red-200">
           <CardHeader>
-            <CardTitle className="flex items-center text-orange-700">
+            <CardTitle className="flex items-center text-red-700">
               <Upload className="h-5 w-5 mr-2" />
               Program Information
             </CardTitle>
@@ -942,9 +943,9 @@ export default function AssessmentsPage() {
         </Card>
 
         {/* Player Information Card */}
-        <Card className="shadow-md border-orange-200">
+        <Card className="shadow-md border-red-200">
           <CardHeader>
-            <CardTitle className="flex items-center text-orange-700">
+            <CardTitle className="flex items-center text-red-700">
               <User className="h-5 w-5 mr-2" />
               Player Information
             </CardTitle>
@@ -1002,9 +1003,9 @@ export default function AssessmentsPage() {
         </Card>
 
         {/* Skills Assessment Section */}
-        <Card className="shadow-md border-orange-200">
+        <Card className="shadow-md border-red-200">
           <CardHeader>
-            <CardTitle className="flex items-center text-orange-700">
+            <CardTitle className="flex items-center text-red-700">
               <Circle className="h-5 w-5 mr-2" />
               Skills Assessment
             </CardTitle>
@@ -1036,11 +1037,11 @@ export default function AssessmentsPage() {
                 const currentRating = assessmentData.skills.find(s => s.skillName === skill.name)?.rating || 0
 
                 return (
-                  <div key={skill.name} className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors">
+                  <div key={skill.name} className="border border-gray-200 rounded-lg p-4 hover:border-red-300 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3 min-w-0 flex-1">
-                        <div className="bg-orange-100 p-2 rounded-full">
-                          <Icon className="h-5 w-5 text-orange-600" />
+                        <div className="bg-red-100 p-2 rounded-full">
+                          <Icon className="h-5 w-5 text-red-600" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="font-medium text-gray-900">{skill.name}</h4>
@@ -1065,10 +1066,10 @@ export default function AssessmentsPage() {
                             onClick={() => updateSkillRating(skill.name, rating.value)}
                             className={`
                               w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold
-                              transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                              transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
                               ${currentRating === rating.value
                                 ? `${rating.color} text-white border-transparent shadow-lg`
-                                : `border-gray-300 text-gray-400 hover:border-orange-300 hover:text-orange-600`
+                                : `border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-600`
                               }
                             `}
                             title={`${rating.value} - ${rating.label}`}
@@ -1103,9 +1104,9 @@ export default function AssessmentsPage() {
         {/* AI Content Generation Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Parent Suggestions */}
-          <Card className="shadow-md border-orange-200">
+          <Card className="shadow-md border-red-200">
             <CardHeader>
-              <CardTitle className="flex items-center text-orange-700">
+              <CardTitle className="flex items-center text-red-700">
                 <MessageSquare className="h-5 w-5 mr-2" />
                 Parent Suggestions
               </CardTitle>
@@ -1124,7 +1125,7 @@ export default function AssessmentsPage() {
               <Button
                 onClick={() => generateAIContent('parentSuggestions')}
                 disabled={loading.parentSuggestions}
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                className="w-full bg-red-600 hover:bg-red-700"
               >
                 {loading.parentSuggestions ? (
                   <>
@@ -1150,9 +1151,9 @@ export default function AssessmentsPage() {
           </Card>
 
           {/* Gameplay Analysis */}
-          <Card className="shadow-md border-orange-200">
+          <Card className="shadow-md border-red-200">
             <CardHeader>
-              <CardTitle className="flex items-center text-orange-700">
+              <CardTitle className="flex items-center text-red-700">
                 <Eye className="h-5 w-5 mr-2" />
                 Gameplay Analysis
               </CardTitle>
@@ -1171,7 +1172,7 @@ export default function AssessmentsPage() {
               <Button
                 onClick={() => generateAIContent('gameplayAnalysis')}
                 disabled={loading.gameplayAnalysis}
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                className="w-full bg-red-600 hover:bg-red-700"
               >
                 {loading.gameplayAnalysis ? (
                   <>
@@ -1197,9 +1198,9 @@ export default function AssessmentsPage() {
           </Card>
 
           {/* Progress Summary */}
-          <Card className="shadow-md border-orange-200">
+          <Card className="shadow-md border-red-200">
             <CardHeader>
-              <CardTitle className="flex items-center text-orange-700">
+              <CardTitle className="flex items-center text-red-700">
                 <TrendingUp className="h-5 w-5 mr-2" />
                 Progress Summary
               </CardTitle>
@@ -1218,7 +1219,7 @@ export default function AssessmentsPage() {
               <Button
                 onClick={() => generateAIContent('progressSummary')}
                 disabled={loading.progressSummary}
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                className="w-full bg-red-600 hover:bg-red-700"
               >
                 {loading.progressSummary ? (
                   <>
@@ -1245,9 +1246,9 @@ export default function AssessmentsPage() {
         </div>
 
         {/* Export and Actions Section */}
-        <Card className="shadow-md border-orange-200">
+        <Card className="shadow-md border-red-200">
           <CardHeader>
-            <CardTitle className="flex items-center text-orange-700">
+            <CardTitle className="flex items-center text-red-700">
               <Download className="h-5 w-5 mr-2" />
               Export & Actions
             </CardTitle>

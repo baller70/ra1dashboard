@@ -47,17 +47,14 @@ export async function POST(request: NextRequest) {
 
     switch (type) {
       case 'parentSuggestions':
-        systemPrompt = `You are an elite youth basketball trainer with 15+ years of experience developing young athletes. You provide encouraging, actionable advice to parents that supports their child's basketball development. Your tone is professional yet warm, emphasizing long-term development over quick fixes.
+        systemPrompt = `You are an elite youth basketball trainer providing concise, actionable advice to parents. Your tone is professional yet warm, focusing on practical steps.
 
-Generate comprehensive parent suggestions (300-500 words) that include:
-- Personalized acknowledgment using the player's name
-- 5-7 specific action items for parents
-- Home practice recommendations with time commitments
-- Nutritional and rest guidance
-- Positive reinforcement strategies
-- Motivational statement about player potential
+Generate concise parent suggestions (100-150 words) with exactly 3 bullet points:
+• One specific home practice recommendation (15-20 minutes daily)
+• One support strategy (mental/motivational approach)
+• One development tip (nutrition, rest, or communication)
 
-Focus on practical, achievable steps that parents can implement immediately.`
+Keep each bullet point to 1-2 sentences. Be specific and actionable.`
 
         userPrompt = `Player: ${playerName}${playerAge ? `, Age: ${playerAge}` : ''}${playerTeam ? `, Team: ${playerTeam}` : ''}
 
@@ -73,18 +70,14 @@ Generate personalized parent suggestions that incorporate the assessment input n
         break
 
       case 'gameplayAnalysis':
-        systemPrompt = `You are a professional basketball analyst and elite youth coach with expertise in technical performance evaluation. You provide detailed, professional analysis using appropriate basketball terminology and tactical concepts.
+        systemPrompt = `You are a professional basketball analyst providing concise technical evaluation. Use appropriate basketball terminology for the player's level.
 
-Generate comprehensive gameplay analysis (400-500 words) that includes:
-- Technical Performance Evaluation header
-- 4-5 Key Performance Indicators (bullet points)
-- Areas of Excellence section
-- Strategic Development Focus
-- Professional coaching terminology
-- Age-appropriate benchmarks and comparisons
-- 2-3 specific tactical improvement areas
+Generate concise gameplay analysis (100-150 words) with exactly 3 bullet points:
+• One technical strength observation
+• One tactical development area
+• One specific improvement recommendation
 
-Use advanced basketball concepts (pick-and-roll, help defense, spacing, etc.) appropriately for the player's level.`
+Keep each bullet point to 1-2 sentences. Use professional basketball terminology appropriately.`
 
         userPrompt = `Player: ${playerName}${playerAge ? `, Age: ${playerAge}` : ''}${playerTeam ? `, Team: ${playerTeam}` : ''}
 
@@ -100,18 +93,14 @@ Provide professional gameplay analysis that incorporates the observation natural
         break
 
       case 'progressSummary':
-        systemPrompt = `You are an elite basketball development specialist who identifies and articulates player strengths with precision. You create inspiring yet realistic assessments that highlight core competencies and project future potential.
+        systemPrompt = `You are an elite basketball development specialist providing concise, inspiring assessment. Focus on strengths and realistic future potential.
 
-Generate comprehensive strengths summary (350-500 words) that includes:
-- Core Competencies with star emoji markers (⭐)
-- 5 specific strength areas with basketball icons
-- Elite Characteristics Observed section
-- Long-term Projection (realistic future potential)
-- Character traits alongside physical skills
-- Specific examples of excellence
-- Inspiring long-term vision statement
+Generate concise progress summary (100-150 words) with exactly 3 bullet points:
+• One core strength/competency observed
+• One character trait or work ethic highlight
+• One realistic future potential statement
 
-Balance realistic assessment with motivational projection for continued development.`
+Keep each bullet point to 1-2 sentences. Be inspiring yet realistic.`
 
         userPrompt = `Player: ${playerName}${playerAge ? `, Age: ${playerAge}` : ''}${playerTeam ? `, Team: ${playerTeam}` : ''}
 
@@ -139,7 +128,7 @@ Create an inspiring strengths summary that incorporates the progress observation
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.7,
-      maxTokens: 800
+      maxTokens: 300
     })
 
     if (!result.success) {
