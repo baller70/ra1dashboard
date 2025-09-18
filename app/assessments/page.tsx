@@ -531,42 +531,46 @@ export default function AssessmentsPage() {
       sidebarY += 8 // Reduced spacing for full page utilization
 
       // Overall rating circle (like resume skill circles) - Compact version
-      const centerX = leftMargin + 20 // Adjusted for new margins
-      const centerY = sidebarY + 8
-      const radius = 8 // Smaller radius for space optimization
+      // Enhanced overall performance donut
+      const centerX = leftMargin + 27
+      const centerY = sidebarY + 22
+      const radius = 18
 
-      // Background circle
+      // Base ring
       pdf.setDrawColor(...colors.mediumGray)
-      pdf.setLineWidth(1.5)
+      pdf.setLineWidth(3.2)
+      if ((pdf as any).setLineCap) { (pdf as any).setLineCap('round') }
       pdf.circle(centerX, centerY, radius, 'S')
 
-      // Progress circle
+      // Progress arc (smooth, rounded)
       const percentage = (parseFloat(averageRating) / 5) * 100
       pdf.setDrawColor(...colors.primary)
-      pdf.setLineWidth(1.5) // Thinner line
-
-      // Draw arc for progress (simplified as we can't draw perfect arcs in jsPDF)
-      const steps = Math.floor((percentage / 100) * 16) // Fewer steps for smaller circle
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / 16) * 2 * Math.PI - Math.PI / 2
-        const x1 = centerX + (radius - 1) * Math.cos(angle)
-        const y1 = centerY + (radius - 1) * Math.sin(angle)
-        const x2 = centerX + (radius + 1) * Math.cos(angle)
-        const y2 = centerY + (radius + 1) * Math.sin(angle)
+      pdf.setLineWidth(3.2)
+      const totalSteps = 120
+      const usedSteps = Math.max(1, Math.floor((percentage / 100) * totalSteps))
+      for (let i = 0; i < usedSteps; i++) {
+        const angle1 = -Math.PI / 2 + (i / totalSteps) * 2 * Math.PI
+        const angle2 = angle1 + (2 * Math.PI) / totalSteps * 0.9
+        const x1 = centerX + radius * Math.cos(angle1)
+        const y1 = centerY + radius * Math.sin(angle1)
+        const x2 = centerX + radius * Math.cos(angle2)
+        const y2 = centerY + radius * Math.sin(angle2)
         pdf.line(x1, y1, x2, y2)
       }
 
-      // Percentage text in center
+      // Center percentage text and label
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(7) // Smaller font for space optimization
+      pdf.setFontSize(9)
       pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 1, { align: 'center' })
-
-      pdf.setFontSize(6) // Smaller font
+      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 2, { align: 'center' })
+      pdf.setFontSize(7)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + 5, { align: 'center' })
+      pdf.text('Overall', centerX, centerY + 8, { align: 'center' })
 
-      sidebarY += 14 // Tightened spacing between KEY SKILLS summary and DETAILS
+      // Advance sidebar Y to just below the donut
+      sidebarY = centerY + radius + 16
+
+      sidebarY += 0 // Spacing already handled by donut block above
 
       // DETAILS (restored minimal subset)
       pdf.setTextColor(...colors.black)
@@ -588,7 +592,7 @@ export default function AssessmentsPage() {
       programDetailLines.forEach((line: string, index: number) => {
         pdf.text(line, leftMargin + 5, sidebarY + (index * 3))
       })
-      sidebarY += (programDetailLines.length * 3) + 8
+      sidebarY += (programDetailLines.length * 3) + 12
 
       // Individual skills as progress bars - Compact version for all 8 skills
       pdf.setTextColor(...colors.black)
@@ -603,45 +607,43 @@ export default function AssessmentsPage() {
         'Passing Accuracy', 'Rebounding', 'Footwork', 'Team Communication'
       ]
 
-      // Uniform, polished spacing for each skill entry
-      const blockTitleToBar = 4
-      const barHeight = 1.5
-      const barToLabel = 3
-      const blockBottomSpacing = 7
-      let skillY = sidebarY
+      // Evenly distribute all 8 skills to fill the available vertical space
+      const NAME_TO_BAR = 4
+      const BAR_HEIGHT = 1.8
+      const BAR_TO_LABEL = 4.5
+      const availableHeight = (pageHeight - bottomMargin) - sidebarY - 8
+      const rowH = availableHeight / allSkills.length
 
-      allSkills.forEach((skillName) => {
+      allSkills.forEach((skillName, index) => {
+        const rowTop = sidebarY + (index * rowH)
         const skill = assessmentData.skills.find(s => s.skillName === skillName)
         const rating = skill ? skill.rating : 0
 
-        // Skill name (larger, bold)
+        // Skill name (uppercased, larger, bold)
         pdf.setTextColor(...colors.darkGray)
-        pdf.setFontSize(9)
+        pdf.setFontSize(10)
         pdf.setFont(bodyFontFamily, 'bold')
-        const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(skillName, 30) : [skillName]
-        pdf.text(nameLines as any, leftMargin + 5, skillY)
+        const title = skillName.toUpperCase()
+        const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(title, 30) : [title]
+        pdf.text(nameLines as any, leftMargin + 5, rowTop)
 
-        // Bar immediately under the title
+        // Progress bar below title
         const lineCount = Array.isArray(nameLines) ? nameLines.length : 1
-        const barY = skillY + blockTitleToBar + (lineCount - 1) * 3
+        const barY = rowTop + NAME_TO_BAR + (lineCount - 1) * 3
         pdf.setFillColor(...colors.mediumGray)
-        pdf.rect(leftMargin + 5, barY, 28, barHeight, 'F')
+        pdf.rect(leftMargin + 5, barY, 28, BAR_HEIGHT, 'F')
 
         // Progress fill
         const skillPercentage = (rating / 5) * 28
         pdf.setFillColor(...colors.primary)
-        pdf.rect(leftMargin + 5, barY, skillPercentage, barHeight, 'F')
+        pdf.rect(leftMargin + 5, barY, skillPercentage, BAR_HEIGHT, 'F')
 
-        // Label centered below the bar
+        // Left-aligned rating label under the bar (balanced spacing)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(7)
         const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
-        const labelX = leftMargin + 5 + 14
-        const labelY = barY + barToLabel
-        pdf.text(ratingLabel, labelX, labelY, { align: 'center' })
-
-        // Advance Y for next skill, maintaining polished rhythm
-        skillY = labelY + blockBottomSpacing
+        const labelY = barY + BAR_TO_LABEL
+        pdf.text(ratingLabel, leftMargin + 5, labelY)
       })
 
       // Main content area (right side) - optimized positioning
