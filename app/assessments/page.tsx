@@ -544,7 +544,7 @@ export default function AssessmentsPage() {
 
       // Progress arc (smooth, rounded)
       const computedPercentage = (parseFloat(averageRating) / 5) * 100
-      const percentage = 20 // forced per request for preview
+      const percentage = computedPercentage
       pdf.setDrawColor(...colors.primary)
       pdf.setLineWidth(3.2)
       const totalSteps = 120
@@ -559,14 +559,26 @@ export default function AssessmentsPage() {
         pdf.line(x1, y1, x2, y2)
       }
 
-      // Center percentage text and label (bigger number)
+      // Center fraction (current_total/200) with dynamic sizing
+      const totalPoints = assessmentData.skills.reduce((sum, s) => sum + Math.max(0, Math.min(5, (s.rating || 0))) * 5, 0)
+      const fractionText = `${totalPoints}/200`
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(16)
       pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 3, { align: 'center' })
+      let targetSize = 50
+      const maxInnerWidth = (radius * 2) - 4
+      let useSize = targetSize
+      if ((pdf as any).getTextWidth) {
+        pdf.setFontSize(useSize)
+        const width = (pdf as any).getTextWidth(fractionText)
+        if (width > maxInnerWidth) {
+          useSize = Math.max(12, Math.floor(targetSize * (maxInnerWidth / width)))
+        }
+      }
+      pdf.setFontSize(useSize)
+      pdf.text(fractionText, centerX, centerY + useSize * 0.35, { align: 'center' })
       pdf.setFontSize(8)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + 11, { align: 'center' })
+      pdf.text('Overall', centerX, centerY + useSize * 0.35 + 6, { align: 'center' })
 
       // Advance sidebar Y to just below the donut
       sidebarY = centerY + radius + 16
