@@ -666,10 +666,11 @@ export default function AssessmentsPage() {
         pdf.setFillColor(...colors.primary)
         pdf.rect(leftMargin + 5, barY, skillPercentage, 1.5, 'F')
 
-        // Rating text
+        // Rating label (no percentages)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(6)
-        pdf.text(`${Math.round((rating / 5) * 100)}%`, 47, rowTop + Math.max(4, rowH * 0.75))
+        const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
+        pdf.text(ratingLabel, 47, rowTop + Math.max(4, rowH * 0.75))
       })
 
       // Main content area (right side) - optimized positioning
@@ -683,7 +684,7 @@ export default function AssessmentsPage() {
       mainY += 15 // Optimized spacing for full page utilization
 
       // Overall performance summary - use Audiowide heading (H3)
-      pdfHeading(3, 'Overall Performance Rating', 60 + leftMargin, mainY, colors.darkGray)
+      pdfHeading(3, 'OVERALL PERFORMANCE RATING', 60 + leftMargin, mainY, colors.darkGray)
       mainY += 6 // Reduced spacing
 
       pdf.setFontSize(8) // Smaller for space optimization
@@ -720,7 +721,7 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont(headerFontFamily, 'normal')
-        pdf.text('Parent Guidance', 60 + leftMargin, mainY)
+        pdf.text('PARENT GUIDANCE', 60 + leftMargin, mainY)
         mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
@@ -743,7 +744,7 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont(headerFontFamily, 'normal')
-        pdf.text('Technical Analysis', 60 + leftMargin, mainY)
+        pdf.text('TECHNICAL ANALYSIS', 60 + leftMargin, mainY)
         mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
@@ -765,7 +766,7 @@ export default function AssessmentsPage() {
         pdf.setTextColor(...colors.primary)
         pdf.setFontSize(12) // Larger section header
         pdf.setFont(headerFontFamily, 'normal')
-        pdf.text('Next Steps', 60 + leftMargin, mainY)
+        pdf.text('NEXT STEP', 60 + leftMargin, mainY)
         mainY += 10 // Optimized spacing
 
         pdf.setTextColor(...colors.darkGray)
