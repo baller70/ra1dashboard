@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server'
 
 const SOURCES: Record<string, string> = {
   'audiowide-regular': 'https://raw.githubusercontent.com/google/fonts/main/ofl/audiowide/Audiowide-Regular.ttf',
-  'saira-regular': 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/static/Saira-Regular.ttf',
-  'saira-bold': 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/static/Saira-Bold.ttf',
+  'saira-regular': 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira%5Bwdth%2Cwght%5D.ttf',
+  'saira-bold': 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira%5Bwdth%2Cwght%5D.ttf',
 }
 
 export async function GET(_req: NextRequest, context: { params: { font: string } }) {

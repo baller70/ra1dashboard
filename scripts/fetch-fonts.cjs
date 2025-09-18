@@ -9,16 +9,12 @@ const path = require('path');
 const outDir = path.join(process.cwd(), 'public', 'fonts');
 const targets = [
   {
-    url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/audiowide/Audiowide-Regular.ttf',
+    url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/audiowide/Audiowide-Regular.ttf',
     filename: 'Audiowide-Regular.ttf',
   },
   {
-    url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/static/Saira-Regular.ttf',
-    filename: 'Saira-Regular.ttf',
-  },
-  {
-    url: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/saira/static/Saira-Bold.ttf',
-    filename: 'Saira-Bold.ttf',
+    url: 'https://raw.githubusercontent.com/google/fonts/main/ofl/saira/Saira%5Bwdth%2Cwght%5D.ttf',
+    filename: 'Saira-Variable.ttf',
   },
 ];
 
