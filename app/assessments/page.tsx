@@ -602,10 +602,16 @@ export default function AssessmentsPage() {
       pdf.text('SKILL BREAKDOWN', leftMargin + 5, sidebarY)
       sidebarY += 10 // Clear separation before skills list
 
-      // Show all 8 skills and evenly distribute to bottom of page
-      const allSkills = [
-        'Ball Handling', 'Shooting Form', 'Defensive Stance', 'Court Awareness',
-        'Passing Accuracy', 'Rebounding', 'Footwork', 'Team Communication'
+      // Show requested skills (display label vs lookup key) and evenly distribute
+      const skillsList = [
+        { display: 'FOOTWORK', key: 'Footwork' },
+        { display: 'FINISHING', key: 'Finishing' },
+        { display: 'BALL HANDLING', key: 'Ball Handling' },
+        { display: 'SHOOTING FORM', key: 'Shooting Form' },
+        { display: 'COURT AWARNESS', key: 'Court Awareness' },
+        { display: 'COMMUNICATION', key: 'Team Communication' },
+        { display: 'DEFENSE', key: 'Defensive Stance' },
+        { display: 'PASSING', key: 'Passing Accuracy' },
       ]
 
       // Evenly distribute all 8 skills to fill the available vertical space
@@ -613,19 +619,19 @@ export default function AssessmentsPage() {
       const BAR_HEIGHT = 1.8
       const BAR_TO_LABEL = 4.5
       const availableHeight = (pageHeight - bottomMargin) - sidebarY - 8
-      const rowH = availableHeight / allSkills.length
+      const rowH = availableHeight / skillsList.length
 
-      allSkills.forEach((skillName, index) => {
+      skillsList.forEach(({ display, key }, index) => {
         const rowTop = sidebarY + (index * rowH)
-        const skill = assessmentData.skills.find(s => s.skillName === skillName)
+        const skill = assessmentData.skills.find(s => s.skillName === key)
         const rating = skill ? skill.rating : 0
 
-        // Skill name (uppercased, larger, bold)
+        // Skill name (uppercased, larger, bold) with percentage appended
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(10)
         pdf.setFont(bodyFontFamily, 'bold')
         const percent = Math.round((rating / 5) * 100)
-        const title = `${skillName.toUpperCase()} - ${percent}%`
+        const title = `${display} - ${percent}%`
         const nameLines = (pdf as any).splitTextToSize ? (pdf as any).splitTextToSize(title, 45) : [title]
         pdf.text(nameLines as any, leftMargin + 5, rowTop)
 
