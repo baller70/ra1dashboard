@@ -7,6 +7,7 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
+    "prebuild": "node scripts/fetch-fonts.cjs",
     "dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" next dev --turbo",
     "dev:optimized": "tsx scripts/startup-optimization.ts && npm run dev",
     "dev:fast": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev --fast-refresh",
