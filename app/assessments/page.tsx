@@ -118,6 +118,7 @@ export default function AssessmentsPage() {
   })
 
   const [parentEmail, setParentEmail] = useState<string>('')
+  const [parentName, setParentName] = useState<string>('')
   const [lastPdfBase64, setLastPdfBase64] = useState<string | null>(null)
 
   const [inputPrompts, setInputPrompts] = useState({
@@ -158,7 +159,7 @@ export default function AssessmentsPage() {
     }))
   }, [])
 
-  type PlayerOption = { _id: string; name: string; parentId: string; parentEmail?: string; age?: string; team?: string }
+  type PlayerOption = { _id: string; name: string; parentId: string; parentName?: string; parentEmail?: string; age?: string; team?: string }
   const [players, setPlayers] = useState<PlayerOption[]>([])
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
   const [selectedParentId, setSelectedParentId] = useState<string>('')
@@ -181,6 +182,7 @@ export default function AssessmentsPage() {
     const p = players.find(pl => String(pl._id) === String(id))
     if (p) {
       setSelectedParentId(String((p as any).parentId))
+      setParentName((p as any).parentName || '')
       updatePlayerInfo('name', p.name || '')
       if ((p as any).parentEmail) setParentEmail((p as any).parentEmail)
     }
@@ -1261,7 +1263,7 @@ export default function AssessmentsPage() {
         body: JSON.stringify({
           to: parentEmail,
           playerName: assessmentData.playerInfo.name,
-          parentName: '',
+          parentName: parentName,
           assessmentUrl,
           pdfBase64: lastPdfBase64,
           programName: assessmentData.programName,
@@ -1436,13 +1438,13 @@ export default function AssessmentsPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="player-name">Player Name</Label>
+                <Label htmlFor="parent-name">Parent Name</Label>
                 <Input
-                  id="player-name"
-                  value={assessmentData.playerInfo.name}
-                  onChange={(e) => updatePlayerInfo('name', e.target.value)}
-                  placeholder="Enter player name"
-                  className="mt-1"
+                  id="parent-name"
+                  value={parentName}
+                  readOnly
+                  placeholder="Auto-filled from selected player"
+                  className="mt-1 bg-gray-50"
                 />
               </div>
               <div>
