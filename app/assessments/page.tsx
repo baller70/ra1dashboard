@@ -158,33 +158,44 @@ export default function AssessmentsPage() {
     }))
   }, [])
 
-  type PlayerOption = { _id: string; name: string; parentId: any; parentEmail?: string; team?: string; age?: string }
-  const [players, setPlayers] = useState<PlayerOption[]>([])
+  type ParentOption = { _id: string; name: string; email: string; childName?: string }
+  const [parents, setParents] = useState<ParentOption[]>([])
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
   const [selectedParentId, setSelectedParentId] = useState<string>('')
 
   useEffect(() => {
-    // Fetch players for dropdown
+    // Fetch parents for dropdown
     ;(async () => {
       try {
-        const res = await fetch('/api/players')
+        const res = await fetch('/api/parents?limit=500')
         const data = await res.json()
-        if (data?.players) setPlayers(data.players)
+        if (data?.data?.parents) setParents(data.data.parents)
       } catch (e) {
-        console.warn('Failed to load players', e)
+        console.warn('Failed to load parents', e)
       }
     })()
   }, [])
 
-  const onSelectPlayer = (id: string) => {
-    setSelectedPlayerId(id)
-    const p = players.find(pl => String(pl._id) === String(id))
-    if (p) {
-      setSelectedParentId(String(p.parentId))
-      updatePlayerInfo('name', p.name || '')
-      if (p.team) updatePlayerInfo('team', p.team)
-      if (p.age) updatePlayerInfo('age', p.age)
-      if (p.parentEmail) setParentEmail(p.parentEmail)
+  const onSelectParent = async (id: string) => {
+    setSelectedParentId(id)
+    const par = parents.find(pr => String(pr._id) === String(id))
+    if (par) {
+      updatePlayerInfo('name', par.childName || '')
+      if (par.email) setParentEmail(par.email)
+      // Ensure a player record exists so assessment history can link to it
+      if (par.childName) {
+        try {
+          const res = await fetch('/api/players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parentId: id, name: par.childName }),
+          })
+          const j = await res.json()
+          if (j?.player?._id) setSelectedPlayerId(String(j.player._id))
+        } catch (e) {
+          console.warn('Failed to ensure player for parent', e)
+        }
+      }
     }
   }
 
@@ -1416,15 +1427,15 @@ export default function AssessmentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <Label htmlFor="player-select">Player *</Label>
-                <Select value={selectedPlayerId} onValueChange={(v) => onSelectPlayer(v)}>
-                  <SelectTrigger id="player-select" className="mt-1">
-                    <SelectValue placeholder="Select a player" />
+                <Label htmlFor="parent-select">Parent *</Label>
+                <Select value={selectedParentId} onValueChange={(v) => onSelectParent(v)}>
+                  <SelectTrigger id="parent-select" className="mt-1">
+                    <SelectValue placeholder="Select a parent" />
                   </SelectTrigger>
                   <SelectContent>
-                    {players.map((p) => (
+                    {parents.map((p) => (
                       <SelectItem key={String(p._id)} value={String(p._id)}>
                         {p.name}
                       </SelectItem>
@@ -1433,9 +1444,19 @@ export default function AssessmentsPage() {
                 </Select>
                 {validationErrors.includes("Player name is required") && (
                   <p className="text-sm text-red-600 mt-1">
-                    Player selection is required
+                    Parent selection is required
                   </p>
                 )}
+              </div>
+              <div>
+                <Label htmlFor="player-name">Player Name</Label>
+                <Input
+                  id="player-name"
+                  value={assessmentData.playerInfo.name}
+                  onChange={(e) => updatePlayerInfo('name', e.target.value)}
+                  placeholder="Enter player name"
+                  className="mt-1"
+                />
               </div>
               <div>
                 <Label htmlFor="player-age">Age</Label>

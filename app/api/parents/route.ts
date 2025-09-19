@@ -119,6 +119,7 @@ export async function POST(request: Request) {
     const createData = {
       name: sanitizedData.name,
       email: sanitizedData.email,
+      childName: sanitizedData.childName || undefined,
       phone: sanitizedData.phone || undefined,
       address: sanitizedData.address || undefined,
       emergencyContact: sanitizedData.emergencyContact || undefined,

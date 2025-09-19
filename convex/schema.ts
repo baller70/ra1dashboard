@@ -18,6 +18,8 @@ export default defineSchema({
   parents: defineTable({
     name: v.string(),
     email: v.string(),
+    // New: optional child/player name associated with this parent
+    childName: v.optional(v.string()),
     phone: v.optional(v.string()),
     address: v.optional(v.string()),
     emergencyContact: v.optional(v.string()),
