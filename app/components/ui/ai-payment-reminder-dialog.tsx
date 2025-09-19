@@ -36,13 +36,19 @@ interface AiPaymentReminderDialogProps {
   onOpenChange: (open: boolean) => void
   paymentData: PaymentData
   onSendReminder: (message: string, method: 'email' | 'sms') => Promise<void>
+  customPrompt?: string
+  parentId?: string
+  paymentId?: string
 }
 
 export function AiPaymentReminderDialog({
   open,
   onOpenChange,
   paymentData,
-  onSendReminder
+  onSendReminder,
+  customPrompt,
+  parentId,
+  paymentId,
 }: AiPaymentReminderDialogProps) {
   const [message, setMessage] = useState<string>('')
   const [method, setMethod] = useState<'email' | 'sms'>('email')
@@ -154,9 +160,14 @@ export function AiPaymentReminderDialog({
             daysPastDue: paymentData.daysPastDue,
             messageType: paymentData.status === 'overdue' ? 'overdue' : 'reminder',
             tone: 'friendly',
-            urgencyLevel: paymentData.status === 'overdue' ? 4 : 3
+            urgencyLevel: paymentData.status === 'overdue' ? 4 : 3,
+            parentId,
+            paymentId,
           },
-          customInstructions: `Generate a ${paymentData.status === 'overdue' ? 'urgent' : 'friendly'} payment reminder for ${paymentData.parentName} regarding installment #${paymentData.installmentNumber} of $${paymentData.amount} due on ${new Date(paymentData.dueDate).toLocaleDateString()}. ${paymentData.status === 'overdue' && paymentData.daysPastDue ? `This payment is ${paymentData.daysPastDue} days overdue.` : ''} Keep it professional but warm.`,
+          customInstructions: [
+            `Generate a ${paymentData.status === 'overdue' ? 'urgent' : 'friendly'} payment reminder for ${paymentData.parentName} regarding installment #${paymentData.installmentNumber} of $${paymentData.amount} due on ${new Date(paymentData.dueDate).toLocaleDateString()}. ${paymentData.status === 'overdue' && paymentData.daysPastDue ? `This payment is ${paymentData.daysPastDue} days overdue.` : ''} Keep it professional but warm.`,
+            (customPrompt || '').trim()
+          ].filter(Boolean).join('\n\nAdditional coach instructions: '),
           includePersonalization: true,
         }),
       })

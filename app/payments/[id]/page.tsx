@@ -30,11 +30,13 @@ import {
   Settings,
   RefreshCw,
   Loader2,
-  Plus
+  Plus,
+  Sparkles
 } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Input } from '../../../components/ui/input'
+import { Textarea } from '../../../components/ui/textarea'
 import { PaymentProgress } from '../../../components/ui/payment-progress'
 import { ModifyScheduleDialog } from '../../../components/ui/modify-schedule-dialog'
 import { AiPaymentReminderDialog } from '../../../components/ui/ai-payment-reminder-dialog'
@@ -299,6 +301,7 @@ export default function PaymentDetailPage() {
     message: string
     tone: string
   } | null>(null)
+  const [aiPrompt, setAiPrompt] = useState<string>('')
 
   // Payment scheduling state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("")
@@ -1789,6 +1792,26 @@ The Basketball Factory Inc.`
                   </Link>
                 </Button>
 
+                {/* AI Reminder Prompt (Optional) */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">AI Reminder Prompt (optional)</label>
+                  <Textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="E.g., Be firm but supportive. Mention upcoming game on Saturday. Keep it under 120 words."
+                    className="min-h-[90px]"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => { setSelectedInstallment(null); setAiReminderOpen(true); }}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AI Generate Reminder
+                  </Button>
+                </div>
+
                 {/* Send Reminder */}
                 <Button
                   variant="outline"
@@ -1843,6 +1866,9 @@ The Basketball Factory Inc.`
             setSelectedInstallment(null) // Clear selected installment when dialog closes
           }
         }}
+        customPrompt={aiPrompt}
+        parentId={(payment.parent as any)?._id || payment.parent?.id}
+        paymentId={(payment as any)._id || payment.id}
         paymentData={{
           parentName: payment.parent?.name || '',
           parentEmail: payment.parent?.email || '',
