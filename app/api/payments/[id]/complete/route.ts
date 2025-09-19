@@ -1,3 +1,7 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+
 import { NextRequest, NextResponse } from 'next/server'
 import { api } from "../../../../convex/_generated/api"
 import { convexHttp } from "../../../../lib/convex-server"
@@ -43,4 +47,4 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     console.error('Error completing payment:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-} 
+}
