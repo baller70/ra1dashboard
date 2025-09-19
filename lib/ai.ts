@@ -95,13 +95,15 @@ export async function generateMessage({
   try {
     const systemPrompt = `You are an expert communication specialist for Rise as One Basketball Program. Generate professional, personalized messages for parents.
 
-    Key Guidelines:
+    Key Guidelines (MANDATORY):
     - Use ${context.tone} tone
     - Format for ${context.channel}
     - Message type: ${context.messageType}
     - Be clear, concise, and action-oriented
     - Include specific details when available
     - Maintain the program's supportive, community-focused brand voice
+    - If "Additional Instructions" are provided, you MUST follow them strictly unless they conflict with safety. Prioritize them over general guidelines.
+    - If a word/character limit is provided in Additional Instructions, enforce it.
 
     ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`;
 
@@ -121,7 +123,7 @@ export async function generateMessage({
 
     ${contextInfo}
 
-    ${customInstructions ? `Additional Instructions: ${customInstructions}` : ''}
+    ${customInstructions ? `Additional Instructions (MANDATORY - follow exactly and reflect clearly in subject and body): ${customInstructions}` : ''}
 
     ${includePersonalization ? 'Include personalization based on the parent and payment data.' : 'Keep the message generic but professional.'}
 
@@ -129,7 +131,7 @@ export async function generateMessage({
     {
       "subject": "Email subject line or SMS preview",
       "body": "Complete message content",
-      "reasoning": "Brief explanation of personalization choices",
+      "reasoning": "Brief explanation of how Additional Instructions were applied and personalization choices",
       "suggestions": ["Alternative subject 1", "Alternative subject 2"]
     }`;
 
