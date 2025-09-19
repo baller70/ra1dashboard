@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 export const createPaymentPlan = mutation({
   args: {
-    parentId: v.string(),
+    parentId: v.id("parents"),
     startDate: v.string(),
     paymentMethod: v.string(),
     type: v.string(),
