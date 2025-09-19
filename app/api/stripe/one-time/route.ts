@@ -91,6 +91,23 @@ export async function POST(request: NextRequest) {
     }
 
     let stripeCustomerId: string | undefined = parent.stripeCustomerId
+
+    // Ensure the stored customer exists in the current Stripe environment (test vs live are separate)
+    if (stripeCustomerId) {
+      try {
+        await stripe.customers.retrieve(stripeCustomerId)
+      } catch (err: any) {
+        const msg = err?.message || ''
+        const code = (err as any)?.raw?.code
+        // If the customer came from the other mode, Stripe returns "No such customer" / resource_missing
+        if (msg.includes('No such customer') || code === 'resource_missing') {
+          stripeCustomerId = undefined
+        } else {
+          throw err
+        }
+      }
+    }
+
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         name: parent.name,
