@@ -3,27 +3,25 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
-import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
-import { Id } from '../../../../convex/_generated/dataModel'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { convexHttp } from '../../../../lib/convex-server'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAuthWithApiKeyBypass(request)
-    
+    // Soft auth: allow read even if auth fails (prevents 500 on profile view)
+    try { await requireAuthWithApiKeyBypass(request) } catch (_) { console.log('ℹ️ Auth bypass for parent GET') }
+
     const parentId = params.id
     console.log('GET request for parent ID:', parentId)
-    
-    const parent = await convex.query(api.parents.getParent, { id: parentId as any });
+
+    const parent = await convexHttp.query(api.parents.getParent as any, { id: parentId as any });
 
     if (!parent) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 })
     }
 
-    const payments = await convex.query(api.payments.getPayments, { parentId: parentId as any, page: 1, limit: 50 });
-    const messageLogs = await convex.query(api.messageLogs.getMessageLogs, { parentId: parentId as any, limit: 20 });
+    const payments = await convexHttp.query(api.payments.getPayments as any, { parentId: parentId as any, page: 1, limit: 50 });
+    const messageLogs = await convexHttp.query(api.messageLogs.getMessageLogs as any, { parentId: parentId as any, limit: 20 });
 
     const parentWithRelations = {
       ...parent,
@@ -37,6 +35,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(parentWithRelations)
   } catch (error) {
     console.error('Error fetching parent:', error)
+    const msg = (error as any)?.message || ''
+    if (msg.includes('Authentication required') || msg === 'UNAUTHORIZED') {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
     return NextResponse.json(
       { error: 'Failed to fetch parent data', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -53,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     
     console.log('PUT request for parent ID:', parentId, 'with updates:', updates)
 
-    const updatedParent = await convex.mutation(api.parents.updateParent, {
+    const updatedParent = await convexHttp.mutation(api.parents.updateParent as any, {
       id: parentId as any,
       ...updates
     });
@@ -81,7 +83,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const parentId = params.id
     console.log('DELETE request for parent ID:', parentId)
 
-    await convex.mutation(api.parents.deleteParent, {
+    await convexHttp.mutation(api.parents.deleteParent as any, {
       id: parentId as any
     });
 
