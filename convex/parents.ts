@@ -139,6 +139,8 @@ export const createParent = mutation({
   args: {
     name: v.string(),
     email: v.string(),
+    childName: v.optional(v.string()),
+    parentEmail: v.optional(v.string()),
     phone: v.optional(v.string()),
     address: v.optional(v.string()),
     emergencyContact: v.optional(v.string()),
@@ -153,6 +155,8 @@ export const createParent = mutation({
     const parentId = await ctx.db.insert("parents", {
       name: args.name,
       email: args.email,
+      childName: args.childName,
+      parentEmail: args.parentEmail,
       phone: args.phone,
       address: args.address,
       emergencyContact: args.emergencyContact,
@@ -178,6 +182,8 @@ export const updateParent = mutation({
     id: v.id("parents"),
     name: v.optional(v.string()),
     email: v.optional(v.string()),
+    childName: v.optional(v.string()),
+    parentEmail: v.optional(v.string()),
     phone: v.optional(v.string()),
     address: v.optional(v.string()),
     emergencyContact: v.optional(v.string()),
@@ -192,15 +198,15 @@ export const updateParent = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    
+
     // Add updatedAt timestamp
     const updateData = {
       ...updates,
       updatedAt: Date.now(),
     };
-    
+
     await ctx.db.patch(id, updateData);
-    
+
     // Return the updated parent record
     return await ctx.db.get(id);
   },

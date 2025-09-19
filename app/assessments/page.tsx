@@ -11,6 +11,10 @@ import { Badge } from '../components/ui/badge'
 import { Separator } from '../components/ui/separator'
 import { Textarea } from '../components/ui/textarea'
 import { Label } from '../components/ui/label'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+import { useSearchParams, useRouter } from 'next/navigation'
+
+
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import {
@@ -81,7 +85,7 @@ const SKILLS = [
 const RATING_LABELS = [
   { value: 1, label: 'Needs Improvement', color: 'bg-red-500' },
   { value: 2, label: 'Developing', color: 'bg-red-400' },
-  { value: 3, label: 'Satisfactory', color: 'bg-gray-500' },
+  { value: 3, label: 'Improving', color: 'bg-gray-500' },
   { value: 4, label: 'Good', color: 'bg-gray-700' },
   { value: 5, label: 'Excellent', color: 'bg-red-600' }
 ]
@@ -109,9 +113,19 @@ export default function AssessmentsPage() {
     parentSuggestions: false,
     gameplayAnalysis: false,
     progressSummary: false,
+    auto: false,
     pdf: false,
-    email: false
-  })
+    email: false,
+    sendEmail: false,
+
+})
+
+const searchParams = useSearchParams()
+const router = useRouter()
+
+  const [parentEmail, setParentEmail] = useState<string>('')
+  const [parentName, setParentName] = useState<string>('')
+  const [lastPdfBase64, setLastPdfBase64] = useState<string | null>(null)
 
   const [inputPrompts, setInputPrompts] = useState({
     parentSuggestions: '',
@@ -146,10 +160,249 @@ export default function AssessmentsPage() {
       ...prev,
       playerInfo: {
         ...prev.playerInfo,
-        assessmentDate: new Date().toISOString().split('T')[0]
-      }
+        assessmentDate: new Date().toISOString().split('T')[0],
+      },
     }))
   }, [])
+
+  type PlayerOption = { _id: string; name: string; parentId: string; parentName?: string; parentEmail?: string; age?: string; team?: string; synthetic?: boolean }
+  const [players, setPlayers] = useState<PlayerOption[]>([])
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [selectedParentId, setSelectedParentId] = useState<string>('')
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const bulk = searchParams.get('bulk') === '1'
+        const selectedIds = bulk ? (searchParams.get('parentIds') || '').split(',').filter(Boolean) : []
+
+        // Load parents to synthesize player options
+        const pres = await fetch('/api/parents?limit=500')
+        const pdata = await pres.json()
+        const parents: any[] = pdata?.data?.parents || pdata?.parents || []
+        let synthesized: PlayerOption[] = parents.map((p: any) => ({
+          _id: `synth_${String(p._id)}`,
+          name: (p as any).childName || p.name || 'Unnamed Player',
+          parentId: String(p._id),
+          parentName: (p as any).emergencyContact || p.name,
+          parentEmail: (p as any).parentEmail || (p as any).email,
+          synthetic: true,
+        }))
+        if (bulk) synthesized = synthesized.filter((opt) => selectedIds.includes(opt.parentId))
+
+        if (bulk) {
+          // In bulk mode, limit the dropdown strictly to the selected parents' players
+          // Optionally merge in real players for those parents if they exist
+          try {
+            const realLists = await Promise.all(
+              selectedIds.map(async (pid) => {
+                try {
+                  const r = await fetch(`/api/players?parentId=${pid}`)
+                  const j = await r.json()
+                  return (j?.players || j?.data?.players || []) as PlayerOption[]
+                } catch { return [] as PlayerOption[] }
+              })
+            )
+            const realPlayers = realLists.flat()
+            const combined: PlayerOption[] = [...synthesized]
+            for (const pl of realPlayers) {
+              const idx = combined.findIndex((x) => String(x.parentId) === String(pl.parentId))
+              if (idx >= 0) combined[idx] = { ...combined[idx], ...pl, synthetic: false }
+              else combined.push(pl)
+            }
+            setPlayers(combined)
+          } catch {
+            setPlayers(synthesized)
+          }
+          return
+        }
+
+        // Non-bulk: merge all real players
+        try {
+          const res = await fetch('/api/players?limit=500')
+          const data = await res.json()
+          const list = (data?.players || data?.data?.players || []) as PlayerOption[]
+          const combined = [...synthesized]
+          for (const pl of list) {
+            if (!combined.find((x) => String(x._id) === String(pl._id))) combined.push(pl)
+          }
+          setPlayers(combined)
+        } catch {
+          setPlayers(synthesized)
+        }
+      } catch (e) {
+        console.warn('Failed to load parents/players', e)
+      }
+    })()
+  }, [searchParams])
+
+  // Bulk Assessment flow: prefill player by parentId, use history, and auto-generate
+  useEffect(() => {
+    const bulk = searchParams.get('bulk')
+    if (bulk !== '1') return
+    const parentIds = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+    const i = parseInt(searchParams.get('i') || '0', 10)
+    if (!parentIds.length || isNaN(i) || i < 0 || i >= parentIds.length) return
+
+    const parentId = parentIds[i]
+    ;(async () => {
+      try {
+        // Fetch parent to enrich contact details (always)
+        const pr = await fetch(`/api/parents/${parentId}`)
+        const pjson = await pr.json()
+        const parent = pjson?.parent || pjson?.data?.parent || pjson || {}
+
+        // Try to get an existing player for this parent
+        let playerId: string | undefined
+        let playerObj: any | undefined
+        const pres = await fetch(`/api/players?parentId=${parentId}`)
+        const pdata = await pres.json()
+        const plist = pdata?.players || pdata?.data?.players || []
+        if (plist.length > 0) {
+          playerObj = plist[0]
+          playerId = String(playerObj._id)
+        } else {
+          // Create a player using parent profile info
+          const createRes = await fetch('/api/players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId,
+              name: (parent?.childName || parent?.name || 'Player'),
+              age: parent?.age,
+              team: parent?.team,
+            })
+          })
+          const created = await createRes.json()
+          playerObj = created?.player
+          playerId = playerObj?._id ? String(playerObj._id) : undefined
+        }
+
+        if (playerId) {
+          // Ensure our local players list contains this player with enriched parent info
+          setPlayers(prev => {
+            const exists = prev.some(x => String(x._id) === String(playerId))
+            if (exists) return prev
+            const enriched = {
+              _id: playerId!,
+              name: playerObj?.name || parent?.childName || parent?.name || 'Player',
+              parentId: String(parentId),
+              parentName: parent?.emergencyContact || parent?.name || '',
+              parentEmail: parent?.parentEmail || parent?.email || '',
+              age: playerObj?.age || parent?.age,
+              team: playerObj?.team || parent?.team,
+            }
+            return [...prev, enriched as any]
+          })
+
+          // Directly set selection and key fields (don't rely on players lookup)
+          setSelectedPlayerId(playerId)
+          setSelectedParentId(String(parentId))
+          setParentName(parent?.emergencyContact || parent?.name || '')
+          if (parent?.parentEmail || parent?.email) setParentEmail(parent?.parentEmail || parent?.email)
+          updatePlayerInfo('name', playerObj?.name || parent?.childName || parent?.name || '')
+          if (playerObj?.age || parent?.age) updatePlayerInfo('age', String(playerObj?.age || parent?.age))
+          if (playerObj?.team || parent?.team) updatePlayerInfo('team', String(playerObj?.team || parent?.team))
+
+          // Prefill ratings from last assessment if available
+          try {
+            const hist = await fetch(`/api/assessments?playerId=${playerId}&limit=1`)
+            const hdata = await hist.json()
+            const last = (hdata?.assessments || hdata?.data?.assessments || [])[0]
+            if (last?.skills?.length) {
+              setAssessmentData(prev => ({
+                ...prev,
+                skills: prev.skills.map(s => {
+                  const found = last.skills.find((ls: any) => ls.skillName === s.skillName)
+                  if (!found) return s
+                  const val = Number(found.rating) || 0
+                  return { ...s, rating: Math.max(1, Math.min(5, val)) }
+                })
+              }))
+            }
+          } catch {}
+
+          // Auto-generate content shortly after state updates
+          setTimeout(() => {
+            generateAllSections()
+          }, 100)
+        }
+      } catch (e) {
+        console.warn('Bulk prefill failed', e)
+      }
+    })()
+  }, [searchParams])
+
+
+  const onSelectPlayer = async (id: string) => {
+    let selectedId = id
+    let p = players.find(pl => String(pl._id) === String(id))
+    // If synthetic, create a real player first
+    if (p && p.synthetic) {
+      try {
+        const res = await fetch('/api/players', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parentId: p.parentId, name: p.name, age: p.age, team: p.team })
+        })
+        const data = await res.json()
+        if (data?.player?._id) {
+          selectedId = String(data.player._id)
+          // Refresh players list to include the real record
+          try {
+            const fres = await fetch('/api/players?limit=500')
+            const fdata = await fres.json()
+            const list = fdata?.players || fdata?.data?.players || []
+            if (list.length > 0) setPlayers(list)
+            p = list.find((pl: any) => String(pl._id) === selectedId) || data.player
+          } catch {}
+        }
+      } catch (e) {
+        console.warn('Failed to create player from parent childName', e)
+      }
+    }
+
+    setSelectedPlayerId(selectedId)
+    if (p) {
+      setSelectedParentId(String((p as any).parentId))
+      // If basic contact info is missing, fetch parent profile
+      let parentNameLocal = (p as any).parentName || ''
+      let parentEmailLocal = (p as any).parentEmail || ''
+      if (!parentNameLocal || !parentEmailLocal) {
+        try {
+          const pr = await fetch(`/api/parents/${(p as any).parentId}`)
+          const j = await pr.json()
+          const parent = j?.parent || j?.data?.parent || j || {}
+          parentNameLocal = parentNameLocal || parent?.emergencyContact || parent?.name || ''
+          parentEmailLocal = parentEmailLocal || parent?.parentEmail || parent?.email || ''
+        } catch {}
+      }
+      setParentName(parentNameLocal)
+      if (parentEmailLocal) setParentEmail(parentEmailLocal)
+
+      updatePlayerInfo('name', p.name || '')
+      if ((p as any).age) updatePlayerInfo('age', String((p as any).age))
+      if ((p as any).team) updatePlayerInfo('team', String((p as any).team))
+
+      // Prefill from last assessment and auto-generate AI
+      try {
+        const hist = await fetch(`/api/assessments?playerId=${selectedId}&limit=1`)
+        const hdata = await hist.json()
+        const last = (hdata?.assessments || hdata?.data?.assessments || [])[0]
+        if (last?.skills?.length) {
+          setAssessmentData(prev => ({
+            ...prev,
+            skills: prev.skills.map(s => {
+              const found = last.skills.find((ls: any) => ls.skillName === s.skillName)
+              return found ? { ...s, rating: Math.max(1, Math.min(5, Number(found.rating) || 0)) } : s
+            })
+          }))
+        }
+      } catch {}
+
+      setTimeout(() => { generateAllSections() }, 50)
+    }
+  }
 
   // Update functions
   const updatePlayerInfo = (field: keyof PlayerInfo, value: string) => {
@@ -167,6 +420,41 @@ export default function AssessmentsPage() {
       )
     }))
   }
+  const generateAllSections = async () => {
+    if (!assessmentData.playerInfo.name) {
+      alert('Please select a player first.')
+      return
+    }
+    setLoading(prev => ({ ...prev, auto: true }))
+    try {
+      const res = await fetch('/api/ai/basketball-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'auto',
+          playerInfo: assessmentData.playerInfo,
+          skills: assessmentData.skills,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to generate')
+      setAssessmentData(prev => ({
+        ...prev,
+        generatedContent: {
+          ...prev.generatedContent,
+          parentSuggestions: data.parentSuggestions || prev.generatedContent.parentSuggestions,
+          gameplayAnalysis: data.gameplayAnalysis || prev.generatedContent.gameplayAnalysis,
+          progressSummary: data.progressSummary || prev.generatedContent.progressSummary,
+        },
+      }))
+    } catch (e: any) {
+      console.error('AI auto generation failed:', e)
+      alert(e?.message || 'Failed to generate all sections')
+    } finally {
+      setLoading(prev => ({ ...prev, auto: false }))
+    }
+  }
+
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -544,7 +832,7 @@ export default function AssessmentsPage() {
 
       // Progress arc (smooth, rounded)
       const computedPercentage = (parseFloat(averageRating) / 5) * 100
-      const percentage = 20 // forced per request for preview
+      const percentage = computedPercentage
       pdf.setDrawColor(...colors.primary)
       pdf.setLineWidth(3.2)
       const totalSteps = 120
@@ -559,14 +847,33 @@ export default function AssessmentsPage() {
         pdf.line(x1, y1, x2, y2)
       }
 
-      // Center percentage text and label (bigger number)
+      // Center percentage with dynamic sizing (target ~50pt) and vertical centering
       pdf.setTextColor(...colors.darkGray)
-      pdf.setFontSize(16)
       pdf.setFont(bodyFontFamily, 'bold')
-      pdf.text(`${Math.round(percentage)}%`, centerX, centerY + 3, { align: 'center' })
-      pdf.setFontSize(8)
+      let targetSize = 50
+      const percentText = `${Math.round(percentage)}%`
+      const maxInnerWidth = (radius * 2) - 4
+      let useSize = targetSize
+      if ((pdf as any).getTextWidth) {
+        pdf.setFontSize(useSize)
+        const width = (pdf as any).getTextWidth(percentText)
+        if (width > maxInnerWidth) {
+          useSize = Math.max(12, Math.floor(targetSize * (maxInnerWidth / width)))
+        }
+      }
+      pdf.setFontSize(useSize)
+      // Try true vertical centering if supported; fallback to tuned offset
+      const textOpts: any = { align: 'center', baseline: 'middle' }
+      try { pdf.text(percentText, centerX, centerY, textOpts) }
+      catch { pdf.text(percentText, centerX, centerY + useSize * 0.35, { align: 'center' } as any) }
+      // Bigger "Overall" label below the number, kept INSIDE the donut
+      const labelSize = 12
+      pdf.setFontSize(labelSize)
       pdf.setFont(bodyFontFamily, 'normal')
-      pdf.text('Overall', centerX, centerY + 11, { align: 'center' })
+      const maxLabelY = centerY + (radius - 5) // keep inside inner circle
+      const preferredLabelY = centerY + useSize * 0.38
+      const labelY = Math.min(maxLabelY, preferredLabelY)
+      pdf.text('Overall', centerX, labelY, { align: 'center' })
 
       // Advance sidebar Y to just below the donut
       sidebarY = centerY + radius + 16
@@ -649,7 +956,7 @@ export default function AssessmentsPage() {
         // Left-aligned rating label under the bar (balanced spacing)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(7)
-        const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
+        const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Improving' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
         const labelY = barY + BAR_TO_LABEL
         pdf.text(ratingLabel, leftMargin + 5, labelY)
       })
@@ -770,11 +1077,32 @@ export default function AssessmentsPage() {
       pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 60 + leftMargin, pageHeight - bottomMargin - 3)
       pdf.text('Professional Basketball Assessment System', 70, pageHeight - 10)
 
-      // Save the PDF
+      // Save the PDF and keep a copy in memory for emailing
       const fileName = `${assessmentData.playerInfo.name.replace(/\s+/g, '_')}_Assessment_Report.pdf`
-      pdf.save(fileName)
+      try {
+        const dataUri = (pdf as any).output('datauristring') as string
+        const base64 = dataUri.split(',')[1]
+        setLastPdfBase64(base64)
+      } catch (_) {}
 
-      alert(`Professional assessment report for ${assessmentData.playerInfo.name} has been generated and downloaded successfully!`)
+      // Open the PDF in a new browser tab (so the user can view and download from the viewer)
+      try {
+        const blobUrl = (pdf as any).output('bloburl') as string
+        const win = window.open(blobUrl, '_blank')
+        if (!win) {
+          // Popup blocked fallback
+          ;(pdf as any).output('dataurlnewwindow')
+        }
+      } catch (e1) {
+        try {
+          ;(pdf as any).output('dataurlnewwindow')
+        } catch (e2) {
+          // Final fallback: direct download
+          pdf.save(fileName)
+        }
+      }
+
+      alert(`Professional assessment report for ${assessmentData.playerInfo.name} has been generated and opened in a new tab. You can download it from the viewer toolbar.`)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert("Failed to generate PDF. Please try again.")
@@ -973,7 +1301,7 @@ export default function AssessmentsPage() {
                 ${ratedSkills.map(skill => {
                   const ratingText = skill.rating === 5 ? 'Excellent' :
                                     skill.rating === 4 ? 'Good' :
-                                    skill.rating === 3 ? 'Satisfactory' :
+                                    skill.rating === 3 ? 'Improving' :
                                     skill.rating === 2 ? 'Developing' : 'Needs Improvement'
                   const stars = '★'.repeat(skill.rating) + '☆'.repeat(5 - skill.rating)
                   return `
@@ -1091,8 +1419,127 @@ export default function AssessmentsPage() {
     )
   }
 
+  // Send to Parents via Resend API (server-side route)
+  const sendToParents = async () => {
+    if (!isReadyForExport()) {
+      alert(`Please complete the following: ${validationErrors.join(', ')}`)
+      return
+    }
+    if (!parentEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(parentEmail)) {
+      alert('Please enter a valid parent email address.')
+      return
+    }
+
+    if (!lastPdfBase64) {
+      alert('Please click "Export PDF" first, then Send to Parents. This ensures the attachment matches the latest edits.')
+      return
+    }
+
+    try {
+
+      setLoading(prev => ({ ...prev, sendEmail: true }))
+
+      const assessmentUrl = `${window.location.origin}/assessments`
+      const res = await fetch('/api/send-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: parentEmail,
+          playerName: assessmentData.playerInfo.name,
+          parentName: parentName,
+          assessmentUrl,
+          pdfBase64: lastPdfBase64,
+          programName: assessmentData.programName,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        console.error('Send email error:', data)
+        alert(`Failed to send email: ${data?.error || 'Unknown error'}`)
+        return
+      }
+
+      // Save assessment record
+      try {
+        if (selectedParentId && selectedPlayerId) {
+          const avg = (() => {
+            const rated = assessmentData.skills.filter(s => s.rating > 0)
+            if (!rated.length) return 0
+            return rated.reduce((sum, s) => sum + s.rating, 0) / rated.length
+          })()
+          const category = (avg >= 4.5)
+            ? 'On track for advanced group'
+            : (avg >= 3.8)
+              ? 'Strong fundamentals building toward consistency'
+              : (avg >= 3.2)
+                ? 'Adequate time and practice showing improvement'
+                : (avg >= 2.5)
+                  ? 'Developing skills with encouraging progress'
+                  : 'Beginner showing early potential'
+
+          await fetch('/api/assessments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId: selectedParentId,
+              playerId: selectedPlayerId,
+              programName: assessmentData.programName,
+              skills: assessmentData.skills,
+              aiParentSuggestions: assessmentData.generatedContent.parentSuggestions,
+              aiGameplayAnalysis: assessmentData.generatedContent.gameplayAnalysis,
+              aiProgressSummary: assessmentData.generatedContent.progressSummary,
+              category,
+              pdfUrl: data?.pdfUrl || undefined,
+            }),
+          })
+        }
+      } catch (e) {
+        console.warn('Failed to save assessment record', e)
+      }
+
+      alert('Assessment emailed to parent successfully.')
+    } catch (err) {
+      console.error('Send email error:', err)
+      alert('Failed to send email. Please try again.')
+    } finally {
+      setLoading(prev => ({ ...prev, sendEmail: false }))
+    }
+  }
+
+
   return (
     <AppLayout>
+      {/* Bulk Assessment progress bar */}
+      {(() => {
+        const bulk = searchParams.get('bulk')
+        if (bulk !== '1') return null
+        const ids = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+        const idx = parseInt(searchParams.get('i') || '0', 10)
+        return (
+          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 flex items-center justify-between">
+            <div className="text-sm text-blue-800">
+              Assessment {Math.min(idx + 1, ids.length)} of {ids.length}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
+              >
+                Skip
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="space-y-6 max-w-6xl mx-auto">
         {/* Header Section with Background Watermark */}
         <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white p-8 rounded-xl shadow-2xl overflow-hidden">
@@ -1182,22 +1629,43 @@ export default function AssessmentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <Label htmlFor="player-name">Player Name *</Label>
-                <Input
-                  id="player-name"
-                  value={assessmentData.playerInfo.name}
-                  onChange={(e) => updatePlayerInfo('name', e.target.value)}
-                  placeholder="Enter player name"
-                  className="mt-1"
-                  required
-                />
+                <Label htmlFor="player-select">Player *</Label>
+                <Select value={selectedPlayerId} onValueChange={(v) => onSelectPlayer(v)}>
+                  <SelectTrigger id="player-select" className="mt-1">
+                    <SelectValue placeholder="Select a player" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players
+                      .filter((p) => {
+                        const bulk = searchParams.get('bulk') === '1'
+                        if (!bulk) return true
+                        const ids = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+                        return ids.includes(String(p.parentId))
+                      })
+                      .map((p) => (
+                        <SelectItem key={String(p._id)} value={String(p._id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
                 {validationErrors.includes("Player name is required") && (
                   <p className="text-sm text-red-600 mt-1">
-                    Player name is required
+                    Player selection is required
                   </p>
                 )}
+              </div>
+              <div>
+                <Label htmlFor="parent-name">Parent Name</Label>
+                <Input
+                  id="parent-name"
+                  value={parentName}
+                  readOnly
+                  placeholder="Auto-filled from selected player"
+                  className="mt-1 bg-gray-50"
+                />
               </div>
               <div>
                 <Label htmlFor="player-age">Age</Label>
@@ -1332,6 +1800,13 @@ export default function AssessmentsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="flex items-center justify-end mb-3">
+          <Button onClick={generateAllSections} disabled={loading.auto} className="bg-red-600 hover:bg-red-700">
+            <Wand2 className="h-4 w-4 mr-2" />
+            {loading.auto ? 'Generating...' : 'AI Auto (All Sections)'}
+          </Button>
+        </div>
 
         {/* AI Content Generation Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1486,57 +1961,68 @@ export default function AssessmentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button
-                onClick={exportToPDF}
-                disabled={loading.pdf}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {loading.pdf ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Printer className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </>
-                )}
-              </Button>
+            <div className="grid grid-cols-1 md:grid-cols-12 items-end gap-4">
+              <div className="md:col-span-3">
+                <Button
+                  onClick={exportToPDF}
+                  disabled={loading.pdf}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {loading.pdf ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Export PDF
+                    </>
+                  )}
+                </Button>
+              </div>
 
-              <Button
-                onClick={generateEmailTemplate}
-                disabled={loading.email}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {loading.email ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Email Template
-                  </>
-                )}
-              </Button>
 
-              <Button
-                onClick={clearAllData}
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear All Data
-              </Button>
+              <div className="md:col-span-3">
+                <Button
+                  onClick={clearAllData}
+                  variant="outline"
+                  className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All Data
+                </Button>
+              </div>
 
-              <div className="flex items-center justify-center">
-                <Badge className="bg-green-100 text-green-800 border-green-300">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  System Ready
-                </Badge>
+              <div className="md:col-span-6">
+                <Label htmlFor="parent-email">Parent Email</Label>
+                <div className="mt-1 flex gap-2">
+                  <Input
+                    id="parent-email"
+                    type="email"
+                    value={parentEmail}
+                    onChange={(e) => setParentEmail(e.target.value)}
+                    placeholder="parent@example.com"
+                    className="flex-1 min-w-0"
+                  />
+                  <Button
+                    onClick={sendToParents}
+                    disabled={loading.sendEmail}
+                    className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {loading.sendEmail ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send to Parents
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 

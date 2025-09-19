@@ -21,6 +21,7 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    childName: '',
     phone: '',
     address: '',
     emergencyContact: '',
@@ -41,6 +42,7 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          childName: formData.childName || undefined,
           phone: formData.phone || undefined,
           address: formData.address || undefined,
           emergencyContact: formData.emergencyContact || undefined,
@@ -124,6 +126,16 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="childName">Player/Child Name</Label>
+              <Input
+                id="childName"
+                placeholder="Enter child's name"
+                value={formData.childName}
+                onChange={(e) => handleInputChange('childName', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
@@ -177,16 +189,16 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
           </div>
 
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={loading || !formData.name || !formData.email}
               className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
             >
@@ -202,4 +214,4 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
       </DialogContent>
     </Dialog>
   )
-} 
+}

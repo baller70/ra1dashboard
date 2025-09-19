@@ -9,7 +9,7 @@ import { Button } from '../../../../components/ui/button'
 import { Input } from '../../../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card'
 import { Label } from '../../../../components/ui/label'
-import { 
+import {
   ArrowLeft,
   Save,
   User,
@@ -29,6 +29,8 @@ export default function EditParentPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    childName: '',
+    parentEmail: '',
     phone: '',
     address: '',
     status: 'active',
@@ -52,6 +54,8 @@ export default function EditParentPage() {
         setFormData({
           name: data.name || '',
           email: data.email || '',
+          childName: data.childName || '',
+          parentEmail: (data as any).parentEmail || '',
           phone: data.phone || '',
           address: data.address || '',
           status: data.status || 'active',
@@ -73,7 +77,7 @@ export default function EditParentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     setSaving(true)
     try {
       const response = await fetch(`/api/parents/${params.id}`, {
@@ -189,6 +193,22 @@ export default function EditParentPage() {
                 </div>
               </div>
 
+              {/* Player/Child Name */}
+              <div className="space-y-2">
+                <Label htmlFor="childName">Player/Child Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="childName"
+                    type="text"
+                    value={formData.childName}
+                    onChange={(e) => handleInputChange('childName', e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter player's/child's name"
+                  />
+                </div>
+              </div>
+
               {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
@@ -246,6 +266,22 @@ export default function EditParentPage() {
                   onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
                   placeholder="Emergency contact information"
                 />
+              {/* Parent Email (separate from main Email) */}
+              <div className="space-y-2">
+                <Label htmlFor="parentEmail">Parent Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="parentEmail"
+                    type="email"
+                    value={(formData as any).parentEmail}
+                    onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter parent email (used for assessments)"
+                  />
+                </div>
+              </div>
+
               </div>
 
               {/* Emergency Phone */}
@@ -297,4 +333,4 @@ export default function EditParentPage() {
       </div>
     </AppLayout>
   )
-} 
+}
