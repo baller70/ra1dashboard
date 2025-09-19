@@ -1789,36 +1789,40 @@ export default function AssessmentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button
-                onClick={exportToPDF}
-                disabled={loading.pdf}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {loading.pdf ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Printer className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </>
-                )}
-              </Button>
+            <div className="grid grid-cols-1 md:grid-cols-12 items-end gap-4">
+              <div className="md:col-span-3">
+                <Button
+                  onClick={exportToPDF}
+                  disabled={loading.pdf}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {loading.pdf ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Export PDF
+                    </>
+                  )}
+                </Button>
+              </div>
 
 
-              <Button
-                onClick={clearAllData}
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear All Data
-              </Button>
+              <div className="md:col-span-3">
+                <Button
+                  onClick={clearAllData}
+                  variant="outline"
+                  className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All Data
+                </Button>
+              </div>
 
-              <div>
+              <div className="md:col-span-6">
                 <Label htmlFor="parent-email">Parent Email</Label>
                 <div className="mt-1 flex gap-2">
                   <Input
@@ -1827,12 +1831,12 @@ export default function AssessmentsPage() {
                     value={parentEmail}
                     onChange={(e) => setParentEmail(e.target.value)}
                     placeholder="parent@example.com"
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                   />
                   <Button
                     onClick={sendToParents}
                     disabled={loading.sendEmail}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     {loading.sendEmail ? (
                       <>
