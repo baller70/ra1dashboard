@@ -173,11 +173,14 @@ const router = useRouter()
   useEffect(() => {
     ;(async () => {
       try {
-        // Primary source: Parents list (connect directly to Parents page profiles)
+        const bulk = searchParams.get('bulk') === '1'
+        const selectedIds = bulk ? (searchParams.get('parentIds') || '').split(',').filter(Boolean) : []
+
+        // Load parents to synthesize player options
         const pres = await fetch('/api/parents?limit=500')
         const pdata = await pres.json()
         const parents: any[] = pdata?.data?.parents || pdata?.parents || []
-        const synthesized: PlayerOption[] = parents.map((p: any) => ({
+        let synthesized: PlayerOption[] = parents.map((p: any) => ({
           _id: `synth_${String(p._id)}`,
           name: (p as any).childName || p.name || 'Unnamed Player',
           parentId: String(p._id),
@@ -185,8 +188,36 @@ const router = useRouter()
           parentEmail: (p as any).parentEmail || (p as any).email,
           synthetic: true,
         }))
+        if (bulk) synthesized = synthesized.filter((opt) => selectedIds.includes(opt.parentId))
 
-        // If we also have real players, we can merge them in (optional)
+        if (bulk) {
+          // In bulk mode, limit the dropdown strictly to the selected parents' players
+          // Optionally merge in real players for those parents if they exist
+          try {
+            const realLists = await Promise.all(
+              selectedIds.map(async (pid) => {
+                try {
+                  const r = await fetch(`/api/players?parentId=${pid}`)
+                  const j = await r.json()
+                  return (j?.players || j?.data?.players || []) as PlayerOption[]
+                } catch { return [] as PlayerOption[] }
+              })
+            )
+            const realPlayers = realLists.flat()
+            const combined: PlayerOption[] = [...synthesized]
+            for (const pl of realPlayers) {
+              const idx = combined.findIndex((x) => String(x.parentId) === String(pl.parentId))
+              if (idx >= 0) combined[idx] = { ...combined[idx], ...pl, synthetic: false }
+              else combined.push(pl)
+            }
+            setPlayers(combined)
+          } catch {
+            setPlayers(synthesized)
+          }
+          return
+        }
+
+        // Non-bulk: merge all real players
         try {
           const res = await fetch('/api/players?limit=500')
           const data = await res.json()
@@ -198,6 +229,13 @@ const router = useRouter()
           setPlayers(combined)
         } catch {
           setPlayers(synthesized)
+        }
+      } catch (e) {
+        console.warn('Failed to load parents/players', e)
+      }
+    })()
+  }, [searchParams])
+
   // Bulk Assessment flow: prefill player by parentId, use history, and auto-generate
   useEffect(() => {
     const bulk = searchParams.get('bulk')
@@ -295,12 +333,6 @@ const router = useRouter()
     })()
   }, [searchParams])
 
-        }
-      } catch (e) {
-        console.warn('Failed to load parents/players', e)
-      }
-    })()
-  }, [])
 
   const onSelectPlayer = async (id: string) => {
     let selectedId = id
@@ -333,9 +365,42 @@ const router = useRouter()
     setSelectedPlayerId(selectedId)
     if (p) {
       setSelectedParentId(String((p as any).parentId))
-      setParentName((p as any).parentName || '')
+      // If basic contact info is missing, fetch parent profile
+      let parentNameLocal = (p as any).parentName || ''
+      let parentEmailLocal = (p as any).parentEmail || ''
+      if (!parentNameLocal || !parentEmailLocal) {
+        try {
+          const pr = await fetch(`/api/parents/${(p as any).parentId}`)
+          const j = await pr.json()
+          const parent = j?.parent || j?.data?.parent || j || {}
+          parentNameLocal = parentNameLocal || parent?.emergencyContact || parent?.name || ''
+          parentEmailLocal = parentEmailLocal || parent?.parentEmail || parent?.email || ''
+        } catch {}
+      }
+      setParentName(parentNameLocal)
+      if (parentEmailLocal) setParentEmail(parentEmailLocal)
+
       updatePlayerInfo('name', p.name || '')
-      if ((p as any).parentEmail) setParentEmail((p as any).parentEmail)
+      if ((p as any).age) updatePlayerInfo('age', String((p as any).age))
+      if ((p as any).team) updatePlayerInfo('team', String((p as any).team))
+
+      // Prefill from last assessment and auto-generate AI
+      try {
+        const hist = await fetch(`/api/assessments?playerId=${selectedId}&limit=1`)
+        const hdata = await hist.json()
+        const last = (hdata?.assessments || hdata?.data?.assessments || [])[0]
+        if (last?.skills?.length) {
+          setAssessmentData(prev => ({
+            ...prev,
+            skills: prev.skills.map(s => {
+              const found = last.skills.find((ls: any) => ls.skillName === s.skillName)
+              return found ? { ...s, rating: Math.max(1, Math.min(5, Number(found.rating) || 0)) } : s
+            })
+          }))
+        }
+      } catch {}
+
+      setTimeout(() => { generateAllSections() }, 50)
     }
   }
 
@@ -394,41 +459,6 @@ const router = useRouter()
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type.startsWith('image/')) {
-  const generateAllSections = async () => {
-    if (!assessmentData.playerInfo.name) {
-      alert('Please select a player first.')
-      return
-    }
-    setLoading(prev => ({ ...prev, auto: true }))
-    try {
-      const res = await fetch('/api/ai/basketball-assessment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'auto',
-          playerInfo: assessmentData.playerInfo,
-          skills: assessmentData.skills,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to generate')
-      setAssessmentData(prev => ({
-        ...prev,
-        generatedContent: {
-          ...prev.generatedContent,
-          parentSuggestions: data.parentSuggestions || prev.generatedContent.parentSuggestions,
-          gameplayAnalysis: data.gameplayAnalysis || prev.generatedContent.gameplayAnalysis,
-          progressSummary: data.progressSummary || prev.generatedContent.progressSummary,
-        },
-      }))
-    } catch (e: any) {
-      console.error('AI auto generation failed:', e)
-      alert(e?.message || 'Failed to generate all sections')
-    } finally {
-      setLoading(prev => ({ ...prev, auto: false }))
-    }
-  }
-
       setAssessmentData(prev => ({ ...prev, logoFile: file }))
     }
   }
@@ -1406,35 +1436,6 @@ const router = useRouter()
     }
 
     try {
-      {/* Bulk Assessment progress bar */}
-      {(() => {
-        const bulk = searchParams.get('bulk')
-        if (bulk !== '1') return null
-        const ids = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
-        const idx = parseInt(searchParams.get('i') || '0', 10)
-        return (
-          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 flex items-center justify-between">
-            <div className="text-sm text-blue-800">
-              Assessment {Math.min(idx + 1, ids.length)} of {ids.length}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
-              >
-                Skip
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )
-      })()}
 
       setLoading(prev => ({ ...prev, sendEmail: true }))
 
@@ -1636,11 +1637,18 @@ const router = useRouter()
                     <SelectValue placeholder="Select a player" />
                   </SelectTrigger>
                   <SelectContent>
-                    {players.map((p) => (
-                      <SelectItem key={String(p._id)} value={String(p._id)}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
+                    {players
+                      .filter((p) => {
+                        const bulk = searchParams.get('bulk') === '1'
+                        if (!bulk) return true
+                        const ids = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+                        return ids.includes(String(p.parentId))
+                      })
+                      .map((p) => (
+                        <SelectItem key={String(p._id)} value={String(p._id)}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {validationErrors.includes("Player name is required") && (
