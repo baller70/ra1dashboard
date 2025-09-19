@@ -83,7 +83,7 @@ const SKILLS = [
 const RATING_LABELS = [
   { value: 1, label: 'Needs Improvement', color: 'bg-red-500' },
   { value: 2, label: 'Developing', color: 'bg-red-400' },
-  { value: 3, label: 'Satisfactory', color: 'bg-gray-500' },
+  { value: 3, label: 'Improving', color: 'bg-gray-500' },
   { value: 4, label: 'Good', color: 'bg-gray-700' },
   { value: 5, label: 'Excellent', color: 'bg-red-600' }
 ]
@@ -823,7 +823,7 @@ export default function AssessmentsPage() {
         // Left-aligned rating label under the bar (balanced spacing)
         pdf.setTextColor(...colors.darkGray)
         pdf.setFontSize(7)
-        const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Satisfactory' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
+        const ratingLabel = rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Improving' : rating === 2 ? 'Developing' : rating === 1 ? 'Needs Improvement' : 'Not Rated'
         const labelY = barY + BAR_TO_LABEL
         pdf.text(ratingLabel, leftMargin + 5, labelY)
       })
@@ -1168,7 +1168,7 @@ export default function AssessmentsPage() {
                 ${ratedSkills.map(skill => {
                   const ratingText = skill.rating === 5 ? 'Excellent' :
                                     skill.rating === 4 ? 'Good' :
-                                    skill.rating === 3 ? 'Satisfactory' :
+                                    skill.rating === 3 ? 'Improving' :
                                     skill.rating === 2 ? 'Developing' : 'Needs Improvement'
                   const stars = '★'.repeat(skill.rating) + '☆'.repeat(5 - skill.rating)
                   return `

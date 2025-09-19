@@ -29,7 +29,7 @@ interface AssessmentData {
 const RATING_LABELS = [
   'Needs Improvement',
   'Developing', 
-  'Satisfactory',
+  'Improving',
   'Good',
   'Excellent'
 ]
