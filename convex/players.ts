@@ -30,7 +30,7 @@ export const getPlayers = query({
       const parent = await ctx.db.get(p.parentId);
       results.push({
         ...p,
-        parentName: parent?.name || null,
+        parentName: (parent as any)?.emergencyContact || parent?.name || null,
         parentEmail: (parent as any)?.parentEmail || (parent as any)?.email || null,
       });
     }
@@ -50,7 +50,7 @@ export const getPlayer = query({
     const parent = await ctx.db.get(player.parentId);
     return {
       ...player,
-      parentName: parent?.name || null,
+      parentName: (parent as any)?.emergencyContact || parent?.name || null,
       parentEmail: (parent as any)?.parentEmail || (parent as any)?.email || null,
     } as any;
   },

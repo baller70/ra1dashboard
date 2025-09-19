@@ -175,7 +175,7 @@ export default function AssessmentsPage() {
           _id: `synth_${String(p._id)}`,
           name: (p as any).childName || p.name || 'Unnamed Player',
           parentId: String(p._id),
-          parentName: p.name,
+          parentName: (p as any).emergencyContact || p.name,
           parentEmail: (p as any).parentEmail || (p as any).email,
           synthetic: true,
         }))
