@@ -209,6 +209,11 @@ const router = useRouter()
     const parentId = parentIds[i]
     ;(async () => {
       try {
+        // Fetch parent to enrich contact details (always)
+        const pr = await fetch(`/api/parents/${parentId}`)
+        const pjson = await pr.json()
+        const parent = pjson?.parent || pjson?.data?.parent || {}
+
         // Try to get an existing player for this parent
         let playerId: string | undefined
         let playerObj: any | undefined
@@ -220,9 +225,6 @@ const router = useRouter()
           playerId = String(playerObj._id)
         } else {
           // Create a player using parent profile info
-          const pr = await fetch(`/api/parents/${parentId}`)
-          const pjson = await pr.json()
-          const parent = pjson?.parent || pjson?.data?.parent
           const createRes = await fetch('/api/players', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -239,7 +241,30 @@ const router = useRouter()
         }
 
         if (playerId) {
-          await onSelectPlayer(playerId)
+          // Ensure our local players list contains this player with enriched parent info
+          setPlayers(prev => {
+            const exists = prev.some(x => String(x._id) === String(playerId))
+            if (exists) return prev
+            const enriched = {
+              _id: playerId!,
+              name: playerObj?.name || parent?.childName || parent?.name || 'Player',
+              parentId: String(parentId),
+              parentName: parent?.emergencyContact || parent?.name || '',
+              parentEmail: parent?.parentEmail || parent?.email || '',
+              age: playerObj?.age || parent?.age,
+              team: playerObj?.team || parent?.team,
+            }
+            return [...prev, enriched as any]
+          })
+
+          // Directly set selection and key fields (don't rely on players lookup)
+          setSelectedPlayerId(playerId)
+          setSelectedParentId(String(parentId))
+          setParentName(parent?.emergencyContact || parent?.name || '')
+          if (parent?.parentEmail || parent?.email) setParentEmail(parent?.parentEmail || parent?.email)
+          updatePlayerInfo('name', playerObj?.name || parent?.childName || parent?.name || '')
+          if (playerObj?.age || parent?.age) updatePlayerInfo('age', String(playerObj?.age || parent?.age))
+          if (playerObj?.team || parent?.team) updatePlayerInfo('team', String(playerObj?.team || parent?.team))
 
           // Prefill ratings from last assessment if available
           try {
@@ -259,16 +284,16 @@ const router = useRouter()
             }
           } catch {}
 
-          // Auto-generate content
+          // Auto-generate content shortly after state updates
           setTimeout(() => {
             generateAllSections()
-          }, 50)
+          }, 100)
         }
       } catch (e) {
         console.warn('Bulk prefill failed', e)
       }
     })()
-  }, [searchParams, players.length])
+  }, [searchParams])
 
         }
       } catch (e) {
