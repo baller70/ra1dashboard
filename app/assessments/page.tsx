@@ -159,7 +159,7 @@ export default function AssessmentsPage() {
     }))
   }, [])
 
-  type PlayerOption = { _id: string; name: string; parentId: string; parentName?: string; parentEmail?: string; age?: string; team?: string }
+  type PlayerOption = { _id: string; name: string; parentId: string; parentName?: string; parentEmail?: string; age?: string; team?: string; synthetic?: boolean }
   const [players, setPlayers] = useState<PlayerOption[]>([])
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
   const [selectedParentId, setSelectedParentId] = useState<string>('')
@@ -167,19 +167,67 @@ export default function AssessmentsPage() {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await fetch('/api/players?limit=500')
-        const data = await res.json()
-        if (data?.players) setPlayers(data.players)
-        if (data?.data?.players) setPlayers(data.data.players)
+        // Primary source: Parents list (connect directly to Parents page profiles)
+        const pres = await fetch('/api/parents?limit=500')
+        const pdata = await pres.json()
+        const parents: any[] = pdata?.data?.parents || pdata?.parents || []
+        const synthesized: PlayerOption[] = parents.map((p: any) => ({
+          _id: `synth_${String(p._id)}`,
+          name: (p as any).childName || p.name || 'Unnamed Player',
+          parentId: String(p._id),
+          parentName: p.name,
+          parentEmail: (p as any).parentEmail || (p as any).email,
+          synthetic: true,
+        }))
+
+        // If we also have real players, we can merge them in (optional)
+        try {
+          const res = await fetch('/api/players?limit=500')
+          const data = await res.json()
+          const list = (data?.players || data?.data?.players || []) as PlayerOption[]
+          const combined = [...synthesized]
+          for (const pl of list) {
+            if (!combined.find((x) => String(x._id) === String(pl._id))) combined.push(pl)
+          }
+          setPlayers(combined)
+        } catch {
+          setPlayers(synthesized)
+        }
       } catch (e) {
-        console.warn('Failed to load players', e)
+        console.warn('Failed to load parents/players', e)
       }
     })()
   }, [])
 
-  const onSelectPlayer = (id: string) => {
-    setSelectedPlayerId(id)
-    const p = players.find(pl => String(pl._id) === String(id))
+  const onSelectPlayer = async (id: string) => {
+    let selectedId = id
+    let p = players.find(pl => String(pl._id) === String(id))
+    // If synthetic, create a real player first
+    if (p && p.synthetic) {
+      try {
+        const res = await fetch('/api/players', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parentId: p.parentId, name: p.name, age: p.age, team: p.team })
+        })
+        const data = await res.json()
+        if (data?.player?._id) {
+          selectedId = String(data.player._id)
+          // Refresh players list to include the real record
+          try {
+            const fres = await fetch('/api/players?limit=500')
+            const fdata = await fres.json()
+            const list = fdata?.players || fdata?.data?.players || []
+            if (list.length > 0) setPlayers(list)
+            p = list.find((pl: any) => String(pl._id) === selectedId) || data.player
+          } catch {}
+        }
+      } catch (e) {
+        console.warn('Failed to create player from parent childName', e)
+      }
+    }
+
+    setSelectedPlayerId(selectedId)
     if (p) {
       setSelectedParentId(String((p as any).parentId))
       setParentName((p as any).parentName || '')
