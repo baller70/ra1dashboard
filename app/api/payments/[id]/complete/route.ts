@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { convexHttp } from "@/app/lib/convex-server"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -10,7 +8,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const paymentId = params.id
 
     // Get payment details
-    const payment = await convex.query(api.payments.getPayment, { id: paymentId as any })
+    const payment = await convexHttp.query(api.payments.getPayment as any, { id: paymentId as any })
     if (!payment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
@@ -25,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })()
 
     // Mark paid and persist payment method so UI badges can display correctly
-    await convex.mutation(api.payments.updatePayment, {
+    await convexHttp.mutation(api.payments.updatePayment as any, {
       id: paymentId as any,
       status: 'paid',
       paidAt: Date.now(),
