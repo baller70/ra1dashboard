@@ -1,5 +1,6 @@
-// @ts-nocheck
 'use client'
+// @ts-nocheck
+import { useRouter } from 'next/navigation'
 
 // Force dynamic rendering - prevent static generation
 
@@ -13,13 +14,13 @@ import { useToast } from '../../components/ui/use-toast'
 import { Toaster } from '../../components/ui/toaster'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog'
 import { Textarea } from '../../components/ui/textarea'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Eye, 
-  Edit, 
+import {
+  Plus,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Eye,
+  Edit,
   MessageSquare,
   CreditCard,
   Users,
@@ -36,6 +37,7 @@ import {
   Loader2,
   RefreshCw,
   ChevronUp,
+  ClipboardList,
   Trash2
   } from 'lucide-react'
 import Link from 'next/link'
@@ -44,6 +46,8 @@ import { ParentCreationModal } from '../../components/ui/parent-creation-modal'
 
 export default function ParentsPage() {
   const { toast } = useToast()
+  const router = useRouter()
+
   const [parents, setParents] = useState<ParentWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -53,22 +57,22 @@ export default function ParentsPage() {
   const [showAiActions, setShowAiActions] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [riskAssessments, setRiskAssessments] = useState<Record<string, any>>({})
-  
+
   // Messaging interface state
   const [showMessagingDialog, setShowMessagingDialog] = useState(false)
   const [generatedMessages, setGeneratedMessages] = useState<any[]>([])
   const [sendingMessages, setSendingMessages] = useState(false)
-  
+
   // AI Analysis dialogs state
   const [showRiskAssessmentDialog, setShowRiskAssessmentDialog] = useState(false)
   const [riskAssessmentResults, setRiskAssessmentResults] = useState<any[]>([])
-  
+
   const [showPaymentPredictionDialog, setShowPaymentPredictionDialog] = useState(false)
   const [paymentPredictionResults, setPaymentPredictionResults] = useState<any[]>([])
-  
+
   const [showEngagementAnalysisDialog, setShowEngagementAnalysisDialog] = useState(false)
   const [engagementAnalysisResults, setEngagementAnalysisResults] = useState<any[]>([])
-  
+
   const [showGeneralMessagesDialog, setShowGeneralMessagesDialog] = useState(false)
   const [generalMessagesResults, setGeneralMessagesResults] = useState<any[]>([])
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
@@ -82,7 +86,7 @@ export default function ParentsPage() {
 
     setDeleteLoading(parentId)
     console.log('🗑️ Starting delete process for parent:', parentId, parentName)
-    
+
     try {
       // Try dynamic route first
       console.log('🔄 Attempting delete via dynamic route...')
@@ -113,17 +117,17 @@ export default function ParentsPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Delete successful:', result)
-        
+
         // Remove the parent from the local state
         setParents(prevParents => prevParents.filter(p => p._id !== parentId))
-        
+
         // Immediately dispatch event for dashboard refresh
         window.dispatchEvent(new Event('parent-deleted'))
         console.log('🔔 Dispatched parent-deleted event for dashboard refresh')
-        
+
         // Also reload the page data
         fetchParents()
-        
+
         toast({
           title: '✅ Parent Deleted Successfully',
           description: `${parentName} has been permanently removed from the system.`,
@@ -158,7 +162,7 @@ export default function ParentsPage() {
       console.log('Parent deleted event received, refreshing data...')
       fetchParents()
     }
-    
+
     window.addEventListener('parent-deleted', handleParentDeleted)
     return () => window.removeEventListener('parent-deleted', handleParentDeleted)
   }, [])
@@ -212,11 +216,11 @@ export default function ParentsPage() {
   const filteredParents = (Array.isArray(parents) ? parents : []).filter(parent => {
     // Defensive null checks to prevent runtime errors
     if (!parent || typeof parent !== 'object') return false
-    
+
     const parentName = parent.name || ''
     const parentEmail = parent.email || ''
     const parentStatus = parent.status || ''
-    
+
     const matchesSearch = parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          parentEmail.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || parentStatus === statusFilter
@@ -297,7 +301,7 @@ export default function ParentsPage() {
     try {
       // Clear any previous messages first
       setGeneratedMessages([])
-      
+
       const response = await fetch('/api/ai/bulk-operations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -399,11 +403,11 @@ export default function ParentsPage() {
           return acc
         }, {})
         setRiskAssessments(prev => ({ ...prev, ...assessmentMap }))
-        
+
         // Store results and open dialog
         setRiskAssessmentResults(data.results.assessments)
         setShowRiskAssessmentDialog(true)
-        
+
         toast({
           title: 'Risk Assessment completed',
           description: `🔍 Risk assessment completed for ${selectedParents.length} parents! Review the detailed analysis.`,
@@ -485,7 +489,7 @@ export default function ParentsPage() {
         // Store generated messages and open messaging interface
         setGeneratedMessages(data.results.messages)
         setShowMessagingDialog(true)
-        
+
         toast({
           title: 'Messages generated',
           description: `✅ Generated ${data.results.successfullyGenerated || selectedParents.length} personalized messages! Review and send them.`,
@@ -517,11 +521,11 @@ export default function ParentsPage() {
       })
       return
     }
-    
+
     try {
       setAiLoading(true)
       const predictions = []
-      
+
       // Make individual API calls for each parent
       for (const parentId of selectedParents) {
         try {
@@ -557,7 +561,7 @@ export default function ParentsPage() {
         // Store results and open dialog
         setPaymentPredictionResults(predictions)
         setShowPaymentPredictionDialog(true)
-        
+
         toast({
           title: 'Payment prediction completed',
           description: `💡 Payment prediction analysis completed for ${predictions.length} parents! Review the detailed predictions.`,
@@ -589,15 +593,15 @@ export default function ParentsPage() {
       })
       return
     }
-    
+
     try {
       setAiLoading(true)
       const response = await fetch('/api/ai/analyze-parent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          parentIds: selectedParents, 
-          analysisType: 'engagement_score' 
+        body: JSON.stringify({
+          parentIds: selectedParents,
+          analysisType: 'engagement_score'
         })
       })
 
@@ -632,7 +636,7 @@ export default function ParentsPage() {
         // Store results and open dialog
         setEngagementAnalysisResults(result.results.analyses || result.results)
         setShowEngagementAnalysisDialog(true)
-        
+
         toast({
           title: 'Engagement analysis completed',
           description: `📊 Engagement analysis completed for ${result.processedCount || selectedParents.length} parents! Review the detailed analysis.`,
@@ -684,8 +688,8 @@ export default function ParentsPage() {
   }
 
   const handleMessageEdit = (messageIndex: number, newMessage: string) => {
-    setGeneratedMessages(prev => 
-      prev.map((msg, index) => 
+    setGeneratedMessages(prev =>
+      prev.map((msg, index) =>
         index === messageIndex ? { ...msg, message: newMessage } : msg
       )
     )
@@ -725,12 +729,12 @@ export default function ParentsPage() {
         title: 'Messages sent successfully',
         description: `📧 Successfully sent ${generatedMessages.length} messages to parents!`,
       })
-      
+
       // Close dialog and clear state
       setShowMessagingDialog(false)
       setGeneratedMessages([])
       setSelectedParents([])
-      
+
     } catch (error) {
       console.error('Send messages error:', error)
       toast({
@@ -807,6 +811,15 @@ export default function ParentsPage() {
                   <Zap className="mr-2 h-4 w-4" />
                   More AI Actions
                 </Button>
+                <Button
+                  onClick={() => router.push(`/assessments?bulk=1&parentIds=${selectedParents.join(',')}&i=0`)}
+                  disabled={aiLoading}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Bulk Assessment ({selectedParents.length})
+                </Button>
+
               </>
             )}
             <Button asChild variant="outline">
@@ -816,6 +829,15 @@ export default function ParentsPage() {
               </Link>
             </Button>
             <Button onClick={() => setShowParentCreationModal(true)}>
+                <Button
+                  onClick={() => router.push(`/assessments?bulk=1&parentIds=${selectedParents.join(',')}&i=0`)}
+                  disabled={aiLoading}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Bulk Assessment ({selectedParents.length})
+                </Button>
+
               <Plus className="mr-2 h-4 w-4" />
               Add Parent
             </Button>
@@ -853,7 +875,7 @@ export default function ParentsPage() {
                   More Filters
                 </Button>
               </div>
-              
+
               {/* Advanced Filters */}
               {showAdvancedFilters && (
                 <div className="border-t pt-4 mt-4">
@@ -862,7 +884,7 @@ export default function ParentsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Payment Status
                       </label>
-                      <select 
+                      <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                         onChange={(e) => {
                           // Filter by payment status
@@ -876,12 +898,12 @@ export default function ParentsPage() {
                         <option value="pending">Pending</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Risk Level
                       </label>
-                      <select 
+                      <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                         onChange={(e) => {
                           // Filter by risk level
@@ -895,12 +917,12 @@ export default function ParentsPage() {
                         <option value="high">High Risk</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Last Activity
                       </label>
-                      <select 
+                      <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                         onChange={(e) => {
                           // Filter by last activity
@@ -916,11 +938,11 @@ export default function ParentsPage() {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           // Reset all filters
@@ -936,8 +958,8 @@ export default function ParentsPage() {
                         Clear Filters
                       </Button>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setShowAdvancedFilters(false)}
                     >
@@ -947,7 +969,7 @@ export default function ParentsPage() {
                   </div>
                 </div>
               )}
-              
+
               {/* Bulk Selection Controls */}
               {filteredParents.length > 0 && (
                 <div className="flex items-center justify-between border-t pt-4">
@@ -969,11 +991,11 @@ export default function ParentsPage() {
                       </Badge>
                     )}
                   </div>
-                  
+
                   {selectedParents.length > 0 && (
                     <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={clearSelection}
                       >
@@ -1007,7 +1029,7 @@ export default function ParentsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div 
+                <div
                   className="text-center p-4 border border-purple-200 rounded-lg bg-white/50 cursor-pointer hover:bg-purple-50 transition-colors"
                   onClick={() => {
                     if (selectedParents.length === 0) {
@@ -1031,7 +1053,7 @@ export default function ParentsPage() {
                   <h4 className="font-medium text-sm mb-1">Risk Assessment</h4>
                   <p className="text-xs text-muted-foreground">AI analyzes payment patterns and behavior</p>
                 </div>
-                <div 
+                <div
                   className="text-center p-4 border border-purple-200 rounded-lg bg-white/50 cursor-pointer hover:bg-purple-50 transition-colors"
                   onClick={() => {
                     if (selectedParents.length === 0) {
@@ -1055,7 +1077,7 @@ export default function ParentsPage() {
                   <h4 className="font-medium text-sm mb-1">Smart Messages</h4>
                   <p className="text-xs text-muted-foreground">Generate personalized communications</p>
                 </div>
-                <div 
+                <div
                   className="text-center p-4 border border-purple-200 rounded-lg bg-white/50 cursor-pointer hover:bg-purple-50 transition-colors"
                   onClick={() => {
                     if (selectedParents.length === 0) {
@@ -1073,7 +1095,7 @@ export default function ParentsPage() {
                   <h4 className="font-medium text-sm mb-1">Payment Prediction</h4>
                   <p className="text-xs text-muted-foreground">Predict payment behavior and issues</p>
                 </div>
-                <div 
+                <div
                   className="text-center p-4 border border-purple-200 rounded-lg bg-white/50 cursor-pointer hover:bg-purple-50 transition-colors"
                   onClick={() => {
                     if (selectedParents.length === 0) {
@@ -1190,7 +1212,7 @@ export default function ParentsPage() {
                           </div>
                           {getRiskLevel(parent._id) && (
                             <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center ${
-                              getRiskLevel(parent._id) === 'high' ? 'bg-red-500' : 
+                              getRiskLevel(parent._id) === 'high' ? 'bg-red-500' :
                               getRiskLevel(parent._id) === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
                             }`}>
                               <AlertTriangle className="h-2 w-2 text-white" />
@@ -1204,7 +1226,7 @@ export default function ParentsPage() {
                           {getRiskLevel(parent._id) && (
                             <Badge
                               variant={
-                                getRiskLevel(parent._id) === 'high' ? 'destructive' : 
+                                getRiskLevel(parent._id) === 'high' ? 'destructive' :
                                 getRiskLevel(parent._id) === 'medium' ? 'secondary' : 'default'
                               }
                               className="text-xs"
@@ -1225,7 +1247,7 @@ export default function ParentsPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <div className="flex items-center space-x-2 mb-1">
@@ -1240,7 +1262,7 @@ export default function ParentsPage() {
                           {parent.paymentPlans?.length || 0} payment plans
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/parents/${parent._id}`}>
@@ -1252,8 +1274,8 @@ export default function ParentsPage() {
                             <Edit className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={async () => {
                             // Generate AI message for ONLY this specific parent
@@ -1261,7 +1283,7 @@ export default function ParentsPage() {
                             try {
                               // Clear any previous messages first
                               setGeneratedMessages([])
-                              
+
                               const response = await fetch('/api/ai/bulk-operations', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1272,7 +1294,7 @@ export default function ParentsPage() {
                                   parameters: { messageType: 'general' }
                                 })
                               })
-                              
+
                               if (response.ok) {
                                 const data = await response.json()
                                 if (data.success && data.results?.messages) {
@@ -1302,8 +1324,8 @@ export default function ParentsPage() {
                         >
                           <MessageSquare className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={async () => {
                             // Get parent's first payment and route to payment detail page
@@ -1312,7 +1334,7 @@ export default function ParentsPage() {
                               const response = await fetch(`/api/payments?parentId=${parent._id}&limit=1`)
                               const data = await response.json()
                               console.log('Payment API response:', data)
-                              
+
                               if (data.success && data.data && data.data.payments && data.data.payments.length > 0) {
                                 const paymentId = data.data.payments[0]._id
                                 console.log('Navigating to payment:', paymentId)
@@ -1338,8 +1360,8 @@ export default function ParentsPage() {
                         >
                           <CreditCard className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteParent(parent._id, parent.name)}
                           disabled={deleteLoading === parent._id}
@@ -1364,7 +1386,7 @@ export default function ParentsPage() {
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No parents found</h3>
                   <p className="text-muted-foreground mb-4">
-                    {searchTerm || statusFilter !== 'all' 
+                    {searchTerm || statusFilter !== 'all'
                       ? 'Try adjusting your search criteria'
                       : 'Get started by adding your first parent'
                     }
@@ -1398,7 +1420,7 @@ export default function ParentsPage() {
               Review and edit the AI-generated messages before sending them to parents.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {generatedMessages.map((message, index) => {
               const parent = getParentDetails(message.parentId)
@@ -1449,14 +1471,14 @@ export default function ParentsPage() {
 
           <DialogFooter className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowMessagingDialog(false)}
                 disabled={sendingMessages}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => {
                   // Regenerate messages
@@ -1468,7 +1490,7 @@ export default function ParentsPage() {
                 Regenerate Messages
               </Button>
             </div>
-            <Button 
+            <Button
               onClick={handleSendMessages}
               disabled={sendingMessages}
               className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
@@ -1504,13 +1526,13 @@ export default function ParentsPage() {
               Comprehensive risk analysis for selected parents based on payment patterns, communication history, and behavioral indicators.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {riskAssessmentResults.map((assessment, index) => {
               const parent = getParentDetails(assessment.parentId)
               const riskLevel = assessment.riskScore >= 80 ? 'high' : assessment.riskScore >= 60 ? 'medium' : 'low'
               const riskColor = riskLevel === 'high' ? 'bg-red-500' : riskLevel === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-              
+
               return (
                 <Card key={assessment.parentId} className={`border-l-4 ${riskLevel === 'high' ? 'border-l-red-500' : riskLevel === 'medium' ? 'border-l-yellow-500' : 'border-l-green-500'}`}>
                   <CardHeader className="pb-3">
@@ -1551,7 +1573,7 @@ export default function ParentsPage() {
                           <p className="text-sm text-muted-foreground">{assessment.communicationScore || 'Analysis pending'}</p>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Risk Factors</h5>
                         <div className="flex flex-wrap gap-2">
@@ -1562,14 +1584,14 @@ export default function ParentsPage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Recommendations</h5>
                         <p className="text-sm text-muted-foreground">
                           {assessment.recommendations || 'Monitor payment patterns and increase communication frequency for better engagement.'}
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
                         <span>Analysis Date: {new Date(assessment.analysisDate || Date.now()).toLocaleString()}</span>
                         <span>Confidence: {assessment.confidence || 85}%</span>
@@ -1582,13 +1604,13 @@ export default function ParentsPage() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowRiskAssessmentDialog(false)}
             >
               Close
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 // Export or take action based on risk assessment
                 toast({
@@ -1620,13 +1642,13 @@ export default function ParentsPage() {
               AI-powered payment behavior predictions based on historical data, payment patterns, and engagement metrics.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {paymentPredictionResults.map((prediction, index) => {
               const parent = getParentDetails(prediction.parentId)
               const likelihoodLevel = prediction.paymentLikelihood >= 80 ? 'high' : prediction.paymentLikelihood >= 60 ? 'medium' : 'low'
               const likelihoodColor = likelihoodLevel === 'high' ? 'bg-green-500' : likelihoodLevel === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
-              
+
               return (
                 <Card key={prediction.parentId} className={`border-l-4 ${likelihoodLevel === 'high' ? 'border-l-green-500' : likelihoodLevel === 'medium' ? 'border-l-yellow-500' : 'border-l-red-500'}`}>
                   <CardHeader className="pb-3">
@@ -1675,7 +1697,7 @@ export default function ParentsPage() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Behavioral Indicators</h5>
                         <div className="flex flex-wrap gap-2">
@@ -1686,14 +1708,14 @@ export default function ParentsPage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Recommendations</h5>
                         <p className="text-sm text-muted-foreground">
                           {prediction.recommendations || 'Continue current payment schedule. Send gentle reminder 3 days before due date.'}
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
                         <span>Prediction Date: {new Date(prediction.predictionDate || Date.now()).toLocaleString()}</span>
                         <span>Model Accuracy: {prediction.modelAccuracy || 92}%</span>
@@ -1706,13 +1728,13 @@ export default function ParentsPage() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowPaymentPredictionDialog(false)}
             >
               Close
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 // Export or take action based on payment predictions
                 toast({
@@ -1744,13 +1766,13 @@ export default function ParentsPage() {
               Comprehensive parent engagement analysis including communication patterns, responsiveness, and participation metrics.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {engagementAnalysisResults.map((analysis, index) => {
               const parent = getParentDetails(analysis.parentId)
               const engagementLevel = analysis.engagementScore >= 80 ? 'high' : analysis.engagementScore >= 60 ? 'medium' : 'low'
               const engagementColor = engagementLevel === 'high' ? 'bg-green-500' : engagementLevel === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
-              
+
               return (
                 <Card key={analysis.parentId} className={`border-l-4 ${engagementLevel === 'high' ? 'border-l-green-500' : engagementLevel === 'medium' ? 'border-l-yellow-500' : 'border-l-red-500'}`}>
                   <CardHeader className="pb-3">
@@ -1801,7 +1823,7 @@ export default function ParentsPage() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Engagement Patterns</h5>
                         <div className="flex flex-wrap gap-2">
@@ -1812,21 +1834,21 @@ export default function ParentsPage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Improvement Opportunities</h5>
                         <p className="text-sm text-muted-foreground">
                           {analysis.improvementOpportunities || 'Continue current engagement level. Consider sending program updates and achievement highlights.'}
                         </p>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <h5 className="font-medium text-sm">Preferred Communication</h5>
                         <p className="text-sm text-muted-foreground">
                           Channel: {analysis.preferredChannel || 'Email'} • Time: {analysis.preferredTime || 'Evening (6-8 PM)'}
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
                         <span>Analysis Period: {analysis.analysisPeriod || 'Last 30 days'}</span>
                         <span>Data Points: {analysis.dataPoints || '47'}</span>
@@ -1839,13 +1861,13 @@ export default function ParentsPage() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowEngagementAnalysisDialog(false)}
             >
               Close
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 // Export or take action based on engagement analysis
                 toast({

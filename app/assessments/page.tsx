@@ -12,6 +12,8 @@ import { Separator } from '../components/ui/separator'
 import { Textarea } from '../components/ui/textarea'
 import { Label } from '../components/ui/label'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+import { useSearchParams, useRouter } from 'next/navigation'
+
 
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -115,7 +117,11 @@ export default function AssessmentsPage() {
     pdf: false,
     email: false,
     sendEmail: false,
-  })
+
+})
+
+const searchParams = useSearchParams()
+const router = useRouter()
 
   const [parentEmail, setParentEmail] = useState<string>('')
   const [parentName, setParentName] = useState<string>('')
@@ -192,6 +198,78 @@ export default function AssessmentsPage() {
           setPlayers(combined)
         } catch {
           setPlayers(synthesized)
+  // Bulk Assessment flow: prefill player by parentId, use history, and auto-generate
+  useEffect(() => {
+    const bulk = searchParams.get('bulk')
+    if (bulk !== '1') return
+    const parentIds = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+    const i = parseInt(searchParams.get('i') || '0', 10)
+    if (!parentIds.length || isNaN(i) || i < 0 || i >= parentIds.length) return
+
+    const parentId = parentIds[i]
+    ;(async () => {
+      try {
+        // Try to get an existing player for this parent
+        let playerId: string | undefined
+        let playerObj: any | undefined
+        const pres = await fetch(`/api/players?parentId=${parentId}`)
+        const pdata = await pres.json()
+        const plist = pdata?.players || pdata?.data?.players || []
+        if (plist.length > 0) {
+          playerObj = plist[0]
+          playerId = String(playerObj._id)
+        } else {
+          // Create a player using parent profile info
+          const pr = await fetch(`/api/parents/${parentId}`)
+          const pjson = await pr.json()
+          const parent = pjson?.parent || pjson?.data?.parent
+          const createRes = await fetch('/api/players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId,
+              name: (parent?.childName || parent?.name || 'Player'),
+              age: parent?.age,
+              team: parent?.team,
+            })
+          })
+          const created = await createRes.json()
+          playerObj = created?.player
+          playerId = playerObj?._id ? String(playerObj._id) : undefined
+        }
+
+        if (playerId) {
+          await onSelectPlayer(playerId)
+
+          // Prefill ratings from last assessment if available
+          try {
+            const hist = await fetch(`/api/assessments?playerId=${playerId}&limit=1`)
+            const hdata = await hist.json()
+            const last = (hdata?.assessments || hdata?.data?.assessments || [])[0]
+            if (last?.skills?.length) {
+              setAssessmentData(prev => ({
+                ...prev,
+                skills: prev.skills.map(s => {
+                  const found = last.skills.find((ls: any) => ls.skillName === s.skillName)
+                  if (!found) return s
+                  const val = Number(found.rating) || 0
+                  return { ...s, rating: Math.max(1, Math.min(5, val)) }
+                })
+              }))
+            }
+          } catch {}
+
+          // Auto-generate content
+          setTimeout(() => {
+            generateAllSections()
+          }, 50)
+        }
+      } catch (e) {
+        console.warn('Bulk prefill failed', e)
+      }
+    })()
+  }, [searchParams, players.length])
+
         }
       } catch (e) {
         console.warn('Failed to load parents/players', e)
@@ -1303,7 +1381,38 @@ export default function AssessmentsPage() {
     }
 
     try {
+      {/* Bulk Assessment progress bar */}
+      {(() => {
+        const bulk = searchParams.get('bulk')
+        if (bulk !== '1') return null
+        const ids = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+        const idx = parseInt(searchParams.get('i') || '0', 10)
+        return (
+          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 flex items-center justify-between">
+            <div className="text-sm text-blue-800">
+              Assessment {Math.min(idx + 1, ids.length)} of {ids.length}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
+              >
+                Skip
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )
+      })()}
+
       setLoading(prev => ({ ...prev, sendEmail: true }))
+
       const assessmentUrl = `${window.location.origin}/assessments`
       const res = await fetch('/api/send-assessment', {
         method: 'POST',
@@ -1375,6 +1484,36 @@ export default function AssessmentsPage() {
 
   return (
     <AppLayout>
+      {/* Bulk Assessment progress bar */}
+      {(() => {
+        const bulk = searchParams.get('bulk')
+        if (bulk !== '1') return null
+        const ids = (searchParams.get('parentIds') || '').split(',').filter(Boolean)
+        const idx = parseInt(searchParams.get('i') || '0', 10)
+        return (
+          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 flex items-center justify-between">
+            <div className="text-sm text-blue-800">
+              Assessment {Math.min(idx + 1, ids.length)} of {ids.length}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
+              >
+                Skip
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => router.push(`/assessments?bulk=1&parentIds=${ids.join(',')}&i=${Math.min(idx + 1, ids.length - 1)}`)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="space-y-6 max-w-6xl mx-auto">
         {/* Header Section with Background Watermark */}
         <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white p-8 rounded-xl shadow-2xl overflow-hidden">
