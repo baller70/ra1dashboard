@@ -1808,23 +1808,6 @@ export default function AssessmentsPage() {
                 )}
               </Button>
 
-              <Button
-                onClick={generateEmailTemplate}
-                disabled={loading.email}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {loading.email ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Email Template
-                  </>
-                )}
-              </Button>
 
               <Button
                 onClick={clearAllData}
