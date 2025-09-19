@@ -120,6 +120,7 @@ export async function POST(request: Request) {
       name: sanitizedData.name,
       email: sanitizedData.email,
       childName: sanitizedData.childName || undefined,
+      parentEmail: sanitizedData.parentEmail || undefined,
       phone: sanitizedData.phone || undefined,
       address: sanitizedData.address || undefined,
       emergencyContact: sanitizedData.emergencyContact || undefined,

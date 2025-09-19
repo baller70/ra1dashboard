@@ -10,6 +10,7 @@ export const CreateParentSchema = z.object({
   name: nameSchema,
   email: emailSchema,
   childName: z.string().max(100, 'Child name too long').optional().nullable(),
+  parentEmail: z.string().email('Invalid parent email format').optional().nullable(),
   phone: phoneSchema.nullable(),
   address: z.string().max(500, 'Address too long').optional().nullable(),
   emergencyContact: z.string().max(100, 'Emergency contact name too long').optional().nullable(),
@@ -149,10 +150,11 @@ export function sanitizeParentData(data: any) {
     name: sanitizeString(data.name),
     email: sanitizeEmail(data.email),
     childName: sanitizeString(data.childName),
+    parentEmail: sanitizeEmail(data.parentEmail),
     phone: sanitizePhone(data.phone),
     address: sanitizeString(data.address),
     emergencyContact: sanitizeString(data.emergencyContact),
     emergencyPhone: sanitizePhone(data.emergencyPhone),
     notes: sanitizeString(data.notes)
   }
-} 
+}

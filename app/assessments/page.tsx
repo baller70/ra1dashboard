@@ -158,44 +158,31 @@ export default function AssessmentsPage() {
     }))
   }, [])
 
-  type ParentOption = { _id: string; name: string; email: string; childName?: string }
-  const [parents, setParents] = useState<ParentOption[]>([])
+  type PlayerOption = { _id: string; name: string; parentId: string; parentEmail?: string; age?: string; team?: string }
+  const [players, setPlayers] = useState<PlayerOption[]>([])
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
   const [selectedParentId, setSelectedParentId] = useState<string>('')
 
   useEffect(() => {
-    // Fetch parents for dropdown
     ;(async () => {
       try {
-        const res = await fetch('/api/parents?limit=500')
+        const res = await fetch('/api/players?limit=500')
         const data = await res.json()
-        if (data?.data?.parents) setParents(data.data.parents)
+        if (data?.players) setPlayers(data.players)
+        if (data?.data?.players) setPlayers(data.data.players)
       } catch (e) {
-        console.warn('Failed to load parents', e)
+        console.warn('Failed to load players', e)
       }
     })()
   }, [])
 
-  const onSelectParent = async (id: string) => {
-    setSelectedParentId(id)
-    const par = parents.find(pr => String(pr._id) === String(id))
-    if (par) {
-      updatePlayerInfo('name', par.childName || '')
-      if (par.email) setParentEmail(par.email)
-      // Ensure a player record exists so assessment history can link to it
-      if (par.childName) {
-        try {
-          const res = await fetch('/api/players', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ parentId: id, name: par.childName }),
-          })
-          const j = await res.json()
-          if (j?.player?._id) setSelectedPlayerId(String(j.player._id))
-        } catch (e) {
-          console.warn('Failed to ensure player for parent', e)
-        }
-      }
+  const onSelectPlayer = (id: string) => {
+    setSelectedPlayerId(id)
+    const p = players.find(pl => String(pl._id) === String(id))
+    if (p) {
+      setSelectedParentId(String((p as any).parentId))
+      updatePlayerInfo('name', p.name || '')
+      if ((p as any).parentEmail) setParentEmail((p as any).parentEmail)
     }
   }
 
@@ -1429,13 +1416,13 @@ export default function AssessmentsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <Label htmlFor="parent-select">Parent *</Label>
-                <Select value={selectedParentId} onValueChange={(v) => onSelectParent(v)}>
-                  <SelectTrigger id="parent-select" className="mt-1">
-                    <SelectValue placeholder="Select a parent" />
+                <Label htmlFor="player-select">Player *</Label>
+                <Select value={selectedPlayerId} onValueChange={(v) => onSelectPlayer(v)}>
+                  <SelectTrigger id="player-select" className="mt-1">
+                    <SelectValue placeholder="Select a player" />
                   </SelectTrigger>
                   <SelectContent>
-                    {parents.map((p) => (
+                    {players.map((p) => (
                       <SelectItem key={String(p._id)} value={String(p._id)}>
                         {p.name}
                       </SelectItem>
@@ -1444,7 +1431,7 @@ export default function AssessmentsPage() {
                 </Select>
                 {validationErrors.includes("Player name is required") && (
                   <p className="text-sm text-red-600 mt-1">
-                    Parent selection is required
+                    Player selection is required
                   </p>
                 )}
               </div>

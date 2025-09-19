@@ -30,6 +30,7 @@ export default function EditParentPage() {
     name: '',
     email: '',
     childName: '',
+    parentEmail: '',
     phone: '',
     address: '',
     status: 'active',
@@ -54,6 +55,7 @@ export default function EditParentPage() {
           name: data.name || '',
           email: data.email || '',
           childName: data.childName || '',
+          parentEmail: (data as any).parentEmail || '',
           phone: data.phone || '',
           address: data.address || '',
           status: data.status || 'active',
@@ -264,6 +266,22 @@ export default function EditParentPage() {
                   onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
                   placeholder="Emergency contact information"
                 />
+              {/* Parent Email (separate from main Email) */}
+              <div className="space-y-2">
+                <Label htmlFor="parentEmail">Parent Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="parentEmail"
+                    type="email"
+                    value={(formData as any).parentEmail}
+                    onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter parent email (used for assessments)"
+                  />
+                </div>
+              </div>
+
               </div>
 
               {/* Emergency Phone */}

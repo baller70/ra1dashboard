@@ -14,11 +14,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Badge } from '../../../components/ui/badge'
 import { Separator } from '../../../components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  User,
+  Phone,
+  Mail,
+  MapPin,
   Calendar,
   DollarSign,
   FileText,
@@ -120,7 +120,7 @@ export default function ParentDetailPage() {
         if (urlParams.has('planCreated')) {
           // Remove the query param to clean up the URL
           router.replace(`/parents/${parentId}`, undefined, { shallow: true });
-          // The refresh will be triggered by the dependency array change, 
+          // The refresh will be triggered by the dependency array change,
           // but we can also explicitly call it.
           refreshParentData();
         }
@@ -364,7 +364,7 @@ export default function ParentDetailPage() {
   // Recommendation action handlers
   const executeRecommendationAction = async (recommendation: string, actionType: string) => {
     setExecutingAction(recommendation)
-    
+
     try {
       switch (actionType) {
         case 'send_reminder':
@@ -661,7 +661,7 @@ export default function ParentDetailPage() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
+            <Button
               onClick={fetchAIAnalysis}
               disabled={aiLoading}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
@@ -737,6 +737,16 @@ export default function ParentDetailPage() {
                   <p className="text-sm text-muted-foreground">{parent.emergencyContact}</p>
                 </div>
               )}
+              { (parent as any).parentEmail && (
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Parent Email</p>
+                    <p className="text-sm text-muted-foreground">{(parent as any).parentEmail}</p>
+                  </div>
+                </div>
+              )}
+
               {parent.emergencyPhone && (
                 <div className="flex items-center space-x-3">
                   <Phone className="h-4 w-4 text-muted-foreground" />
@@ -815,25 +825,25 @@ export default function ParentDetailPage() {
                       <Shield className="h-5 w-5 text-blue-600" />
                       <span className="font-medium">Risk Level</span>
                     </div>
-                    <Badge 
+                    <Badge
                       variant={
-                        aiAnalysis.riskLevel === 'high' ? 'destructive' : 
+                        aiAnalysis.riskLevel === 'high' ? 'destructive' :
                         aiAnalysis.riskLevel === 'medium' ? 'secondary' : 'default'
                       }
                     >
                       {aiAnalysis.riskLevel?.toUpperCase() || 'UNKNOWN'}
                     </Badge>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Risk Score</span>
                       <span className="font-medium">{aiAnalysis.riskScore || 0}/100</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className={`h-2 rounded-full ${
-                          (aiAnalysis.riskScore || 0) > 70 ? 'bg-red-500' : 
+                          (aiAnalysis.riskScore || 0) > 70 ? 'bg-red-500' :
                           (aiAnalysis.riskScore || 0) > 40 ? 'bg-yellow-500' : 'bg-green-500'
                         }`}
                         style={{ width: `${Math.min(aiAnalysis.riskScore || 0, 100)}%` }}
@@ -892,7 +902,7 @@ export default function ParentDetailPage() {
                   {aiAnalysis.recommendations.slice(0, 4).map((recommendation: string, index: number) => {
                     const actionType = getRecommendationActionType(recommendation)
                     const isExecuting = executingAction === recommendation
-                    
+
                     return (
                       <div key={index} className="p-3 border border-orange-200 rounded-lg bg-white/50">
                         <div className="flex items-start justify-between space-x-3">
@@ -922,7 +932,7 @@ export default function ParentDetailPage() {
                       </div>
                     )
                   })}
-                  
+
                   {aiAnalysis.priorityActions && aiAnalysis.priorityActions.length > 0 && (
                     <div className="pt-3 border-t border-orange-200">
                       <h4 className="text-xs font-semibold text-red-600 mb-3 flex items-center">
@@ -932,7 +942,7 @@ export default function ParentDetailPage() {
                       {aiAnalysis.priorityActions.slice(0, 2).map((action: string, index: number) => {
                         const actionType = getRecommendationActionType(action)
                         const isExecuting = executingAction === action
-                        
+
                         return (
                           <div key={index} className="p-3 mb-2 border border-red-200 rounded-lg bg-red-50/50">
                             <div className="flex items-start justify-between space-x-3">
@@ -999,8 +1009,8 @@ export default function ParentDetailPage() {
             {Array.isArray(paymentPlans) && paymentPlans.length > 0 ? (
               <div className="space-y-3">
                 {paymentPlans.map((plan) => (
-                  <Link 
-                    key={String(plan._id || plan.id)} 
+                  <Link
+                    key={String(plan._id || plan.id)}
                     href="#"
                     className="block"
                     onClick={(e) => { e.preventDefault(); openPlanDetail(plan) }}
@@ -1042,7 +1052,7 @@ export default function ParentDetailPage() {
                     </div>
                   </Link>
                 ))}
-                
+
                 {paymentPlans.length > 3 && (
                   <div className="pt-3 border-t">
                     <Link href={`/payment-plans?parentId=${parentId}`}>
@@ -1142,7 +1152,7 @@ export default function ParentDetailPage() {
               AI-Generated Message for {parent?.name}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              This message was personalized based on {parent?.name}'s profile, payment history, and AI analysis. 
+              This message was personalized based on {parent?.name}'s profile, payment history, and AI analysis.
               You can edit it before sending.
             </p>
           </DialogHeader>
@@ -1166,9 +1176,9 @@ export default function ParentDetailPage() {
               className="min-h-[120px]"
             />
             <div className="flex items-center justify-between">
-              <Button 
-                variant="outline" 
-                onClick={generateAIMessage} 
+              <Button
+                variant="outline"
+                onClick={generateAIMessage}
                 disabled={sendingMessage}
                 size="sm"
               >
