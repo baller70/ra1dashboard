@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({ id: data?.id || null })
+    return NextResponse.json({ id: data?.id || null, pdfUrl: ctaUrl })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Unexpected error' }, { status: 500 })
   }

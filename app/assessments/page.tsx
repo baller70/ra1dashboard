@@ -11,6 +11,8 @@ import { Badge } from '../components/ui/badge'
 import { Separator } from '../components/ui/separator'
 import { Textarea } from '../components/ui/textarea'
 import { Label } from '../components/ui/label'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select'
+
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import {
@@ -109,6 +111,7 @@ export default function AssessmentsPage() {
     parentSuggestions: false,
     gameplayAnalysis: false,
     progressSummary: false,
+    auto: false,
     pdf: false,
     email: false,
     sendEmail: false,
@@ -150,10 +153,40 @@ export default function AssessmentsPage() {
       ...prev,
       playerInfo: {
         ...prev.playerInfo,
-        assessmentDate: new Date().toISOString().split('T')[0]
-      }
+        assessmentDate: new Date().toISOString().split('T')[0],
+      },
     }))
   }, [])
+
+  type PlayerOption = { _id: string; name: string; parentId: any; parentEmail?: string; team?: string; age?: string }
+  const [players, setPlayers] = useState<PlayerOption[]>([])
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [selectedParentId, setSelectedParentId] = useState<string>('')
+
+  useEffect(() => {
+    // Fetch players for dropdown
+    ;(async () => {
+      try {
+        const res = await fetch('/api/players')
+        const data = await res.json()
+        if (data?.players) setPlayers(data.players)
+      } catch (e) {
+        console.warn('Failed to load players', e)
+      }
+    })()
+  }, [])
+
+  const onSelectPlayer = (id: string) => {
+    setSelectedPlayerId(id)
+    const p = players.find(pl => String(pl._id) === String(id))
+    if (p) {
+      setSelectedParentId(String(p.parentId))
+      updatePlayerInfo('name', p.name || '')
+      if (p.team) updatePlayerInfo('team', p.team)
+      if (p.age) updatePlayerInfo('age', p.age)
+      if (p.parentEmail) setParentEmail(p.parentEmail)
+    }
+  }
 
   // Update functions
   const updatePlayerInfo = (field: keyof PlayerInfo, value: string) => {
@@ -171,10 +204,80 @@ export default function AssessmentsPage() {
       )
     }))
   }
+  const generateAllSections = async () => {
+    if (!assessmentData.playerInfo.name) {
+      alert('Please select a player first.')
+      return
+    }
+    setLoading(prev => ({ ...prev, auto: true }))
+    try {
+      const res = await fetch('/api/ai/basketball-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'auto',
+          playerInfo: assessmentData.playerInfo,
+          skills: assessmentData.skills,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to generate')
+      setAssessmentData(prev => ({
+        ...prev,
+        generatedContent: {
+          ...prev.generatedContent,
+          parentSuggestions: data.parentSuggestions || prev.generatedContent.parentSuggestions,
+          gameplayAnalysis: data.gameplayAnalysis || prev.generatedContent.gameplayAnalysis,
+          progressSummary: data.progressSummary || prev.generatedContent.progressSummary,
+        },
+      }))
+    } catch (e: any) {
+      console.error('AI auto generation failed:', e)
+      alert(e?.message || 'Failed to generate all sections')
+    } finally {
+      setLoading(prev => ({ ...prev, auto: false }))
+    }
+  }
+
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type.startsWith('image/')) {
+  const generateAllSections = async () => {
+    if (!assessmentData.playerInfo.name) {
+      alert('Please select a player first.')
+      return
+    }
+    setLoading(prev => ({ ...prev, auto: true }))
+    try {
+      const res = await fetch('/api/ai/basketball-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'auto',
+          playerInfo: assessmentData.playerInfo,
+          skills: assessmentData.skills,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to generate')
+      setAssessmentData(prev => ({
+        ...prev,
+        generatedContent: {
+          ...prev.generatedContent,
+          parentSuggestions: data.parentSuggestions || prev.generatedContent.parentSuggestions,
+          gameplayAnalysis: data.gameplayAnalysis || prev.generatedContent.gameplayAnalysis,
+          progressSummary: data.progressSummary || prev.generatedContent.progressSummary,
+        },
+      }))
+    } catch (e: any) {
+      console.error('AI auto generation failed:', e)
+      alert(e?.message || 'Failed to generate all sections')
+    } finally {
+      setLoading(prev => ({ ...prev, auto: false }))
+    }
+  }
+
       setAssessmentData(prev => ({ ...prev, logoFile: file }))
     }
   }
@@ -1173,6 +1276,45 @@ export default function AssessmentsPage() {
         alert(`Failed to send email: ${data?.error || 'Unknown error'}`)
         return
       }
+
+      // Save assessment record
+      try {
+        if (selectedParentId && selectedPlayerId) {
+          const avg = (() => {
+            const rated = assessmentData.skills.filter(s => s.rating > 0)
+            if (!rated.length) return 0
+            return rated.reduce((sum, s) => sum + s.rating, 0) / rated.length
+          })()
+          const category = (avg >= 4.5)
+            ? 'On track for advanced group'
+            : (avg >= 3.8)
+              ? 'Strong fundamentals building toward consistency'
+              : (avg >= 3.2)
+                ? 'Adequate time and practice showing improvement'
+                : (avg >= 2.5)
+                  ? 'Developing skills with encouraging progress'
+                  : 'Beginner showing early potential'
+
+          await fetch('/api/assessments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId: selectedParentId,
+              playerId: selectedPlayerId,
+              programName: assessmentData.programName,
+              skills: assessmentData.skills,
+              aiParentSuggestions: assessmentData.generatedContent.parentSuggestions,
+              aiGameplayAnalysis: assessmentData.generatedContent.gameplayAnalysis,
+              aiProgressSummary: assessmentData.generatedContent.progressSummary,
+              category,
+              pdfUrl: data?.pdfUrl || undefined,
+            }),
+          })
+        }
+      } catch (e) {
+        console.warn('Failed to save assessment record', e)
+      }
+
       alert('Assessment emailed to parent successfully.')
     } catch (err) {
       console.error('Send email error:', err)
@@ -1276,18 +1418,22 @@ export default function AssessmentsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <Label htmlFor="player-name">Player Name *</Label>
-                <Input
-                  id="player-name"
-                  value={assessmentData.playerInfo.name}
-                  onChange={(e) => updatePlayerInfo('name', e.target.value)}
-                  placeholder="Enter player name"
-                  className="mt-1"
-                  required
-                />
+                <Label htmlFor="player-select">Player *</Label>
+                <Select value={selectedPlayerId} onValueChange={(v) => onSelectPlayer(v)}>
+                  <SelectTrigger id="player-select" className="mt-1">
+                    <SelectValue placeholder="Select a player" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players.map((p) => (
+                      <SelectItem key={String(p._id)} value={String(p._id)}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {validationErrors.includes("Player name is required") && (
                   <p className="text-sm text-red-600 mt-1">
-                    Player name is required
+                    Player selection is required
                   </p>
                 )}
               </div>
@@ -1424,6 +1570,13 @@ export default function AssessmentsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="flex items-center justify-end mb-3">
+          <Button onClick={generateAllSections} disabled={loading.auto} className="bg-red-600 hover:bg-red-700">
+            <Wand2 className="h-4 w-4 mr-2" />
+            {loading.auto ? 'Generating...' : 'AI Auto (All Sections)'}
+          </Button>
+        </div>
 
         {/* AI Content Generation Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

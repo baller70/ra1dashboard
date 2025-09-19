@@ -557,6 +557,36 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_priority", ["priority"])
     .index("by_read_status", ["isRead"])
-    .index("by_created_at", ["createdAt"])
-    .index("by_expires_at", ["expiresAt"]),
-});      
+    .index("by_created_at", ["createdAt"]),
+
+  // PLAYERS AND ASSESSMENTS
+  players: defineTable({
+    parentId: v.id("parents"),
+    name: v.string(),
+    age: v.optional(v.string()),
+    team: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_parent", ["parentId"])
+    .index("by_name", ["name"]),
+
+  assessments: defineTable({
+    parentId: v.id("parents"),
+    playerId: v.id("players"),
+    programName: v.optional(v.string()),
+    skills: v.array(v.object({ skillName: v.string(), rating: v.number() })),
+    aiParentSuggestions: v.optional(v.string()),
+    aiGameplayAnalysis: v.optional(v.string()),
+    aiProgressSummary: v.optional(v.string()),
+    category: v.optional(v.string()),
+    pdfUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_parent", ["parentId"])
+    .index("by_player", ["playerId"])
+    .index("by_created_at", ["createdAt"]),
+
+});
