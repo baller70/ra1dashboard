@@ -212,7 +212,7 @@ const router = useRouter()
         // Fetch parent to enrich contact details (always)
         const pr = await fetch(`/api/parents/${parentId}`)
         const pjson = await pr.json()
-        const parent = pjson?.parent || pjson?.data?.parent || {}
+        const parent = pjson?.parent || pjson?.data?.parent || pjson || {}
 
         // Try to get an existing player for this parent
         let playerId: string | undefined
