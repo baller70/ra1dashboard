@@ -347,7 +347,7 @@ export default function PaymentDetailPage() {
       const usp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
       const status = usp.get('status')
       const sessionId = usp.get('session_id')
-      if (status === 'success' && sessionId && payment?.id) {
+      if (status === 'success' && sessionId && ((payment as any)?._id || (payment as any)?.id)) {
         ;(async () => {
           try {
             await fetch(`/api/payments/${(payment as any)._id || payment.id}/complete`, {
