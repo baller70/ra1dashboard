@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { api } from "@/convex/_generated/api"
-import { convexHttp } from "@/lib/convex-server"
+import { api } from "../../../../convex/_generated/api"
+import { convexHttp } from "../../../../lib/convex-server"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
