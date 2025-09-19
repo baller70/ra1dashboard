@@ -8,8 +8,8 @@ import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
 import { useToast } from '../../../hooks/use-toast'
-import { 
-  CreditCard, 
+import {
+  CreditCard,
   ArrowLeft,
   User,
   Mail,
@@ -218,26 +218,26 @@ const paymentOptions = [
 ]
 
 const paymentSchedules = [
-  { 
-    value: "full", 
+  {
+    value: "full",
     label: "Full Payment",
     amount: "$1,699.59",
     description: "Pay the full amount now"
   },
-  { 
-    value: "quarterly", 
+  {
+    value: "quarterly",
     label: "Quarterly",
     amount: "$566.74",
     description: "4 payments over 12 months (Total: $2,266.96)"
   },
-  { 
-    value: "monthly", 
+  {
+    value: "monthly",
     label: "Monthly",
-    amount: "$189.11", 
+    amount: "$189.11",
     description: "9 payments over 9 months (Total: $1,701.99)"
   },
-  { 
-    value: "custom", 
+  {
+    value: "custom",
     label: "Custom Schedule",
     amount: "Variable",
     description: "Set your own installments"
@@ -248,7 +248,7 @@ export default function PaymentDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  
+
   // Early return if no payment ID
   if (!params?.id) {
     return <div>Payment ID not found</div>
@@ -264,17 +264,17 @@ export default function PaymentDetailPage() {
   const [aiReminderOpen, setAiReminderOpen] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
   const [paymentProgress, setPaymentProgress] = useState<PaymentProgressData | null>(null)
-  
+
   // Dialog states
   const [modifyScheduleOpen, setModifyScheduleOpen] = useState(false)
   const [reminderReviewOpen, setReminderReviewOpen] = useState(false)
   const [paymentOptionsOpen, setPaymentOptionsOpen] = useState(false)
   const [paymentReference, setPaymentReference] = useState('')
-  
+
   // Custom installment states
   const [customInstallments, setCustomInstallments] = useState(3)
   const [customMonths, setCustomMonths] = useState(3)
-  
+
   // Credit card form states
   const [showCreditCardForm, setShowCreditCardForm] = useState(false)
   const [creditCardForm, setCreditCardForm] = useState({
@@ -306,16 +306,16 @@ export default function PaymentDetailPage() {
   const [customAmount, setCustomAmount] = useState<string>("")
   const [customInstallmentCount, setCustomInstallmentCount] = useState<number>(1)
   const [customPaymentFrequency, setCustomPaymentFrequency] = useState<number>(1)
-  const [checkDetails, setCheckDetails] = useState({ 
-    checkNumbers: [], 
+  const [checkDetails, setCheckDetails] = useState({
+    checkNumbers: [],
     startDate: "",
     customAmount: ""
   })
   const [checkInstallments, setCheckInstallments] = useState<number>(1)
   const [checkFrequencyMonths, setCheckFrequencyMonths] = useState<number>(1)
   const [individualCheckNumbers, setIndividualCheckNumbers] = useState<string[]>([''])
-  const [cashDetails, setCashDetails] = useState({ 
-    receiptNumber: "", 
+  const [cashDetails, setCashDetails] = useState({
+    receiptNumber: "",
     paidDate: "",
     customAmount: ""
   })
@@ -326,7 +326,7 @@ export default function PaymentDetailPage() {
   // Collapsible state
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false)
   const [isCommunicationHistoryOpen, setIsCommunicationHistoryOpen] = useState(true)
-  
+
   // Enhanced UX states
   const [lastActionTime, setLastActionTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -375,7 +375,7 @@ export default function PaymentDetailPage() {
 
   // Update individual check numbers array when installments change
   useEffect(() => {
-    const newCheckNumbers = Array(checkInstallments).fill('').map((_, index) => 
+    const newCheckNumbers = Array(checkInstallments).fill('').map((_, index) =>
       individualCheckNumbers[index] || ''
     )
     setIndividualCheckNumbers(newCheckNumbers)
@@ -430,9 +430,9 @@ export default function PaymentDetailPage() {
       console.log('🔍 Starting fetchPaymentDetails for ID:', params.id)
       setLoading(true)
       const response = await fetch(`/api/payments/${params.id}?t=${Date.now()}`)
-      
+
       console.log('🔍 Fetch response status:', response.status)
-      
+
       if (!response.ok) {
         console.log('🚨 Response not ok:', response.status, response.statusText)
         if (response.status === 404) {
@@ -457,7 +457,7 @@ export default function PaymentDetailPage() {
     try {
       setHistoryLoading(true)
       const response = await fetch(`/api/payments/${params.id}/history`)
-      
+
       if (response.ok) {
         const data = await response.json()
         setPaymentHistory(data.history || [])
@@ -471,11 +471,11 @@ export default function PaymentDetailPage() {
 
   const fetchCommunicationHistory = async () => {
     if (!payment?.parent?.id) return
-    
+
     try {
       setCommHistoryLoading(true)
               const response = await fetch(`/api/communication/history?parentId=${payment.parent._id || payment.parent.id}&limit=10`)
-      
+
       if (response.ok) {
         const data = await response.json()
         setCommunicationHistory(data.messages || [])
@@ -490,7 +490,7 @@ export default function PaymentDetailPage() {
   const fetchPaymentProgress = async () => {
     try {
       const response = await fetch(`/api/payments/${params.id}/progress`)
-      
+
       if (response.ok) {
         const data = await response.json()
         console.log('[Payment Page] Progress API response:', data);
@@ -504,7 +504,7 @@ export default function PaymentDetailPage() {
 
   const handleMarkAsPaid = async () => {
     if (!payment) return
-    
+
     try {
       const response = await fetch(`/api/payments/${payment.id}`, {
         method: 'PATCH',
@@ -543,7 +543,7 @@ export default function PaymentDetailPage() {
 
   const handleSendReminder = async (message: string, method: 'email' | 'sms') => {
     if (!payment || !payment.parent?.id) return
-    
+
     try {
       setSendingReminder(true)
       const response = await fetch('/api/messages', {
@@ -566,7 +566,7 @@ export default function PaymentDetailPage() {
       if (response.ok) {
         fetchPaymentDetails()
         fetchPaymentHistory()
-        
+
         toast({
           title: '✅ Reminder Sent Successfully!',
           description: `Payment reminder sent to ${payment.parent.name} via ${method.toUpperCase()} for $${payment.amount}.`,
@@ -591,18 +591,18 @@ export default function PaymentDetailPage() {
 
   const handleSendReminderReview = () => {
     if (!payment || !payment.parent) return
-    
-    const daysOverdue = payment.status === 'overdue' 
+
+    const daysOverdue = payment.status === 'overdue'
       ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
       : 0
-    
+
     // Generate a professional reminder message
     const defaultMessage = `Dear ${payment.parent.name},
 
 I hope this message finds you well. I wanted to reach out regarding your payment of $${payment.amount} that was due on ${new Date(payment.dueDate).toLocaleDateString()}.
 
-${payment.status === 'overdue' && daysOverdue > 0 ? 
-  `This payment is currently ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue. ` : 
+${payment.status === 'overdue' && daysOverdue > 0 ?
+  `This payment is currently ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue. ` :
   'This payment is now due. '
 }
 
@@ -623,22 +623,22 @@ The Basketball Factory Inc.`
 
   const handleSendInstallmentReminder = async (installment: any) => {
     if (!payment || !payment.parent) return
-    
+
     try {
       setSendingReminder(true)
-      
+
       // Calculate days past due for this specific installment
-      const daysOverdue = installment.status === 'overdue' 
+      const daysOverdue = installment.status === 'overdue'
         ? Math.floor((new Date().getTime() - new Date(installment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
         : 0
-      
+
       // Generate professional installment reminder message instantly (no API call needed)
       const installmentMessage = `Dear ${payment.parent.name || 'Parent'},
 
 I hope this message finds you well. I wanted to reach out regarding installment payment #${installment.installmentNumber} of $${installment.amount.toFixed(2)} that was due on ${new Date(installment.dueDate).toLocaleDateString()}.
 
-${installment.status === 'overdue' && daysOverdue > 0 ? 
-  `This installment payment is currently ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue. ` : 
+${installment.status === 'overdue' && daysOverdue > 0 ?
+  `This installment payment is currently ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue. ` :
   'This installment payment is now due. '
 }
 
@@ -650,10 +650,10 @@ Thank you for your time and continued support of our basketball program.
 
 Best regards,
 The Basketball Factory Inc.`
-      
+
       // Store installment context for the AI reminder dialog
       setSelectedInstallment(installment)
-      
+
       // Open the AI reminder dialog
       setAiReminderOpen(true)
     } catch (error) {
@@ -676,14 +676,14 @@ The Basketball Factory Inc.`
 
     try {
       setProcessingPayment(true)
-      
+
       // Calculate payment amount based on schedule
       const baseAmount = parseFloat(String(payment.amount)) || 1699.59 // Fallback to a default amount
       console.log('Base payment data:', { 'payment.amount': payment.amount, baseAmount, selectedPaymentSchedule })
       let paymentAmount = baseAmount
       let installmentCount = 1
       let totalAmount = baseAmount
-      
+
       switch (selectedPaymentSchedule) {
         case 'full':
           paymentAmount = baseAmount
@@ -707,7 +707,7 @@ The Basketball Factory Inc.`
           totalAmount = paymentAmount * installmentCount
           break
       }
-      
+
       if (selectedPaymentOption === 'stripe_card') {
         // If full one-time payment, process in-app via PaymentIntent (no redirect)
         if (selectedPaymentSchedule === 'full') {
@@ -748,7 +748,7 @@ The Basketball Factory Inc.`
         const response = await fetch('/api/payments/process-card', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             paymentId: (payment as any)._id || payment.id,
             amount: Math.round(paymentAmount * 100),
             totalAmount: Math.round(totalAmount * 100),
@@ -784,7 +784,7 @@ The Basketball Factory Inc.`
         const response = await fetch('/api/stripe/create-payment-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             paymentId: payment.id,
             amount: Math.round(paymentAmount * 100),
             paymentMethod: 'bank_transfer',
@@ -801,7 +801,7 @@ The Basketball Factory Inc.`
         if (url) {
           window.open(url, '_blank')
         }
-        
+
       } else {
         // Handle check and cash payments
         if (selectedPaymentOption === 'check' && selectedPaymentSchedule === 'custom') {
@@ -848,7 +848,7 @@ The Basketball Factory Inc.`
           const response = await fetch(`/api/payments/${payment.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               paymentMethod: selectedPaymentOption,
               paymentReference: paymentReference,
               amount: paymentAmount,
@@ -862,10 +862,10 @@ The Basketball Factory Inc.`
           await Promise.all([fetchPaymentDetails(), fetchPaymentHistory()])
         }
       }
-      
+
       // Close the dialog
       setPaymentOptionsOpen(false)
-      
+
       // Reset form
       setCreditCardForm({
         cardNumber: '',
@@ -882,7 +882,7 @@ The Basketball Factory Inc.`
       })
       setSelectedPaymentOption('')
       setSelectedPaymentSchedule('')
-      
+
     } catch (error) {
       console.error('Payment processing error:', error)
       toast({
@@ -933,7 +933,7 @@ The Basketball Factory Inc.`
     )
   }
 
-  const daysOverdue = payment.status === 'overdue' 
+  const daysOverdue = payment.status === 'overdue'
     ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
     : 0
 
@@ -951,7 +951,7 @@ The Basketball Factory Inc.`
             </Button>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">PAYMENT DETAILS</h1>
-              <Badge 
+              <Badge
                 variant={payment.status === 'paid' ? 'default' : payment.status === 'overdue' ? 'destructive' : 'secondary'}
                 className="text-sm px-3 py-1"
               >
@@ -984,40 +984,40 @@ The Basketball Factory Inc.`
                 <div className="grid grid-cols-3 gap-6 mb-6">
                   {/* Amount Due/Remaining */}
                   <div className={`text-center p-4 rounded-lg ${
-                    paymentProgress && paymentProgress.remainingAmount === 0 
-                      ? 'bg-green-50' 
+                    paymentProgress && paymentProgress.remainingAmount === 0
+                      ? 'bg-green-50'
                       : paymentProgress && paymentProgress.remainingAmount > 0
                       ? 'bg-orange-50'
                       : 'bg-green-50'
                   }`}>
                     <DollarSign className={`h-8 w-8 mx-auto mb-2 ${
-                      paymentProgress && paymentProgress.remainingAmount === 0 
-                        ? 'text-green-600' 
+                      paymentProgress && paymentProgress.remainingAmount === 0
+                        ? 'text-green-600'
                         : paymentProgress && paymentProgress.remainingAmount > 0
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`} />
                     <div className={`text-3xl font-bold ${
-                      paymentProgress && paymentProgress.remainingAmount === 0 
-                        ? 'text-green-600' 
+                      paymentProgress && paymentProgress.remainingAmount === 0
+                        ? 'text-green-600'
                         : paymentProgress && paymentProgress.remainingAmount > 0
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`}>
-                      ${paymentProgress && paymentProgress.remainingAmount !== undefined 
-                        ? paymentProgress.remainingAmount.toFixed(2) 
+                      ${paymentProgress && paymentProgress.remainingAmount !== undefined
+                        ? paymentProgress.remainingAmount.toFixed(2)
                         : payment.amount.toFixed(2)
                       }
                     </div>
                     <div className={`text-sm font-medium ${
-                      paymentProgress && paymentProgress.remainingAmount === 0 
-                        ? 'text-green-600' 
+                      paymentProgress && paymentProgress.remainingAmount === 0
+                        ? 'text-green-600'
                         : paymentProgress && paymentProgress.remainingAmount > 0
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`}>
-                      {paymentProgress && paymentProgress.remainingAmount === 0 
-                        ? 'Fully Paid' 
+                      {paymentProgress && paymentProgress.remainingAmount === 0
+                        ? 'Fully Paid'
                         : 'Amount Remaining'
                       }
                     </div>
@@ -1027,8 +1027,8 @@ The Basketball Factory Inc.`
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <CheckCircle className="h-8 w-8 mx-auto text-blue-600 mb-2" />
                     <div className="text-3xl font-bold text-blue-600">
-                      ${paymentProgress && paymentProgress.paidAmount !== undefined 
-                        ? paymentProgress.paidAmount.toFixed(2) 
+                      ${paymentProgress && paymentProgress.paidAmount !== undefined
+                        ? paymentProgress.paidAmount.toFixed(2)
                         : '0.00'
                       }
                     </div>
@@ -1038,7 +1038,7 @@ The Basketball Factory Inc.`
                   {/* Payment Progress */}
                   <div className={`text-center p-4 rounded-lg ${
                     paymentProgress && paymentProgress.progressPercentage === 100
-                      ? 'bg-green-50' 
+                      ? 'bg-green-50'
                       : paymentProgress && paymentProgress.progressPercentage > 0
                       ? 'bg-blue-50'
                       : payment.status === 'overdue'
@@ -1056,21 +1056,21 @@ The Basketball Factory Inc.`
                     )}
                     <div className={`text-3xl font-bold ${
                       paymentProgress && paymentProgress.progressPercentage === 100
-                        ? 'text-green-600' 
+                        ? 'text-green-600'
                         : paymentProgress && paymentProgress.progressPercentage > 0
                         ? 'text-blue-600'
                         : payment.status === 'overdue'
                         ? 'text-red-600'
                         : 'text-yellow-600'
                     }`}>
-                      {paymentProgress && paymentProgress.progressPercentage !== undefined 
+                      {paymentProgress && paymentProgress.progressPercentage !== undefined
                         ? `${Math.round(paymentProgress.progressPercentage)}%`
                         : payment.status === 'paid' ? '100%' : '0%'
                       }
                     </div>
                     <div className={`text-sm font-medium ${
                       paymentProgress && paymentProgress.progressPercentage === 100
-                        ? 'text-green-600' 
+                        ? 'text-green-600'
                         : paymentProgress && paymentProgress.progressPercentage > 0
                         ? 'text-blue-600'
                         : payment.status === 'overdue'
@@ -1078,7 +1078,7 @@ The Basketball Factory Inc.`
                         : 'text-yellow-600'
                     }`}>
                       {paymentProgress && paymentProgress.progressPercentage === 100
-                        ? 'Complete' 
+                        ? 'Complete'
                         : 'Progress'
                       }
                     </div>
@@ -1103,7 +1103,7 @@ The Basketball Factory Inc.`
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Progress Bar */}
                     <div>
                       <div className="flex justify-between text-sm mb-2">
@@ -1111,7 +1111,7 @@ The Basketball Factory Inc.`
                         <span className="font-medium">{Math.round(paymentProgress.progressPercentage)}% Complete</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
+                        <div
                           className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500"
                           style={{ width: `${paymentProgress.progressPercentage}%` }}
                         ></div>
@@ -1175,7 +1175,7 @@ The Basketball Factory Inc.`
                         <span>{Math.round(paymentProgress.progressPercentage)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-green-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${paymentProgress.progressPercentage}%` }}
                         ></div>
@@ -1229,9 +1229,9 @@ The Basketball Factory Inc.`
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
                           if (paymentProgress.nextDue) {
                             const nextDueInstallment = {
@@ -1274,8 +1274,8 @@ The Basketball Factory Inc.`
                   <div className="space-y-3">
                     {paymentProgress.installments.map((installment, index) => (
                       <div key={installment._id} className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                        installment.status === 'paid' 
-                          ? 'bg-green-50 border-green-200' 
+                        installment.status === 'paid'
+                          ? 'bg-green-50 border-green-200'
                           : installment.status === 'overdue'
                           ? 'bg-red-50 border-red-200'
                           : 'bg-white border-gray-200'
@@ -1308,7 +1308,7 @@ The Basketball Factory Inc.`
                         <div className="flex items-center gap-3">
                           <div className="text-right">
                             <div className="font-bold">${installment.amount.toFixed(2)}</div>
-                            <Badge 
+                            <Badge
                               variant={
                                 installment.status === 'paid' ? 'default' :
                                 installment.status === 'overdue' ? 'destructive' :
@@ -1318,7 +1318,7 @@ The Basketball Factory Inc.`
                                 installment.status === 'paid' ? 'bg-green-500 hover:bg-green-600' : ''
                               }`}
                             >
-                              {installment.status === 'paid' ? 'Paid' : 
+                              {installment.status === 'paid' ? 'Paid' :
                                installment.status === 'overdue' ? 'Overdue' : 'Pending'}
                             </Badge>
                           </div>
@@ -1334,9 +1334,9 @@ The Basketball Factory Inc.`
                                 AI Reminder
                               </Button>
                               {installment.status === 'pending' && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => {
                                     setPayingInstallment(installment)
                                     setInstallmentPaymentOpen(true)
@@ -1421,8 +1421,8 @@ The Basketball Factory Inc.`
                             }`}>
                               <div className="flex-shrink-0">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  entry.type === 'payment' 
-                                    ? 'bg-green-600' 
+                                  entry.type === 'payment'
+                                    ? 'bg-green-600'
                                     : 'bg-orange-600'
                                 }`}>
                                   {entry.type === 'payment' ? (
@@ -1456,11 +1456,11 @@ The Basketball Factory Inc.`
                                 <div className="flex items-center justify-between mt-2">
                                   <p className="text-xs text-gray-500">by {entry.performedBy}</p>
                                   {entry.amount && (
-                                    <Badge 
-                                      variant={entry.type === 'payment' ? 'default' : 'outline'} 
+                                    <Badge
+                                      variant={entry.type === 'payment' ? 'default' : 'outline'}
                                       className={`text-xs ${
-                                        entry.type === 'payment' 
-                                          ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                        entry.type === 'payment'
+                                          ? 'bg-green-500 hover:bg-green-600 text-white'
                                           : ''
                                       }`}
                                     >
@@ -1553,7 +1553,7 @@ The Basketball Factory Inc.`
                         <p className="text-gray-600 mb-4">
                           No messages have been sent to {payment.parent?.name} yet.
                         </p>
-                        <Button 
+                        <Button
                           variant="outline"
                           onClick={() => {
                             // Send First Message
@@ -1592,7 +1592,7 @@ The Basketball Factory Inc.`
                       </div>
                       <h3 className="font-bold text-lg text-gray-900">{payment.parent.name}</h3>
                     </div>
-                    
+
                     {/* Contact Information */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
@@ -1606,11 +1606,11 @@ The Basketball Factory Inc.`
                         </div>
                       )}
                     </div>
-                    
+
                     {/* View Parent Profile Button */}
                     <div className="pt-4 border-t">
                       <Button asChild className="w-full bg-orange-600 hover:bg-orange-700" size="sm">
-                        <Link 
+                        <Link
                           href={`/parents/${payment.parent._id || payment.parent.id}`}
                           onClick={() => {
                             if (!payment.parent) {
@@ -1631,7 +1631,7 @@ The Basketball Factory Inc.`
                             console.log('Parent ID length:', parentId?.length);
                             console.log('Navigation URL:', `/parents/${parentId}`);
                             console.log('=== END DEBUG ===');
-                            
+
                             if (!parentId) {
                               toast({
                                 title: 'Error',
@@ -1676,10 +1676,10 @@ The Basketball Factory Inc.`
                   <p className="text-xs text-gray-600 mb-2">
                     Link to open secure payment form
                   </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full" 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
                     onClick={() => {
                       console.log('🔥 BUTTON CLICKED!')
                       alert('Button clicked! Opening dialog...')
@@ -1693,7 +1693,17 @@ The Basketball Factory Inc.`
                   </div>
                 </div>
 
-                
+                  {/* Admin: Mark Paid (visible with ?admin=1) */}
+                  {typeof window !== 'undefined' && window.location.search.includes('admin=1') && payment?.status !== 'paid' && (
+                    <div className="mt-2">
+                      <Button variant="destructive" size="sm" onClick={handleMarkAsPaid}>
+                        Mark Paid (Admin)
+                      </Button>
+                    </div>
+                  )}
+
+
+
 
                 {/* Contract */}
                 <div className="p-3 bg-gray-50 rounded-lg">
@@ -1768,9 +1778,9 @@ The Basketball Factory Inc.`
                 </Button>
 
                 {/* Send Reminder */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="w-full"
                   onClick={handleSendReminderReview}
                   disabled={sendingReminder}
@@ -1829,7 +1839,7 @@ The Basketball Factory Inc.`
           installmentNumber: selectedInstallment ? selectedInstallment.installmentNumber : 1,
           totalInstallments: paymentProgress?.totalInstallments || 1,
           status: selectedInstallment ? selectedInstallment.status : payment.status,
-          daysPastDue: selectedInstallment && selectedInstallment.status === 'overdue' 
+          daysPastDue: selectedInstallment && selectedInstallment.status === 'overdue'
             ? Math.floor((new Date().getTime() - new Date(selectedInstallment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
             : daysOverdue
         }}
@@ -1848,7 +1858,7 @@ The Basketball Factory Inc.`
               Choose your preferred payment method and schedule for this payment
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Payment Methods */}
             <div className="space-y-6">
@@ -1968,7 +1978,7 @@ The Basketball Factory Inc.`
             {selectedPaymentOption === 'check' && (
               <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <h4 className="font-medium text-green-900 mb-3">Check Payment Details</h4>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   {/* Number of Installments Dropdown */}
                   <div>
@@ -2049,7 +2059,7 @@ The Basketball Factory Inc.`
             {selectedPaymentOption === 'cash' && (
               <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <h4 className="font-medium text-yellow-900 mb-3">Cash Payment Details</h4>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   {/* Number of Installments Dropdown */}
                   <div>
@@ -2118,7 +2128,7 @@ The Basketball Factory Inc.`
                 )}
               </div>
             )}
-            
+
             {selectedPaymentOption === 'cash' && (
               <div className="space-y-3">
                 <Label htmlFor="paymentReference">Receipt Number</Label>
@@ -2133,7 +2143,7 @@ The Basketball Factory Inc.`
                   <CreditCard className="h-5 w-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-blue-900">Credit Card Information</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   {/* Card Details */}
                   <div className="grid grid-cols-1 gap-4">
@@ -2201,7 +2211,7 @@ The Basketball Factory Inc.`
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Billing Address */}
                   <div className="space-y-4">
                     <h4 className="font-medium text-blue-900">Billing Address</h4>
@@ -2292,7 +2302,7 @@ The Basketball Factory Inc.`
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Amount:</span>
                         <span className="text-sm font-medium">
-                          {selectedPaymentSchedule === 'custom' 
+                          {selectedPaymentSchedule === 'custom'
                             ? `$${(payment.amount / customInstallments).toFixed(2)} per installment`
                             : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$${payment.amount.toFixed(2)}`
                           }
@@ -2316,8 +2326,8 @@ The Basketball Factory Inc.`
           </div>
 
           <DialogFooter className="flex gap-3 pt-6 border-t">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setPaymentOptionsOpen(false)
                 // Reset form when closing
@@ -2342,16 +2352,16 @@ The Basketball Factory Inc.`
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handlePaymentProcess}
               disabled={
-                !selectedPaymentOption || 
-                !selectedPaymentSchedule || 
+                !selectedPaymentOption ||
+                !selectedPaymentSchedule ||
                 processingPayment ||
                 (selectedPaymentOption === 'stripe_card' && (
-                  !creditCardForm.cardNumber || 
-                  !creditCardForm.expiryDate || 
-                  !creditCardForm.cvv || 
+                  !creditCardForm.cardNumber ||
+                  !creditCardForm.expiryDate ||
+                  !creditCardForm.cvv ||
                   !creditCardForm.cardholderName ||
                   !creditCardForm.billingAddress.line1 ||
                   !creditCardForm.billingAddress.city ||
@@ -2469,8 +2479,8 @@ The Basketball Factory Inc.`
           </div>
 
           <DialogFooter className="flex gap-3 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setInstallmentPaymentOpen(false)
                 setPayingInstallment(null)
@@ -2494,13 +2504,13 @@ The Basketball Factory Inc.`
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={async () => {
                 if (!payingInstallment || !payment) return
-                
+
                 try {
                   setProcessingPayment(true)
-                  
+
                   const response = await fetch('/api/payments/process-card', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2524,7 +2534,7 @@ The Basketball Factory Inc.`
 
                   if (response.ok) {
                     const result = await response.json()
-                    
+
                     toast({
                       title: '✅ Payment Successful!',
                       description: `Installment #${payingInstallment.installmentNumber} payment of $${payingInstallment.amount.toFixed(2)} processed successfully.`,
@@ -2534,7 +2544,7 @@ The Basketball Factory Inc.`
                     // Close dialog and refresh data
                     setInstallmentPaymentOpen(false)
                     setPayingInstallment(null)
-                    
+
                     // Refresh payment data
                     await Promise.all([
                       fetchPaymentDetails(),
@@ -2573,9 +2583,9 @@ The Basketball Factory Inc.`
                 }
               }}
               disabled={
-                !creditCardForm.cardNumber || 
-                !creditCardForm.expiryDate || 
-                !creditCardForm.cvv || 
+                !creditCardForm.cardNumber ||
+                !creditCardForm.expiryDate ||
+                !creditCardForm.cvv ||
                 !creditCardForm.cardholderName ||
                 processingPayment
               }
@@ -2595,4 +2605,4 @@ The Basketball Factory Inc.`
       </Dialog>
     </div>
   )
-} 
+}

@@ -3005,6 +3005,11 @@
     "@webassemblyjs/ast" "1.14.1"
     "@xtuc/long" "4.2.2"
 
+"@xmldom/xmldom@^0.8.3":
+  version "0.8.11"
+  resolved "https://registry.npmjs.org/@xmldom/xmldom/-/xmldom-0.8.11.tgz"
+  integrity sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==
+
 "@xobotyi/scrollbar-width@^1.9.5":
   version "1.9.5"
   resolved "https://registry.npmjs.org/@xobotyi/scrollbar-width/-/scrollbar-width-1.9.5.tgz"
@@ -5320,6 +5325,13 @@ font-measure@^1.2.2:
   integrity sha512-mRLEpdrWzKe9hbfaF3Qpr06TAjquuBVP5cHy4b3hyeNdjc9i0PO6HniGsX5vjL5OWv7+Bd++NiooNpT/s8BvIA==
   dependencies:
     css-font "^1.2.0"
+
+fonteditor-core@^2.6.3:
+  version "2.6.3"
+  resolved "https://registry.npmjs.org/fonteditor-core/-/fonteditor-core-2.6.3.tgz"
+  integrity sha512-YUryIKjkenjZ41E7JvM3V+02Ak4mTHDDTwBWgs9KBzypzHqLZHuua1UDRevZNTKawmnq1dbBAa70Jddl2+F4FQ==
+  dependencies:
+    "@xmldom/xmldom" "^0.8.3"
 
 for-each@^0.3.3, for-each@^0.3.5:
   version "0.3.5"

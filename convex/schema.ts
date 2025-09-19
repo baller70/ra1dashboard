@@ -20,6 +20,8 @@ export default defineSchema({
     email: v.string(),
     // New: optional child/player name associated with this parent
     childName: v.optional(v.string()),
+    // New: dedicated Parent Email used for assessments/communications
+    parentEmail: v.optional(v.string()),
     phone: v.optional(v.string()),
     address: v.optional(v.string()),
     emergencyContact: v.optional(v.string()),
