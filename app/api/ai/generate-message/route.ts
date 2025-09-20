@@ -120,30 +120,22 @@ Please provide both subject line and message body in JSON format:
       }
     }
 
-    // Use OpenAI through our AI library
-    const aiResult = await generateMessage({
-      context: {
-        parentId: context?.parentId,
-        paymentId: context?.paymentId,
-        messageType: mapMessageType(context?.messageType ?? 'general'),
-        tone: mapTone(context?.tone ?? 'friendly'),
-        channel: 'email' // Default to email
-      },
-      parentData,
-      paymentData,
-      customInstructions,
-      includePersonalization
+    // Use the messages array we built above with proper custom instructions handling
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
+      max_tokens: 500,
+      temperature: 0.7,
     })
 
-    if (!aiResult.success) {
-      throw new Error(aiResult.error || 'Failed to generate message')
+    const generatedMessage = completion.choices[0]?.message?.content
+    if (!generatedMessage) {
+      throw new Error('No message generated from OpenAI')
     }
-
-    const generatedContent = aiResult.message
 
     return NextResponse.json({
       success: true,
-      message: generatedContent,
+      message: generatedMessage,
       context: {
         parentName: parentData?.name,
         messageType: context.messageType,
