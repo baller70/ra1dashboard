@@ -48,8 +48,9 @@ test('AI reminder honors custom prompt and displays influenced message', async (
 
   const aiMessageTextarea = dialog.getByRole('textbox');
   await expect(aiMessageTextarea).toBeVisible();
-  // Wait until content appears
-  await expect(aiMessageTextarea).not.toHaveValue('');
+  // Wait until generation completes and content appears
+  await expect(aiMessageTextarea).toBeEnabled({ timeout: 20000 });
+  await expect(aiMessageTextarea).not.toHaveValue('', { timeout: 20000 });
 
   // 5) Validate that message reflects the prompt (contains "Saturday")
   const value = await aiMessageTextarea.inputValue();
