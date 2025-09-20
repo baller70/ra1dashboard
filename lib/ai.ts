@@ -93,18 +93,6 @@ export async function generateMessage({
   includePersonalization?: boolean;
 }): Promise<{ success: boolean; message?: AIGeneratedMessage; error?: string }> {
   try {
-    const systemPrompt = `You are an expert communication specialist for Rise as One Basketball Program. Generate professional, personalized messages for parents.
-
-    Key Guidelines:
-    - Use ${context.tone} tone
-    - Format for ${context.channel}
-    - Message type: ${context.messageType}
-    - Be clear, concise, and action-oriented
-    - Include specific details when available
-    - Maintain the program's supportive, community-focused brand voice
-
-    ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`;
-
     let contextInfo = '';
     if (parentData) {
       contextInfo += `Parent: ${parentData.name} (${parentData.email})\n`;
@@ -117,11 +105,47 @@ export async function generateMessage({
       contextInfo += `Status: ${paymentData.status}\n`;
     }
 
-    const userPrompt = `Generate a ${context.messageType} message with the following context:
+    const systemPrompt = customInstructions && customInstructions.trim()
+      ? `You are an expert communication specialist for Rise as One Basketball Program. The user has provided specific custom instructions that you MUST follow exactly. Your primary job is to follow the user's custom instructions while incorporating the relevant payment context.
+
+IMPORTANT: The user's custom instructions take ABSOLUTE PRIORITY. Follow them exactly, even if they seem informal or direct.
+
+Custom Instructions: ${customInstructions}
+
+Context Information:
+${contextInfo}
+
+Generate a message that follows the custom instructions exactly while incorporating the payment context (parent name, amount, due date, etc.).
+
+${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`
+      : `You are an expert communication specialist for Rise as One Basketball Program. Generate professional, personalized messages for parents.
+
+    Key Guidelines:
+    - Use ${context.tone} tone
+    - Format for ${context.channel}
+    - Message type: ${context.messageType}
+    - Be clear, concise, and action-oriented
+    - Include specific details when available
+    - Maintain the program's supportive, community-focused brand voice
+
+    ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`;
+
+    const userPrompt = customInstructions && customInstructions.trim()
+      ? `Follow the custom instructions exactly: "${customInstructions}"
+
+Use this payment context:
+${contextInfo}
+
+Generate the message following the custom instructions exactly. Provide in JSON format:
+{
+  "subject": "Subject line here",
+  "body": "Message body here following the custom instructions exactly",
+  "reasoning": "Brief explanation of how you followed the custom instructions",
+  "suggestions": ["Alternative subject 1", "Alternative subject 2"]
+}`
+      : `Generate a ${context.messageType} message with the following context:
 
     ${contextInfo}
-
-    ${customInstructions ? `Additional Instructions: ${customInstructions}` : ''}
 
     ${includePersonalization ? 'Include personalization based on the parent and payment data.' : 'Keep the message generic but professional.'}
 

@@ -45,7 +45,17 @@ export async function POST(request: Request) {
     const messages = [
       {
         role: "system" as const,
-        content: `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
+        content: customInstructions && customInstructions.trim()
+          ? `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. The user has provided specific custom instructions that you MUST follow exactly. Your primary job is to follow the user's custom instructions while incorporating the relevant payment context.
+
+IMPORTANT: The user's custom instructions take ABSOLUTE PRIORITY. Follow them exactly, even if they seem informal or direct.
+
+Custom Instructions: ${customInstructions}
+
+Context: ${aiContext}
+
+Generate a message that follows the custom instructions exactly while incorporating the payment context (parent name, amount, due date, etc.).`
+          : `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
 
 Guidelines:
 - Use a ${context?.tone ?? 'friendly'} tone
@@ -60,10 +70,25 @@ Context: ${aiContext}`
       },
       {
         role: "user" as const,
-        content: `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
+        content: customInstructions && customInstructions.trim()
+          ? `Follow the custom instructions exactly: "${customInstructions}"
+
+Use this payment context:
+- Parent: ${context?.parentName || 'Parent'}
+- Amount: $${context?.amount || 'Amount'}
+- Due Date: ${context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : 'Due Date'}
+- Status: ${context?.status || 'Status'}
+
+Generate the message following the custom instructions exactly. Provide in JSON format:
+{
+  "subject": "Subject line here",
+  "body": "Message body here following the custom instructions exactly",
+  "reasoning": "Brief explanation of how you followed the custom instructions",
+  "suggestions": ["Alternative subject 1", "Alternative subject 2"]
+}`
+          : `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
 - Tone: ${context?.tone ?? 'friendly'}
 - Urgency: ${context?.urgencyLevel ?? 3}/5
-${customInstructions ? `- Additional instructions: ${customInstructions}` : ''}
 
 Please provide both subject line and message body in JSON format:
 {

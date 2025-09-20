@@ -30,7 +30,8 @@ import {
   Settings,
   RefreshCw,
   Loader2,
-  Plus
+  Plus,
+  Sparkles
 } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
@@ -299,6 +300,10 @@ export default function PaymentDetailPage() {
     message: string
     tone: string
   } | null>(null)
+
+  // AI Reminder Prompt state
+  const [aiReminderPrompt, setAiReminderPrompt] = useState<string>('')
+  const [generatingAiReminder, setGeneratingAiReminder] = useState(false)
 
   // Payment scheduling state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("")
@@ -677,7 +682,71 @@ The Basketball Factory Inc.`
     }
   }
 
+  // AI Generate Reminder function
+  const handleAiGenerateReminder = async () => {
+    if (!payment || !payment.parent) return
 
+    try {
+      setGeneratingAiReminder(true)
+
+      const response = await fetch('/api/ai/generate-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          context: {
+            parentId: payment.parent._id || payment.parent.id,
+            paymentId: payment._id || payment.id,
+            parentName: payment.parent.name,
+            parentEmail: payment.parent.email,
+            amount: payment.amount,
+            dueDate: payment.dueDate,
+            status: payment.status,
+            messageType: 'reminder'
+          },
+          customInstructions: aiReminderPrompt.trim() || `Generate a professional payment reminder for ${payment.parent.name} regarding their payment of $${payment.amount} due on ${new Date(payment.dueDate).toLocaleDateString()}. ${payment.status === 'overdue' ? 'This payment is overdue.' : 'This payment is now due.'} Keep it professional but warm.`,
+          includePersonalization: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate message: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate message')
+      }
+
+      // Set the generated reminder and open the review dialog
+      setAiGeneratedReminder({
+        subject: data.message.subject || 'Payment Reminder',
+        message: data.message.body || data.message,
+        tone: 'professional'
+      })
+
+      setReminderReviewOpen(true)
+
+      toast({
+        title: '✨ AI Reminder Generated',
+        description: 'Your personalized reminder message has been created. Review and send it below.',
+        duration: 5000,
+      })
+
+    } catch (error) {
+      console.error('Error generating AI reminder:', error)
+      toast({
+        title: '⚠️ AI Generation Failed',
+        description: 'Failed to generate AI reminder. Please try again or use the standard reminder.',
+        variant: 'destructive',
+        duration: 5000,
+      })
+    } finally {
+      setGeneratingAiReminder(false)
+    }
+  }
 
   const handlePaymentProcess = async () => {
     if (!payment || !selectedPaymentOption || !selectedPaymentSchedule) return
@@ -1788,6 +1857,42 @@ The Basketball Factory Inc.`
                     Communication
                   </Link>
                 </Button>
+
+                {/* AI Reminder Section */}
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      AI Reminder Prompt (optional)
+                    </label>
+                    <textarea
+                      value={aiReminderPrompt}
+                      onChange={(e) => setAiReminderPrompt(e.target.value)}
+                      placeholder="you owe me $213 please pay before next game"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleAiGenerateReminder}
+                    disabled={generatingAiReminder || !payment?.parent}
+                  >
+                    {generatingAiReminder ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        AI Generate Reminder
+                      </>
+                    )}
+                  </Button>
+                </div>
 
                 {/* Send Reminder */}
                 <Button
