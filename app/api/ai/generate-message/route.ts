@@ -76,21 +76,15 @@ Context: ${aiContext}`
       {
         role: "user" as const,
         content: customInstructions && customInstructions.trim()
-          ? `Follow the custom instructions exactly: "${customInstructions}"
+          ? `Follow these EXACT custom instructions: "${customInstructions}"
 
-Use this payment context:
+Payment context to incorporate:
 - Parent: ${context?.parentName || 'Parent'}
 - Amount: $${context?.amount || 'Amount'}
 - Due Date: ${context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : 'Due Date'}
 - Status: ${context?.status || 'Status'}
 
-Generate the message following the custom instructions exactly. Provide in JSON format:
-{
-  "subject": "Subject line here",
-  "body": "Message body here following the custom instructions exactly",
-  "reasoning": "Brief explanation of how you followed the custom instructions",
-  "suggestions": ["Alternative subject 1", "Alternative subject 2"]
-}`
+Write a message that follows the custom instructions EXACTLY while mentioning the payment details. Do NOT make it professional or polite if the custom instructions say otherwise.`
           : `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
 - Tone: ${context?.tone ?? 'friendly'}
 - Urgency: ${context?.urgencyLevel ?? 3}/5
@@ -142,22 +136,9 @@ Please provide both subject line and message body in JSON format:
       throw new Error('No message generated from OpenAI')
     }
 
-    // Parse JSON response if it's in JSON format
-    let messageBody = generatedMessage
-    let messageSubject = 'Payment Reminder'
-
-    try {
-      const jsonResponse = JSON.parse(generatedMessage)
-      if (jsonResponse.body) {
-        messageBody = jsonResponse.body
-      }
-      if (jsonResponse.subject) {
-        messageSubject = jsonResponse.subject
-      }
-    } catch (e) {
-      // If not JSON, use the raw message
-      console.log('🔥 Not JSON format, using raw message')
-    }
+    // Use the raw message directly
+    const messageBody = generatedMessage
+    const messageSubject = 'Payment Reminder'
 
     return NextResponse.json({
       success: true,
