@@ -110,6 +110,29 @@ Create a complete, professional message that incorporates the requested tone and
     console.log('🔥 USER PROMPT:', userPrompt)
     console.log('🔥 MESSAGES ARRAY:', JSON.stringify(messages, null, 2))
 
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+      console.error('🔥 OPENAI_API_KEY not configured properly')
+
+      // Fallback: Generate a simple message without AI
+      const fallbackMessage = customInstructions && customInstructions.trim()
+        ? `${customInstructions.trim()} Kevin, your payment of $${context.amount || paymentData?.amount || 'N/A'} is due on ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}.`
+        : `Dear ${parentData?.name || 'Parent'}, this is a friendly reminder that your payment of $${context.amount || paymentData?.amount || 'N/A'} is due on ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}. Thank you for your prompt attention to this matter.`
+
+      return NextResponse.json({
+        success: true,
+        message: fallbackMessage,
+        subject: 'Payment Reminder',
+        context: {
+          parentName: parentData?.name,
+          messageType: context.messageType,
+          tone: customInstructions ? 'custom' : 'professional',
+          personalized: includePersonalization,
+          fallback: true
+        }
+      })
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
