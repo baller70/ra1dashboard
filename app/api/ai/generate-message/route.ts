@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     const context: any = rawContext ?? {}; // Ensure we always have an object
 
     // Simple fallback - don't try to fetch data from Convex for now
+    // Note: parentName should now be the emergency contact first name passed from frontend
     const parentName = context?.parentName || 'Parent'
     const baseAmount = context?.amount || '150'
     const dueDate = context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'

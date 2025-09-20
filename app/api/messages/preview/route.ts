@@ -37,8 +37,17 @@ export async function POST(request: Request) {
     let processedBody = messageBody || ''
 
     if (parent) {
+      // Use emergency contact first name if available, otherwise use parent name first name
+      const getEmergencyContactFirstName = (parent: any): string => {
+        if (parent?.emergencyContact) {
+          const firstName = parent.emergencyContact.split(' ')[0]
+          return firstName || parent.emergencyContact
+        }
+        return parent?.name?.split(' ')[0] || 'Parent'
+      }
+
       const templateVariables = {
-        parentName: parent.name,
+        parentName: getEmergencyContactFirstName(parent),
         parentEmail: parent.email,
         programName: 'Rise as One Yearly Program',
         ...variables

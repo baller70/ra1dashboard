@@ -92,7 +92,7 @@ export function ReminderReviewDialog({
           {/* Payment Details */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-medium">Parent:</span>
+              <span className="font-medium">Recipient:</span>
               <span>{paymentData.parentName}</span>
             </div>
             <div className="flex items-center justify-between">

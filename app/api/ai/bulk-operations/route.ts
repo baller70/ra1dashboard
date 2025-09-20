@@ -195,6 +195,7 @@ async function generateAIMessage(context: any, messageType: string, tone: string
 
   // For now, return a simple personalized message
   // TODO: Integrate with OpenAI AI library for better personalization
+  // Note: parentName should be the emergency contact first name
   return `Dear ${parentName}, this is a ${messageType} message regarding your participation in the Rise as One Yearly Program. Thank you for your continued support.`
 }
 

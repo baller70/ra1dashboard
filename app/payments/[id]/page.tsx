@@ -590,7 +590,7 @@ export default function PaymentDetailPage() {
           body: message,
           channel: method,
           variables: {
-            parentName: payment.parent.name,
+            parentName: getEmergencyContactFirstName(payment.parent), // Use emergency contact first name
             amount: payment.amount,
             dueDate: new Date(payment.dueDate).toLocaleDateString(),
             paymentId: payment.id
@@ -631,8 +631,9 @@ export default function PaymentDetailPage() {
       ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
       : 0
 
-    // Generate a professional reminder message
-    const defaultMessage = `Dear ${payment.parent.name},
+    // Generate a professional reminder message using emergency contact first name
+    const recipientName = getEmergencyContactFirstName(payment.parent)
+    const defaultMessage = `Dear ${recipientName},
 
 I hope this message finds you well. I wanted to reach out regarding your payment of $${payment.amount} that was due on ${new Date(payment.dueDate).toLocaleDateString()}.
 
@@ -704,6 +705,17 @@ The Basketball Factory Inc.`
     }
   }
 
+  // Helper function to get emergency contact first name
+  const getEmergencyContactFirstName = (parent: any): string => {
+    if (parent?.emergencyContact) {
+      // Extract first name from emergency contact (e.g., "Kevin Houston" -> "Kevin")
+      const firstName = parent.emergencyContact.split(' ')[0]
+      return firstName || parent.emergencyContact
+    }
+    // Fallback to parent name if no emergency contact
+    return parent?.name?.split(' ')[0] || 'Parent'
+  }
+
   // AI Generate Reminder function - PROPER AI INTEGRATION
   const handleAiGenerateReminder = async () => {
     if (!payment || !payment.parent) return
@@ -711,11 +723,14 @@ The Basketball Factory Inc.`
     try {
       setGeneratingAiReminder(true)
 
+      // Use emergency contact first name as recipient
+      const recipientName = getEmergencyContactFirstName(payment.parent)
+
       const requestBody = {
         context: {
           parentId: payment.parent._id || payment.parent.id,
           paymentId: payment._id || payment.id,
-          parentName: payment.parent.name,
+          parentName: recipientName, // Use emergency contact first name
           parentEmail: payment.parent.email,
           amount: payment.amount,
           dueDate: payment.dueDate,
@@ -1967,7 +1982,7 @@ The Basketball Factory Inc.`
           }
         }}
         paymentData={{
-          parentName: payment.parent?.name || '',
+          parentName: getEmergencyContactFirstName(payment.parent), // Use emergency contact first name
           parentEmail: payment.parent?.email || '',
           amount: customAmountFromAI || payment.amount, // Use custom amount if available
           dueDate: new Date(payment.dueDate).getTime(),

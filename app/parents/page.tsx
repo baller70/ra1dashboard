@@ -1063,11 +1063,21 @@ export default function ParentsPage() {
                         variant: 'destructive',
                       })
                     } else {
+                      // Helper function to get emergency contact first name
+                      const getEmergencyContactFirstName = (parent: any): string => {
+                        if (parent?.emergencyContact) {
+                          const firstName = parent.emergencyContact.split(' ')[0]
+                          return firstName || parent.emergencyContact
+                        }
+                        return parent?.name?.split(' ')[0] || 'Parent'
+                      }
+
                       // Use individual parent smart messages for selected parents
                       selectedParents.forEach(parentId => {
                         const parent = parents.find(p => p._id === parentId)
                         if (parent) {
-                          handleSingleParentSmartMessages(parentId, parent.name)
+                          const recipientName = getEmergencyContactFirstName(parent)
+                          handleSingleParentSmartMessages(parentId, recipientName)
                         }
                       })
                     }

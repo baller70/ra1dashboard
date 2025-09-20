@@ -222,6 +222,7 @@ export async function sendBulkTemplatedEmails({
 }
 
 // Payment reminder email
+// Note: parentName should be the emergency contact first name
 export async function sendPaymentReminderEmail({
   parentEmail,
   parentName,
@@ -231,7 +232,7 @@ export async function sendPaymentReminderEmail({
   daysPastDue = 0,
 }: {
   parentEmail: string;
-  parentName: string;
+  parentName: string; // This should be the emergency contact first name
   amount: number;
   dueDate: Date;
   paymentPlanName?: string;
@@ -362,12 +363,13 @@ export async function sendPaymentReminderEmail({
 }
 
 // Welcome email for new parents
+// Note: parentName should be the emergency contact first name
 export async function sendWelcomeEmail({
   parentEmail,
   parentName,
 }: {
   parentEmail: string;
-  parentName: string;
+  parentName: string; // This should be the emergency contact first name
 }) {
   const subject = 'Welcome to Rise as One Basketball Program!';
 

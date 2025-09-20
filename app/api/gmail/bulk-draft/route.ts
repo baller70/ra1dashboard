@@ -40,9 +40,20 @@ export async function POST(request: Request) {
       let personalizedBody = messageBody
 
       if (customizePerParent) {
+        // Use emergency contact first name if available, otherwise use parent name first name
+        const getEmergencyContactFirstName = (parent: any): string => {
+          if (parent?.emergencyContact) {
+            const firstName = parent.emergencyContact.split(' ')[0]
+            return firstName || parent.emergencyContact
+          }
+          return parent?.name?.split(' ')[0] || 'Parent'
+        }
+
+        const recipientName = getEmergencyContactFirstName(parent)
+
         // Replace common variables
-        personalizedSubject = personalizedSubject.replace(/\{parentName\}/g, parent.name || 'Parent')
-        personalizedBody = personalizedBody.replace(/\{parentName\}/g, parent.name || 'Parent')
+        personalizedSubject = personalizedSubject.replace(/\{parentName\}/g, recipientName)
+        personalizedBody = personalizedBody.replace(/\{parentName\}/g, recipientName)
         personalizedBody = personalizedBody.replace(/\{parentEmail\}/g, parent.email)
       }
 
