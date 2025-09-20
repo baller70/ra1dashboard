@@ -18,7 +18,11 @@ export async function POST(request: Request) {
     
 
     const body: AIMessageRequest = await request.json();
+    console.log('🔥 FULL REQUEST BODY:', JSON.stringify(body, null, 2))
     const { context: rawContext, customInstructions, includePersonalization, templateId } = body;
+    console.log('🔥 EXTRACTED customInstructions:', customInstructions)
+    console.log('🔥 customInstructions type:', typeof customInstructions)
+    console.log('🔥 customInstructions length:', customInstructions?.length)
     const context: any = rawContext ?? {}; // Ensure we always have an object
 
     // Fetch parent data if provided
