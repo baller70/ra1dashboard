@@ -304,6 +304,28 @@ export default function PaymentDetailPage() {
   // AI Reminder Prompt state
   const [aiReminderPrompt, setAiReminderPrompt] = useState<string>('')
   const [generatingAiReminder, setGeneratingAiReminder] = useState(false)
+  const [customAmountFromAI, setCustomAmountFromAI] = useState<number | null>(null)
+
+  // Helper function to extract amount from AI prompt
+  const extractAmountFromPrompt = (prompt: string): number | null => {
+    if (!prompt) return null
+
+    // Look for patterns like: $200, 200 dollars, 200$, $200.00, etc.
+    const patterns = [
+      /\$(\d+(?:\.\d{2})?)/,  // $200 or $200.00
+      /(\d+(?:\.\d{2})?)\s*dollars?/i,  // 200 dollars
+      /(\d+(?:\.\d{2})?)\$/,  // 200$
+    ]
+
+    for (const pattern of patterns) {
+      const match = prompt.match(pattern)
+      if (match) {
+        return parseFloat(match[1])
+      }
+    }
+
+    return null
+  }
 
   // Payment scheduling state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("")
@@ -394,13 +416,13 @@ export default function PaymentDetailPage() {
     setIndividualCheckNumbers(newCheckNumbers)
   }, [checkInstallments])
 
-  // Auto-refresh data every 30 seconds if there are pending payments
+  // Auto-refresh data every 5 minutes if there are pending payments (reduced frequency)
   useEffect(() => {
     if (payment?.status === 'pending' || payment?.status === 'overdue') {
       const interval = setInterval(() => {
         fetchPaymentDetails()
         fetchPaymentProgress()
-      }, 30000) // 30 seconds
+      }, 300000) // 5 minutes instead of 30 seconds
 
       return () => clearInterval(interval)
     }
@@ -724,6 +746,12 @@ The Basketball Factory Inc.`
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to generate message')
+      }
+
+      // Extract custom amount from AI prompt if present
+      const extractedAmount = extractAmountFromPrompt(aiReminderPrompt.trim())
+      if (extractedAmount) {
+        setCustomAmountFromAI(extractedAmount)
       }
 
       // Set the generated reminder and open the review dialog
@@ -1931,11 +1959,17 @@ The Basketball Factory Inc.`
 
       <ReminderReviewDialog
         open={reminderReviewOpen}
-        onOpenChange={setReminderReviewOpen}
+        onOpenChange={(open) => {
+          setReminderReviewOpen(open)
+          if (!open) {
+            // Reset custom amount when dialog closes
+            setCustomAmountFromAI(null)
+          }
+        }}
         paymentData={{
           parentName: payment.parent?.name || '',
           parentEmail: payment.parent?.email || '',
-          amount: payment.amount,
+          amount: customAmountFromAI || payment.amount, // Use custom amount if available
           dueDate: new Date(payment.dueDate).getTime(),
           status: payment.status
         }}

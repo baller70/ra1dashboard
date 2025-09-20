@@ -224,9 +224,9 @@ export default function PaymentsPage() {
     fetchData(true)
   }
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 5 minutes (reduced frequency)
   useEffect(() => {
-    const interval = setInterval(() => fetchData(), 30 * 1000)
+    const interval = setInterval(() => fetchData(), 300 * 1000) // 5 minutes instead of 30 seconds
     return () => clearInterval(interval)
   }, [fetchData])
 
@@ -268,15 +268,23 @@ export default function PaymentsPage() {
     }
   }, [fetchData])
 
-  // Listen for page focus to refresh data when returning from other pages
+  // Listen for page focus to refresh data when returning from other pages (with debounce)
   useEffect(() => {
+    let focusTimeout: NodeJS.Timeout
     const handlePageFocus = () => {
-      console.log('Page focused, refreshing payment data...')
-      fetchData()
+      // Debounce focus events to prevent excessive refreshing
+      clearTimeout(focusTimeout)
+      focusTimeout = setTimeout(() => {
+        console.log('Page focused, refreshing payment data...')
+        fetchData()
+      }, 2000) // Wait 2 seconds before refreshing
     }
-    
+
     window.addEventListener('focus', handlePageFocus)
-    return () => window.removeEventListener('focus', handlePageFocus)
+    return () => {
+      window.removeEventListener('focus', handlePageFocus)
+      clearTimeout(focusTimeout)
+    }
   }, [fetchData])
 
   // Fetch data using API routes instead of direct Convex queries
