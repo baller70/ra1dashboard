@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 // Clerk auth
 import { AIMessageRequest } from '../../../../lib/types'
-import { generateMessage } from '../../../../lib/ai'
+
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
 import OpenAI from 'openai'
@@ -207,56 +207,4 @@ Create a complete, professional message that incorporates the requested tone and
   }
 }
 
-function buildAIContext(parentData: any, paymentData: any, contractData: any, context: any): string {
-  let contextParts = []
 
-  if (parentData) {
-    contextParts.push(`Parent: ${parentData.name} (${parentData.email})`)
-    
-    if (parentData.payments?.length > 0) {
-      const latestPayment = parentData.payments[0]
-      contextParts.push(`Latest payment: $${latestPayment.amount} due ${latestPayment.dueDate.toDateString()} (Status: ${latestPayment.status})`)
-      
-      const overduePayments = parentData.payments.filter((p: any) => p.status === 'overdue')
-      if (overduePayments.length > 0) {
-        contextParts.push(`Overdue payments: ${overduePayments.length}`)
-      }
-    }
-
-    if (parentData.contracts?.length > 0) {
-      const latestContract = parentData.contracts[0]
-      contextParts.push(`Contract status: ${latestContract.status}`)
-      if (latestContract.expiresAt) {
-        contextParts.push(`Contract expires: ${latestContract.expiresAt.toDateString()}`)
-      }
-    }
-
-    if (parentData.paymentPlans?.length > 0) {
-      const activePlan = parentData.paymentPlans[0]
-      contextParts.push(`Payment plan: ${activePlan.type} ($${activePlan.installmentAmount} x ${activePlan.installments})`)
-    }
-
-    const recentMessages = parentData.messageLogs?.length || 0
-    contextParts.push(`Recent communications: ${recentMessages} messages`)
-  }
-
-  if (paymentData) {
-    contextParts.push(`Payment amount: $${paymentData.amount}`)
-    contextParts.push(`Due date: ${paymentData.dueDate.toDateString()}`)
-    contextParts.push(`Payment status: ${paymentData.status}`)
-    if (paymentData.remindersSent > 0) {
-      contextParts.push(`Reminders sent: ${paymentData.remindersSent}`)
-    }
-  }
-
-  if (contractData) {
-    contextParts.push(`Contract: ${contractData.originalName}`)
-    contextParts.push(`Contract status: ${contractData.status}`)
-    if (contractData.expiresAt) {
-      const daysUntilExpiry = Math.ceil((new Date(contractData.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-      contextParts.push(`Days until expiry: ${daysUntilExpiry}`)
-    }
-  }
-
-  return contextParts.join('\n')
-}
