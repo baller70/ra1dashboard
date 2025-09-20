@@ -682,35 +682,55 @@ The Basketball Factory Inc.`
     }
   }
 
-  // AI Generate Reminder function - SIMPLE FRONTEND-ONLY VERSION
+  // AI Generate Reminder function - PROPER AI INTEGRATION
   const handleAiGenerateReminder = async () => {
     if (!payment || !payment.parent) return
 
     try {
       setGeneratingAiReminder(true)
 
-      // SIMPLE: Just use the custom prompt directly if provided
-      let finalMessage = ''
-
-      if (aiReminderPrompt.trim()) {
-        // Use custom prompt exactly as entered
-        finalMessage = aiReminderPrompt.trim()
-      } else {
-        // Default message
-        finalMessage = `Dear ${payment.parent.name}, this is a friendly reminder that your payment of $${payment.amount} is due on ${new Date(payment.dueDate).toLocaleDateString()}. Thank you!`
+      const requestBody = {
+        context: {
+          parentId: payment.parent._id || payment.parent.id,
+          paymentId: payment._id || payment.id,
+          parentName: payment.parent.name,
+          parentEmail: payment.parent.email,
+          amount: payment.amount,
+          dueDate: payment.dueDate,
+          status: payment.status,
+          messageType: 'reminder'
+        },
+        customInstructions: aiReminderPrompt.trim() || null,
+        includePersonalization: true,
       }
 
-      console.log('🔥 FRONTEND: Using custom prompt:', aiReminderPrompt)
-      console.log('🔥 FRONTEND: Final message:', finalMessage)
+      console.log('🔥 FRONTEND: Sending custom instructions:', aiReminderPrompt.trim())
+      console.log('🔥 FRONTEND: Request body:', requestBody)
 
-      // Simulate a brief delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch('/api/ai/generate-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate message: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('🔥 FRONTEND: API response:', data)
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate message')
+      }
 
       // Set the generated reminder and open the review dialog
       setAiGeneratedReminder({
-        subject: 'Payment Reminder',
-        message: finalMessage,
-        tone: 'custom'
+        subject: data.subject || 'Payment Reminder',
+        message: data.message,
+        tone: 'professional'
       })
 
       setReminderReviewOpen(true)

@@ -9,6 +9,11 @@ import { AIMessageRequest } from '../../../../lib/types'
 import { generateMessage } from '../../../../lib/ai'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
+import OpenAI from 'openai'
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -46,32 +51,10 @@ export async function POST(request: Request) {
     // Build context for AI
     const aiContext = buildAIContext(parentData, paymentData, contractData, context)
     
-    // HARDCODED TEST - Always return the custom prompt if it exists
+    // Build AI messages with custom instructions support
     console.log('🔥 API CALLED - customInstructions:', customInstructions)
 
-    if (customInstructions && customInstructions.trim()) {
-      console.log('🔥 CUSTOM INSTRUCTIONS FOUND:', customInstructions)
-
-      return NextResponse.json({
-        success: true,
-        message: `CUSTOM PROMPT WORKING: ${customInstructions.trim()}`,
-        subject: 'Payment Reminder',
-        context: {
-          parentName: parentData?.name,
-          messageType: context.messageType,
-          tone: context.tone,
-          personalized: includePersonalization
-        }
-      })
-    }
-
-    console.log('🔥 NO CUSTOM INSTRUCTIONS - using default')
-
-    // Generate personalized message using AI for non-custom cases
-    const messages = [
-      {
-        role: "system" as const,
-        content: `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
+    let systemPrompt = `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
 
 Guidelines:
 - Use a ${context?.tone ?? 'friendly'} tone
@@ -83,50 +66,54 @@ Guidelines:
 - Include clear next steps or call-to-action when appropriate
 
 Context: ${aiContext}`
+
+    let userPrompt = `Generate a ${context?.messageType ?? 'general'} message for:
+- Parent: ${parentData?.name || 'Parent'}
+- Amount: $${context.amount || paymentData?.amount || 'N/A'}
+- Due Date: ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}
+- Status: ${context.status || paymentData?.status || 'pending'}
+
+Please provide a complete, professional message.`
+
+    // If custom instructions are provided, modify the prompts to use them as guidance
+    if (customInstructions && customInstructions.trim()) {
+      console.log('🔥 CUSTOM INSTRUCTIONS FOUND:', customInstructions)
+
+      systemPrompt = `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate a professional payment reminder message following these specific instructions: "${customInstructions.trim()}".
+
+Make sure the message is still professional and appropriate for business communication, but incorporate the tone, urgency, and style requested in the instructions. The custom instructions should guide the overall approach and tone of the message.`
+
+      userPrompt = `Generate a payment reminder message for:
+- Parent: ${parentData?.name || 'Parent'}
+- Amount: $${context.amount || paymentData?.amount || 'N/A'}
+- Due Date: ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}
+- Status: ${context.status || paymentData?.status || 'pending'}
+
+Follow these custom instructions: "${customInstructions.trim()}"
+
+Create a complete, professional message that incorporates the requested tone and style while maintaining appropriate business communication standards. Do not just copy the instructions - use them as guidance to create a proper payment reminder message.`
+    }
+
+    // Build messages array for OpenAI
+    const messages = [
+      {
+        role: "system" as const,
+        content: systemPrompt
       },
       {
         role: "user" as const,
-        content: `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
-- Tone: ${context?.tone ?? 'friendly'}
-- Urgency: ${context?.urgencyLevel ?? 3}/5
-
-Please provide both subject line and message body in JSON format:
-{
-  "subject": "Subject line here",
-  "body": "Message body here with proper formatting",
-  "reasoning": "Brief explanation of personalization choices",
-  "suggestions": ["Alternative subject 1", "Alternative subject 2"]
-}`
+        content: userPrompt
       }
     ]
 
-    // Map message types to OpenAI AI library format
-    const mapMessageType = (type: string) => {
-      switch (type) {
-        case 'reminder': return 'payment_reminder'
-        case 'overdue': return 'overdue_notice'
-        case 'welcome': return 'welcome'
-        case 'follow_up': return 'general'
-        case 'renewal': return 'general'
-        default: return 'general'
-      }
-    }
-
-    const mapTone = (tone: string) => {
-      switch (tone) {
-        case 'formal': return 'professional'
-        default: return tone as 'professional' | 'friendly' | 'urgent' | 'casual'
-      }
-    }
-
-    // Use the messages array we built above with proper custom instructions handling
-    console.log('🔥 CUSTOM INSTRUCTIONS DEBUG:', customInstructions)
+    console.log('🔥 SYSTEM PROMPT:', systemPrompt)
+    console.log('🔥 USER PROMPT:', userPrompt)
     console.log('🔥 MESSAGES ARRAY:', JSON.stringify(messages, null, 2))
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
-      max_tokens: 500,
+      max_tokens: 400,
       temperature: 0.7,
     })
 
@@ -137,8 +124,8 @@ Please provide both subject line and message body in JSON format:
       throw new Error('No message generated from OpenAI')
     }
 
-    // Use the raw message directly
-    const messageBody = generatedMessage
+    // Use the generated message directly
+    const messageBody = generatedMessage.trim()
     const messageSubject = 'Payment Reminder'
 
     return NextResponse.json({
