@@ -46,17 +46,18 @@ export async function POST(request: Request) {
     // Build context for AI
     const aiContext = buildAIContext(parentData, paymentData, contractData, context)
     
-    // SIMPLE DIRECT APPROACH - If custom instructions exist, use them directly
+    // ULTRA SIMPLE - Just return the custom prompt directly
     if (customInstructions && customInstructions.trim()) {
-      console.log('🔥 USING CUSTOM INSTRUCTIONS:', customInstructions)
+      console.log('🔥 CUSTOM PROMPT RECEIVED:', customInstructions)
 
-      const directMessage = `${customInstructions} Kevin, your payment of $${context?.amount || '150'} is due on ${context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'}.`
+      // Just use the custom prompt as-is
+      const simpleMessage = customInstructions.trim()
 
-      console.log('🔥 DIRECT MESSAGE GENERATED:', directMessage)
+      console.log('🔥 RETURNING SIMPLE MESSAGE:', simpleMessage)
 
       return NextResponse.json({
         success: true,
-        message: directMessage,
+        message: simpleMessage,
         subject: 'Payment Reminder',
         context: {
           parentName: parentData?.name,
