@@ -17,6 +17,27 @@ const openai = new OpenAI({
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
+// Helper function to extract amount from custom instructions
+function extractAmountFromInstructions(instructions: string): string | null {
+  if (!instructions) return null;
+
+  // Look for patterns like: $200, 200 dollars, 200$, $200.00, etc.
+  const patterns = [
+    /\$(\d+(?:\.\d{2})?)/,  // $200 or $200.00
+    /(\d+(?:\.\d{2})?)\s*dollars?/i,  // 200 dollars
+    /(\d+(?:\.\d{2})?)\$/,  // 200$
+  ];
+
+  for (const pattern of patterns) {
+    const match = instructions.match(pattern);
+    if (match) {
+      return match[1]; // Return the captured number
+    }
+  }
+
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     console.log('🔥 API ROUTE CALLED')
@@ -30,10 +51,14 @@ export async function POST(request: Request) {
 
     // Simple fallback - don't try to fetch data from Convex for now
     const parentName = context?.parentName || 'Parent'
-    const amount = context?.amount || '150'
+    const baseAmount = context?.amount || '150'
     const dueDate = context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'
 
-    console.log('🔥 PROCESSING WITH:', { parentName, amount, dueDate, customInstructions })
+    // Extract custom amount from instructions if provided
+    const customAmount = extractAmountFromInstructions(customInstructions || '');
+    const amount = customAmount || baseAmount; // Use custom amount if found, otherwise database amount
+
+    console.log('🔥 PROCESSING WITH:', { parentName, baseAmount, customAmount, finalAmount: amount, dueDate, customInstructions })
 
     // Build AI messages with custom instructions support
     console.log('🔥 API CALLED - customInstructions:', customInstructions)
@@ -103,22 +128,22 @@ Create a complete, professional message that incorporates the requested tone and
 
       if (customInstructions && customInstructions.trim()) {
         const instructions = customInstructions.trim().toLowerCase()
-        // Use the simplified data we already have
-        const amount = context.amount || '150'
-        const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'
+        // Use the custom amount we extracted earlier, or fallback to database amount
+        const fallbackAmount = amount // This already contains the custom amount if found
+        const fallbackDueDate = dueDate
 
         // Analyze custom instructions and create appropriate message
         if (instructions.includes('urgent') || instructions.includes('asap') || instructions.includes('immediately')) {
-          fallbackMessage = `${parentName}, This is an urgent reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Immediate attention to this matter would be greatly appreciated. Thank you.`
+          fallbackMessage = `${parentName}, This is an urgent reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Immediate attention to this matter would be greatly appreciated. Thank you.`
         } else if (instructions.includes('firm') || instructions.includes('direct') || instructions.includes('owe')) {
-          fallbackMessage = `${parentName}, This is an important reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Please process this payment promptly to avoid any delays. Thank you for your attention to this matter.`
+          fallbackMessage = `${parentName}, This is an important reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Please process this payment promptly to avoid any delays. Thank you for your attention to this matter.`
         } else if (instructions.includes('friendly') || instructions.includes('polite') || instructions.includes('gentle')) {
-          fallbackMessage = `Dear ${parentName}, I hope this message finds you well! This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. We appreciate your continued support. Thank you!`
+          fallbackMessage = `Dear ${parentName}, I hope this message finds you well! This is a friendly reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. We appreciate your continued support. Thank you!`
         } else if (instructions.includes('game') || instructions.includes('next game') || instructions.includes('upcoming')) {
-          fallbackMessage = `${parentName}, With our upcoming game approaching, this is a reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Your prompt attention would be appreciated. Thank you!`
+          fallbackMessage = `${parentName}, With our upcoming game approaching, this is a reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Your prompt attention would be appreciated. Thank you!`
         } else {
           // Default professional tone incorporating the custom instructions
-          fallbackMessage = `${parentName}, This is a reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. ${instructions.includes('please') ? 'Please' : 'We would appreciate if you could'} process this payment at your earliest convenience. Thank you for your attention to this matter.`
+          fallbackMessage = `${parentName}, This is a reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. ${instructions.includes('please') ? 'Please' : 'We would appreciate if you could'} process this payment at your earliest convenience. Thank you for your attention to this matter.`
         }
       } else {
         // Standard professional message
@@ -177,7 +202,7 @@ Create a complete, professional message that incorporates the requested tone and
 
       // Fallback to intelligent message generation if OpenAI fails
       const fallbackParentName = parentName
-      const fallbackAmount = amount
+      const fallbackAmount = amount // This already contains the custom amount if found
       const fallbackDueDate = dueDate
 
       const fallbackMessage = customInstructions && customInstructions.trim()
