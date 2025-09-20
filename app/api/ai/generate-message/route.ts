@@ -46,18 +46,15 @@ export async function POST(request: Request) {
     // Build context for AI
     const aiContext = buildAIContext(parentData, paymentData, contractData, context)
     
-    // ULTRA SIMPLE - Just return the custom prompt directly
+    // HARDCODED TEST - Always return the custom prompt if it exists
+    console.log('🔥 API CALLED - customInstructions:', customInstructions)
+
     if (customInstructions && customInstructions.trim()) {
-      console.log('🔥 CUSTOM PROMPT RECEIVED:', customInstructions)
-
-      // Just use the custom prompt as-is
-      const simpleMessage = customInstructions.trim()
-
-      console.log('🔥 RETURNING SIMPLE MESSAGE:', simpleMessage)
+      console.log('🔥 CUSTOM INSTRUCTIONS FOUND:', customInstructions)
 
       return NextResponse.json({
         success: true,
-        message: simpleMessage,
+        message: `CUSTOM PROMPT WORKING: ${customInstructions.trim()}`,
         subject: 'Payment Reminder',
         context: {
           parentName: parentData?.name,
@@ -67,6 +64,8 @@ export async function POST(request: Request) {
         }
       })
     }
+
+    console.log('🔥 NO CUSTOM INSTRUCTIONS - using default')
 
     // Generate personalized message using AI for non-custom cases
     const messages = [
