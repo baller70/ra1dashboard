@@ -166,7 +166,7 @@ Create a complete, professional message that incorporates the requested tone and
         message: messageBody,
         subject: messageSubject,
         context: {
-          parentName: parentData?.name,
+          parentName: parentName,
           messageType: context.messageType,
           tone: context.tone,
           personalized: includePersonalization
@@ -176,20 +176,20 @@ Create a complete, professional message that incorporates the requested tone and
       console.error('🔥 OpenAI API Error:', openaiError)
 
       // Fallback to intelligent message generation if OpenAI fails
-      const parentName = parentData?.name || 'Parent'
-      const amount = context.amount || paymentData?.amount || '150'
-      const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '9/20/2025'
+      const fallbackParentName = parentName
+      const fallbackAmount = amount
+      const fallbackDueDate = dueDate
 
       const fallbackMessage = customInstructions && customInstructions.trim()
-        ? `${parentName}, This is an important reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Please process this payment promptly. Thank you for your attention to this matter.`
-        : `Dear ${parentName}, This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Thank you for your prompt attention to this matter.`
+        ? `${fallbackParentName}, This is an important reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Please process this payment promptly. Thank you for your attention to this matter.`
+        : `Dear ${fallbackParentName}, This is a friendly reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Thank you for your prompt attention to this matter.`
 
       return NextResponse.json({
         success: true,
         message: fallbackMessage,
         subject: 'Payment Reminder',
         context: {
-          parentName: parentData?.name,
+          parentName: fallbackParentName,
           messageType: context.messageType,
           tone: customInstructions ? 'custom' : 'professional',
           personalized: includePersonalization,
