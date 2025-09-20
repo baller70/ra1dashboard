@@ -121,6 +121,9 @@ Please provide both subject line and message body in JSON format:
     }
 
     // Use the messages array we built above with proper custom instructions handling
+    console.log('🔥 CUSTOM INSTRUCTIONS DEBUG:', customInstructions)
+    console.log('🔥 MESSAGES ARRAY:', JSON.stringify(messages, null, 2))
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
@@ -129,6 +132,8 @@ Please provide both subject line and message body in JSON format:
     })
 
     const generatedMessage = completion.choices[0]?.message?.content
+    console.log('🔥 OPENAI RESPONSE:', generatedMessage)
+
     if (!generatedMessage) {
       throw new Error('No message generated from OpenAI')
     }
