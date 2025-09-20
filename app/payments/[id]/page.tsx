@@ -689,25 +689,31 @@ The Basketball Factory Inc.`
     try {
       setGeneratingAiReminder(true)
 
+      const requestBody = {
+        context: {
+          parentId: payment.parent._id || payment.parent.id,
+          paymentId: payment._id || payment.id,
+          parentName: payment.parent.name,
+          parentEmail: payment.parent.email,
+          amount: payment.amount,
+          dueDate: payment.dueDate,
+          status: payment.status,
+          messageType: 'reminder'
+        },
+        customInstructions: aiReminderPrompt.trim() || `Generate a professional payment reminder for ${payment.parent.name} regarding their payment of $${payment.amount} due on ${new Date(payment.dueDate).toLocaleDateString()}. ${payment.status === 'overdue' ? 'This payment is overdue.' : 'This payment is now due.'} Keep it professional but warm.`,
+        includePersonalization: true,
+      }
+
+      console.log('🔥 FRONTEND: aiReminderPrompt =', aiReminderPrompt)
+      console.log('🔥 FRONTEND: aiReminderPrompt.trim() =', aiReminderPrompt.trim())
+      console.log('🔥 FRONTEND: Sending request body =', requestBody)
+
       const response = await fetch('/api/ai/generate-message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          context: {
-            parentId: payment.parent._id || payment.parent.id,
-            paymentId: payment._id || payment.id,
-            parentName: payment.parent.name,
-            parentEmail: payment.parent.email,
-            amount: payment.amount,
-            dueDate: payment.dueDate,
-            status: payment.status,
-            messageType: 'reminder'
-          },
-          customInstructions: aiReminderPrompt.trim() || `Generate a professional payment reminder for ${payment.parent.name} regarding their payment of $${payment.amount} due on ${new Date(payment.dueDate).toLocaleDateString()}. ${payment.status === 'overdue' ? 'This payment is overdue.' : 'This payment is now due.'} Keep it professional but warm.`,
-          includePersonalization: true,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
