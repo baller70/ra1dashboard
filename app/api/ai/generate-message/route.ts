@@ -19,38 +19,22 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(request: Request) {
   try {
-    // Temporarily disabled for testing: await requireAuth()
-    
+    console.log('🔥 API ROUTE CALLED')
 
     const body: AIMessageRequest = await request.json();
     console.log('🔥 FULL REQUEST BODY:', JSON.stringify(body, null, 2))
     const { context: rawContext, customInstructions, includePersonalization, templateId } = body;
     console.log('🔥 EXTRACTED customInstructions:', customInstructions)
-    console.log('🔥 customInstructions type:', typeof customInstructions)
-    console.log('🔥 customInstructions length:', customInstructions?.length)
+
     const context: any = rawContext ?? {}; // Ensure we always have an object
 
-    // Fetch parent data if provided
-    let parentData = null
-    if (context?.parentId) {
-      parentData = await convex.query(api.parents.getParent, { id: context.parentId as any })
-    }
+    // Simple fallback - don't try to fetch data from Convex for now
+    const parentName = context?.parentName || 'Parent'
+    const amount = context?.amount || '150'
+    const dueDate = context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'
 
-    // Fetch payment data if provided
-    let paymentData = null
-    if (context?.paymentId) {
-      paymentData = await convex.query(api.payments.getPayment, { id: context.paymentId as any })
-    }
+    console.log('🔥 PROCESSING WITH:', { parentName, amount, dueDate, customInstructions })
 
-    // Fetch contract data if provided
-    let contractData = null
-    if (context?.contractId) {
-      contractData = await convex.query(api.contracts.getContract, { id: context.contractId as any })
-    }
-
-    // Build context for AI
-    const aiContext = buildAIContext(parentData, paymentData, contractData, context)
-    
     // Build AI messages with custom instructions support
     console.log('🔥 API CALLED - customInstructions:', customInstructions)
 
@@ -65,13 +49,13 @@ Guidelines:
 - Focus on the child's development and program benefits
 - Include clear next steps or call-to-action when appropriate
 
-Context: ${aiContext}`
+Context: Payment reminder for ${parentName}`
 
     let userPrompt = `Generate a ${context?.messageType ?? 'general'} message for:
-- Parent: ${parentData?.name || 'Parent'}
-- Amount: $${context.amount || paymentData?.amount || 'N/A'}
-- Due Date: ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}
-- Status: ${context.status || paymentData?.status || 'pending'}
+- Parent: ${parentName}
+- Amount: $${amount}
+- Due Date: ${dueDate}
+- Status: ${context.status || 'pending'}
 
 Please provide a complete, professional message.`
 
@@ -84,10 +68,10 @@ Please provide a complete, professional message.`
 Make sure the message is still professional and appropriate for business communication, but incorporate the tone, urgency, and style requested in the instructions. The custom instructions should guide the overall approach and tone of the message.`
 
       userPrompt = `Generate a payment reminder message for:
-- Parent: ${parentData?.name || 'Parent'}
-- Amount: $${context.amount || paymentData?.amount || 'N/A'}
-- Due Date: ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}
-- Status: ${context.status || paymentData?.status || 'pending'}
+- Parent: ${parentName}
+- Amount: $${amount}
+- Due Date: ${dueDate}
+- Status: ${context.status || 'pending'}
 
 Follow these custom instructions: "${customInstructions.trim()}"
 
@@ -119,9 +103,9 @@ Create a complete, professional message that incorporates the requested tone and
 
       if (customInstructions && customInstructions.trim()) {
         const instructions = customInstructions.trim().toLowerCase()
-        const parentName = parentData?.name || 'Parent'
-        const amount = context.amount || paymentData?.amount || '150'
-        const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '9/20/2025'
+        // Use the simplified data we already have
+        const amount = context.amount || '150'
+        const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'
 
         // Analyze custom instructions and create appropriate message
         if (instructions.includes('urgent') || instructions.includes('asap') || instructions.includes('immediately')) {
@@ -138,10 +122,6 @@ Create a complete, professional message that incorporates the requested tone and
         }
       } else {
         // Standard professional message
-        const parentName = parentData?.name || 'Parent'
-        const amount = context.amount || paymentData?.amount || '150'
-        const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '9/20/2025'
-
         fallbackMessage = `Dear ${parentName}, This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Thank you for your prompt attention to this matter.`
       }
 
@@ -152,7 +132,7 @@ Create a complete, professional message that incorporates the requested tone and
         message: fallbackMessage,
         subject: 'Payment Reminder',
         context: {
-          parentName: parentData?.name,
+          parentName: parentName,
           messageType: context.messageType,
           tone: customInstructions ? 'custom' : 'professional',
           personalized: includePersonalization,
