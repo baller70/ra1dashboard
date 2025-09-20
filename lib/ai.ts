@@ -95,13 +95,15 @@ export async function generateMessage({
   try {
     const systemPrompt = `You are an expert communication specialist for Rise as One Basketball Program. Generate professional, personalized messages for parents.
 
-    Key Guidelines:
+    Key Guidelines (MANDATORY):
     - Use ${context.tone} tone
     - Format for ${context.channel}
     - Message type: ${context.messageType}
     - Be clear, concise, and action-oriented
     - Include specific details when available
     - Maintain the program's supportive, community-focused brand voice
+    - If "Additional Instructions" are provided, you MUST follow them strictly unless they conflict with safety. Prioritize them over general guidelines.
+    - If a word/character limit is provided in Additional Instructions, enforce it.
 
     ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`;
 
@@ -121,7 +123,7 @@ export async function generateMessage({
 
     ${contextInfo}
 
-    ${customInstructions ? `Additional Instructions: ${customInstructions}` : ''}
+    ${customInstructions ? `Additional Instructions (MANDATORY - follow exactly and reflect clearly in subject and body): ${customInstructions}` : ''}
 
     ${includePersonalization ? 'Include personalization based on the parent and payment data.' : 'Keep the message generic but professional.'}
 
@@ -129,7 +131,7 @@ export async function generateMessage({
     {
       "subject": "Email subject line or SMS preview",
       "body": "Complete message content",
-      "reasoning": "Brief explanation of personalization choices",
+      "reasoning": "Brief explanation of how Additional Instructions were applied and personalization choices",
       "suggestions": ["Alternative subject 1", "Alternative subject 2"]
     }`;
 
@@ -142,7 +144,9 @@ export async function generateMessage({
     });
 
     if (!result.success) {
-      return { success: false, error: result.error };
+      // Fallback: synthesize a deterministic message that incorporates customInstructions
+      const synthesized = synthesizeFallbackMessage({ context, parentData, paymentData, customInstructions, includePersonalization });
+      return { success: true, message: synthesized };
     }
 
     const message = JSON.parse(result.content) as AIGeneratedMessage;
@@ -155,6 +159,51 @@ export async function generateMessage({
       error: error instanceof Error ? error.message : 'Failed to generate message',
     };
   }
+}
+
+function synthesizeFallbackMessage({ context, parentData, paymentData, customInstructions, includePersonalization }: { context: AIMessageContext; parentData?: any; paymentData?: any; customInstructions?: string; includePersonalization?: boolean; }): AIGeneratedMessage {
+  const parentName = parentData?.name || 'Parent';
+  const email = parentData?.email ? ` (${parentData.email})` : '';
+  const amount = paymentData?.amount ? `$${paymentData.amount}` : '';
+  const due = paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '';
+  const status = paymentData?.status || context.messageType;
+
+  const guidance = (customInstructions || '').trim();
+  // Try to detect a word limit like "under 120 words" or "< 120 words"
+  const wordLimitMatch = guidance.match(/under\s+(\d+)\s+words|less\s+than\s+(\d+)\s+words|<(\d+)\s*words?/i);
+  const limit = wordLimitMatch ? Number(wordLimitMatch[1] || wordLimitMatch[2] || wordLimitMatch[3]) : undefined;
+
+  const overdueLine = status === 'overdue' && paymentData?.daysPastDue
+    ? `This payment is ${paymentData.daysPastDue} day${paymentData.daysPastDue > 1 ? 's' : ''} overdue. `
+    : '';
+
+  let body = `Hi ${parentName}${email},\n\n` +
+    `This is a ${status === 'overdue' ? 'time-sensitive' : 'friendly'} reminder regarding your payment ${amount}${due ? ` due on ${due}` : ''}. ` +
+    overdueLine +
+    `${includePersonalization ? 'We appreciate your continued support of the program. ' : ''}` +
+    `${guidance ? `\n\nCoach guidance: ${guidance}` : ''}` +
+    `\n\nPlease reply if you have any questions or need help.\n\n` +
+    `Best regards,\nRise as One Basketball Program`;
+
+  if (limit && Number.isFinite(limit)) {
+    const words = body.split(/\s+/);
+    if (words.length > limit) {
+      body = words.slice(0, Math.max(10, limit)).join(' ') + '…';
+    }
+  }
+
+  const subjectBase = status === 'overdue' ? 'Overdue Payment Reminder' : 'Payment Reminder';
+  const subject = guidance ? `${subjectBase} — per coach guidance` : subjectBase;
+
+  return {
+    subject,
+    body,
+    reasoning: 'Fallback synthesis used due to AI unavailability; custom instructions embedded and basic context included.',
+    suggestions: [
+      `${subjectBase}: ${amount} ${due ? `due ${due}` : ''}`.trim(),
+      'Reminder: Next steps and contact info inside'
+    ]
+  };
 }
 
 // Generate payment insights

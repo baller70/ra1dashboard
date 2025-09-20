@@ -2,13 +2,15 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
+import Stripe from "stripe";
+
 // Utility function to safely get parent data with ID validation
 async function safeGetParent(ctx: any, parentId: any) {
   // Accept Convex string IDs which are typically 32-characters long. Only reject obviously malformed values.
   if (!parentId || typeof parentId !== 'string' || parentId.length < 25) {
     return null;
   }
-  
+
   try {
     return await ctx.db.get(parentId as Id<"parents">);
   } catch (error) {
@@ -91,7 +93,7 @@ export const getPayments = query({
         // Use safeGetParent to handle ID validation
         const parent = await safeGetParent(ctx, payment.parentId);
 
-        // Only try to get payment plan if paymentPlanId is a valid Convex ID  
+        // Only try to get payment plan if paymentPlanId is a valid Convex ID
         let paymentPlan = null;
         try {
           if (payment.paymentPlanId && typeof payment.paymentPlanId === 'string' && payment.paymentPlanId.length >= 25) {
@@ -127,7 +129,7 @@ export const getPayments = query({
       const latestPaymentsMap = new Map();
       filteredPayments.forEach((payment) => {
         const parentId = payment.parentId;
-        if (!latestPaymentsMap.has(parentId) || 
+        if (!latestPaymentsMap.has(parentId) ||
             (payment.dueDate && latestPaymentsMap.get(parentId).dueDate && payment.dueDate > latestPaymentsMap.get(parentId).dueDate)) {
           latestPaymentsMap.set(parentId, payment);
         }
@@ -156,7 +158,7 @@ export const getPayment = query({
   args: { id: v.id("payments") },
   handler: async (ctx, args) => {
     const payment = await ctx.db.get(args.id);
-    
+
     if (!payment) {
       return null;
     }
@@ -335,7 +337,7 @@ export const updatePayment = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    
+
     await ctx.db.patch(id, {
       ...updates,
       updatedAt: Date.now(),
@@ -385,16 +387,16 @@ export const getPaymentHistory = query({
   args: { paymentId: v.id("payments") },
   handler: async (ctx, args) => {
     const payment = await ctx.db.get(args.paymentId);
-    
+
     if (!payment) {
       return { history: [] };
     }
 
     // Get parent information for context
             const parent = await safeGetParent(ctx, payment.parentId);
-    
+
     // Get payment plan information if available
-    const paymentPlan = payment.paymentPlanId ? 
+    const paymentPlan = payment.paymentPlanId ?
       await ctx.db.get(payment.paymentPlanId) : null;
 
     // Get installment information if available
@@ -559,7 +561,7 @@ export const getPaymentHistory = query({
     // Sort history by timestamp (most recent first)
     history.sort((a, b) => b.timestamp - a.timestamp);
 
-    return { 
+    return {
       history,
       summary: {
         totalEvents: history.length,
@@ -669,7 +671,7 @@ export const debugPaymentData = query({
   handler: async (ctx) => {
     const payments = await ctx.db.query("payments").take(3);
     const parents = await ctx.db.query("parents").take(3);
-    
+
     return {
       samplePayments: payments.map(p => ({
         id: p._id,
@@ -694,7 +696,7 @@ export const deletePaymentsWithInvalidParentIds = mutation({
   handler: async (ctx) => {
     const payments = await ctx.db.query("payments").collect();
     const deletedPayments = [];
-    
+
     for (const payment of payments) {
       // Check if parent ID is in old Prisma format (starts with "cmd")
       if (payment.parentId && typeof payment.parentId === 'string' && payment.parentId.startsWith('cmd')) {
@@ -711,7 +713,7 @@ export const deletePaymentsWithInvalidParentIds = mutation({
         }
       }
     }
-    
+
     return {
       deletedCount: deletedPayments.length,
       deletedPayments
@@ -792,7 +794,7 @@ export const updatePaymentPlan = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    
+
     await ctx.db.patch(id, {
       ...updates,
       updatedAt: Date.now(),
@@ -889,7 +891,7 @@ export const debugAllPaymentData = query({
   args: {},
   handler: async (ctx) => {
     const payments = await ctx.db.query("payments").collect();
-    
+
     return {
       totalPayments: payments.length,
       paymentsWithPaidAt: payments.filter(p => p.paidAt !== undefined).length,
@@ -952,41 +954,41 @@ export const cleanupTestPaymentPlans = mutation({
     if (!args.confirm) {
       return { error: "Must confirm cleanup by passing confirm: true" };
     }
-    
+
     console.log("🧹 Cleaning up test payment plans...");
-    
+
     // Real Houston family parent IDs
     const realParentIds = [
       'j97en33trdcm4f7hzvzj5e6vsn7mwxxr', // Kevin Houston
-      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston  
+      'j97f7v56vbr080c66j9zq36m0s7mwzts', // Casey Houston
       'j97c2xwtde8px84t48m8qtw0fn7mzcfb', // Nate Houston
       'j97de6dyw5c8m50je4a31z248x7n2mwp'  // Matt Houston
     ];
-    
+
     const allPaymentPlans = await ctx.db.query("paymentPlans").collect();
     console.log(`📊 Found ${allPaymentPlans.length} total payment plans`);
-    
+
     const realPlans = allPaymentPlans.filter(plan => realParentIds.includes(plan.parentId));
     const testPlans = allPaymentPlans.filter(plan => !realParentIds.includes(plan.parentId));
-    
+
     console.log(`✅ Real payment plans: ${realPlans.length}`);
     console.log(`❌ Test payment plans to delete: ${testPlans.length}`);
-    
+
     let deletedCount = 0;
-    
+
     // Delete test payment plans
     for (const plan of testPlans) {
       await ctx.db.delete(plan._id);
       deletedCount++;
     }
-    
+
     console.log(`🎉 Deleted ${deletedCount} test payment plans`);
     console.log(`✅ Remaining real payment plans: ${realPlans.length}`);
-    
+
     // Calculate correct total potential revenue
     const totalRevenue = realPlans.reduce((sum, plan) => sum + (plan.totalAmount || 0), 0);
     console.log(`💰 Correct Total Potential Revenue: $${totalRevenue}`);
-    
+
     return {
       success: true,
       deletedTestPlans: deletedCount,
@@ -998,22 +1000,24 @@ export const cleanupTestPaymentPlans = mutation({
 });
 
     // Get payments with parent and payment plan info
-    
+
     export const processDuePayments = mutation({
-        args: { stripe: v.any() },
+        args: { stripe: v.optional(v.any()) },
         handler: async (ctx, args) => {
+            const key = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_TEST_KEY || process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY;
+            const stripe = key ? new Stripe(key) : (args as any)?.stripe;
             const now = new Date();
             const duePayments = await ctx.db
                 .query("payments")
                 .filter((q) => q.eq(q.field("status"), "pending"))
                 .filter((q) => q.lte(q.field("dueDate"), now.getTime()))
                 .collect();
-    
+
             for (const payment of duePayments) {
                 const parent = await ctx.db.get(payment.parentId as Id<"parents">);
-                if (parent && parent.stripeCustomerId) {
+                if (parent && parent.stripeCustomerId && stripe) {
                     try {
-                        const paymentIntents = await args.stripe.paymentIntents.create({
+                        const paymentIntents = await stripe.paymentIntents.create({
                             amount: payment.amount * 100,
                             currency: "usd",
                             customer: parent.stripeCustomerId,
@@ -1037,7 +1041,7 @@ export const cleanupTestPaymentPlans = mutation({
             }
         },
     });
-    
+
     export const markPaymentAsPaid = mutation({
         args: { paymentId: v.id("payments") },
         handler: async (ctx, args) => {
@@ -1055,13 +1059,13 @@ export const cleanupTestPaymentPlans = mutation({
                 .query("payments")
                 .filter((q) => q.eq(q.field("status"), "pending"))
                 .collect();
-    
+
             for (const payment of upcomingPayments) {
                 if (payment.dueDate) {
                     const dueDate = new Date(payment.dueDate);
                     const diffTime = dueDate.getTime() - now.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
                     if (diffDays <= 7 && diffDays > 0) {
                         const parent = await ctx.db.get(payment.parentId as Id<"parents">);
                         if (parent) {
@@ -1081,4 +1085,3 @@ export const cleanupTestPaymentPlans = mutation({
             }
         },
     });
-    

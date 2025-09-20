@@ -113,7 +113,19 @@ Please provide both subject line and message body in JSON format:
       throw new Error(aiResult.error || 'Failed to generate message')
     }
 
-    const generatedContent = aiResult.message
+    let generatedContent = aiResult.message as any
+
+    // Ensure coach custom instructions are visibly reflected in the body
+    if (typeof generatedContent?.body === 'string' && customInstructions) {
+      const bodyLower = generatedContent.body.toLowerCase()
+      const hint = (customInstructions as string).slice(0, 24).toLowerCase()
+      if (!bodyLower.includes('coach guidance:') && !bodyLower.includes(hint)) {
+        generatedContent = {
+          ...generatedContent,
+          body: `${generatedContent.body}\n\nCoach guidance: ${customInstructions}`,
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

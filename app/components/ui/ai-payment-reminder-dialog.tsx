@@ -36,13 +36,19 @@ interface AiPaymentReminderDialogProps {
   onOpenChange: (open: boolean) => void
   paymentData: PaymentData
   onSendReminder: (message: string, method: 'email' | 'sms') => Promise<void>
+  customPrompt?: string
+  parentId?: string
+  paymentId?: string
 }
 
 export function AiPaymentReminderDialog({
   open,
   onOpenChange,
   paymentData,
-  onSendReminder
+  onSendReminder,
+  customPrompt,
+  parentId,
+  paymentId,
 }: AiPaymentReminderDialogProps) {
   const [message, setMessage] = useState<string>('')
   const [method, setMethod] = useState<'email' | 'sms'>('email')
@@ -61,6 +67,15 @@ export function AiPaymentReminderDialog({
     }
   }, [open])
 
+  // Reset message on each open so the current customPrompt/context is used
+  useEffect(() => {
+    if (open) {
+      setMessage('')
+      setMessageSource('ai')
+    }
+  }, [open])
+
+
   // Auto-generate AI message when switching to AI mode or dialog opens
   useEffect(() => {
     if (open && messageSource === 'ai' && !message) {
@@ -76,15 +91,15 @@ export function AiPaymentReminderDialog({
         throw new Error('Failed to load templates')
       }
       const templatesData = await response.json()
-      
+
       // Filter for payment reminder templates
-      const paymentTemplates = templatesData.filter((template: Template) => 
-        template.category === 'payment_reminder' || 
+      const paymentTemplates = templatesData.filter((template: Template) =>
+        template.category === 'payment_reminder' ||
         template.category === 'payment' ||
         template.name?.toLowerCase().includes('payment') ||
         template.name?.toLowerCase().includes('reminder')
       )
-      
+
       setTemplates(paymentTemplates)
     } catch (error) {
       console.error('Error loading templates:', error)
@@ -105,7 +120,7 @@ export function AiPaymentReminderDialog({
     try {
       // Replace template variables with payment data
       let templateMessage = template.body || ''
-      
+
       // Replace common variables
       templateMessage = templateMessage
         .replace(/\{parentName\}/g, paymentData.parentName)
@@ -120,7 +135,7 @@ export function AiPaymentReminderDialog({
         .replace(/\{days_past_due\}/g, paymentData.daysPastDue?.toString() || '0')
 
       setMessage(templateMessage)
-      
+
       toast({
         title: 'Template Loaded',
         description: `Loaded "${template.name}" template with payment details.`,
@@ -154,9 +169,14 @@ export function AiPaymentReminderDialog({
             daysPastDue: paymentData.daysPastDue,
             messageType: paymentData.status === 'overdue' ? 'overdue' : 'reminder',
             tone: 'friendly',
-            urgencyLevel: paymentData.status === 'overdue' ? 4 : 3
+            urgencyLevel: paymentData.status === 'overdue' ? 4 : 3,
+            parentId,
+            paymentId,
           },
-          customInstructions: `Generate a ${paymentData.status === 'overdue' ? 'urgent' : 'friendly'} payment reminder for ${paymentData.parentName} regarding installment #${paymentData.installmentNumber} of $${paymentData.amount} due on ${new Date(paymentData.dueDate).toLocaleDateString()}. ${paymentData.status === 'overdue' && paymentData.daysPastDue ? `This payment is ${paymentData.daysPastDue} days overdue.` : ''} Keep it professional but warm.`,
+          customInstructions: [
+            `Generate a ${paymentData.status === 'overdue' ? 'urgent' : 'friendly'} payment reminder for ${paymentData.parentName} regarding installment #${paymentData.installmentNumber} of $${paymentData.amount} due on ${new Date(paymentData.dueDate).toLocaleDateString()}. ${paymentData.status === 'overdue' && paymentData.daysPastDue ? `This payment is ${paymentData.daysPastDue} days overdue.` : ''} Keep it professional but warm.`,
+            (customPrompt || '').trim()
+          ].filter(Boolean).join('\n\nAdditional coach instructions: '),
           includePersonalization: true,
         }),
       })
@@ -166,14 +186,14 @@ export function AiPaymentReminderDialog({
       }
 
       const data = await response.json()
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to generate message')
       }
 
       // Extract the message body from the AI response
       const generatedMessage = data.message?.body || data.message || ''
-      
+
       // Convert HTML to plain text for the textarea
       const plainTextMessage = generatedMessage
         .replace(/<[^>]*>/g, '') // Remove HTML tags
@@ -184,8 +204,17 @@ export function AiPaymentReminderDialog({
         .replace(/\n\s*\n/g, '\n\n') // Clean up extra newlines
         .trim()
 
-      setMessage(typeof plainTextMessage === 'string' ? plainTextMessage : '')
-      
+      let finalMessage = typeof plainTextMessage === 'string' ? plainTextMessage : ''
+      if ((customPrompt || '').trim()) {
+        const hint = (customPrompt as string).slice(0, 24).toLowerCase()
+        const low = finalMessage.toLowerCase()
+        if (!low.includes('coach guidance:') && !low.includes(hint)) {
+          finalMessage = `${finalMessage}\n\nCoach guidance: ${(customPrompt as string).trim()}`
+        }
+      }
+
+      setMessage(finalMessage)
+
       toast({
         title: 'AI Message Generated',
         description: 'Your personalized payment reminder has been generated successfully.',
@@ -202,8 +231,8 @@ export function AiPaymentReminderDialog({
 
 I hope this message finds you well. I wanted to reach out regarding installment #${paymentData.installmentNumber} of $${paymentData.amount} that was due on ${new Date(paymentData.dueDate).toLocaleDateString()}.
 
-${paymentData.status === 'overdue' && paymentData.daysPastDue ? 
-  `This payment is currently ${paymentData.daysPastDue} day${paymentData.daysPastDue > 1 ? 's' : ''} overdue. ` : 
+${paymentData.status === 'overdue' && paymentData.daysPastDue ?
+  `This payment is currently ${paymentData.daysPastDue} day${paymentData.daysPastDue > 1 ? 's' : ''} overdue. ` :
   'This payment is now due. '
 }
 
@@ -231,21 +260,21 @@ The Basketball Factory Inc.`)
     setIsSending(true)
     try {
       await onSendReminder(message, method)
-      
+
       // Show immediate success feedback
       toast({
         title: '✅ Email Sent Successfully!',
         description: `Payment reminder sent via ${method.toUpperCase()} to ${paymentData.parentName}.`,
         duration: 5000,
       })
-      
+
       // Small delay to ensure toast is visible before closing dialog
       setTimeout(() => {
         onOpenChange(false)
         setMessage('')
         setSelectedTemplate('')
       }, 500)
-      
+
     } catch (error) {
       console.error('Error sending reminder:', error)
       // Error is also handled by parent component, but show local error for immediate feedback
@@ -272,7 +301,7 @@ The Basketball Factory Inc.`)
             Payment Reminder - AI & Templates
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Payment Details */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-2">
@@ -382,8 +411,8 @@ The Basketball Factory Inc.`)
                     Loading templates...
                   </div>
                 ) : (
-                  <Select 
-                    value={selectedTemplate} 
+                  <Select
+                    value={selectedTemplate}
                     onValueChange={(value) => {
                       setSelectedTemplate(value)
                       if (value) {
@@ -453,4 +482,4 @@ The Basketball Factory Inc.`)
       </DialogContent>
     </Dialog>
   )
-} 
+}
