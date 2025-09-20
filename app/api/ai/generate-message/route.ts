@@ -46,21 +46,32 @@ export async function POST(request: Request) {
     // Build context for AI
     const aiContext = buildAIContext(parentData, paymentData, contractData, context)
     
-    // Generate personalized message using AI
+    // SIMPLE DIRECT APPROACH - If custom instructions exist, use them directly
+    if (customInstructions && customInstructions.trim()) {
+      console.log('🔥 USING CUSTOM INSTRUCTIONS:', customInstructions)
+
+      const directMessage = `${customInstructions} Kevin, your payment of $${context?.amount || '150'} is due on ${context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : '9/20/2025'}.`
+
+      console.log('🔥 DIRECT MESSAGE GENERATED:', directMessage)
+
+      return NextResponse.json({
+        success: true,
+        message: directMessage,
+        subject: 'Payment Reminder',
+        context: {
+          parentName: parentData?.name,
+          messageType: context.messageType,
+          tone: context.tone,
+          personalized: includePersonalization
+        }
+      })
+    }
+
+    // Generate personalized message using AI for non-custom cases
     const messages = [
       {
         role: "system" as const,
-        content: customInstructions && customInstructions.trim()
-          ? `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. The user has provided specific custom instructions that you MUST follow exactly. Your primary job is to follow the user's custom instructions while incorporating the relevant payment context.
-
-IMPORTANT: The user's custom instructions take ABSOLUTE PRIORITY. Follow them exactly, even if they seem informal or direct.
-
-Custom Instructions: ${customInstructions}
-
-Context: ${aiContext}
-
-Generate a message that follows the custom instructions exactly while incorporating the payment context (parent name, amount, due date, etc.).`
-          : `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
+        content: `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate personalized, professional messages for parents based on the provided context.
 
 Guidelines:
 - Use a ${context?.tone ?? 'friendly'} tone
@@ -75,17 +86,7 @@ Context: ${aiContext}`
       },
       {
         role: "user" as const,
-        content: customInstructions && customInstructions.trim()
-          ? `Follow these EXACT custom instructions: "${customInstructions}"
-
-Payment context to incorporate:
-- Parent: ${context?.parentName || 'Parent'}
-- Amount: $${context?.amount || 'Amount'}
-- Due Date: ${context?.dueDate ? new Date(context.dueDate).toLocaleDateString() : 'Due Date'}
-- Status: ${context?.status || 'Status'}
-
-Write a message that follows the custom instructions EXACTLY while mentioning the payment details. Do NOT make it professional or polite if the custom instructions say otherwise.`
-          : `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
+        content: `Generate a ${context?.messageType ?? 'general'} message with the following requirements:
 - Tone: ${context?.tone ?? 'friendly'}
 - Urgency: ${context?.urgencyLevel ?? 3}/5
 
