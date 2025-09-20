@@ -204,7 +204,16 @@ export function AiPaymentReminderDialog({
         .replace(/\n\s*\n/g, '\n\n') // Clean up extra newlines
         .trim()
 
-      setMessage(typeof plainTextMessage === 'string' ? plainTextMessage : '')
+      let finalMessage = typeof plainTextMessage === 'string' ? plainTextMessage : ''
+      if ((customPrompt || '').trim()) {
+        const hint = (customPrompt as string).slice(0, 24).toLowerCase()
+        const low = finalMessage.toLowerCase()
+        if (!low.includes('coach guidance:') && !low.includes(hint)) {
+          finalMessage = `${finalMessage}\n\nCoach guidance: ${(customPrompt as string).trim()}`
+        }
+      }
+
+      setMessage(finalMessage)
 
       toast({
         title: 'AI Message Generated',
