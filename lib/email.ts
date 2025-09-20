@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { SIGNATURE_BLOCK } from './constants';
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('RESEND_API_KEY is required');
@@ -314,11 +315,8 @@ export async function sendPaymentReminderEmail({
         <p style="font-size: 16px; margin-top: 30px;">
           Thank you for your continued support of the Rise as One Basketball Program!
         </p>
-        
-        <p style="font-size: 16px;">
-          Best regards,<br>
-          <strong>Rise as One Basketball Program Team</strong>
-        </p>
+
+        ${SIGNATURE_BLOCK.HTML}
       </div>
     </div>
   `;
@@ -342,9 +340,7 @@ export async function sendPaymentReminderEmail({
     If you have any questions about this payment or need to discuss payment arrangements, please contact us at ${REPLY_TO_EMAIL}.
     
     Thank you for your continued support of the Rise as One Basketball Program!
-    
-    Best regards,
-    Rise as One Basketball Program Team
+    ${SIGNATURE_BLOCK.PLAIN_TEXT}
   `;
 
   return await sendEmail({
@@ -408,10 +404,7 @@ export async function sendWelcomeEmail({
           We look forward to an amazing season!
         </p>
         
-        <p style="font-size: 16px;">
-          Best regards,<br>
-          <strong>Rise as One Basketball Program Team</strong>
-        </p>
+        ${SIGNATURE_BLOCK.HTML}
       </div>
     </div>
   `;
@@ -433,9 +426,7 @@ export async function sendWelcomeEmail({
     If you have any questions or need assistance, please contact us at ${REPLY_TO_EMAIL}.
     
     We look forward to an amazing season!
-    
-    Best regards,
-    Rise as One Basketball Program Team
+    ${SIGNATURE_BLOCK.PLAIN_TEXT}
   `;
 
   return await sendEmail({
@@ -460,16 +451,18 @@ async function getEmailTemplate(templateId: string) {
         <p>Dear {{parentName}},</p>
         <p>This is a reminder that your payment of {{amount}} is due on {{dueDate}}.</p>
         <p>Thank you!</p>
+        ${SIGNATURE_BLOCK.HTML}
       `,
-      textContent: 'Dear {{parentName}}, This is a reminder that your payment of {{amount}} is due on {{dueDate}}. Thank you!',
+      textContent: `Dear {{parentName}}, This is a reminder that your payment of {{amount}} is due on {{dueDate}}. Thank you!${SIGNATURE_BLOCK.PLAIN_TEXT}`,
     },
     'welcome': {
       subject: 'Welcome to {{programName}}!',
       content: `
         <p>Dear {{parentName}},</p>
         <p>Welcome to {{programName}}! We're excited to have you join us.</p>
-        <p>Best regards!</p>
+        ${SIGNATURE_BLOCK.HTML}
       `,
+      textContent: `Dear {{parentName}}, Welcome to {{programName}}! We're excited to have you join us.${SIGNATURE_BLOCK.PLAIN_TEXT}`,
     },
   };
 

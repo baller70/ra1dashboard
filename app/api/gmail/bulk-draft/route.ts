@@ -6,6 +6,7 @@ import { requireAuth } from '../../../../lib/api-utils'
 import { gmailService } from '../../../../lib/gmail'
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+import { appendSignature } from '../../../../lib/constants'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
         personalizedSubject = personalizedSubject.replace(/\{parentName\}/g, recipientName)
         personalizedBody = personalizedBody.replace(/\{parentName\}/g, recipientName)
         personalizedBody = personalizedBody.replace(/\{parentEmail\}/g, parent.email)
+
+        // Add signature to personalized body
+        personalizedBody = appendSignature(personalizedBody, 'plain')
+      } else {
+        // Add signature to non-personalized body
+        personalizedBody = appendSignature(personalizedBody, 'plain')
       }
 
       try {

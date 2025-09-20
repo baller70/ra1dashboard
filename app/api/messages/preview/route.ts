@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api'
+import { appendSignature } from '../../../../lib/constants'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       subject: processedSubject,
-      body: processedBody,
+      body: appendSignature(processedBody, 'plain'),
       recipientCount: recipients?.length || 0,
       estimatedDelivery: new Date()
     })

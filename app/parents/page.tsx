@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge'
 import { useToast } from '../../components/ui/use-toast'
 import { Toaster } from '../../components/ui/toaster'
+import { appendSignature } from '../../lib/constants'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog'
 import { Textarea } from '../../components/ui/textarea'
 import {

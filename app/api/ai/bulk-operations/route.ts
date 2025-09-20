@@ -7,6 +7,7 @@ import { requireAuth } from '../../../../lib/api-utils'
 import { generateBulkOperationPlan } from '../../../../lib/ai'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
+import { appendSignature } from '../../../../lib/constants'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -196,7 +197,8 @@ async function generateAIMessage(context: any, messageType: string, tone: string
   // For now, return a simple personalized message
   // TODO: Integrate with OpenAI AI library for better personalization
   // Note: parentName should be the emergency contact first name
-  return `Dear ${parentName}, this is a ${messageType} message regarding your participation in the Rise as One Yearly Program. Thank you for your continued support.`
+  const baseMessage = `Dear ${parentName}, this is a ${messageType} message regarding your participation in the Rise as One Yearly Program. Thank you for your continued support.`
+  return appendSignature(baseMessage, 'plain')
 }
 
 function calculatePersonalizationLevel(context: any): number {

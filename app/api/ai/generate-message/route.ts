@@ -10,6 +10,7 @@ import { AIMessageRequest } from '../../../../lib/types'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../../../../convex/_generated/api'
 import OpenAI from 'openai'
+import { appendSignature } from '../../../../lib/constants'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -157,7 +158,7 @@ IMPORTANT: Prioritize the information in the custom instructions over the fallba
 
       return NextResponse.json({
         success: true,
-        message: fallbackMessage,
+        message: appendSignature(fallbackMessage, 'plain'),
         subject: 'Payment Reminder',
         context: {
           parentName: parentName,
@@ -191,7 +192,7 @@ IMPORTANT: Prioritize the information in the custom instructions over the fallba
 
       return NextResponse.json({
         success: true,
-        message: messageBody,
+        message: appendSignature(messageBody, 'plain'),
         subject: messageSubject,
         context: {
           parentName: parentName,
@@ -214,7 +215,7 @@ IMPORTANT: Prioritize the information in the custom instructions over the fallba
 
       return NextResponse.json({
         success: true,
-        message: fallbackMessage,
+        message: appendSignature(fallbackMessage, 'plain'),
         subject: 'Payment Reminder',
         context: {
           parentName: fallbackParentName,
