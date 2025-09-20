@@ -1,5 +1,6 @@
 
 export const dynamic = "force-dynamic";
+// Force fresh deployment - AI Reminder Prompt fix v2
 
 import { NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/api-utils'
