@@ -84,23 +84,25 @@ Context: Payment reminder for ${parentName}`
 
 Please provide a complete, professional message.`
 
-    // If custom instructions are provided, modify the prompts to use them as guidance
+    // If custom instructions are provided, use them as the primary source of information
     if (customInstructions && customInstructions.trim()) {
       console.log('🔥 CUSTOM INSTRUCTIONS FOUND:', customInstructions)
 
-      systemPrompt = `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. Generate a professional payment reminder message following these specific instructions: "${customInstructions.trim()}".
+      systemPrompt = `You are an intelligent assistant for the "Rise as One Yearly Program" parent communication system. The user has provided specific custom instructions for this payment reminder message. Use these custom instructions as your PRIMARY source of information and guidance.
 
-Make sure the message is still professional and appropriate for business communication, but incorporate the tone, urgency, and style requested in the instructions. The custom instructions should guide the overall approach and tone of the message.`
+Custom Instructions: "${customInstructions.trim()}"
 
-      userPrompt = `Generate a payment reminder message for:
+Generate a professional payment reminder message that follows these custom instructions exactly. If the custom instructions mention specific amounts, dates, or other details, use those instead of any fallback information. The custom instructions should be treated as the authoritative source.`
+
+      userPrompt = `Generate a payment reminder message based on these custom instructions: "${customInstructions.trim()}"
+
+Additional context (use only if not specified in custom instructions):
 - Parent: ${parentName}
-- Amount: $${amount}
-- Due Date: ${dueDate}
+- Fallback Amount: $${amount}
+- Fallback Due Date: ${dueDate}
 - Status: ${context.status || 'pending'}
 
-Follow these custom instructions: "${customInstructions.trim()}"
-
-Create a complete, professional message that incorporates the requested tone and style while maintaining appropriate business communication standards. Do not just copy the instructions - use them as guidance to create a proper payment reminder message.`
+IMPORTANT: Prioritize the information in the custom instructions over the fallback context. If the custom instructions specify amounts, dates, or other details, use those instead. Create a complete, professional message that follows the custom instructions while maintaining appropriate business communication standards.`
     }
 
     // Build messages array for OpenAI
