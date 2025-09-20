@@ -138,9 +138,27 @@ Please provide both subject line and message body in JSON format:
       throw new Error('No message generated from OpenAI')
     }
 
+    // Parse JSON response if it's in JSON format
+    let messageBody = generatedMessage
+    let messageSubject = 'Payment Reminder'
+
+    try {
+      const jsonResponse = JSON.parse(generatedMessage)
+      if (jsonResponse.body) {
+        messageBody = jsonResponse.body
+      }
+      if (jsonResponse.subject) {
+        messageSubject = jsonResponse.subject
+      }
+    } catch (e) {
+      // If not JSON, use the raw message
+      console.log('🔥 Not JSON format, using raw message')
+    }
+
     return NextResponse.json({
       success: true,
-      message: generatedMessage,
+      message: messageBody,
+      subject: messageSubject,
       context: {
         parentName: parentData?.name,
         messageType: context.messageType,
