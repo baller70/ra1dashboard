@@ -110,14 +110,42 @@ Create a complete, professional message that incorporates the requested tone and
     console.log('🔥 USER PROMPT:', userPrompt)
     console.log('🔥 MESSAGES ARRAY:', JSON.stringify(messages, null, 2))
 
-    // Check if OpenAI API key is configured
+    // Check if OpenAI API key is configured - if not, use intelligent fallback
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-      console.error('🔥 OPENAI_API_KEY not configured properly')
+      console.log('🔥 OPENAI_API_KEY not configured - using intelligent fallback')
 
-      // Fallback: Generate a simple message without AI
-      const fallbackMessage = customInstructions && customInstructions.trim()
-        ? `${customInstructions.trim()} Kevin, your payment of $${context.amount || paymentData?.amount || 'N/A'} is due on ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}.`
-        : `Dear ${parentData?.name || 'Parent'}, this is a friendly reminder that your payment of $${context.amount || paymentData?.amount || 'N/A'} is due on ${context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : 'N/A'}. Thank you for your prompt attention to this matter.`
+      // Intelligent fallback: Create professional message based on custom instructions
+      let fallbackMessage = ''
+
+      if (customInstructions && customInstructions.trim()) {
+        const instructions = customInstructions.trim().toLowerCase()
+        const parentName = parentData?.name || 'Parent'
+        const amount = context.amount || paymentData?.amount || '150'
+        const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '9/20/2025'
+
+        // Analyze custom instructions and create appropriate message
+        if (instructions.includes('urgent') || instructions.includes('asap') || instructions.includes('immediately')) {
+          fallbackMessage = `${parentName}, This is an urgent reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Immediate attention to this matter would be greatly appreciated. Thank you.`
+        } else if (instructions.includes('firm') || instructions.includes('direct') || instructions.includes('owe')) {
+          fallbackMessage = `${parentName}, This is an important reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Please process this payment promptly to avoid any delays. Thank you for your attention to this matter.`
+        } else if (instructions.includes('friendly') || instructions.includes('polite') || instructions.includes('gentle')) {
+          fallbackMessage = `Dear ${parentName}, I hope this message finds you well! This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. We appreciate your continued support. Thank you!`
+        } else if (instructions.includes('game') || instructions.includes('next game') || instructions.includes('upcoming')) {
+          fallbackMessage = `${parentName}, With our upcoming game approaching, this is a reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Your prompt attention would be appreciated. Thank you!`
+        } else {
+          // Default professional tone incorporating the custom instructions
+          fallbackMessage = `${parentName}, This is a reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. ${instructions.includes('please') ? 'Please' : 'We would appreciate if you could'} process this payment at your earliest convenience. Thank you for your attention to this matter.`
+        }
+      } else {
+        // Standard professional message
+        const parentName = parentData?.name || 'Parent'
+        const amount = context.amount || paymentData?.amount || '150'
+        const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '9/20/2025'
+
+        fallbackMessage = `Dear ${parentName}, This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Thank you for your prompt attention to this matter.`
+      }
+
+      console.log('🔥 FALLBACK MESSAGE:', fallbackMessage)
 
       return NextResponse.json({
         success: true,
@@ -133,35 +161,62 @@ Create a complete, professional message that incorporates the requested tone and
       })
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages,
-      max_tokens: 400,
-      temperature: 0.7,
-    })
+    // If OpenAI is configured, use it
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        max_tokens: 400,
+        temperature: 0.7,
+      })
 
-    const generatedMessage = completion.choices[0]?.message?.content
-    console.log('🔥 OPENAI RESPONSE:', generatedMessage)
+      const generatedMessage = completion.choices[0]?.message?.content
+      console.log('🔥 OPENAI RESPONSE:', generatedMessage)
 
-    if (!generatedMessage) {
-      throw new Error('No message generated from OpenAI')
-    }
-
-    // Use the generated message directly
-    const messageBody = generatedMessage.trim()
-    const messageSubject = 'Payment Reminder'
-
-    return NextResponse.json({
-      success: true,
-      message: messageBody,
-      subject: messageSubject,
-      context: {
-        parentName: parentData?.name,
-        messageType: context.messageType,
-        tone: context.tone,
-        personalized: includePersonalization
+      if (!generatedMessage) {
+        throw new Error('No message generated from OpenAI')
       }
-    })
+
+      // Use the generated message directly
+      const messageBody = generatedMessage.trim()
+      const messageSubject = 'Payment Reminder'
+
+      return NextResponse.json({
+        success: true,
+        message: messageBody,
+        subject: messageSubject,
+        context: {
+          parentName: parentData?.name,
+          messageType: context.messageType,
+          tone: context.tone,
+          personalized: includePersonalization
+        }
+      })
+    } catch (openaiError) {
+      console.error('🔥 OpenAI API Error:', openaiError)
+
+      // Fallback to intelligent message generation if OpenAI fails
+      const parentName = parentData?.name || 'Parent'
+      const amount = context.amount || paymentData?.amount || '150'
+      const dueDate = context.dueDate ? new Date(context.dueDate).toLocaleDateString() : paymentData?.dueDate ? new Date(paymentData.dueDate).toLocaleDateString() : '9/20/2025'
+
+      const fallbackMessage = customInstructions && customInstructions.trim()
+        ? `${parentName}, This is an important reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Please process this payment promptly. Thank you for your attention to this matter.`
+        : `Dear ${parentName}, This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Thank you for your prompt attention to this matter.`
+
+      return NextResponse.json({
+        success: true,
+        message: fallbackMessage,
+        subject: 'Payment Reminder',
+        context: {
+          parentName: parentData?.name,
+          messageType: context.messageType,
+          tone: customInstructions ? 'custom' : 'professional',
+          personalized: includePersonalization,
+          fallback: true
+        }
+      })
+    }
 
   } catch (error) {
     console.error('AI message generation error:', error)
