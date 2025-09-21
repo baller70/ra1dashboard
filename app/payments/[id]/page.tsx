@@ -480,11 +480,11 @@ export default function PaymentDetailPage() {
   }
 
   useEffect(() => {
-    if (payment?.parent?.id) {
+    if (payment?.parent?.id || payment?.parent?._id || payment?.parentId) {
       fetchCommunicationHistory()
       fetchLeagueFees()
     }
-  }, [payment?.parent?.id])
+  }, [payment?.parent?.id, payment?.parent?._id, payment?.parentId])
 
   const fetchPaymentDetails = async () => {
     try {
@@ -506,6 +506,12 @@ export default function PaymentDetailPage() {
 
       const data = await response.json()
       setPayment(data)
+
+      // Fetch league fees after payment data is loaded
+      if (data?.parent?._id || data?.parent?.id || data?.parentId) {
+        console.log('Payment data loaded, fetching league fees...')
+        setTimeout(() => fetchLeagueFees(), 100) // Small delay to ensure state is updated
+      }
     } catch (error) {
       console.error('Error fetching payment:', error)
       setError('Failed to load payment details')
@@ -564,10 +570,16 @@ export default function PaymentDetailPage() {
   }
 
   const fetchLeagueFees = async () => {
-    if (!payment?.parent?.id && !payment?.parent?._id) return
+    // Get parent ID from payment object or URL
+    const parentId = payment?.parent?._id || payment?.parent?.id || payment?.parentId
+
+    if (!parentId) {
+      console.log('No parent ID available for league fees fetch')
+      return
+    }
 
     try {
-      const parentId = payment?.parent?._id || payment?.parent?.id
+      console.log('Fetching league fees for parent ID:', parentId)
       const response = await fetch(`/api/league-fees?parentId=${parentId}`)
 
       if (response.ok) {
