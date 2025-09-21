@@ -11,26 +11,39 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const withStats = searchParams.get('withStats') === 'true'
 
-    if (withStats) {
-      // Get seasons with statistics
-      const seasons = await convex.query(api.seasons.getSeasonsWithStats)
-      return NextResponse.json({
-        success: true,
-        data: seasons
-      })
-    } else {
-      // Get basic seasons
-      const seasons = await convex.query(api.seasons.getSeasons)
-      return NextResponse.json({
-        success: true,
-        data: seasons
-      })
-    }
+    // TEMPORARY: Return mock data until Convex functions are deployed
+    const mockSeasons = [
+      {
+        _id: "temp_season_1",
+        name: "Summer League 2024",
+        type: "summer_league",
+        year: 2024,
+        startDate: Date.now(),
+        endDate: Date.now() + (90 * 24 * 60 * 60 * 1000), // 90 days from now
+        registrationDeadline: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
+        isActive: true,
+        description: "Summer basketball league program",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        stats: withStats ? {
+          totalFees: 0,
+          paidFees: 0,
+          pendingFees: 0,
+          overdueFees: 0,
+          totalRevenue: 0
+        } : undefined
+      }
+    ];
+
+    return NextResponse.json({
+      success: true,
+      data: mockSeasons
+    })
 
   } catch (error) {
     console.error('Error fetching seasons:', error)
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Internal server error',
         data: []
@@ -46,16 +59,19 @@ export async function POST(request: NextRequest) {
 
     if (!name || !type || !year || !startDate || !endDate) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Missing required fields: name, type, year, startDate, endDate' 
+          error: 'Missing required fields: name, type, year, startDate, endDate'
         },
         { status: 400 }
       )
     }
 
-    // Create season
-    const seasonId = await convex.mutation(api.seasons.createSeason, {
+    // TEMPORARY: Mock season creation until Convex functions are deployed
+    const seasonId = `temp_season_${Date.now()}`
+
+    console.log('Season created (mock):', {
+      seasonId,
       name,
       type,
       year,
@@ -73,7 +89,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating season:', error)
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error'
       },

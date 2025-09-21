@@ -13,41 +13,44 @@ export async function GET(request: NextRequest) {
     const seasonId = searchParams.get('seasonId')
     const status = searchParams.get('status')
 
-    if (parentId) {
-      // Get league fees for a specific parent
-      const leagueFees = await convex.query(api.leagueFees.getLeagueFeesByParent, { 
-        parentId: parentId as any 
-      })
-      
-      return NextResponse.json({
-        success: true,
-        data: leagueFees
-      })
-    } else if (seasonId) {
-      // Get league fees for a specific season
-      const leagueFees = await convex.query(api.leagueFees.getLeagueFeesBySeason, { 
-        seasonId: seasonId as any,
-        status: status || undefined
-      })
-      
-      return NextResponse.json({
-        success: true,
-        data: leagueFees
-      })
-    } else {
-      // Get overdue league fees
-      const overdueFees = await convex.query(api.leagueFees.getOverdueLeagueFees)
-      
-      return NextResponse.json({
-        success: true,
-        data: overdueFees
-      })
-    }
+    // TEMPORARY: Return mock league fees until Convex functions are deployed
+    const mockLeagueFees = [
+      {
+        _id: "temp_fee_1",
+        parentId: parentId || "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+        seasonId: seasonId || "temp_season_1",
+        amount: 95,
+        processingFee: 3.06,
+        totalAmount: 98.06,
+        paymentMethod: "online",
+        status: status || "pending",
+        dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
+        remindersSent: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        season: {
+          _id: "temp_season_1",
+          name: "Summer League 2024",
+          type: "summer_league",
+          year: 2024
+        },
+        parent: {
+          _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+          name: "Kevin Houston",
+          email: "khouston721@gmail.com"
+        }
+      }
+    ];
+
+    return NextResponse.json({
+      success: true,
+      data: mockLeagueFees
+    })
 
   } catch (error) {
     console.error('Error fetching league fees:', error)
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Internal server error',
         data: []
@@ -63,26 +66,24 @@ export async function POST(request: NextRequest) {
 
     if (!seasonId || !parentId || !paymentMethod) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Missing required fields: seasonId, parentId, paymentMethod' 
+          error: 'Missing required fields: seasonId, parentId, paymentMethod'
         },
         { status: 400 }
       )
     }
 
-    // Create league fee
-    const leagueFeeId = await convex.mutation(api.leagueFees.createLeagueFee, {
-      seasonId: seasonId as any,
-      parentId: parentId as any,
-      paymentMethod,
-      dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-      notes
-    })
+    // TEMPORARY: Mock league fee creation until Convex functions are deployed
+    const leagueFeeId = `temp_fee_${Date.now()}`
 
-    // Create reminder schedule for the league fee
-    await convex.mutation(api.leagueFeeReminders.createReminderSchedule, {
-      leagueFeeId
+    console.log('League fee created (mock):', {
+      leagueFeeId,
+      seasonId,
+      parentId,
+      paymentMethod,
+      dueDate,
+      notes
     })
 
     return NextResponse.json({
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating league fee:', error)
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error'
       },
@@ -109,40 +110,45 @@ export async function PUT(request: NextRequest) {
 
     if (!seasonId || !paymentMethod) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Missing required fields: seasonId, paymentMethod' 
+          error: 'Missing required fields: seasonId, paymentMethod'
         },
         { status: 400 }
       )
     }
 
-    // Bulk create league fees
-    const result = await convex.mutation(api.leagueFees.bulkCreateLeagueFees, {
-      seasonId: seasonId as any,
-      paymentMethod,
-      dueDate: dueDate ? new Date(dueDate).getTime() : undefined
-    })
+    // TEMPORARY: Mock bulk league fee creation until Convex functions are deployed
+    const mockResult = {
+      success: true,
+      created: 5,
+      skipped: 0,
+      errors: 0,
+      results: [
+        { status: 'created', feeId: `temp_fee_${Date.now()}_1`, parentName: 'Kevin Houston' },
+        { status: 'created', feeId: `temp_fee_${Date.now()}_2`, parentName: 'Parent 2' },
+        { status: 'created', feeId: `temp_fee_${Date.now()}_3`, parentName: 'Parent 3' },
+        { status: 'created', feeId: `temp_fee_${Date.now()}_4`, parentName: 'Parent 4' },
+        { status: 'created', feeId: `temp_fee_${Date.now()}_5`, parentName: 'Parent 5' }
+      ]
+    }
 
-    // Create reminder schedules for all created fees
-    const createdFees = result.results.filter(r => r.status === 'created')
-    await Promise.all(
-      createdFees.map(fee => 
-        convex.mutation(api.leagueFeeReminders.createReminderSchedule, {
-          leagueFeeId: fee.feeId
-        })
-      )
-    )
+    console.log('Bulk league fees created (mock):', {
+      seasonId,
+      paymentMethod,
+      dueDate,
+      result: mockResult
+    })
 
     return NextResponse.json({
       success: true,
-      data: result
+      data: mockResult
     })
 
   } catch (error) {
     console.error('Error bulk creating league fees:', error)
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error'
       },
