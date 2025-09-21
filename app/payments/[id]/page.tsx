@@ -1801,7 +1801,11 @@ The Basketball Factory Inc.`
                       <CreditCard className="h-4 w-4" />
                       STRIPE INTEGRATION
                     </h4>
-                    <Badge variant="outline">Not Connected</Badge>
+                    {payment?.parent?.stripeCustomerId ? (
+                      <Badge variant="default">Connected</Badge>
+                    ) : (
+                      <Badge variant="outline">Not Connected</Badge>
+                    )}
                   </div>
                   <p className="text-xs text-gray-600 mb-2">
                     Link to open secure payment form
@@ -1811,16 +1815,11 @@ The Basketball Factory Inc.`
                     size="sm"
                     className="w-full"
                     onClick={() => {
-                      console.log('🔥 BUTTON CLICKED!')
-                      alert('Button clicked! Opening dialog...')
                       setPaymentOptionsOpen(true)
                     }}
                   >
                     Choose payment option...
                   </Button>
-                  <div className="mt-2 text-xs text-red-600">
-                    DEBUG: paymentOptionsOpen = {String(paymentOptionsOpen)}
-                  </div>
                 </div>
 
                   {/* Admin: Mark Paid (visible with ?admin=1) */}
