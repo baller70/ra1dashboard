@@ -38,6 +38,7 @@ export function Header() {
     { name: 'Communication', href: '/communication' },
     { name: 'Contracts', href: '/contracts' },
     { name: 'Assessment', href: '/assessments' },
+    { name: 'Admin', href: '/admin/seasons' },
     { name: 'Settings', href: '/settings' },
   ]
 
