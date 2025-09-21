@@ -33,7 +33,8 @@ import {
   Loader2,
   Plus,
   Sparkles,
-  Receipt
+  Receipt,
+  Shield
 } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
@@ -1978,7 +1979,25 @@ The Basketball Factory Inc.`
                   </p>
                 </div>
 
-
+                {/* Admin Panel */}
+                <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-orange-600" />
+                      ADMIN PANEL
+                    </h4>
+                    <Badge variant="outline" className="text-orange-600 border-orange-300">Admin</Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Manage league fees and season settings
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="w-full border-orange-300 text-orange-700 hover:bg-orange-100">
+                    <Link href="/admin/seasons">
+                      <Shield className="mr-2 h-3 w-3" />
+                      Manage League Fees
+                    </Link>
+                  </Button>
+                </div>
 
                 {/* Communication */}
                 <Button asChild variant="outline" size="sm" className="w-full">
