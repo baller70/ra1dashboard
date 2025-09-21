@@ -126,13 +126,7 @@ export const updateSeason = mutation({
   },
 });
 
-// Get single season
-export const getSeason = query({
-  args: { id: v.id("seasons") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
-  },
-});
+
 
 // Delete season (only if no league fees exist)
 export const deleteSeason = mutation({
