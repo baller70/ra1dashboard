@@ -19,7 +19,10 @@ import {
   Settings,
   Trash2,
   Edit,
-  Receipt
+  Receipt,
+  UserPlus,
+  Eye,
+  CreditCard
 } from 'lucide-react'
 
 interface Season {
@@ -42,10 +45,47 @@ interface Season {
   }
 }
 
+interface Parent {
+  _id: string
+  name: string
+  email: string
+  childName?: string
+  phone?: string
+  status: string
+}
+
+interface LeagueFee {
+  _id: string
+  parentId: string
+  seasonId: string
+  amount: number
+  processingFee: number
+  totalAmount: number
+  paymentMethod: string
+  status: string
+  dueDate: number
+  remindersSent: number
+  createdAt: number
+  updatedAt: number
+  parent: Parent
+  season: {
+    _id: string
+    name: string
+    type: string
+    year: number
+  }
+}
+
 export default function SeasonsPage() {
   const [seasons, setSeasons] = useState<Season[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showLeagueFeesDialog, setShowLeagueFeesDialog] = useState(false)
+  const [showCreateFeeDialog, setShowCreateFeeDialog] = useState(false)
+  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null)
+  const [leagueFees, setLeagueFees] = useState<LeagueFee[]>([])
+  const [parents, setParents] = useState<Parent[]>([])
+  const [feesLoading, setFeesLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     type: 'summer_league',
@@ -54,6 +94,13 @@ export default function SeasonsPage() {
     endDate: '',
     registrationDeadline: '',
     description: ''
+  })
+  const [feeFormData, setFeeFormData] = useState({
+    parentId: '',
+    amount: 95,
+    paymentMethod: 'online',
+    dueDate: '',
+    notes: ''
   })
   const { toast } = useToast()
 
@@ -118,6 +165,85 @@ export default function SeasonsPage() {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create season',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const fetchParents = async () => {
+    try {
+      const response = await fetch('/api/parents?limit=1000')
+      const data = await response.json()
+      if (data.success) {
+        setParents(data.data.parents || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch parents:', error)
+    }
+  }
+
+  const fetchLeagueFees = async (seasonId: string) => {
+    try {
+      setFeesLoading(true)
+      const response = await fetch(`/api/league-fees?seasonId=${seasonId}`)
+      const data = await response.json()
+      if (data.success) {
+        setLeagueFees(data.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch league fees:', error)
+    } finally {
+      setFeesLoading(false)
+    }
+  }
+
+  const handleViewLeagueFees = async (season: Season) => {
+    setSelectedSeason(season)
+    setShowLeagueFeesDialog(true)
+    await fetchParents()
+    await fetchLeagueFees(season._id)
+  }
+
+  const handleCreateIndividualFee = async () => {
+    if (!selectedSeason || !feeFormData.parentId) return
+
+    try {
+      const response = await fetch('/api/league-fees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seasonId: selectedSeason._id,
+          parentId: feeFormData.parentId,
+          paymentMethod: feeFormData.paymentMethod,
+          amount: feeFormData.amount,
+          dueDate: feeFormData.dueDate ? new Date(feeFormData.dueDate).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          notes: feeFormData.notes
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: 'League fee created successfully',
+        })
+        setShowCreateFeeDialog(false)
+        setFeeFormData({
+          parentId: '',
+          amount: 95,
+          paymentMethod: 'online',
+          dueDate: '',
+          notes: ''
+        })
+        await fetchLeagueFees(selectedSeason._id)
+        await fetchSeasons()
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create league fee',
         variant: 'destructive',
       })
     }
@@ -305,6 +431,14 @@ export default function SeasonsPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => handleViewLeagueFees(season)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Manage Fees
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleBulkCreateFees(season._id, 'online')}
                   >
                     <Receipt className="h-4 w-4 mr-1" />
@@ -337,6 +471,165 @@ export default function SeasonsPage() {
             </Button>
           </div>
         )}
+
+        {/* League Fees Management Dialog */}
+        <Dialog open={showLeagueFeesDialog} onOpenChange={setShowLeagueFeesDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Manage League Fees - {selectedSeason?.name}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  {leagueFees.length} league fees found
+                </div>
+                <Button
+                  onClick={() => setShowCreateFeeDialog(true)}
+                  size="sm"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create Individual Fee
+                </Button>
+              </div>
+
+              {feesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {leagueFees.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No league fees found for this season
+                    </div>
+                  ) : (
+                    leagueFees.map((fee) => (
+                      <Card key={fee._id} className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <div className="font-medium">{fee.parent.name}</div>
+                              <div className="text-sm text-muted-foreground">{fee.parent.email}</div>
+                            </div>
+                            <Badge variant={fee.status === 'paid' ? 'default' : 'secondary'}>
+                              {fee.status}
+                            </Badge>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">${fee.totalAmount}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Due: {new Date(fee.dueDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Individual Fee Dialog */}
+        <Dialog open={showCreateFeeDialog} onOpenChange={setShowCreateFeeDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Create League Fee
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="parent">Parent</Label>
+                <Select
+                  value={feeFormData.parentId}
+                  onValueChange={(value) => setFeeFormData({ ...feeFormData, parentId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a parent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {parents.filter(p => p.status === 'active').map((parent) => (
+                      <SelectItem key={parent._id} value={parent._id}>
+                        {parent.name} ({parent.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="amount">Amount ($)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={feeFormData.amount}
+                  onChange={(e) => setFeeFormData({ ...feeFormData, amount: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Select
+                  value={feeFormData.paymentMethod}
+                  onValueChange={(value) => setFeeFormData({ ...feeFormData, paymentMethod: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="online">Online Payment</SelectItem>
+                    <SelectItem value="in_person">In-Person Payment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={feeFormData.dueDate}
+                  onChange={(e) => setFeeFormData({ ...feeFormData, dueDate: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Input
+                  id="notes"
+                  value={feeFormData.notes}
+                  onChange={(e) => setFeeFormData({ ...feeFormData, notes: e.target.value })}
+                  placeholder="Additional notes..."
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateFeeDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateIndividualFee}
+                  disabled={!feeFormData.parentId}
+                  className="flex-1"
+                >
+                  Create Fee
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   )

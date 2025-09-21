@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { seasonId, parentId, paymentMethod, dueDate, notes } = await request.json()
+    const { seasonId, parentId, paymentMethod, dueDate, notes, amount } = await request.json()
 
     if (!seasonId || !parentId || !paymentMethod) {
       return NextResponse.json(
@@ -89,21 +89,82 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TEMPORARY: Mock league fee creation until Convex functions are deployed
-    const leagueFeeId = `temp_fee_${Date.now()}`
+    // Find the parent in our mock data
+    const parent = mockParents.find(p => p._id === parentId)
+    if (!parent) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Parent not found'
+        },
+        { status: 404 }
+      )
+    }
 
-    console.log('League fee created (mock):', {
+    // Check if fee already exists for this parent and season
+    const existingFee = mockLeagueFees.find(fee =>
+      fee.parentId === parentId && fee.seasonId === seasonId
+    )
+
+    if (existingFee) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'League fee already exists for this parent and season'
+        },
+        { status: 409 }
+      )
+    }
+
+    const timestamp = Date.now()
+    const leagueFeeId = `temp_fee_${timestamp}`
+    const feeAmount = amount || 95
+    const processingFee = paymentMethod === 'online' ? Math.round(feeAmount * 0.029 + 30) / 100 : 0
+    const totalAmount = feeAmount + processingFee
+    const dueDateTimestamp = dueDate ? new Date(dueDate).getTime() : timestamp + (30 * 24 * 60 * 60 * 1000)
+
+    const newFee = {
+      _id: leagueFeeId,
+      parentId: parentId,
+      seasonId: seasonId,
+      amount: feeAmount,
+      processingFee: processingFee,
+      totalAmount: totalAmount,
+      paymentMethod: paymentMethod,
+      status: "pending",
+      dueDate: dueDateTimestamp,
+      remindersSent: 0,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      notes: notes || '',
+      season: {
+        _id: seasonId,
+        name: seasonId === "temp_season_1" ? "Summer League 2024" : "New Season",
+        type: "summer_league",
+        year: 2024
+      },
+      parent: parent
+    }
+
+    // Add to our in-memory storage
+    mockLeagueFees.push(newFee)
+
+    console.log('Individual league fee created:', {
       leagueFeeId,
+      parentName: parent.name,
       seasonId,
-      parentId,
+      amount: feeAmount,
+      totalAmount,
       paymentMethod,
-      dueDate,
-      notes
+      dueDate: new Date(dueDateTimestamp).toISOString()
     })
 
     return NextResponse.json({
       success: true,
-      data: { leagueFeeId }
+      data: {
+        leagueFeeId,
+        fee: newFee
+      }
     })
 
   } catch (error) {
