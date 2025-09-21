@@ -31,7 +31,8 @@ import {
   RefreshCw,
   Loader2,
   Plus,
-  Sparkles
+  Sparkles,
+  Receipt
 } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
@@ -98,6 +99,27 @@ interface Payment {
     scheduledFor: string
     status: string
   }>
+}
+
+interface LeagueFeeData {
+  _id: string
+  amount: number
+  processingFee?: number
+  totalAmount: number
+  paymentMethod: string
+  status: string
+  dueDate: number
+  paidAt?: number
+  stripePaymentLinkId?: string
+  remindersSent: number
+  lastReminderSent?: number
+  notes?: string
+  season: {
+    _id: string
+    name: string
+    type: string
+    year: number
+  }
 }
 
 interface PaymentHistory {
@@ -257,6 +279,7 @@ export default function PaymentDetailPage() {
   const [payment, setPayment] = useState<Payment | null>(null)
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([])
   const [communicationHistory, setCommunicationHistory] = useState<CommunicationRecord[]>([])
+  const [leagueFees, setLeagueFees] = useState<LeagueFeeData[]>([])
   const [loading, setLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [commHistoryLoading, setCommHistoryLoading] = useState(false)
@@ -457,6 +480,7 @@ export default function PaymentDetailPage() {
   useEffect(() => {
     if (payment?.parent?.id) {
       fetchCommunicationHistory()
+      fetchLeagueFees()
     }
   }, [payment?.parent?.id])
 
@@ -534,6 +558,25 @@ export default function PaymentDetailPage() {
     } catch (error) {
       console.error('Error fetching payment progress:', error)
       // Don't show error toast for optional progress data
+    }
+  }
+
+  const fetchLeagueFees = async () => {
+    if (!payment?.parent?.id && !payment?.parent?._id) return
+
+    try {
+      const parentId = payment?.parent?._id || payment?.parent?.id
+      const response = await fetch(`/api/league-fees?parentId=${parentId}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('League fees data received:', data)
+        setLeagueFees(data.data || [])
+      } else {
+        console.warn('Failed to fetch league fees:', response.status)
+      }
+    } catch (error) {
+      console.error('Error fetching league fees:', error)
     }
   }
 
@@ -1896,6 +1939,124 @@ The Basketball Factory Inc.`
                       </div>
                     )
                   })()}
+                </div>
+
+                {/* League Fees */}
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Receipt className="h-4 w-4" />
+                      LEAGUE FEES
+                    </h4>
+                    <Badge variant="secondary">{leagueFees.length}</Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Season fees for Summer League and Fall Tournament
+                  </p>
+
+                  {leagueFees.length > 0 ? (
+                    <div className="space-y-2">
+                      {leagueFees.map((fee) => (
+                        <div key={fee._id} className="p-2 bg-white rounded border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium">{fee.season.name}</span>
+                            <Badge
+                              variant={fee.status === 'paid' ? 'default' : fee.status === 'overdue' ? 'destructive' : 'secondary'}
+                            >
+                              {fee.status === 'paid' ? 'Paid' : fee.status === 'overdue' ? 'Overdue' : 'Pending'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-600">
+                            <span>${fee.totalAmount.toFixed(2)}</span>
+                            <span>Due: {new Date(fee.dueDate).toLocaleDateString()}</span>
+                          </div>
+                          {fee.status !== 'paid' && (
+                            <div className="flex gap-1 mt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 text-xs"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch('/api/league-fees/send-reminder', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        leagueFeeId: fee._id,
+                                        parentId: payment?.parent?._id || payment?.parent?.id
+                                      })
+                                    })
+
+                                    if (response.ok) {
+                                      toast({
+                                        title: 'Reminder Sent',
+                                        description: `League fee reminder sent for ${fee.season.name}`,
+                                      })
+                                      fetchLeagueFees() // Refresh data
+                                    } else {
+                                      throw new Error('Failed to send reminder')
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: 'Error',
+                                      description: 'Failed to send league fee reminder',
+                                      variant: 'destructive'
+                                    })
+                                  }
+                                }}
+                              >
+                                <Bell className="mr-1 h-3 w-3" />
+                                Remind
+                              </Button>
+                              {fee.paymentMethod === 'online' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 text-xs"
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch('/api/stripe/league-fee', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          leagueFeeId: fee._id,
+                                          parentId: payment?.parent?._id || payment?.parent?.id
+                                        })
+                                      })
+
+                                      if (response.ok) {
+                                        const data = await response.json()
+                                        if (data.paymentLink) {
+                                          window.open(data.paymentLink, '_blank')
+                                        }
+                                      } else {
+                                        throw new Error('Failed to create payment link')
+                                      }
+                                    } catch (error) {
+                                      toast({
+                                        title: 'Error',
+                                        description: 'Failed to create payment link',
+                                        variant: 'destructive'
+                                      })
+                                    }
+                                  }}
+                                >
+                                  <CreditCard className="mr-1 h-3 w-3" />
+                                  Pay Online
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Receipt className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs text-gray-500">No league fees found</p>
+                      <p className="text-xs text-gray-400 mt-1">Fees will appear when seasons are created</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Communication */}
