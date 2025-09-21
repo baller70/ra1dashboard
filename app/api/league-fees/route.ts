@@ -6,6 +6,35 @@ import { api } from "@/convex/_generated/api"
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
+// TEMPORARY: In-memory storage for mock league fees until Convex functions are deployed
+let mockLeagueFees: any[] = [
+  {
+    _id: "temp_fee_1",
+    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+    seasonId: "temp_season_1",
+    amount: 95,
+    processingFee: 3.06,
+    totalAmount: 98.06,
+    paymentMethod: "online",
+    status: "pending",
+    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
+    remindersSent: 0,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    season: {
+      _id: "temp_season_1",
+      name: "Summer League 2024",
+      type: "summer_league",
+      year: 2024
+    },
+    parent: {
+      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+      name: "Kevin Houston",
+      email: "khouston721@gmail.com"
+    }
+  }
+]
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -13,38 +42,24 @@ export async function GET(request: NextRequest) {
     const seasonId = searchParams.get('seasonId')
     const status = searchParams.get('status')
 
-    // TEMPORARY: Return mock league fees until Convex functions are deployed
-    const mockLeagueFees = [
-      {
-        _id: "temp_fee_1",
-        parentId: parentId || "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-        seasonId: seasonId || "temp_season_1",
-        amount: 95,
-        processingFee: 3.06,
-        totalAmount: 98.06,
-        paymentMethod: "online",
-        status: status || "pending",
-        dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
-        remindersSent: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        season: {
-          _id: "temp_season_1",
-          name: "Summer League 2024",
-          type: "summer_league",
-          year: 2024
-        },
-        parent: {
-          _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-          name: "Kevin Houston",
-          email: "khouston721@gmail.com"
-        }
-      }
-    ];
+    // Filter league fees based on query parameters
+    let filteredFees = mockLeagueFees
+
+    if (parentId) {
+      filteredFees = filteredFees.filter(fee => fee.parentId === parentId)
+    }
+
+    if (seasonId) {
+      filteredFees = filteredFees.filter(fee => fee.seasonId === seasonId)
+    }
+
+    if (status) {
+      filteredFees = filteredFees.filter(fee => fee.status === status)
+    }
 
     return NextResponse.json({
       success: true,
-      data: mockLeagueFees
+      data: filteredFees
     })
 
   } catch (error) {
@@ -118,31 +133,74 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // TEMPORARY: Mock bulk league fee creation until Convex functions are deployed
-    const mockResult = {
+    // TEMPORARY: Create actual mock league fees that will persist in memory
+    const mockParents = [
+      { _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx", name: "Kevin Houston", email: "khouston721@gmail.com" },
+      { _id: "parent_2", name: "Sarah Johnson", email: "sarah.johnson@email.com" },
+      { _id: "parent_3", name: "Mike Davis", email: "mike.davis@email.com" },
+      { _id: "parent_4", name: "Lisa Wilson", email: "lisa.wilson@email.com" },
+      { _id: "parent_5", name: "Tom Brown", email: "tom.brown@email.com" }
+    ]
+
+    const timestamp = Date.now()
+    const dueDateTimestamp = dueDate ? new Date(dueDate).getTime() : timestamp + (30 * 24 * 60 * 60 * 1000)
+
+    // Remove existing fees for this season to avoid duplicates
+    mockLeagueFees = mockLeagueFees.filter(fee => fee.seasonId !== seasonId)
+
+    const createdFees = mockParents.map((parent, index) => {
+      const feeId = `temp_fee_${timestamp}_${index + 1}`
+      const newFee = {
+        _id: feeId,
+        parentId: parent._id,
+        seasonId: seasonId,
+        amount: 95,
+        processingFee: 3.06,
+        totalAmount: 98.06,
+        paymentMethod: paymentMethod,
+        status: "pending",
+        dueDate: dueDateTimestamp,
+        remindersSent: 0,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        season: {
+          _id: seasonId,
+          name: seasonId === "temp_season_1" ? "Summer League 2024" : "New Season",
+          type: "summer_league",
+          year: 2024
+        },
+        parent: parent
+      }
+
+      // Add to our in-memory storage
+      mockLeagueFees.push(newFee)
+
+      return {
+        status: 'created',
+        feeId: feeId,
+        parentName: parent.name
+      }
+    })
+
+    const result = {
       success: true,
-      created: 5,
+      created: createdFees.length,
       skipped: 0,
       errors: 0,
-      results: [
-        { status: 'created', feeId: `temp_fee_${Date.now()}_1`, parentName: 'Kevin Houston' },
-        { status: 'created', feeId: `temp_fee_${Date.now()}_2`, parentName: 'Parent 2' },
-        { status: 'created', feeId: `temp_fee_${Date.now()}_3`, parentName: 'Parent 3' },
-        { status: 'created', feeId: `temp_fee_${Date.now()}_4`, parentName: 'Parent 4' },
-        { status: 'created', feeId: `temp_fee_${Date.now()}_5`, parentName: 'Parent 5' }
-      ]
+      results: createdFees
     }
 
     console.log('Bulk league fees created (mock):', {
       seasonId,
       paymentMethod,
       dueDate,
-      result: mockResult
+      result,
+      totalFeesInMemory: mockLeagueFees.length
     })
 
     return NextResponse.json({
       success: true,
-      data: mockResult
+      data: result
     })
 
   } catch (error) {
