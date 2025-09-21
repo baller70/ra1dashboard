@@ -25,6 +25,7 @@ import {
   MessageCircle,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   ExternalLink,
   Upload,
   Settings,
@@ -280,6 +281,7 @@ export default function PaymentDetailPage() {
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([])
   const [communicationHistory, setCommunicationHistory] = useState<CommunicationRecord[]>([])
   const [leagueFees, setLeagueFees] = useState<LeagueFeeData[]>([])
+  const [leagueFeesDialogOpen, setLeagueFeesDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [commHistoryLoading, setCommHistoryLoading] = useState(false)
@@ -1942,122 +1944,29 @@ The Basketball Factory Inc.`
                 </div>
 
                 {/* League Fees */}
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
+                <div
+                  className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => setLeagueFeesDialogOpen(true)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <Receipt className="h-4 w-4" />
-                      LEAGUE FEES
-                    </h4>
-                    <Badge variant="secondary">{leagueFees.length}</Badge>
+                      <h4 className="text-sm font-medium">LEAGUE FEES</h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{leagueFees.length}</Badge>
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Season fees for Summer League and Fall Tournament
+                  <p className="text-xs text-gray-600 mt-1">
+                    {leagueFees.length > 0
+                      ? `${leagueFees.filter(f => f.status === 'pending').length} pending, ${leagueFees.filter(f => f.status === 'paid').length} paid`
+                      : 'Season fees for Summer League and Fall Tournament'
+                    }
                   </p>
-
-                  {leagueFees.length > 0 ? (
-                    <div className="space-y-2">
-                      {leagueFees.map((fee) => (
-                        <div key={fee._id} className="p-2 bg-white rounded border">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium">{fee.season.name}</span>
-                            <Badge
-                              variant={fee.status === 'paid' ? 'default' : fee.status === 'overdue' ? 'destructive' : 'secondary'}
-                            >
-                              {fee.status === 'paid' ? 'Paid' : fee.status === 'overdue' ? 'Overdue' : 'Pending'}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-gray-600">
-                            <span>${fee.totalAmount.toFixed(2)}</span>
-                            <span>Due: {new Date(fee.dueDate).toLocaleDateString()}</span>
-                          </div>
-                          {fee.status !== 'paid' && (
-                            <div className="flex gap-1 mt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 text-xs"
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch('/api/league-fees/send-reminder', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({
-                                        leagueFeeId: fee._id,
-                                        parentId: payment?.parent?._id || payment?.parent?.id
-                                      })
-                                    })
-
-                                    if (response.ok) {
-                                      toast({
-                                        title: 'Reminder Sent',
-                                        description: `League fee reminder sent for ${fee.season.name}`,
-                                      })
-                                      fetchLeagueFees() // Refresh data
-                                    } else {
-                                      throw new Error('Failed to send reminder')
-                                    }
-                                  } catch (error) {
-                                    toast({
-                                      title: 'Error',
-                                      description: 'Failed to send league fee reminder',
-                                      variant: 'destructive'
-                                    })
-                                  }
-                                }}
-                              >
-                                <Bell className="mr-1 h-3 w-3" />
-                                Remind
-                              </Button>
-                              {fee.paymentMethod === 'online' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1 text-xs"
-                                  onClick={async () => {
-                                    try {
-                                      const response = await fetch('/api/stripe/league-fee', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          leagueFeeId: fee._id,
-                                          parentId: payment?.parent?._id || payment?.parent?.id
-                                        })
-                                      })
-
-                                      if (response.ok) {
-                                        const data = await response.json()
-                                        if (data.paymentLink) {
-                                          window.open(data.paymentLink, '_blank')
-                                        }
-                                      } else {
-                                        throw new Error('Failed to create payment link')
-                                      }
-                                    } catch (error) {
-                                      toast({
-                                        title: 'Error',
-                                        description: 'Failed to create payment link',
-                                        variant: 'destructive'
-                                      })
-                                    }
-                                  }}
-                                >
-                                  <CreditCard className="mr-1 h-3 w-3" />
-                                  Pay Online
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <Receipt className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                      <p className="text-xs text-gray-500">No league fees found</p>
-                      <p className="text-xs text-gray-400 mt-1">Fees will appear when seasons are created</p>
-                    </div>
-                  )}
                 </div>
+
+
 
                 {/* Communication */}
                 <Button asChild variant="outline" size="sm" className="w-full">
@@ -2933,6 +2842,184 @@ The Basketball Factory Inc.`
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* League Fees Dialog */}
+      <Dialog open={leagueFeesDialogOpen} onOpenChange={setLeagueFeesDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              League Fees
+            </DialogTitle>
+            <DialogDescription>
+              Season fees for Summer League and Fall Tournament programs
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {leagueFees.length > 0 ? (
+              leagueFees.map((fee) => (
+                <div key={fee._id} className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-lg">{fee.season.name}</h4>
+                        <Badge
+                          variant={
+                            fee.status === 'paid' ? 'default' :
+                            fee.status === 'overdue' ? 'destructive' :
+                            'secondary'
+                          }
+                        >
+                          {fee.status === 'paid' ? 'Paid' : fee.status === 'overdue' ? 'Overdue' : 'Pending'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {fee.season.type === 'summer_league' ? 'Summer League Fee' : 'Fall Tournament Fee'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Amount</p>
+                      <p className="font-medium">${fee.amount}</p>
+                      {fee.processingFee && (
+                        <p className="text-xs text-muted-foreground">
+                          + ${fee.processingFee} processing fee
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total</p>
+                      <p className="font-medium text-lg">${fee.totalAmount.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Payment Method</p>
+                      <p className="font-medium capitalize">
+                        {fee.paymentMethod === 'online' ? 'Online Payment' : 'In-Person Payment'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Due Date</p>
+                      <p className="font-medium">
+                        {new Date(fee.dueDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {fee.paidAt && (
+                    <div className="mb-3">
+                      <p className="text-sm text-green-600">
+                        ✓ Paid on {new Date(fee.paidAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {fee.remindersSent > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-muted-foreground">
+                        {fee.remindersSent} reminder{fee.remindersSent > 1 ? 's' : ''} sent
+                        {fee.lastReminderSent && (
+                          <span> (last: {new Date(fee.lastReminderSent).toLocaleDateString()})</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {fee.status !== 'paid' && (
+                    <div className="flex gap-2 pt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/league-fees/send-reminder', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                leagueFeeId: fee._id,
+                                parentId: payment?.parent?._id || payment?.parent?.id
+                              })
+                            })
+
+                            if (response.ok) {
+                              toast({
+                                title: 'Reminder Sent',
+                                description: `League fee reminder sent for ${fee.season.name}`,
+                              })
+                              fetchLeagueFees() // Refresh data
+                            } else {
+                              throw new Error('Failed to send reminder')
+                            }
+                          } catch (error) {
+                            toast({
+                              title: 'Error',
+                              description: 'Failed to send league fee reminder',
+                              variant: 'destructive'
+                            })
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Send Reminder
+                      </Button>
+                      {fee.paymentMethod === 'online' && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/stripe/league-fee', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  leagueFeeId: fee._id,
+                                  parentId: payment?.parent?._id || payment?.parent?.id
+                                })
+                              })
+
+                              if (response.ok) {
+                                const data = await response.json()
+                                if (data.paymentLink) {
+                                  window.open(data.paymentLink, '_blank')
+                                  toast({
+                                    title: 'Payment Link Created',
+                                    description: 'Payment link opened in new tab',
+                                  })
+                                }
+                              } else {
+                                throw new Error('Failed to create payment link')
+                              }
+                            } catch (error) {
+                              toast({
+                                title: 'Error',
+                                description: 'Failed to create payment link',
+                                variant: 'destructive'
+                              })
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          <CreditCard className="h-4 w-4 mr-1" />
+                          Pay Online
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No league fees found</p>
+                <p className="text-xs mt-1">League fees will appear here when seasons are created</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
