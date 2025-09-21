@@ -593,4 +593,71 @@ export default defineSchema({
     .index("by_player", ["playerId"])
     .index("by_created_at", ["createdAt"]),
 
+  // LEAGUE FEE SYSTEM
+  seasons: defineTable({
+    name: v.string(), // "Summer League 2024", "Fall Tournament 2024"
+    type: v.string(), // "summer_league", "fall_tournament"
+    year: v.number(), // 2024
+    startDate: v.number(),
+    endDate: v.number(),
+    registrationDeadline: v.optional(v.number()),
+    isActive: v.boolean(),
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_type", ["type"])
+    .index("by_year", ["year"])
+    .index("by_active", ["isActive"])
+    .index("by_type_year", ["type", "year"]),
+
+  leagueFees: defineTable({
+    seasonId: v.id("seasons"),
+    parentId: v.id("parents"),
+    amount: v.number(), // Base fee amount ($95)
+    processingFee: v.optional(v.number()), // Stripe processing fee for online payments
+    totalAmount: v.number(), // amount + processingFee (for online) or just amount (for in-person)
+    paymentMethod: v.string(), // "online", "in_person"
+    status: v.string(), // "pending", "paid", "overdue", "cancelled"
+    dueDate: v.number(),
+    paidAt: v.optional(v.number()),
+    stripePaymentLinkId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    remindersSent: v.number(),
+    lastReminderSent: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_season", ["seasonId"])
+    .index("by_parent", ["parentId"])
+    .index("by_status", ["status"])
+    .index("by_due_date", ["dueDate"])
+    .index("by_season_parent", ["seasonId", "parentId"])
+    .index("by_season_status", ["seasonId", "status"])
+    .index("by_overdue", ["status", "dueDate"])
+    .index("by_payment_method", ["paymentMethod"]),
+
+  leagueFeeReminders: defineTable({
+    leagueFeeId: v.id("leagueFees"),
+    parentId: v.id("parents"),
+    seasonId: v.id("seasons"),
+    reminderType: v.string(), // "initial", "first_reminder", "second_reminder", "final_notice"
+    scheduledFor: v.number(),
+    sentAt: v.optional(v.number()),
+    status: v.string(), // "scheduled", "sent", "failed", "cancelled"
+    messageLogId: v.optional(v.id("messageLogs")),
+    failureReason: v.optional(v.string()),
+    retryCount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_league_fee", ["leagueFeeId"])
+    .index("by_parent", ["parentId"])
+    .index("by_season", ["seasonId"])
+    .index("by_scheduled_for", ["scheduledFor"])
+    .index("by_status", ["status"])
+    .index("by_reminder_type", ["reminderType"])
+    .index("by_due_reminders", ["status", "scheduledFor"]),
+
 });

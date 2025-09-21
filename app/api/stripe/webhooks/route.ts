@@ -60,8 +60,9 @@ export async function POST(request: NextRequest) {
       }
 
       case 'payment_intent.succeeded': {
-        // Optional: handle if metadata.paymentId exists
         const pi = event.data.object as Stripe.PaymentIntent
+
+        // Handle regular payment updates
         const paymentId = (pi.metadata as any)?.paymentId as string | undefined
         if (paymentId) {
           try {
@@ -74,6 +75,25 @@ export async function POST(request: NextRequest) {
             })
           } catch (convexErr) {
             console.error('Convex updatePayment failed from webhook (PI):', convexErr)
+          }
+        }
+
+        // Handle league fee payments
+        const leagueFeeId = (pi.metadata as any)?.leagueFeeId as string | undefined
+        if (leagueFeeId) {
+          try {
+            await convex.mutation(api.leagueFees.markLeagueFeePaid, {
+              id: leagueFeeId as any,
+              stripePaymentIntentId: pi.id,
+              notes: 'Marked paid via Stripe webhook (payment_intent.succeeded)'
+            })
+
+            // Cancel any pending reminders for this league fee
+            await convex.mutation(api.leagueFeeReminders.cancelRemindersForLeagueFee, {
+              leagueFeeId: leagueFeeId as any
+            })
+          } catch (convexErr) {
+            console.error('Convex league fee update failed from webhook (PI):', convexErr)
           }
         }
         break

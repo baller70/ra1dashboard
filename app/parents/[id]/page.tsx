@@ -71,6 +71,27 @@ interface PaymentData {
   description: string
 }
 
+interface LeagueFeeData {
+  _id: string
+  amount: number
+  processingFee?: number
+  totalAmount: number
+  paymentMethod: string
+  status: string
+  dueDate: number
+  paidAt?: number
+  stripePaymentLinkId?: string
+  remindersSent: number
+  lastReminderSent?: number
+  notes?: string
+  season: {
+    _id: string
+    name: string
+    type: string
+    year: number
+  }
+}
+
 interface MessageData {
   id: string
   content: string
@@ -100,6 +121,7 @@ export default function ParentDetailPage() {
   const [parent, setParent] = useState<ParentData | null>(null)
   const [payments, setPayments] = useState<PaymentData[]>([])
   const [paymentPlans, setPaymentPlans] = useState<any[]>([])
+  const [leagueFees, setLeagueFees] = useState<LeagueFeeData[]>([])
   const [loading, setLoading] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
 
@@ -171,6 +193,16 @@ export default function ParentDetailPage() {
           console.warn('Failed to fetch payment plans:', plansResponse.status)
         }
 
+        // Fetch league fees for this parent with cache-busting
+        const leagueFeesResponse = await fetch(`/api/league-fees?parentId=${parentId}&t=${timestamp}`)
+        if (leagueFeesResponse.ok) {
+          const leagueFeesData = await leagueFeesResponse.json()
+          console.log('League fees data received:', leagueFeesData)
+          setLeagueFees(leagueFeesData.data || [])
+        } else {
+          console.warn('Failed to fetch league fees:', leagueFeesResponse.status)
+        }
+
       } catch (error) {
         console.error('Error fetching parent data:', error)
         setDataError('Failed to load parent data')
@@ -204,6 +236,14 @@ export default function ParentDetailPage() {
         console.log('Refreshed payment plans data:', plansData)
         const arr = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.data) ? plansData.data : [])
         setPaymentPlans(arr)
+      }
+
+      // Refresh league fees data
+      const leagueFeesResponse = await fetch(`/api/league-fees?parentId=${parentId}`)
+      if (leagueFeesResponse.ok) {
+        const leagueFeesData = await leagueFeesResponse.json()
+        console.log('Refreshed league fees data:', leagueFeesData)
+        setLeagueFees(leagueFeesData.data || [])
       }
 
       toast({
@@ -451,6 +491,73 @@ export default function ParentDetailPage() {
       })
     } else {
       throw new Error('Failed to schedule follow-up')
+    }
+  }
+
+  const sendLeagueFeeReminder = async (leagueFee: LeagueFeeData) => {
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentId,
+          message: `Hi ${parent?.name}, this is a reminder about your ${leagueFee.season.name} fee of $${leagueFee.totalAmount}. ${leagueFee.paymentMethod === 'online' ? 'You can pay online using the payment link we\'ll send you.' : 'Please bring payment to the facility.'} Due date: ${new Date(leagueFee.dueDate).toLocaleDateString()}`,
+          type: 'league_fee_reminder',
+          metadata: {
+            leagueFeeId: leagueFee._id,
+            seasonId: leagueFee.season._id
+          }
+        })
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'League fee reminder sent',
+          description: `Reminder sent to ${parent?.name} for ${leagueFee.season.name}`,
+        })
+        refreshParentData()
+      } else {
+        throw new Error('Failed to send league fee reminder')
+      }
+    } catch (error) {
+      toast({
+        title: 'Failed to send reminder',
+        description: 'There was an error sending the league fee reminder.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const createLeagueFeePaymentLink = async (leagueFee: LeagueFeeData) => {
+    try {
+      const response = await fetch('/api/stripe/league-fee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leagueFeeId: leagueFee._id,
+          parentId: parent?._id
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        if (data.url) {
+          window.open(data.url, '_blank')
+          toast({
+            title: 'Payment link created',
+            description: 'Payment link opened in new tab',
+          })
+        }
+      } else {
+        throw new Error(data.error || 'Failed to create payment link')
+      }
+    } catch (error) {
+      toast({
+        title: 'Failed to create payment link',
+        description: error instanceof Error ? error.message : 'There was an error creating the payment link.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -1125,6 +1232,134 @@ export default function ParentDetailPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No payment records found</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* League Fees */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                League Fees {leagueFees.length > 0 ? `(${leagueFees.length})` : ''}
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshParentData}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {leagueFees && leagueFees.length > 0 ? (
+              <div className="space-y-4">
+                {leagueFees.map((fee) => (
+                  <div key={fee._id} className="p-4 border rounded-lg bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-lg">{fee.season.name}</h4>
+                          <Badge
+                            variant={
+                              fee.status === 'paid' ? 'default' :
+                              fee.status === 'overdue' ? 'destructive' :
+                              'secondary'
+                            }
+                          >
+                            {fee.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {fee.season.type === 'summer_league' ? 'Summer League Fee' : 'Fall Tournament Fee'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Amount</p>
+                        <p className="font-medium">${fee.amount}</p>
+                        {fee.processingFee && (
+                          <p className="text-xs text-muted-foreground">
+                            + ${fee.processingFee} processing fee
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total</p>
+                        <p className="font-medium text-lg">${fee.totalAmount}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Payment Method</p>
+                        <p className="font-medium capitalize">
+                          {fee.paymentMethod === 'online' ? 'Online Payment' : 'In-Person Payment'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Due Date</p>
+                        <p className="font-medium">
+                          {new Date(fee.dueDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {fee.paidAt && (
+                      <div className="mb-3">
+                        <p className="text-sm text-green-600">
+                          ✓ Paid on {new Date(fee.paidAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+
+                    {fee.remindersSent > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs text-muted-foreground">
+                          {fee.remindersSent} reminder{fee.remindersSent > 1 ? 's' : ''} sent
+                          {fee.lastReminderSent && (
+                            <span> (last: {new Date(fee.lastReminderSent).toLocaleDateString()})</span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {fee.status !== 'paid' && (
+                      <div className="flex gap-2 pt-3 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendLeagueFeeReminder(fee)}
+                          className="flex-1"
+                        >
+                          <Mail className="h-4 w-4 mr-1" />
+                          Send Reminder
+                        </Button>
+                        {fee.paymentMethod === 'online' && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => createLeagueFeePaymentLink(fee)}
+                            className="flex-1"
+                          >
+                            <CreditCard className="h-4 w-4 mr-1" />
+                            Create Payment Link
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No league fees found</p>
+                <p className="text-xs mt-1">League fees will appear here when seasons are created</p>
               </div>
             )}
           </CardContent>
