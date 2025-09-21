@@ -76,6 +76,8 @@ Guidelines:
 - Focus on the child's development and program benefits
 - Include clear next steps or call-to-action when appropriate
 
+IMPORTANT: Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.
+
 Context: Payment reminder for ${parentName}`
 
     let userPrompt = `Generate a ${context?.messageType ?? 'general'} message for:
@@ -84,7 +86,7 @@ Context: Payment reminder for ${parentName}`
 - Due Date: ${dueDate}
 - Status: ${context.status || 'pending'}
 
-Please provide a complete, professional message.`
+Please provide a complete, professional message. Do NOT include any signature or closing signature block at the end.`
 
     // If custom instructions are provided, use them as the primary source of information
     if (customInstructions && customInstructions.trim()) {
@@ -94,7 +96,9 @@ Please provide a complete, professional message.`
 
 Custom Instructions: "${customInstructions.trim()}"
 
-Generate a professional payment reminder message that follows these custom instructions exactly. If the custom instructions mention specific amounts, dates, or other details, use those instead of any fallback information. The custom instructions should be treated as the authoritative source.`
+Generate a professional payment reminder message that follows these custom instructions exactly. If the custom instructions mention specific amounts, dates, or other details, use those instead of any fallback information. The custom instructions should be treated as the authoritative source.
+
+IMPORTANT: Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.`
 
       userPrompt = `Generate a payment reminder message based on these custom instructions: "${customInstructions.trim()}"
 
@@ -104,7 +108,10 @@ Additional context (use only if not specified in custom instructions):
 - Fallback Due Date: ${dueDate}
 - Status: ${context.status || 'pending'}
 
-IMPORTANT: Prioritize the information in the custom instructions over the fallback context. If the custom instructions specify amounts, dates, or other details, use those instead. Create a complete, professional message that follows the custom instructions while maintaining appropriate business communication standards.`
+IMPORTANT:
+1. Prioritize the information in the custom instructions over the fallback context. If the custom instructions specify amounts, dates, or other details, use those instead.
+2. Create a complete, professional message that follows the custom instructions while maintaining appropriate business communication standards.
+3. Do NOT add any signature, closing signature block, or contact information at the end. The message should end with the main content only.`
     }
 
     // Build messages array for OpenAI

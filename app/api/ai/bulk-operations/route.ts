@@ -186,11 +186,11 @@ async function generateAIMessage(context: any, messageType: string, tone: string
   const messages = [
     {
       role: "system" as const,
-      content: `Generate a personalized ${messageType} message with ${tone} tone for a parent in the "Rise as One Yearly Program". Return only the message content as plain text.`
+      content: `Generate a personalized ${messageType} message with ${tone} tone for a parent in the "Rise as One Yearly Program". Return only the message content as plain text. Do NOT include any signature, closing signature block, or contact information placeholders at the end of the message.`
     },
     {
       role: "user" as const,
-      content: `Generate message for ${parentName} with context: ${JSON.stringify(context)}`
+      content: `Generate message for ${parentName} with context: ${JSON.stringify(context)}. Do NOT add any signature or closing signature block.`
     }
   ]
 

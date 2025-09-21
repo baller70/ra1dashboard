@@ -117,6 +117,8 @@ ${contextInfo}
 
 Generate a message that follows the custom instructions exactly while incorporating the payment context (parent name, amount, due date, etc.).
 
+CRITICAL: Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.
+
 ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`
       : `You are an expert communication specialist for Rise as One Basketball Program. Generate professional, personalized messages for parents.
 
@@ -127,6 +129,8 @@ ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possi
     - Be clear, concise, and action-oriented
     - Include specific details when available
     - Maintain the program's supportive, community-focused brand voice
+
+    CRITICAL: Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.
 
     ${context.channel === 'sms' ? 'Keep SMS messages under 160 characters when possible.' : 'For emails, use plain text formatting with clear structure. Do NOT include HTML, CSS, or any markup - only clean, readable plain text.'}`;
 
