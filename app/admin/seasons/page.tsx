@@ -10,8 +10,9 @@ import { Badge } from '../../../components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog'
 import { Checkbox } from '../../../components/ui/checkbox'
+import { Textarea } from '../../../components/ui/textarea'
 import { useToast } from '../../../hooks/use-toast'
-import { LeagueFeeEmailPreviewDialog } from '../../../components/ui/league-fee-email-preview-dialog'
+
 import {
   Calendar,
   Plus,
@@ -29,8 +30,22 @@ import {
   Send,
   CheckSquare,
   Square,
-  UserCheck
+  UserCheck,
+  Edit3
 } from 'lucide-react'
+
+// Email Preview Dialog Component
+interface EmailPreviewData {
+  subject: string
+  body: string
+  paymentAmount: number
+  processingFee: number
+  totalAmount: number
+  seasonName: string
+  dueDate: string
+  stripePaymentLink: string
+  facilityPaymentLink: string
+}
 
 interface Season {
   _id: string
@@ -835,19 +850,19 @@ export default function SeasonsPage() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handlePreviewEmail}
-                  disabled={selectedParents.length === 0 || generatingEmailPreview}
+                  onClick={handleSendReminders}
+                  disabled={selectedParents.length === 0 || sendingEmails}
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
-                  {generatingEmailPreview ? (
+                  {sendingEmails ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Generating Preview...
+                      Sending...
                     </>
                   ) : (
                     <>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Preview Email ({selectedParents.length})
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email Reminders ({selectedParents.length})
                     </>
                   )}
                 </Button>
@@ -855,18 +870,6 @@ export default function SeasonsPage() {
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* Email Preview Dialog */}
-        <LeagueFeeEmailPreviewDialog
-          open={showEmailPreviewDialog}
-          onOpenChange={setShowEmailPreviewDialog}
-          selectedParents={parents.filter(p => selectedParents.includes(p._id))}
-          seasonName={selectedSeason?.name || ''}
-          emailPreview={emailPreviewData}
-          onSendEmails={handleSendEmailsWithCustomContent}
-          isSending={sendingEmails}
-          isGenerating={generatingEmailPreview}
-        />
       </div>
     </AppLayout>
   )
