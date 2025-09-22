@@ -51,20 +51,25 @@ export async function GET(request: NextRequest) {
     const parentId = searchParams.get('parentId')
     const seasonId = searchParams.get('seasonId')
     const status = searchParams.get('status')
+    const feeId = searchParams.get('feeId')
 
     // Filter league fees based on query parameters
     let filteredFees = mockLeagueFees
 
-    if (parentId) {
-      filteredFees = filteredFees.filter(fee => fee.parentId === parentId)
-    }
+    if (feeId) {
+      filteredFees = filteredFees.filter(fee => fee._id === feeId)
+    } else {
+      if (parentId) {
+        filteredFees = filteredFees.filter(fee => fee.parentId === parentId)
+      }
 
-    if (seasonId) {
-      filteredFees = filteredFees.filter(fee => fee.seasonId === seasonId)
-    }
+      if (seasonId) {
+        filteredFees = filteredFees.filter(fee => fee.seasonId === seasonId)
+      }
 
-    if (status) {
-      filteredFees = filteredFees.filter(fee => fee.status === status)
+      if (status) {
+        filteredFees = filteredFees.filter(fee => fee.status === status)
+      }
     }
 
     return NextResponse.json({
@@ -287,3 +292,6 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+// Export the mock data so it can be shared with other endpoints
+export { mockLeagueFees }

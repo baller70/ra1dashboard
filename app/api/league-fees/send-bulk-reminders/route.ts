@@ -1,6 +1,18 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
+import { mockLeagueFees } from '../route'
+
+// Initialize Stripe
+function getStripe() {
+  const secret = process.env.STRIPE_SECRET_KEY
+  if (!secret) {
+    console.warn('STRIPE_SECRET_KEY not configured - using mock payment links')
+    return null
+  }
+  return new Stripe(secret, { apiVersion: '2024-06-20' } as any)
+}
 
 // Mock parents data for league fee reminders
 const mockParents = [
@@ -11,41 +23,88 @@ const mockParents = [
   { _id: "j975g9n5ve0qqsby21a0k9n1js7n7tc1", name: "Tom Brown", email: "tom.brown@email.com", status: "active" }
 ]
 
-// Mock league fees data (this should match the data from the main route)
-let mockLeagueFees: any[] = [
-  {
-    _id: "temp_fee_1",
-    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-    seasonId: "temp_season_1",
-    amount: 95,
-    processingFee: 3.06,
-    totalAmount: 98.06,
-    paymentMethod: "online",
-    status: "pending",
-    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-    remindersSent: 0,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    season: {
-      _id: "temp_season_1",
-      name: "Summer League 2024",
-      type: "summer_league",
-      year: 2024
-    },
-    parent: {
-      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-      name: "Kevin Houston",
-      email: "khouston721@gmail.com"
-    }
-  }
-]
+// Mock league fees data is now imported from the main league-fees route to ensure consistency
 
-// Generate Stripe payment link for a parent
-const generateStripePaymentLink = (parentId: string, feeId: string, amount: number) => {
-  // This would normally integrate with Stripe's Payment Links API
-  // For now, return a mock URL that includes the parent and fee information
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
-  return `${baseUrl}/pay/league-fee/${feeId}?parent=${parentId}&amount=${amount}`
+// Generate actual Stripe payment link for a parent
+const generateStripePaymentLink = async (parent: any, fee: any) => {
+  const stripe = getStripe()
+
+  if (!stripe) {
+    // Fallback to local payment page if Stripe is not configured
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
+    return `${baseUrl}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
+  }
+
+  try {
+    // Create or get Stripe customer for the parent
+    let customerId = parent.stripeCustomerId
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        name: parent.name,
+        email: parent.email,
+        metadata: {
+          parentId: parent._id,
+          source: 'ra1_league_fees'
+        }
+      })
+      customerId = customer.id
+      // Note: In a real implementation, you'd update the parent record with the customerId
+    }
+
+    // Create a product for the league fee
+    const product = await stripe.products.create({
+      name: `${fee.season.name} - League Fee`,
+      description: `League fee payment for ${fee.season.name}`,
+      metadata: {
+        leagueFeeId: fee._id,
+        parentId: parent._id,
+        seasonId: fee.seasonId,
+        source: 'league_fee_payment'
+      }
+    })
+
+    // Create a price for the league fee
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: Math.round(fee.totalAmount * 100), // Convert to cents
+      currency: 'usd',
+      metadata: {
+        leagueFeeId: fee._id,
+        parentId: parent._id,
+        seasonId: fee.seasonId
+      }
+    })
+
+    // Create the payment link
+    const paymentLink = await stripe.paymentLinks.create({
+      line_items: [
+        {
+          price: price.id,
+          quantity: 1
+        }
+      ],
+      metadata: {
+        leagueFeeId: fee._id,
+        parentId: parent._id,
+        seasonId: fee.seasonId,
+        source: 'league_fee_payment'
+      },
+      after_completion: {
+        type: 'redirect',
+        redirect: {
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/payments/success?fee=${fee._id}`
+        }
+      }
+    })
+
+    return paymentLink.url
+
+  } catch (error) {
+    console.error('Error creating Stripe payment link:', error)
+    // Fallback to local payment page
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
+    return `${baseUrl}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
+  }
 }
 
 // Generate AI-powered personalized email content
@@ -157,7 +216,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate personalized Stripe payment link
-        const paymentLink = generateStripePaymentLink(parentId, fee._id, fee.totalAmount)
+        const paymentLink = await generateStripePaymentLink(parent, fee)
 
         // Generate AI-powered personalized email
         const emailContent = await generatePersonalizedEmail(parent, fee, paymentLink)

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { mockLeagueFees } from '../../../league-fees/route'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -13,6 +14,8 @@ function getStripe() {
   if (!secret) throw new Error('STRIPE_SECRET_KEY not configured')
   return new Stripe(secret, { apiVersion: '2024-06-20' } as any)
 }
+
+// Mock league fees data is now imported from the league-fees route to ensure consistency
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe()
@@ -40,10 +43,62 @@ export async function POST(request: NextRequest) {
         const metadata = session.metadata || {}
         const paymentId = (metadata as any).paymentId as string | undefined
         const parentId = (metadata as any).parentId as string | undefined
+        const leagueFeeId = (metadata as any).leagueFeeId as string | undefined
         const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
 
-        // One-time checkout success: mark payment paid
-        if (mode === 'payment' && paymentId) {
+        console.log('Checkout session completed:', {
+          sessionId: session.id,
+          mode,
+          paymentId,
+          parentId,
+          leagueFeeId,
+          paymentIntentId,
+          metadata
+        })
+
+        // Handle league fee payments from payment links
+        if (mode === 'payment' && leagueFeeId && parentId) {
+          try {
+            // Find the league fee in our mock data
+            const feeIndex = mockLeagueFees.findIndex(fee => fee._id === leagueFeeId && fee.parentId === parentId)
+
+            if (feeIndex !== -1) {
+              // Update the league fee status to paid
+              mockLeagueFees[feeIndex] = {
+                ...mockLeagueFees[feeIndex],
+                status: 'paid',
+                paymentMethod: 'stripe',
+                paidAt: Date.now(),
+                stripePaymentIntentId: paymentIntentId,
+                updatedAt: Date.now(),
+                paymentNote: 'Paid via Stripe payment link'
+              }
+
+              console.log('League fee marked as paid:', {
+                leagueFeeId,
+                parentId,
+                parentName: mockLeagueFees[feeIndex].parent.name,
+                amount: mockLeagueFees[feeIndex].totalAmount,
+                sessionId: session.id
+              })
+
+              // In a real implementation, you would also:
+              // 1. Update the database record
+              // 2. Cancel any pending reminders
+              // 3. Send confirmation email to parent
+              // 4. Notify admin of successful payment
+
+            } else {
+              console.error('League fee not found for payment:', { leagueFeeId, parentId })
+            }
+
+          } catch (error) {
+            console.error('Error processing league fee payment:', error)
+          }
+        }
+
+        // Handle regular one-time checkout payments
+        else if (mode === 'payment' && paymentId) {
           try {
             await convex.mutation(api.payments.updatePayment as any, {
               id: paymentId as any,
