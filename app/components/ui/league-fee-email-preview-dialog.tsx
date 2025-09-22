@@ -7,7 +7,7 @@ import { Textarea } from './textarea'
 import { Input } from './input'
 import { Label } from './label'
 import { Badge } from './badge'
-import { useToast } from './use-toast'
+import { useToast } from '../../hooks/use-toast'
 import { Mail, Users, Edit3, Send, Eye, DollarSign, CreditCard, Building2 } from 'lucide-react'
 
 interface Parent {
