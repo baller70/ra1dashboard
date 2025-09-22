@@ -3004,23 +3004,18 @@ The Basketball Factory Inc.`
                           size="sm"
                           onClick={async () => {
                             try {
-                              const response = await fetch('/api/stripe/league-fee', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  leagueFeeId: fee._id,
-                                  parentId: payment?.parent?._id || payment?.parent?.id
-                                })
-                              })
+                              const response = await fetch(`/api/league-fees/payment-link?feeId=${fee._id}&parentId=${payment?.parent?._id || payment?.parent?.id}`)
 
                               if (response.ok) {
                                 const data = await response.json()
-                                if (data.paymentLink) {
-                                  window.open(data.paymentLink, '_blank')
+                                if (data.success && data.data.paymentLink) {
+                                  window.open(data.data.paymentLink, '_blank')
                                   toast({
                                     title: 'Payment Link Created',
                                     description: 'Payment link opened in new tab',
                                   })
+                                } else {
+                                  throw new Error(data.error || 'Failed to create payment link')
                                 }
                               } else {
                                 throw new Error('Failed to create payment link')
