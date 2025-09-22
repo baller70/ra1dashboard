@@ -51,6 +51,7 @@ export default function LeagueFeePaymentPage() {
   
   const [fee, setFee] = useState<LeagueFee | null>(null)
   const [loading, setLoading] = useState(true)
+  const [paymentLoading, setPaymentLoading] = useState(false)
   
   const feeId = params.feeId as string
   const parentId = searchParams.get('parent')
@@ -87,13 +88,35 @@ export default function LeagueFeePaymentPage() {
     }
   }
 
-  const handleStripePayment = () => {
-    // This would normally redirect to Stripe Checkout or open Stripe Elements
-    // For now, we'll show a message about Stripe integration
-    toast({
-      title: 'Stripe Integration',
-      description: 'This would redirect to Stripe Checkout for secure payment processing.',
-    })
+  const handleStripePayment = async () => {
+    if (!fee || !parentId) return
+
+    try {
+      setPaymentLoading(true)
+
+      // Get the actual Stripe payment link
+      const response = await fetch(`/api/league-fees/payment-link?feeId=${feeId}&parentId=${parentId}`)
+      const data = await response.json()
+
+      if (data.success && data.data.paymentLink) {
+        // Redirect to the Stripe payment link
+        window.location.href = data.data.paymentLink
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create payment link',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create payment link',
+        variant: 'destructive',
+      })
+    } finally {
+      setPaymentLoading(false)
+    }
   }
 
   const facilityPaymentLink = `/pay/facility/${feeId}?parent=${parentId}`
@@ -208,12 +231,22 @@ export default function LeagueFeePaymentPage() {
                 <div className="space-y-3">
                   <Button
                     onClick={handleStripePayment}
+                    disabled={paymentLoading}
                     className="w-full bg-blue-600 hover:bg-blue-700"
                     size="lg"
                   >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Pay Online with Credit Card (${fee.totalAmount})
-                    <ExternalLink className="h-4 w-4 ml-2" />
+                    {paymentLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating Payment Link...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Pay Online with Credit Card (${fee.totalAmount})
+                        <ExternalLink className="h-4 w-4 ml-2" />
+                      </>
+                    )}
                   </Button>
 
                   <div className="text-center text-sm text-muted-foreground">
