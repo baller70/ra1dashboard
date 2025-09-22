@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Badge } from '../../../components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog'
+import { Checkbox } from '../../../components/ui/checkbox'
 import { useToast } from '../../../hooks/use-toast'
 import {
   Calendar,
@@ -22,7 +23,12 @@ import {
   Receipt,
   UserPlus,
   Eye,
-  CreditCard
+  CreditCard,
+  Mail,
+  Send,
+  CheckSquare,
+  Square,
+  UserCheck
 } from 'lucide-react'
 
 interface Season {
@@ -82,10 +88,14 @@ export default function SeasonsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showLeagueFeesDialog, setShowLeagueFeesDialog] = useState(false)
   const [showCreateFeeDialog, setShowCreateFeeDialog] = useState(false)
+  const [showParentSelectionDialog, setShowParentSelectionDialog] = useState(false)
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null)
   const [leagueFees, setLeagueFees] = useState<LeagueFee[]>([])
   const [parents, setParents] = useState<Parent[]>([])
+  const [selectedParents, setSelectedParents] = useState<string[]>([])
+  const [selectAllParents, setSelectAllParents] = useState(false)
   const [feesLoading, setFeesLoading] = useState(false)
+  const [sendingEmails, setSendingEmails] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     type: 'summer_league',
@@ -249,15 +259,55 @@ export default function SeasonsPage() {
     }
   }
 
-  const handleBulkCreateFees = async (seasonId: string, paymentMethod: string) => {
+  const handleParentSelection = (season: Season) => {
+    setSelectedSeason(season)
+    setShowParentSelectionDialog(true)
+    fetchParents()
+    setSelectedParents([])
+    setSelectAllParents(false)
+  }
+
+  const handleSelectAllParents = (checked: boolean) => {
+    setSelectAllParents(checked)
+    if (checked) {
+      setSelectedParents(parents.filter(p => p.status === 'active').map(p => p._id))
+    } else {
+      setSelectedParents([])
+    }
+  }
+
+  const handleParentToggle = (parentId: string) => {
+    setSelectedParents(prev => {
+      const newSelection = prev.includes(parentId)
+        ? prev.filter(id => id !== parentId)
+        : [...prev, parentId]
+
+      // Update select all checkbox state
+      const activeParents = parents.filter(p => p.status === 'active')
+      setSelectAllParents(newSelection.length === activeParents.length)
+
+      return newSelection
+    })
+  }
+
+  const handleSendReminders = async () => {
+    if (!selectedSeason || selectedParents.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one parent to send reminders to',
+        variant: 'destructive',
+      })
+      return
+    }
+
     try {
-      const response = await fetch('/api/league-fees', {
-        method: 'PUT',
+      setSendingEmails(true)
+      const response = await fetch('/api/league-fees/send-bulk-reminders', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          seasonId,
-          paymentMethod,
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+          seasonId: selectedSeason._id,
+          parentIds: selectedParents
         })
       })
 
@@ -265,18 +315,22 @@ export default function SeasonsPage() {
       if (data.success) {
         toast({
           title: 'Success',
-          description: `Created ${data.data.created} league fees for all active parents`,
+          description: `Sent ${data.data.sent} reminder emails successfully`,
         })
-        fetchSeasons()
+        setShowParentSelectionDialog(false)
+        setSelectedParents([])
+        setSelectAllParents(false)
       } else {
         throw new Error(data.error)
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create league fees',
+        description: error instanceof Error ? error.message : 'Failed to send reminders',
         variant: 'destructive',
       })
+    } finally {
+      setSendingEmails(false)
     }
   }
 
@@ -439,18 +493,19 @@ export default function SeasonsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleBulkCreateFees(season._id, 'online')}
+                    onClick={() => handleParentSelection(season)}
                   >
-                    <Receipt className="h-4 w-4 mr-1" />
-                    Create Online Fees
+                    <UserCheck className="h-4 w-4 mr-1" />
+                    Parent Selection
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleBulkCreateFees(season._id, 'in_person')}
+                    onClick={() => handleParentSelection(season)}
+                    className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
                   >
-                    <Receipt className="h-4 w-4 mr-1" />
-                    Create In-Person Fees
+                    <Send className="h-4 w-4 mr-1" />
+                    Send Reminders
                   </Button>
                 </div>
               </CardContent>
@@ -625,6 +680,85 @@ export default function SeasonsPage() {
                   className="flex-1"
                 >
                   Create Fee
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Parent Selection Dialog */}
+        <Dialog open={showParentSelectionDialog} onOpenChange={setShowParentSelectionDialog}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5" />
+                Parent Selection - {selectedSeason?.name}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={selectAllParents}
+                    onCheckedChange={handleSelectAllParents}
+                  />
+                  <Label htmlFor="select-all" className="font-medium">
+                    Select All Parents
+                  </Label>
+                </div>
+                <Badge variant="outline">
+                  {selectedParents.length} of {parents.filter(p => p.status === 'active').length} selected
+                </Badge>
+              </div>
+
+              <div className="border rounded-lg p-4 max-h-96 overflow-y-auto">
+                <div className="space-y-2">
+                  {parents.filter(p => p.status === 'active').map((parent) => (
+                    <div key={parent._id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                      <Checkbox
+                        id={parent._id}
+                        checked={selectedParents.includes(parent._id)}
+                        onCheckedChange={() => handleParentToggle(parent._id)}
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor={parent._id} className="font-medium cursor-pointer">
+                          {parent.name}
+                        </Label>
+                        <div className="text-sm text-muted-foreground">
+                          {parent.email}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowParentSelectionDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendReminders}
+                  disabled={selectedParents.length === 0 || sendingEmails}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {sendingEmails ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email Reminders ({selectedParents.length})
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

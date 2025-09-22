@@ -28,6 +28,7 @@ let mockLeagueFees: any[] = [
     status: "pending",
     dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
     remindersSent: 0,
+    lastReminderSent: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     season: {
@@ -143,6 +144,7 @@ export async function POST(request: NextRequest) {
       status: "pending",
       dueDate: dueDateTimestamp,
       remindersSent: 0,
+      lastReminderSent: null,
       createdAt: timestamp,
       updatedAt: timestamp,
       notes: notes || '',
@@ -231,6 +233,7 @@ export async function PUT(request: NextRequest) {
         status: "pending",
         dueDate: dueDateTimestamp,
         remindersSent: 0,
+        lastReminderSent: null,
         createdAt: timestamp,
         updatedAt: timestamp,
         season: {
