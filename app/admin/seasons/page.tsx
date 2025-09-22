@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog'
 import { Checkbox } from '../../../components/ui/checkbox'
 import { useToast } from '../../../hooks/use-toast'
+import { LeagueFeeEmailPreviewDialog } from '../../../components/ui/league-fee-email-preview-dialog'
 import {
   Calendar,
   Plus,
@@ -96,6 +97,9 @@ export default function SeasonsPage() {
   const [selectAllParents, setSelectAllParents] = useState(false)
   const [feesLoading, setFeesLoading] = useState(false)
   const [sendingEmails, setSendingEmails] = useState(false)
+  const [showEmailPreviewDialog, setShowEmailPreviewDialog] = useState(false)
+  const [emailPreviewData, setEmailPreviewData] = useState<any>(null)
+  const [generatingEmailPreview, setGeneratingEmailPreview] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     type: 'summer_league',
@@ -290,6 +294,46 @@ export default function SeasonsPage() {
     })
   }
 
+  const handlePreviewEmail = async () => {
+    if (!selectedSeason || selectedParents.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one parent to preview email for',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setGeneratingEmailPreview(true)
+      const response = await fetch('/api/league-fees/generate-email-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seasonId: selectedSeason._id,
+          parentIds: selectedParents
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setEmailPreviewData(data.data.emailPreview)
+        setShowEmailPreviewDialog(true)
+        setShowParentSelectionDialog(false)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to generate email preview',
+        variant: 'destructive',
+      })
+    } finally {
+      setGeneratingEmailPreview(false)
+    }
+  }
+
   const handleSendReminders = async () => {
     if (!selectedSeason || selectedParents.length === 0) {
       toast({
@@ -327,6 +371,53 @@ export default function SeasonsPage() {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to send reminders',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingEmails(false)
+    }
+  }
+
+  const handleSendEmailsWithCustomContent = async (subject: string, body: string) => {
+    if (!selectedSeason || selectedParents.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'No parents selected for sending emails',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setSendingEmails(true)
+      const response = await fetch('/api/league-fees/send-bulk-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seasonId: selectedSeason._id,
+          parentIds: selectedParents,
+          customSubject: subject,
+          customBody: body
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description: `Sent ${data.data.sent} reminder emails successfully`,
+        })
+        setShowEmailPreviewDialog(false)
+        setSelectedParents([])
+        setSelectAllParents(false)
+        setEmailPreviewData(null)
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to send emails',
         variant: 'destructive',
       })
     } finally {
@@ -744,19 +835,19 @@ export default function SeasonsPage() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleSendReminders}
-                  disabled={selectedParents.length === 0 || sendingEmails}
+                  onClick={handlePreviewEmail}
+                  disabled={selectedParents.length === 0 || generatingEmailPreview}
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
-                  {sendingEmails ? (
+                  {generatingEmailPreview ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending...
+                      Generating Preview...
                     </>
                   ) : (
                     <>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email Reminders ({selectedParents.length})
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview Email ({selectedParents.length})
                     </>
                   )}
                 </Button>
@@ -764,6 +855,18 @@ export default function SeasonsPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Email Preview Dialog */}
+        <LeagueFeeEmailPreviewDialog
+          open={showEmailPreviewDialog}
+          onOpenChange={setShowEmailPreviewDialog}
+          selectedParents={parents.filter(p => selectedParents.includes(p._id))}
+          seasonName={selectedSeason?.name || ''}
+          emailPreview={emailPreviewData}
+          onSendEmails={handleSendEmailsWithCustomContent}
+          isSending={sendingEmails}
+          isGenerating={generatingEmailPreview}
+        />
       </div>
     </AppLayout>
   )

@@ -178,7 +178,7 @@ This is an automated reminder. If you have already paid, please disregard this m
 
 export async function POST(request: NextRequest) {
   try {
-    const { seasonId, parentIds } = await request.json()
+    const { seasonId, parentIds, customSubject, customBody } = await request.json()
 
     if (!seasonId || !parentIds || !Array.isArray(parentIds)) {
       return NextResponse.json(
@@ -244,8 +244,16 @@ export async function POST(request: NextRequest) {
         // Generate personalized Stripe payment link
         const paymentLink = await generateStripePaymentLink(parent, fee)
 
-        // Generate AI-powered personalized email
-        const emailContent = await generatePersonalizedEmail(parent, fee, paymentLink)
+        // Generate email content (use custom content if provided, otherwise generate AI content)
+        let emailContent
+        if (customSubject && customBody) {
+          // Use custom subject and body from email preview
+          emailContent = `Subject: ${customSubject}\n\n${customBody}`
+        } else {
+          // Generate AI-powered personalized email
+          const generatedEmail = await generatePersonalizedEmail(parent, fee, paymentLink)
+          emailContent = `Subject: ${generatedEmail.subject}\n\n${generatedEmail.body}`
+        }
 
         // Here you would normally send the email using your email service
         // For now, we'll simulate the email sending
