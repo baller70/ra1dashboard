@@ -13,6 +13,7 @@ import { Checkbox } from '../../../components/ui/checkbox'
 import { Textarea } from '../../../components/ui/textarea'
 import { useToast } from '../../../hooks/use-toast'
 
+
 import {
   Calendar,
   Plus,
@@ -850,23 +851,136 @@ export default function SeasonsPage() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleSendReminders}
-                  disabled={selectedParents.length === 0 || sendingEmails}
+                  onClick={handlePreviewEmail}
+                  disabled={selectedParents.length === 0 || generatingEmailPreview}
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
-                  {sendingEmails ? (
+                  {generatingEmailPreview ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending...
+                      Generating Preview...
                     </>
                   ) : (
                     <>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email Reminders ({selectedParents.length})
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview Email ({selectedParents.length})
                     </>
                   )}
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Email Preview Dialog */}
+        <Dialog open={showEmailPreviewDialog} onOpenChange={setShowEmailPreviewDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Email Preview - {selectedSeason?.name}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Recipients Section */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-900">
+                    Recipients ({selectedParents.length})
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {parents.filter(p => selectedParents.includes(p._id)).slice(0, 10).map((parent) => (
+                    <Badge key={parent._id} variant="secondary" className="text-xs">
+                      {parent.name}
+                    </Badge>
+                  ))}
+                  {selectedParents.length > 10 && (
+                    <Badge variant="secondary" className="text-xs">
+                      +{selectedParents.length - 10} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {generatingEmailPreview ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                  <span className="text-gray-600">Generating AI-powered email template...</span>
+                </div>
+              ) : emailPreviewData ? (
+                <>
+                  {/* Payment Details */}
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-900">Payment Details</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Amount:</span>
+                        <div className="font-medium">${emailPreviewData.paymentAmount}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Processing Fee:</span>
+                        <div className="font-medium">${emailPreviewData.processingFee}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Total:</span>
+                        <div className="font-medium text-green-700">${emailPreviewData.totalAmount}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Due Date:</span>
+                        <div className="font-medium">{emailPreviewData.dueDate}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email Content Preview */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Email Content</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Subject:</div>
+                      <div className="font-medium">{emailPreviewData.subject}</div>
+                    </div>
+                    <div className="bg-white border rounded-lg p-6">
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {emailPreviewData.body}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowEmailPreviewDialog(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleSendEmailsWithCustomContent(emailPreviewData.subject, emailPreviewData.body)}
+                      disabled={sendingEmails}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {sendingEmails ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending to {selectedParents.length} parents...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Send Emails to {selectedParents.length} Parents
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>
