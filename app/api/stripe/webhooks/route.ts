@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-import { mockLeagueFees } from '../../../league-fees/route'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -15,7 +14,35 @@ function getStripe() {
   return new Stripe(secret, { apiVersion: '2024-06-20' } as any)
 }
 
-// Mock league fees data is now imported from the league-fees route to ensure consistency
+// Mock league fees data for webhook processing (should match the data from league-fees routes)
+let mockLeagueFees: any[] = [
+  {
+    _id: "temp_fee_1",
+    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+    seasonId: "temp_season_1",
+    amount: 95,
+    processingFee: 3.06,
+    totalAmount: 98.06,
+    paymentMethod: "online",
+    status: "pending",
+    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
+    remindersSent: 0,
+    lastReminderSent: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    season: {
+      _id: "temp_season_1",
+      name: "Summer League 2024",
+      type: "summer_league",
+      year: 2024
+    },
+    parent: {
+      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+      name: "Kevin Houston",
+      email: "khouston721@gmail.com"
+    }
+  }
+]
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe()

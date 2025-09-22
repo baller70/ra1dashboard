@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { mockLeagueFees } from '../route'
 
 // Initialize Stripe
 function getStripe() {
@@ -23,7 +22,34 @@ const mockParents = [
   { _id: "j975g9n5ve0qqsby21a0k9n1js7n7tc1", name: "Tom Brown", email: "tom.brown@email.com", status: "active" }
 ]
 
-// Mock league fees data is now imported from the main league-fees route to ensure consistency
+// Mock league fees data (this should match the data from the main route)
+let mockLeagueFees: any[] = [
+  {
+    _id: "temp_fee_1",
+    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+    seasonId: "temp_season_1",
+    amount: 95,
+    processingFee: 3.06,
+    totalAmount: 98.06,
+    paymentMethod: "online",
+    status: "pending",
+    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
+    remindersSent: 0,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    season: {
+      _id: "temp_season_1",
+      name: "Summer League 2024",
+      type: "summer_league",
+      year: 2024
+    },
+    parent: {
+      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
+      name: "Kevin Houston",
+      email: "khouston721@gmail.com"
+    }
+  }
+]
 
 // Generate actual Stripe payment link for a parent
 const generateStripePaymentLink = async (parent: any, fee: any) => {
