@@ -1236,10 +1236,9 @@ The Basketball Factory Inc.`
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`}>
-                      ${paymentProgress && paymentProgress.remainingAmount !== undefined
-                        ? paymentProgress.remainingAmount.toFixed(2)
-                        : payment.amount.toFixed(2)
-                      }
+                      ${Number((paymentProgress && paymentProgress.remainingAmount !== undefined)
+                        ? paymentProgress.remainingAmount
+                        : (payment && (payment as any).amount)) .toFixed(2)}
                     </div>
                     <div className={`text-sm font-medium ${
                       paymentProgress && paymentProgress.remainingAmount === 0
@@ -1259,10 +1258,7 @@ The Basketball Factory Inc.`
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <CheckCircle className="h-8 w-8 mx-auto text-blue-600 mb-2" />
                     <div className="text-3xl font-bold text-blue-600">
-                      ${paymentProgress && paymentProgress.paidAmount !== undefined
-                        ? paymentProgress.paidAmount.toFixed(2)
-                        : '0.00'
-                      }
+                      ${Number((paymentProgress && paymentProgress.paidAmount !== undefined) ? paymentProgress.paidAmount : 0).toFixed(2)}
                     </div>
                     <div className="text-sm text-blue-600 font-medium">Amount Paid</div>
                   </div>
@@ -1418,19 +1414,19 @@ The Basketball Factory Inc.`
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
                         <div className="text-2xl font-bold text-green-600">
-                          ${paymentProgress.paidAmount.toFixed(2)}
+                          ${Number(paymentProgress?.paidAmount ?? 0).toFixed(2)}
                         </div>
                         <div className="text-sm text-green-600">Paid</div>
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-blue-600">
-                          ${paymentProgress.remainingAmount.toFixed(2)}
+                          ${Number(paymentProgress?.remainingAmount ?? 0).toFixed(2)}
                         </div>
                         <div className="text-sm text-blue-600">Remaining</div>
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-gray-600">
-                          ${paymentProgress.totalAmount.toFixed(2)}
+                          ${Number(paymentProgress?.totalAmount ?? 0).toFixed(2)}
                         </div>
                         <div className="text-sm text-gray-600">Total</div>
                       </div>
@@ -1454,10 +1450,10 @@ The Basketball Factory Inc.`
                     <div>
                       <div className="text-xl font-bold">Payment #{paymentProgress.nextDue.installmentNumber}</div>
                       <div className="text-sm text-gray-600">
-                        Due: {new Date(paymentProgress.nextDue.dueDate).toLocaleDateString()}
+                        Due: {paymentProgress?.nextDue?.dueDate ? new Date(paymentProgress.nextDue.dueDate).toLocaleDateString() : 'N/A'}
                       </div>
                       <div className="text-2xl font-bold text-orange-600 mt-1">
-                        ${paymentProgress.nextDue.amount.toFixed(2)}
+                        ${Number(paymentProgress?.nextDue?.amount ?? 0).toFixed(2)}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -1539,7 +1535,7 @@ The Basketball Factory Inc.`
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <div className="font-bold">${installment.amount.toFixed(2)}</div>
+                            <div className="font-bold">${Number((installment as any)?.amount ?? 0).toFixed(2)}</div>
                             <Badge
                               variant={
                                 installment.status === 'paid' ? 'default' :
@@ -2659,7 +2655,7 @@ The Basketball Factory Inc.`
                         <span className="text-sm font-medium">
                           {selectedPaymentSchedule === 'custom'
                             ? `$${(payment.amount / customInstallments).toFixed(2)} per installment`
-                            : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$${payment.amount.toFixed(2)}`
+                            : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$${Number((payment as any)?.amount ?? 0).toFixed(2)}`
                           }
                         </span>
                       </div>
@@ -3072,7 +3068,7 @@ The Basketball Factory Inc.`
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="font-medium text-lg">${fee.totalAmount.toFixed(2)}</p>
+                      <p className="font-medium text-lg">${Number((fee as any)?.totalAmount ?? 0).toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Payment Method</p>
