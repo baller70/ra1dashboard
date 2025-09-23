@@ -1629,27 +1629,6 @@ The Basketball Factory Inc.`
                       </div>
                       {isPaymentHistoryOpen ? (
                         <ChevronUp className="h-4 w-4" />
-                          {installment.status === 'paid' && (() => {
-                            let manual = false
-                            try {
-                              const parsed = JSON.parse((installment as any).notes || '{}')
-                              manual = !!parsed?.manualPayment
-                            } catch {}
-                            return manual ? (
-                              <div className="mt-2 flex items-center gap-2">
-                                <Badge className="bg-green-600/10 text-green-700 border border-green-200">Manual</Badge>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openManualDialog(installment, 'unmark')}
-                                  className="flex items-center gap-1 text-gray-700 border-gray-200 hover:bg-gray-50"
-                                >
-                                  Unmark
-                                </Button>
-                              </div>
-                            ) : null
-                          })()}
-
                       ) : (
                         <ChevronDown className="h-4 w-4" />
                       )}
