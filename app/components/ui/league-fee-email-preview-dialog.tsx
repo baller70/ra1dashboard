@@ -280,7 +280,7 @@ export function LeagueFeeEmailPreviewDialog(props: LeagueFeeEmailPreviewDialogPr
                 </Button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

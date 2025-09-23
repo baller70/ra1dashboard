@@ -46,6 +46,8 @@ import { ReminderReviewDialog } from '../../../components/ui/reminder-review-dia
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Label } from '../../../components/ui/label'
 
+import { Textarea } from '../../../components/ui/textarea'
+
 interface Payment {
   id: string
   amount: number
@@ -158,6 +160,7 @@ interface PaymentInstallment {
   isInGracePeriod?: boolean
   gracePeriodEnd?: number
   remindersSent: number
+  notes?: string
 }
 
 interface PaymentProgressData {
@@ -326,6 +329,13 @@ export default function PaymentDetailPage() {
     message: string
     tone: string
   } | null>(null)
+  // Manual installment marking dialog state
+  const [manualDialogOpen, setManualDialogOpen] = useState(false)
+  const [manualAction, setManualAction] = useState<'mark' | 'unmark'>('mark')
+  const [manualTarget, setManualTarget] = useState<PaymentInstallment | null>(null)
+  const [manualMethod, setManualMethod] = useState<string>('cash')
+  const [manualNote, setManualNote] = useState<string>('')
+
 
   // AI Reminder Prompt state
   const [aiReminderPrompt, setAiReminderPrompt] = useState<string>('')
@@ -750,6 +760,40 @@ The Basketball Factory Inc.`
 
       // Open the AI reminder dialog
       setAiReminderOpen(true)
+
+  // Manual installment mark/unmark handlers
+  const openManualDialog = (installment: any, action: 'mark' | 'unmark') => {
+    setManualTarget(installment)
+    setManualAction(action)
+    setManualMethod('cash')
+    setManualNote('')
+    setManualDialogOpen(true)
+  }
+
+  const handleManualConfirm = async () => {
+    if (!manualTarget) return
+    try {
+      const resp = await fetch(`/api/installments/${manualTarget._id}/manual`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          markPaid: manualAction === 'mark',
+          method: manualMethod,
+          note: manualNote,
+          actor: 'admin',
+        }),
+      })
+      if (!resp.ok) throw new Error(await resp.text())
+      toast({ title: manualAction === 'mark' ? '✅ Marked as Paid' : '↩️ Reverted', description: manualAction === 'mark' ? `Installment #${manualTarget.installmentNumber} marked as paid manually.` : `Installment #${manualTarget.installmentNumber} reverted to pending.` })
+      setManualDialogOpen(false)
+      setManualTarget(null)
+      await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
+    } catch (e: any) {
+      console.error('Manual mark error:', e)
+      toast({ title: 'Error', description: e?.message || 'Failed to update installment', variant: 'destructive' })
+    }
+  }
+
     } catch (error) {
       console.error('Error generating installment reminder:', error)
       toast({
@@ -1192,10 +1236,9 @@ The Basketball Factory Inc.`
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`}>
-                      ${paymentProgress && paymentProgress.remainingAmount !== undefined
-                        ? paymentProgress.remainingAmount.toFixed(2)
-                        : payment.amount.toFixed(2)
-                      }
+                      ${Number((paymentProgress && paymentProgress.remainingAmount !== undefined)
+                        ? paymentProgress.remainingAmount
+                        : (payment && (payment as any).amount)) .toFixed(2)}
                     </div>
                     <div className={`text-sm font-medium ${
                       paymentProgress && paymentProgress.remainingAmount === 0
@@ -1215,10 +1258,7 @@ The Basketball Factory Inc.`
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <CheckCircle className="h-8 w-8 mx-auto text-blue-600 mb-2" />
                     <div className="text-3xl font-bold text-blue-600">
-                      ${paymentProgress && paymentProgress.paidAmount !== undefined
-                        ? paymentProgress.paidAmount.toFixed(2)
-                        : '0.00'
-                      }
+                      ${Number((paymentProgress && paymentProgress.paidAmount !== undefined) ? paymentProgress.paidAmount : 0).toFixed(2)}
                     </div>
                     <div className="text-sm text-blue-600 font-medium">Amount Paid</div>
                   </div>
@@ -1374,19 +1414,19 @@ The Basketball Factory Inc.`
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
                         <div className="text-2xl font-bold text-green-600">
-                          ${paymentProgress.paidAmount.toFixed(2)}
+                          ${Number(paymentProgress?.paidAmount ?? 0).toFixed(2)}
                         </div>
                         <div className="text-sm text-green-600">Paid</div>
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-blue-600">
-                          ${paymentProgress.remainingAmount.toFixed(2)}
+                          ${Number(paymentProgress?.remainingAmount ?? 0).toFixed(2)}
                         </div>
                         <div className="text-sm text-blue-600">Remaining</div>
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-gray-600">
-                          ${paymentProgress.totalAmount.toFixed(2)}
+                          ${Number(paymentProgress?.totalAmount ?? 0).toFixed(2)}
                         </div>
                         <div className="text-sm text-gray-600">Total</div>
                       </div>
@@ -1410,10 +1450,10 @@ The Basketball Factory Inc.`
                     <div>
                       <div className="text-xl font-bold">Payment #{paymentProgress.nextDue.installmentNumber}</div>
                       <div className="text-sm text-gray-600">
-                        Due: {new Date(paymentProgress.nextDue.dueDate).toLocaleDateString()}
+                        Due: {paymentProgress?.nextDue?.dueDate ? new Date(paymentProgress.nextDue.dueDate).toLocaleDateString() : 'N/A'}
                       </div>
                       <div className="text-2xl font-bold text-orange-600 mt-1">
-                        ${paymentProgress.nextDue.amount.toFixed(2)}
+                        ${Number(paymentProgress?.nextDue?.amount ?? 0).toFixed(2)}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -1495,7 +1535,7 @@ The Basketball Factory Inc.`
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <div className="font-bold">${installment.amount.toFixed(2)}</div>
+                            <div className="font-bold">${Number((installment as any)?.amount ?? 0).toFixed(2)}</div>
                             <Badge
                               variant={
                                 installment.status === 'paid' ? 'default' :
@@ -1510,6 +1550,26 @@ The Basketball Factory Inc.`
                                installment.status === 'overdue' ? 'Overdue' : 'Pending'}
                             </Badge>
                           </div>
+                          {installment.status === 'paid' && (() => {
+                            let manual = false
+                            try {
+                              const parsed = JSON.parse((installment as any).notes || '{}')
+                              manual = !!parsed?.manualPayment
+                            } catch {}
+                            return manual ? (
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openManualDialog(installment, 'unmark')}
+                                  className="flex items-center gap-1 text-gray-700 border-gray-200 hover:bg-gray-50"
+                                >
+                                  Unmark
+                                </Button>
+                              </div>
+                            ) : null
+                          })()}
+
                           {installment.status !== 'paid' && (
                             <div className="flex gap-2">
                               <Button
@@ -1521,11 +1581,21 @@ The Basketball Factory Inc.`
                                 <Bell className="h-3 w-3" />
                                 AI Reminder
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openManualDialog(installment, 'mark')}
+                                className="flex items-center gap-1 text-green-600 border-green-200 hover:bg-green-50"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                Mark as Paid
+                              </Button>
                               {installment.status === 'pending' && (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
+
                                     setPayingInstallment(installment)
                                     setInstallmentPaymentOpen(true)
                                   }}
@@ -1592,7 +1662,16 @@ The Basketball Factory Inc.`
                           .map(installment => ({
                             id: `payment_${installment._id}`,
                             action: 'Payment Received',
-                            description: `Installment #${installment.installmentNumber} payment processed successfully via credit card`,
+                            description: (() => {
+                              try {
+                                const parsed = JSON.parse((installment as any).notes || '{}')
+                                if (parsed?.manualPayment) {
+                                  const m = parsed.manualPayment.method || 'manual'
+                                  return `Installment #${installment.installmentNumber} manually recorded as paid (${m})`
+                                }
+                              } catch {}
+                              return `Installment #${installment.installmentNumber} payment processed successfully via credit card`
+                            })(),
                             performedAt: installment.paidAt || Date.now(),
                             performedBy: payment.parent?.name || 'Parent',
                             amount: installment.amount,
@@ -2576,7 +2655,7 @@ The Basketball Factory Inc.`
                         <span className="text-sm font-medium">
                           {selectedPaymentSchedule === 'custom'
                             ? `$${(payment.amount / customInstallments).toFixed(2)} per installment`
-                            : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$${payment.amount.toFixed(2)}`
+                            : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$${Number((payment as any)?.amount ?? 0).toFixed(2)}`
                           }
                         </span>
                       </div>
@@ -2876,6 +2955,70 @@ The Basketball Factory Inc.`
         </DialogContent>
       </Dialog>
 
+      {/* Manual Installment Mark/Unmark Dialog */}
+      <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {manualAction === 'mark' ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  Mark Installment #{manualTarget?.installmentNumber} as Paid
+                </>
+              ) : (
+                <>Revert Manual Payment</>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {manualAction === 'mark'
+                ? `This will mark installment #${manualTarget?.installmentNumber} as paid without charging their stored payment method. You can note how payment was collected.`
+                : `This will revert installment #${manualTarget?.installmentNumber} back to pending.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {manualAction === 'mark' && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <Select value={manualMethod} onValueChange={setManualMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="check">Check</SelectItem>
+                    <SelectItem value="zelle">Zelle</SelectItem>
+                    <SelectItem value="venmo">Venmo</SelectItem>
+                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Notes (optional)</Label>
+                <Textarea
+                  value={manualNote}
+                  onChange={(e) => setManualNote(e.target.value)}
+                  placeholder="e.g., Collected cash at practice on 9/21"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 pt-4">
+            <Button variant="outline" onClick={() => setManualDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant={manualAction === 'mark' ? 'default' : 'destructive'}
+              onClick={handleManualConfirm}
+            >
+              {manualAction === 'mark' ? 'Confirm Mark as Paid' : 'Confirm Revert'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {/* League Fees Dialog */}
       <Dialog open={leagueFeesDialogOpen} onOpenChange={setLeagueFeesDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -2925,7 +3068,7 @@ The Basketball Factory Inc.`
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="font-medium text-lg">${fee.totalAmount.toFixed(2)}</p>
+                      <p className="font-medium text-lg">${Number((fee as any)?.totalAmount ?? 0).toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Payment Method</p>

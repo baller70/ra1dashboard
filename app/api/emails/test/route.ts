@@ -109,16 +109,27 @@ export async function POST(request: Request) {
     }
 
     // Provide more detailed error information
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorDetails = error instanceof Error && 'response' in error 
-      ? (error as any).response?.data 
-      : null
+    const errorMessage = (error as any)?.message || (error instanceof Error ? error.message : 'Unknown error')
+    const errorDetails = (error as any)?.response?.data || null
+
+    // Surface more debug info inline to avoid relying on server logs
+    const rawDebug: any = {
+      type: typeof error,
+      name: (error as any)?.name,
+      status: (error as any)?.status,
+      message: (error as any)?.message,
+      response: (error as any)?.response,
+      toString: (() => {
+        try { return String(error) } catch { return 'n/a' }
+      })(),
+    }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to send test email',
         details: errorMessage,
         debugInfo: errorDetails,
+        rawDebug,
         environmentCheck: {
           hasResendApiKey: !!process.env.RESEND_API_KEY,
           resendFromEmail: process.env.RESEND_FROM_EMAIL,
