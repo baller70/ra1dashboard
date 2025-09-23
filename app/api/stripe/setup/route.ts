@@ -131,18 +131,25 @@ export async function POST(request: NextRequest) {
         await convex.mutation(api.parents.updateParent, { id: parent._id, stripeCustomerId: customerId });
       }
 
-      const pmId = String(paymentMethodId);
-      // Attach the PM to the customer, then set as default
-      await stripe.paymentMethods.attach(pmId, { customer: customerId });
-      await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: pmId } });
+      const pmAlias = String(paymentMethodId);
+      // Use SetupIntent confirm to ensure the PM is properly attached under this customer
+      const si = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method: pmAlias,
+        confirm: true,
+        payment_method_types: ['card'],
+      });
+      const attachedPmId = typeof si.payment_method === 'string' ? si.payment_method : (si.payment_method as any)?.id;
+
+      await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: attachedPmId } });
 
       await convex.mutation(api.parents.updateParent, {
         id: parent._id,
         stripeCustomerId: customerId,
-        stripePaymentMethodId: pmId,
+        stripePaymentMethodId: attachedPmId,
       });
 
-      return NextResponse.json({ success: true, customerId, paymentMethodId: pmId });
+      return NextResponse.json({ success: true, customerId, paymentMethodId: attachedPmId });
     }
   } catch (error: any) {
     console.error('Error resolving customer via setup POST:', error);
