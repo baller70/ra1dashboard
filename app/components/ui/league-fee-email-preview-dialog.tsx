@@ -265,7 +265,7 @@ export function LeagueFeeEmailPreviewDialog({
                 </Button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

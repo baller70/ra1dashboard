@@ -81,6 +81,89 @@ export async function attachPaymentMethod(customerId: string, paymentMethodId: s
   }
 }
 
+// Two-factor customer linking helpers (email + card fingerprint)
+export async function getPaymentMethodFingerprint(pmId: string) {
+  const pm = await stripe.paymentMethods.retrieve(pmId);
+  const fingerprint = (pm?.card as any)?.fingerprint as string | undefined;
+  return { pm, fingerprint };
+}
+
+export async function findCustomersByEmailAndFingerprint(email: string, fingerprint: string) {
+  const all: Stripe.Customer[] = [];
+  let startingAfter: string | undefined = undefined;
+  // Paginate customers list by email (Stripe caps at 100/page)
+  while (true) {
+    const res = await stripe.customers.list({ email, limit: 100, starting_after: startingAfter });
+    all.push(...res.data);
+    if (!res.has_more) break;
+    startingAfter = res.data[res.data.length - 1]?.id;
+  }
+
+  const exact: Stripe.Customer[] = [];
+  for (const c of all) {
+    // List up to 100 card payment methods for this customer
+    const pms = await stripe.paymentMethods.list({ customer: c.id, type: 'card', limit: 100 });
+    const hasMatch = pms.data.some((m) => ((m.card as any)?.fingerprint) === fingerprint);
+    if (hasMatch) exact.push(c);
+  }
+  return exact;
+}
+
+async function pickMostRecentSuccessful(customers: Stripe.Customer[]) {
+  let best = customers[0];
+  let bestTs = 0;
+  for (const c of customers) {
+    const pis = await stripe.paymentIntents.list({ customer: c.id, limit: 10 });
+    // Prefer latest succeeded; fall back to any latest
+    const succeededTs = pis.data
+      .filter((pi) => pi.status === 'succeeded')
+      .map((pi) => pi.created)[0] || 0;
+    const anyTs = pis.data[0]?.created || 0;
+    const ts = Math.max(succeededTs, anyTs);
+    if (ts > bestTs) {
+      bestTs = ts;
+      best = c;
+    }
+  }
+  return best;
+}
+
+export async function ensureCustomerByEmailAndFingerprint(
+  pmId: string,
+  email: string,
+  name?: string,
+  phone?: string,
+  metadata?: Record<string, string>
+) {
+  const { pm, fingerprint } = await getPaymentMethodFingerprint(pmId);
+  if (!fingerprint) throw new Error('Missing card fingerprint on payment method');
+
+  const exactMatches = await findCustomersByEmailAndFingerprint(email, fingerprint);
+  let customer: Stripe.Customer;
+
+  if (exactMatches.length === 1) {
+    customer = exactMatches[0];
+  } else if (exactMatches.length > 1) {
+    customer = await pickMostRecentSuccessful(exactMatches);
+  } else {
+    // Email-only matches with different cards SHOULD NOT be linked; create new customer
+    customer = await stripe.customers.create({ email, name, phone, metadata });
+  }
+
+  // Attach PM if not already attached to this customer
+  if (pm.customer !== customer.id) {
+    await stripe.paymentMethods.attach(pmId, { customer: customer.id });
+  }
+
+  // Set default payment method for future off-session charges
+  await stripe.customers.update(customer.id, {
+    invoice_settings: { default_payment_method: pmId },
+  });
+
+  return { customerId: customer.id, paymentMethodId: pmId };
+}
+
+
 // Subscription Management
 export async function createSubscription(customerId: string, priceId: string, metadata?: Record<string, string>) {
   try {
@@ -308,4 +391,4 @@ export function centsToDollars(cents: number): number {
 
 export function dollarsToCents(dollars: number): number {
   return Math.round(dollars * 100);
-} 
+}

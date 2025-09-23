@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
 import Stripe from 'stripe';
+import { ensureCustomerByEmailAndFingerprint } from '@/lib/stripe'
+
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -18,7 +20,7 @@ function getStripe() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { parentId, priceId, action } = body;
+    const { parentId, priceId, action, paymentMethodId } = body;
 
     if (!parentId) {
       return NextResponse.json({ error: 'Parent ID is required' }, { status: 400 });
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (action === 'create') {
       // Create or get Stripe customer
       let stripeCustomerId = parent.stripeCustomerId;
-      
+
       if (!stripeCustomerId) {
         const stripeCustomer = await stripe.customers.create({
           email: parent.email,
@@ -56,6 +58,44 @@ export async function POST(request: NextRequest) {
         });
 
         stripeCustomerId = stripeCustomer.id;
+      }
+
+
+      // If client provided a paymentMethodId, resolve via two-factor (email + fingerprint)
+      if (paymentMethodId) {
+        const { customerId, paymentMethodId: pmId } = await ensureCustomerByEmailAndFingerprint(
+          String(paymentMethodId),
+          String(parent.email),
+          String(parent.name),
+          parent.phone || undefined,
+          { parentId: String(parent._id) }
+        );
+
+        await convex.mutation(api.parents.updateParent, {
+          id: parent._id,
+          stripeCustomerId: customerId,
+          stripePaymentMethodId: pmId,
+        });
+
+        const subscription = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [
+            {
+              price: priceId || process.env.STRIPE_DEFAULT_PRICE_ID!,
+              quantity: 1,
+            },
+          ],
+          default_payment_method: pmId,
+          payment_behavior: 'default_incomplete',
+          payment_settings: { save_default_payment_method: 'on_subscription' },
+          expand: ['latest_invoice.payment_intent'],
+          metadata: { parentId: String(parent._id) },
+        });
+
+        return NextResponse.json({
+          clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret || null,
+          subscriptionId: subscription.id,
+        });
       }
 
       // Create checkout session for subscription
@@ -76,9 +116,9 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         url: session.url,
-        sessionId: session.id 
+        sessionId: session.id
       });
     }
 
@@ -114,7 +154,7 @@ export async function PATCH(request: NextRequest) {
       // TODO: Update subscription status in Convex when subscription table is implemented
       console.log('Subscription cancelled:', subscription.id);
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
         subscription: {
           id: subscription.id,
@@ -133,7 +173,7 @@ export async function PATCH(request: NextRequest) {
       // TODO: Update subscription status in Convex when subscription table is implemented
       console.log('Subscription reactivated:', subscription.id);
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
         subscription: {
           id: subscription.id,

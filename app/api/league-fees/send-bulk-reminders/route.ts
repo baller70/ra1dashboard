@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { Resend } from 'resend'
 
 // Initialize Stripe
 function getStripe() {
@@ -11,6 +12,16 @@ function getStripe() {
     return null
   }
   return new Stripe(secret, { apiVersion: '2024-06-20' } as any)
+}
+
+// Initialize Resend
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey || apiKey === 'placeholder-key-for-build' || apiKey === 're_placeholder_key_for_testing') {
+    console.warn('RESEND_API_KEY not configured - email sending will be simulated')
+    return null
+  }
+  return new Resend(apiKey)
 }
 
 // Mock parents data for league fee reminders
@@ -250,28 +261,111 @@ export async function POST(request: NextRequest) {
           // Use custom subject and body from email preview
           emailContent = `Subject: ${customSubject}\n\n${customBody}`
         } else {
-          // Generate AI-powered personalized email
-          const generatedEmail = await generatePersonalizedEmail(parent, fee, paymentLink)
-          emailContent = `Subject: ${generatedEmail.subject}\n\n${generatedEmail.body}`
+          // Generate AI-powered personalized email (returns full content including Subject line)
+          emailContent = await generatePersonalizedEmail(parent, fee, paymentLink)
         }
 
-        // Here you would normally send the email using your email service
-        // For now, we'll simulate the email sending
-        console.log(`Sending email to ${parent.email}:`, emailContent)
+        // Send the actual email using Resend
+        const resend = getResend()
+        let emailSent = false
+        let emailError = null
+
+        if (resend && parent.email) {
+          try {
+            // Parse the email content to extract subject and body
+            const emailLines = emailContent.split('\n')
+            const subjectLine = emailLines.find(line => line.startsWith('Subject:'))
+            const subject = subjectLine ? subjectLine.replace('Subject:', '').trim() : `League Fee Payment Reminder - ${fee.season.name}`
+
+            // Get the body (everything after the subject line)
+            const subjectIndex = emailLines.findIndex(line => line.startsWith('Subject:'))
+            const body = subjectIndex >= 0 ? emailLines.slice(subjectIndex + 1).join('\n').trim() : emailContent
+
+            // Send email via Resend
+            let messageId: string | null = null
+            let usedFallback = false
+            const result = await resend.emails.send({
+              from: process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <onboarding@resend.dev>',
+              to: [parent.email],
+              subject: subject,
+              text: body,
+              html: body.replace(/\n/g, '<br>') // Simple HTML conversion
+            })
+
+            if (result.error) {
+              // If domain is not verified, retry with Resend's onboarding domain just for this send
+              const errStr = typeof result.error === 'string' ? result.error : JSON.stringify(result.error)
+              const isDomainUnverified = errStr.includes('domain is not verified') || (result.error as any)?.statusCode === 403
+              if (isDomainUnverified) {
+                try {
+                  const fb = await resend.emails.send({
+                    from: 'RA1 Basketball <onboarding@resend.dev>',
+                    to: [parent.email],
+                    subject: subject,
+                    text: body,
+                    html: body.replace(/\n/g, '<br>')
+                  })
+                  if (fb.error) {
+                    emailError = fb.error
+                    console.error(`Fallback send failed to ${parent.email}:`, fb.error)
+                  } else {
+                    emailSent = true
+                    usedFallback = true
+                    messageId = (fb as any).data?.id ?? null
+                    console.log(`✅ Email sent via fallback to ${parent.email}:`, (fb as any).data)
+                  }
+                } catch (e) {
+                  emailError = e
+                  console.error(`Fallback error sending email to ${parent.email}:`, e)
+                }
+              } else {
+                emailError = result.error
+                console.error(`Failed to send email to ${parent.email}:`, result.error)
+              }
+            } else {
+              emailSent = true
+              messageId = (result as any).data?.id ?? null
+              console.log(`✅ Email successfully sent to ${parent.email}:`, (result as any).data)
+            }
+          } catch (error) {
+            emailError = error
+            console.error(`Error sending email to ${parent.email}:`, error)
+          }
+        } else {
+          console.log(`📧 Simulating email to ${parent.email} (Resend not configured):`, emailContent)
+          emailSent = true // Simulate success for development
+        }
 
         // Update reminder count
         fee.remindersSent = (fee.remindersSent || 0) + 1
         fee.updatedAt = Date.now()
 
-        results.push({
-          parentId,
-          parentName: parent.name,
-          parentEmail: parent.email,
-          status: 'sent',
-          paymentLink,
-          emailContent: emailContent.substring(0, 200) + '...' // Truncated for response
-        })
-        successCount++
+        // Update results based on email sending status
+        if (emailSent) {
+          results.push({
+            parentId,
+            parentName: parent.name,
+            parentEmail: parent.email,
+            status: 'sent',
+            paymentLink,
+            emailContent: emailContent.substring(0, 200) + '...', // Truncated for response
+            emailId: typeof messageId === 'string' ? messageId : undefined,
+            usedFallback: typeof usedFallback !== 'undefined' ? usedFallback : false
+          })
+          successCount++
+        } else {
+          results.push({
+            parentId,
+            parentName: parent.name,
+            parentEmail: parent.email,
+            status: 'error',
+            error: emailError ? (emailError instanceof Error ? emailError.message : (typeof emailError === 'string' ? emailError : JSON.stringify(emailError))) : 'Failed to send email',
+            paymentLink,
+            emailContent: emailContent.substring(0, 200) + '...', // Truncated for response
+            usedFallback: false
+          })
+          errorCount++
+        }
 
       } catch (error) {
         results.push({

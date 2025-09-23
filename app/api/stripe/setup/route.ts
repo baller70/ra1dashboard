@@ -5,6 +5,8 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../convex/_generated/api';
 import Stripe from 'stripe';
 
+import { ensureCustomerByEmailAndFingerprint } from '@/lib/stripe'
+
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 function getStripe() {
@@ -83,3 +85,39 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+
+export async function POST(request: NextRequest) {
+  try {
+    const { parentId, paymentMethodId } = await request.json();
+    if (!parentId || !paymentMethodId) {
+      return NextResponse.json({ error: 'parentId and paymentMethodId are required' }, { status: 400 });
+    }
+
+    const parent = await convex.query(api.parents.getParent, { id: parentId as any });
+    if (!parent) {
+      return NextResponse.json({ error: 'Parent not found' }, { status: 404 });
+    }
+
+    // Resolve customer via two-factor matching and attach PM, set as default
+    const { customerId, paymentMethodId: pmId } = await ensureCustomerByEmailAndFingerprint(
+      String(paymentMethodId),
+      String(parent.email),
+      String(parent.name),
+      parent.phone || undefined,
+      { parentId: String(parent._id), source: 'setup' }
+    );
+
+    await convex.mutation(api.parents.updateParent, {
+      id: parent._id,
+      stripeCustomerId: customerId,
+      stripePaymentMethodId: pmId,
+    });
+
+    return NextResponse.json({ success: true, customerId, paymentMethodId: pmId });
+  } catch (error: any) {
+    console.error('Error resolving customer via setup POST:', error);
+    return NextResponse.json({ error: error?.message || 'Failed to resolve customer' }, { status: 500 });
+  }
+}
+

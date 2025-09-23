@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { ensureCustomerByEmailAndFingerprint } from '@/lib/stripe'
+
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { parentId, paymentId, amount, description } = body || {}
+    const { parentId, paymentId, amount, description, paymentMethodId } = body || {}
 
     if (!parentId || !paymentId || !amount) {
       return NextResponse.json(
@@ -116,8 +118,40 @@ export async function POST(request: NextRequest) {
         metadata: { parentId: parent._id, source: 'ra1-app' },
       })
       stripeCustomerId = customer.id
+
       await convex.mutation(api.parents.updateParent, { id: parent._id, stripeCustomerId })
     }
+
+    // If client provided a paymentMethodId, run two-factor linking and create a PaymentIntent instead of Checkout Session.
+    if (paymentMethodId) {
+      const { customerId, paymentMethodId: pmId } = await ensureCustomerByEmailAndFingerprint(
+        String(paymentMethodId),
+        String(parent.email),
+        String(parent.name),
+        parent.phone || undefined,
+        { parentId: String(parent._id), source: 'one_time_checkout' }
+      )
+
+      await convex.mutation(api.parents.updateParent, {
+        id: parent._id,
+        stripeCustomerId: customerId,
+        stripePaymentMethodId: pmId,
+      })
+
+      const pi = await stripe.paymentIntents.create({
+        amount: Number(amount),
+        currency: 'usd',
+        customer: customerId,
+        payment_method: pmId,
+        setup_future_usage: 'off_session',
+        automatic_payment_methods: { enabled: true },
+        metadata: { parentId: String(parent._id), paymentId: String(paymentId), source: 'one_time_inapp' },
+        description: description || `Payment ${paymentId}`,
+      })
+
+      return NextResponse.json({ success: true, clientSecret: pi.client_secret, paymentIntentId: pi.id })
+    }
+
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     const session = await stripe.checkout.sessions.create({
@@ -146,5 +180,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-
 

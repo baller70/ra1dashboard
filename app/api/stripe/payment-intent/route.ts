@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { ensureCustomerByEmailAndFingerprint } from '@/lib/stripe'
+
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -17,7 +19,7 @@ function getStripe() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { parentId, paymentId, amount, description } = await request.json()
+    const { parentId, paymentId, amount, description, paymentMethodId } = await request.json()
     if (!parentId || !amount) {
       return NextResponse.json({ error: 'Missing required fields: parentId, amount' }, { status: 400 })
     }
@@ -30,7 +32,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 })
     }
 
-    // Ensure Stripe customer
+    // If a paymentMethodId is provided, use two-factor matching (email + card fingerprint)
+    if (paymentMethodId) {
+      const { customerId, paymentMethodId: pmId } = await ensureCustomerByEmailAndFingerprint(
+        String(paymentMethodId),
+        String(parent.email),
+        String(parent.name),
+        parent.phone || undefined,
+        { parentId: String(parent._id), source: 'ra1-app' }
+      )
+
+      await convex.mutation(api.parents.updateParent as any, {
+        id: parent._id,
+        stripeCustomerId: customerId,
+        stripePaymentMethodId: pmId,
+      })
+
+      const intent = await stripe.paymentIntents.create({
+        amount: Number(amount),
+        currency: 'usd',
+        customer: customerId,
+        payment_method: pmId,
+        setup_future_usage: 'off_session',
+        automatic_payment_methods: { enabled: true },
+        metadata: {
+          source: 'one_time_inapp',
+          parentId: String(parent._id || parentId),
+          paymentId: paymentId ? String(paymentId) : '',
+        },
+        description: description || 'One-time payment',
+      })
+
+      return NextResponse.json({ success: true, clientSecret: intent.client_secret, paymentIntentId: intent.id })
+    }
+
+    // Fallback: existing behavior (email-only). Ensure Stripe customer by creating if missing
     let stripeCustomerId: string | undefined = parent.stripeCustomerId
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
@@ -43,7 +79,6 @@ export async function POST(request: NextRequest) {
       await convex.mutation(api.parents.updateParent as any, { id: parent._id, stripeCustomerId })
     }
 
-    // Create PaymentIntent (amount expected in cents)
     const intent = await stripe.paymentIntents.create({
       amount: Number(amount),
       currency: 'usd',
