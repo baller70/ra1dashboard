@@ -68,7 +68,7 @@ export const createPaymentInstallment = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     const installmentData: any = {
       parentPaymentId: args.parentPaymentId,
       installmentNumber: args.installmentNumber,
@@ -99,7 +99,7 @@ export const getPaymentInstallments = query({
   handler: async (ctx, args) => {
     const installments = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_parent_payment", (q) => 
+      .withIndex("by_parent_payment", (q) =>
         q.eq("parentPaymentId", args.parentPaymentId)
       )
       .order("asc")
@@ -117,7 +117,7 @@ export const getParentInstallments = query({
   handler: async (ctx, args) => {
     const installments = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_parent", (q) => 
+      .withIndex("by_parent", (q) =>
         q.eq("parentId", args.parentId)
       )
       .order("asc")
@@ -132,10 +132,10 @@ export const getOverdueInstallments = query({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
-    
+
     const overdueInstallments = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_overdue", (q) => 
+      .withIndex("by_overdue", (q) =>
         q.eq("status", "pending")
       )
       .filter((q) => q.lt(q.field("dueDate"), now))
@@ -150,10 +150,10 @@ export const getGracePeriodInstallments = query({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
-    
+
     const gracePeriodInstallments = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_grace_period", (q) => 
+      .withIndex("by_grace_period", (q) =>
         q.eq("isInGracePeriod", true)
       )
       .filter((q) => q.gt(q.field("gracePeriodEnd"), now))
@@ -173,7 +173,7 @@ export const markInstallmentPaid = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     await ctx.db.patch(args.installmentId, {
       status: "paid",
       paidAt: now,
@@ -189,13 +189,13 @@ export const markInstallmentPaid = mutation({
     if (installment) {
       const allInstallments = await ctx.db
         .query("paymentInstallments")
-        .withIndex("by_parent_payment", (q) => 
+        .withIndex("by_parent_payment", (q) =>
           q.eq("parentPaymentId", installment.parentPaymentId)
         )
         .collect();
 
       const paidInstallments = allInstallments.filter(i => i.status === "paid");
-      
+
       // If all installments are paid, mark parent payment as paid
       if (paidInstallments.length === allInstallments.length) {
         await ctx.db.patch(installment.parentPaymentId, {
@@ -218,7 +218,7 @@ export const markInstallmentOverdue = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     const gracePeriodEnd = now + (5 * 24 * 60 * 60 * 1000); // 5 days from now
-    
+
     await ctx.db.patch(args.installmentId, {
       status: "overdue",
       isInGracePeriod: true,
@@ -238,7 +238,7 @@ export const updateReminderSent = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     const installment = await ctx.db.get(args.installmentId);
-    
+
     if (installment) {
       await ctx.db.patch(args.installmentId, {
         remindersSent: installment.remindersSent + 1,
@@ -259,7 +259,7 @@ export const getPaymentProgress = query({
   handler: async (ctx, args) => {
     const installments = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_parent_payment", (q) => 
+      .withIndex("by_parent_payment", (q) =>
         q.eq("parentPaymentId", args.parentPaymentId)
       )
       .collect();
@@ -315,7 +315,7 @@ export const modifyPaymentSchedule = mutation({
     // Get existing installments
     const existingInstallments = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_parent_payment", (q) => 
+      .withIndex("by_parent_payment", (q) =>
         q.eq("parentPaymentId", args.parentPaymentId)
       )
       .collect();
@@ -352,7 +352,7 @@ export const modifyPaymentSchedule = mutation({
 
     return { success: true };
   },
-}); 
+});
 
 // Mark the first installment as paid
 export const markFirstInstallmentPaid = mutation({
@@ -361,11 +361,11 @@ export const markFirstInstallmentPaid = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     // Find the first installment for this payment
     const firstInstallment = await ctx.db
       .query("paymentInstallments")
-      .withIndex("by_parent_payment", (q) => 
+      .withIndex("by_parent_payment", (q) =>
         q.eq("parentPaymentId", args.parentPaymentId)
       )
       .filter((q) => q.eq(q.field("installmentNumber"), 1))
@@ -379,10 +379,10 @@ export const markFirstInstallmentPaid = mutation({
       });
       return firstInstallment._id;
     }
-    
+
     return null;
   },
-}); 
+});
 
 // Update installment status to paid (for testing first payment processing)
 export const updateInstallmentToPaid = mutation({
@@ -391,13 +391,59 @@ export const updateInstallmentToPaid = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     await ctx.db.patch(args.installmentId, {
       status: "paid",
       paidAt: now,
       updatedAt: now,
     });
-    
+
     return args.installmentId;
   },
-}); 
+});
+
+// Manually mark or unmark an installment as paid (no Stripe charge)
+export const setManualInstallmentStatus = mutation({
+  args: {
+    installmentId: v.id("paymentInstallments"),
+    markPaid: v.boolean(),
+    method: v.optional(v.string()),
+    note: v.optional(v.string()),
+    actor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const installment = await ctx.db.get(args.installmentId);
+    if (!installment) return { success: false, error: "Installment not found" };
+
+    // Merge notes JSON with manualPayment info
+    const existingNotes = (installment as any).notes || '';
+    const existingParsed = (() => { try { return JSON.parse(existingNotes) } catch { return {} } })();
+
+    const nextNotes = args.markPaid
+      ? JSON.stringify({
+          ...existingParsed,
+          manualPayment: {
+            at: now,
+            method: args.method || 'manual',
+            note: args.note || '',
+            actor: args.actor || 'admin',
+          },
+        })
+      : JSON.stringify({
+          ...Object.fromEntries(Object.entries(existingParsed).filter(([k]) => k !== 'manualPayment')),
+        });
+
+    await ctx.db.patch(args.installmentId, {
+      status: args.markPaid ? 'paid' : 'pending',
+      paidAt: args.markPaid ? now : undefined,
+      notes: nextNotes,
+      updatedAt: now,
+    });
+
+    // If unmarking and parent payment was previously marked paid solely because all were paid, we leave parent status unchanged for safety.
+    // A follow-up job can recompute parent status if needed.
+
+    return { success: true, paid: args.markPaid };
+  },
+});
