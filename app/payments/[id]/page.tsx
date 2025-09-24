@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 export const dynamic = 'force-dynamic'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -336,6 +336,16 @@ export default function PaymentDetailPage() {
   const [manualMethod, setManualMethod] = useState<string>('cash')
   const [manualNote, setManualNote] = useState<string>('')
 
+  // Guard to prevent stale progress fetch from overwriting fresh server progress
+  const [progressGuardUntil, setProgressGuardUntil] = useState<number>(0)
+  // Temporary override to force immediate UI reflection in Summary/Progress
+  const [summaryOverride, setSummaryOverride] = useState<{ paidAmount?: number; remainingAmount?: number; progressPercentage?: number } | null>(null)
+  // UI version tick to force remount of Summary/Progress/Schedule blocks after manual actions
+  const [uiVersion, setUiVersion] = useState<number>(0)
+  // After a successful manual POST, we lock in the expected progress and only clear it
+  // when a matching GET /progress returns. This prevents stale responses from reverting UI.
+  const expectedProgressRef = useRef<{ paidAmount?: number; remainingAmount?: number; progressPercentage?: number; paidInstallments?: number } | null>(null)
+
 
   // AI Reminder Prompt state
   const [aiReminderPrompt, setAiReminderPrompt] = useState<string>('')
@@ -501,7 +511,7 @@ export default function PaymentDetailPage() {
     try {
       console.log('🔍 Starting fetchPaymentDetails for ID:', params.id)
       setLoading(true)
-      const response = await fetch(`/api/payments/${params.id}?t=${Date.now()}`)
+      const response = await fetch(`/api/payments/${params.id}?t=${Date.now()}`, { cache: 'no-store' })
 
       console.log('🔍 Fetch response status:', response.status)
 
@@ -534,7 +544,7 @@ export default function PaymentDetailPage() {
   const fetchPaymentHistory = async () => {
     try {
       setHistoryLoading(true)
-      const response = await fetch(`/api/payments/${params.id}/history`)
+      const response = await fetch(`/api/payments/${params.id}/history?t=${Date.now()}`, { cache: 'no-store' })
 
       if (response.ok) {
         const data = await response.json()
@@ -567,11 +577,42 @@ export default function PaymentDetailPage() {
 
   const fetchPaymentProgress = async () => {
     try {
-      const response = await fetch(`/api/payments/${params.id}/progress`)
+      // Prevent stale read-after-write from overwriting fresh server-calculated progress
+      if (Date.now() < progressGuardUntil) {
+        console.log('[Payment Page] Skipping progress fetch due to guard window');
+        return;
+      }
+
+      const response = await fetch(`/api/payments/${params.id}/progress?t=${Date.now()}`, { cache: 'no-store' })
 
       if (response.ok) {
         const data = await response.json()
         console.log('[Payment Page] Progress API response:', data);
+        // Double-guard: skip applying stale responses that arrive during the guard window
+        if (Date.now() < progressGuardUntil) {
+          console.log('[Payment Page] Skipping applying progress due to guard window');
+          return;
+        }
+        // If we have an expected progress signature, only accept a matching fresh value
+        const expected = expectedProgressRef.current
+        if (expected) {
+          const matches =
+            typeof data?.paidAmount === 'number' &&
+            typeof data?.progressPercentage === 'number' &&
+            typeof data?.paidInstallments === 'number' &&
+            Math.round(data.progressPercentage) === Math.round((expected.progressPercentage ?? data.progressPercentage) as number) &&
+            data.paidAmount === (expected.paidAmount ?? data.paidAmount) &&
+            data.paidInstallments === (expected.paidInstallments ?? data.paidInstallments)
+
+          if (!matches) {
+            console.log('[Payment Page] Ignoring stale/unconfirmed progress that does not match expected server progress; retrying shortly')
+            setTimeout(() => { try { fetchPaymentProgress() } catch {} }, 1000)
+            return
+          }
+          // Matched the expected fresh server progress; clear override and lock
+          expectedProgressRef.current = null
+          setSummaryOverride(null)
+        }
         setPaymentProgress(data)
       }
     } catch (error) {
@@ -761,38 +802,7 @@ The Basketball Factory Inc.`
       // Open the AI reminder dialog
       setAiReminderOpen(true)
 
-  // Manual installment mark/unmark handlers
-  const openManualDialog = (installment: any, action: 'mark' | 'unmark') => {
-    setManualTarget(installment)
-    setManualAction(action)
-    setManualMethod('cash')
-    setManualNote('')
-    setManualDialogOpen(true)
-  }
 
-  const handleManualConfirm = async () => {
-    if (!manualTarget) return
-    try {
-      const resp = await fetch(`/api/installments/${manualTarget._id}/manual`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          markPaid: manualAction === 'mark',
-          method: manualMethod,
-          note: manualNote,
-          actor: 'admin',
-        }),
-      })
-      if (!resp.ok) throw new Error(await resp.text())
-      toast({ title: manualAction === 'mark' ? '✅ Marked as Paid' : '↩️ Reverted', description: manualAction === 'mark' ? `Installment #${manualTarget.installmentNumber} marked as paid manually.` : `Installment #${manualTarget.installmentNumber} reverted to pending.` })
-      setManualDialogOpen(false)
-      setManualTarget(null)
-      await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
-    } catch (e: any) {
-      console.error('Manual mark error:', e)
-      toast({ title: 'Error', description: e?.message || 'Failed to update installment', variant: 'destructive' })
-    }
-  }
 
     } catch (error) {
       console.error('Error generating installment reminder:', error)
@@ -837,6 +847,7 @@ The Basketball Factory Inc.`
           amount: payment.amount,
           dueDate: payment.dueDate,
           status: payment.status,
+
           messageType: 'reminder'
         },
         customInstructions: aiReminderPrompt.trim() || null,
@@ -1165,6 +1176,104 @@ The Basketball Factory Inc.`
     )
   }
 
+  // Manual installment mark/unmark handlers (component scope)
+  const openManualDialog = (installment: any, action: 'mark' | 'unmark') => {
+    setManualTarget(installment)
+    setManualAction(action)
+    setManualMethod('cash')
+    setManualNote('')
+    setManualDialogOpen(true)
+  }
+
+  const handleManualConfirm = async () => {
+    if (!manualTarget) return
+    try {
+      const resp = await fetch(`/api/installments/${manualTarget._id}/manual`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          markPaid: manualAction === 'mark',
+          method: manualMethod,
+          note: manualNote,
+          actor: 'admin',
+          parentPaymentId: (payment as any)?._id || (payment as any)?.id || params.id,
+        }),
+      })
+      const json = await resp.json().catch(() => ({} as any))
+      if (!resp.ok || json?.success === false) {
+        const msg = json?.error || (await resp.text()).slice(0, 500) || 'Failed to update installment'
+        throw new Error(msg)
+      }
+
+      // Prefer server-calculated progress when provided (strong read-after-write)
+      if (json?.progress) {
+        console.log('[Payment Page] Applying server progress', json.progress);
+        setPaymentProgress(json.progress as any)
+        // Force immediate UI reflection for Summary/Progress
+        setSummaryOverride({
+          paidAmount: (json.progress as any).paidAmount,
+          remainingAmount: (json.progress as any).remainingAmount,
+          progressPercentage: (json.progress as any).progressPercentage,
+        })
+        // Lock in expected progress until a matching fresh GET confirms it; do not auto-clear
+        expectedProgressRef.current = {
+          paidAmount: (json.progress as any).paidAmount,
+          remainingAmount: (json.progress as any).remainingAmount,
+          progressPercentage: (json.progress as any).progressPercentage,
+          paidInstallments: (json.progress as any).paidInstallments,
+        }
+        // Guard against stale overwrites for a longer window to ensure consistency
+        setProgressGuardUntil(Date.now() + 15000)
+        // Force remount of key UI blocks to ensure immediate visual update
+        setUiVersion(v => v + 1)
+      } else {
+        // Optimistic UI update: flip the status locally so the button toggles immediately
+        setPaymentProgress((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            installments: prev.installments.map((i) =>
+              i._id === manualTarget._id
+                ? { ...i, status: manualAction === 'mark' ? 'paid' : 'pending', paidAt: manualAction === 'mark' ? Date.now() : undefined }
+                : i
+            ),
+          }
+        })
+        setProgressGuardUntil(Date.now() + 15000)
+        setUiVersion(v => v + 1)
+      }
+
+      toast({ title: manualAction === 'mark' ? '✅ Marked as Paid' : '↩️ Reverted', description: manualAction === 'mark' ? `Installment #${manualTarget.installmentNumber} marked as paid manually.` : `Installment #${manualTarget.installmentNumber} reverted to pending.` })
+
+      // Immediately reflect in Payment History list without waiting for server
+      try {
+        const newEntry = {
+          id: `manual_${manualTarget._id}_${Date.now()}`,
+          action: manualAction === 'mark' ? 'Payment Received' : 'Payment Reverted',
+          description: manualAction === 'mark'
+            ? `Installment #${manualTarget.installmentNumber} manually recorded as paid (${manualMethod || 'manual'})`
+            : `Manual payment for installment #${manualTarget.installmentNumber} reverted to pending`,
+          performedBy: 'admin',
+          performedAt: new Date().toISOString(),
+          amount: manualTarget.amount,
+          status: manualAction === 'mark' ? 'paid' : 'pending',
+          metadata: { installmentId: manualTarget._id, method: manualMethod || 'manual', note: manualNote || '' },
+        } as any
+        setPaymentHistory(prev => [newEntry, ...(prev || [])])
+      } catch {}
+
+      setManualDialogOpen(false)
+      setManualTarget(null)
+      // Also refresh details/history immediately; delay progress fetch to avoid read-after-write
+      await Promise.all([fetchPaymentDetails(), fetchPaymentHistory()])
+      // Allow extra time for DB consistency before re-fetching progress
+      setTimeout(() => { try { setProgressGuardUntil(0); fetchPaymentProgress(); } catch {} }, 12000)
+    } catch (e: any) {
+      console.error('Manual mark error:', e)
+      toast({ title: 'Error', description: e?.message || 'Failed to update installment', variant: 'destructive' })
+    }
+  }
+
   const daysOverdue = payment.status === 'overdue'
     ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
     : 0
@@ -1205,7 +1314,7 @@ The Basketball Factory Inc.`
           {/* Left Column - Payment Summary */}
           <div className="lg:col-span-2 space-y-6">
             {/* Payment Summary Card */}
-            <Card className="bg-white">
+            <Card key={`summary-${uiVersion}`} className="bg-white">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <DollarSign className="h-5 w-5" />
@@ -1229,14 +1338,16 @@ The Basketball Factory Inc.`
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`} />
-                    <div className={`text-3xl font-bold ${
+                    <div data-testid="amount-remaining" className={`text-3xl font-bold ${
                       paymentProgress && paymentProgress.remainingAmount === 0
                         ? 'text-green-600'
                         : paymentProgress && paymentProgress.remainingAmount > 0
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`}>
-                      ${Number((paymentProgress && paymentProgress.remainingAmount !== undefined)
+                      ${Number((summaryOverride && summaryOverride.remainingAmount !== undefined)
+                        ? summaryOverride.remainingAmount
+                        : (paymentProgress && paymentProgress.remainingAmount !== undefined)
                         ? paymentProgress.remainingAmount
                         : (payment && (payment as any).amount)) .toFixed(2)}
                     </div>
@@ -1257,8 +1368,12 @@ The Basketball Factory Inc.`
                   {/* Amount Paid */}
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <CheckCircle className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                    <div className="text-3xl font-bold text-blue-600">
-                      ${Number((paymentProgress && paymentProgress.paidAmount !== undefined) ? paymentProgress.paidAmount : 0).toFixed(2)}
+                    <div data-testid="amount-paid" className="text-3xl font-bold text-blue-600">
+                      ${Number((summaryOverride && summaryOverride.paidAmount !== undefined)
+                        ? summaryOverride.paidAmount
+                        : (paymentProgress && paymentProgress.paidAmount !== undefined)
+                        ? paymentProgress.paidAmount
+                        : 0).toFixed(2)}
                     </div>
                     <div className="text-sm text-blue-600 font-medium">Amount Paid</div>
                   </div>
@@ -1282,7 +1397,7 @@ The Basketball Factory Inc.`
                     ) : (
                       <Clock className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
                     )}
-                    <div className={`text-3xl font-bold ${
+                    <div data-testid="progress-percentage" className={`text-3xl font-bold ${
                       paymentProgress && paymentProgress.progressPercentage === 100
                         ? 'text-green-600'
                         : paymentProgress && paymentProgress.progressPercentage > 0
@@ -1291,7 +1406,9 @@ The Basketball Factory Inc.`
                         ? 'text-red-600'
                         : 'text-yellow-600'
                     }`}>
-                      {paymentProgress && paymentProgress.progressPercentage !== undefined
+                      {(summaryOverride && summaryOverride.progressPercentage !== undefined)
+                        ? `${Math.round(summaryOverride.progressPercentage!)}%`
+                        : (paymentProgress && paymentProgress.progressPercentage !== undefined)
                         ? `${Math.round(paymentProgress.progressPercentage)}%`
                         : payment.status === 'paid' ? '100%' : '0%'
                       }
@@ -1488,7 +1605,7 @@ The Basketball Factory Inc.`
 
             {/* Payment Schedule */}
             {paymentProgress && paymentProgress.installments && paymentProgress.installments.length > 0 && (
-              <Card className="bg-white">
+              <Card key={`schedule-${uiVersion}`} className="bg-white">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Calendar className="h-5 w-5" />
@@ -1550,25 +1667,18 @@ The Basketball Factory Inc.`
                                installment.status === 'overdue' ? 'Overdue' : 'Pending'}
                             </Badge>
                           </div>
-                          {installment.status === 'paid' && (() => {
-                            let manual = false
-                            try {
-                              const parsed = JSON.parse((installment as any).notes || '{}')
-                              manual = !!parsed?.manualPayment
-                            } catch {}
-                            return manual ? (
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openManualDialog(installment, 'unmark')}
-                                  className="flex items-center gap-1 text-gray-700 border-gray-200 hover:bg-gray-50"
-                                >
-                                  Unmark
-                                </Button>
-                              </div>
-                            ) : null
-                          })()}
+                          {installment.status === 'paid' && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openManualDialog(installment, 'unmark')}
+                                className="flex items-center gap-1 text-gray-700 border-gray-200 hover:bg-gray-50"
+                              >
+                                Unmark
+                              </Button>
+                            </div>
+                          )}
 
                           {installment.status !== 'paid' && (
                             <div className="flex gap-2">

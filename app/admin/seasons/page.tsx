@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AppLayout } from '../../../components/app-layout'
+import { AppLayout as AL } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
@@ -99,7 +99,7 @@ interface LeagueFee {
   }
 }
 
-export default function SeasonsPage() {
+const SeasonsPage = () => {
   const [seasons, setSeasons] = useState<Season[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -165,8 +165,8 @@ export default function SeasonsPage() {
           ...formData,
           startDate: new Date(formData.startDate).getTime(),
           endDate: new Date(formData.endDate).getTime(),
-          registrationDeadline: formData.registrationDeadline 
-            ? new Date(formData.registrationDeadline).getTime() 
+          registrationDeadline: formData.registrationDeadline
+            ? new Date(formData.registrationDeadline).getTime()
             : undefined
         })
       })
@@ -443,19 +443,19 @@ export default function SeasonsPage() {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AL>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
             <p className="mt-2 text-muted-foreground">Loading seasons...</p>
           </div>
         </div>
-      </AppLayout>
+      </AL>
     )
-  }
+  };
 
   return (
-    <AppLayout>
+    <AL>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -980,11 +980,14 @@ export default function SeasonsPage() {
                     </Button>
                   </div>
                 </>
-              )}
+              ) : null}
             </div>
           </DialogContent>
         </Dialog>
       </div>
-    </AppLayout>
+    </AL>
   )
 }
+
+
+export default SeasonsPage

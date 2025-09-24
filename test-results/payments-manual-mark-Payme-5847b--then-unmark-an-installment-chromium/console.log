@@ -1,0 +1,32 @@
+[log] 🔄 Page is in loading state
+[log] 🔍 useEffect triggered with params.id: jh70600kn9dtn791k8dz3vqtxx7qxbzs
+[log] 🔍 Starting fetchPaymentDetails for ID: jh70600kn9dtn791k8dz3vqtxx7qxbzs
+[log] 🔄 Page is in loading state
+[error] Failed to load resource: the server responded with a status of 404 ()
+[log] [Payment Page] Progress API response: {totalInstallments: 9, paidInstallments: 2, overdueInstallments: 0, totalAmount: 9000, paidAmount: 2000}
+[log] 🔄 Page is in loading state
+[log] 🔍 Fetch response status: 200
+[log] Payment data loaded, fetching league fees...
+[log] Fetching league fees for parent ID: j971g9n5ve0qqsby21a0k9n1js7n7tbx
+[log] No parent ID available for league fees fetch
+[log] League fees data received: {success: true, data: Array(1)}
+[error] Failed to load resource: the server responded with a status of 500 ()
+[log] [Payment Page] Applying server progress {totalInstallments: 9, paidInstallments: 3, overdueInstallments: 0, totalAmount: 9000, paidAmount: 3000}
+[log] 🔍 Starting fetchPaymentDetails for ID: jh70600kn9dtn791k8dz3vqtxx7qxbzs
+[log] 🔄 Page is in loading state
+[error] Failed to load resource: the server responded with a status of 500 ()
+[log] 🔄 Page is in loading state
+[log] 🔍 Fetch response status: 200
+[log] Payment data loaded, fetching league fees...
+[log] Fetching league fees for parent ID: j971g9n5ve0qqsby21a0k9n1js7n7tbx
+[log] League fees data received: {success: true, data: Array(1)}
+[log] [Payment Page] Progress API response: {totalInstallments: 9, paidInstallments: 2, overdueInstallments: 0, totalAmount: 9000, paidAmount: 2000}
+[log] [Payment Page] Applying server progress {totalInstallments: 9, paidInstallments: 2, overdueInstallments: 1, totalAmount: 9000, paidAmount: 2000}
+[log] 🔍 Starting fetchPaymentDetails for ID: jh70600kn9dtn791k8dz3vqtxx7qxbzs
+[log] 🔄 Page is in loading state
+[log] 🔍 Fetch response status: 200
+[log] Payment data loaded, fetching league fees...
+[log] Fetching league fees for parent ID: j971g9n5ve0qqsby21a0k9n1js7n7tbx
+[log] League fees data received: {success: true, data: Array(1)}
+[error] Failed to load resource: the server responded with a status of 500 ()
+[log] [Payment Page] Progress API response: {totalInstallments: 9, paidInstallments: 2, overdueInstallments: 0, totalAmount: 9000, paidAmount: 2000}
