@@ -27,8 +27,9 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Parsed teamId:', teamId, 'parentIds:', parentIds);
 
     // Use the Convex assignParentsToTeam mutation
+    // Convert null to undefined for Convex compatibility
     const result = await convex.mutation(api.teams.assignParentsToTeam, {
-      teamId: teamId as any,
+      teamId: teamId || undefined,
       parentIds: parentIds as any[]
     });
     console.log('🔍 Convex mutation result:', result);
