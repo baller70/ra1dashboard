@@ -686,6 +686,18 @@ export default function PaymentsPage() {
   // Unassign a single parent from their team (keeps parent record and moves to Unassigned)
   const handleUnassignParent = async (parentId: string) => {
     try {
+      const parent = allParents.find((p: any) => p._id === parentId)
+      const prevTeamId = parent?.teamId
+      const parentName = parent?.name || 'this parent'
+      if (!prevTeamId) {
+        // Already unassigned; nothing to do
+        toast({ title: 'Already Unassigned', description: `${parentName} is not currently assigned to a team.` })
+        return
+      }
+
+      const ok = window.confirm(`Remove ${parentName} from their team and move to Unassigned?`)
+      if (!ok) return
+
       const res = await fetch('/api/teams/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -693,7 +705,7 @@ export default function PaymentsPage() {
       })
       const result = await res.json()
       if (res.ok && result?.success) {
-        toast({ title: 'Removed from Team', description: 'Parent moved to Unassigned', duration: 2500 })
+        toast({ title: 'Removed from Team', description: `${parentName} moved to Unassigned`, duration: 2500 })
         await fetchData(true)
       } else {
         toast({ title: 'Error', description: result?.error || 'Failed to remove from team', variant: 'destructive' })
