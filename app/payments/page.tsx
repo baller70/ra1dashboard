@@ -771,32 +771,49 @@ export default function PaymentsPage() {
     (() => {
       // First group payments by team as before
       const paymentGroups = deduplicatedPayments.reduce((groups: Record<string, any[]>, payment) => {
-        // Find the parent's team from allParents data
         const parent = allParents.find(p => p._id === payment.parentId)
         const team = teams.find(t => t._id === parent?.teamId)
         const teamKey = team ? team.name : 'Unassigned'
-
-        if (!groups[teamKey]) {
-          groups[teamKey] = []
-        }
+        if (!groups[teamKey]) groups[teamKey] = []
         groups[teamKey].push(payment)
         return groups
       }, {})
 
-      // Now add ALL unassigned parents (even those without payments) to the Unassigned group
+      // Ensure every team shows up, even if there are no payments
+      for (const t of teams) {
+        if (!paymentGroups[t.name]) paymentGroups[t.name] = []
+      }
+      if (!paymentGroups['Unassigned']) paymentGroups['Unassigned'] = []
+
+      // Add mock entries for parents with no payments in each team
+      for (const t of teams) {
+        const teamKey = t.name
+        const parentsInTeam = allParents.filter(p => p.teamId === t._id)
+        for (const parent of parentsInTeam) {
+          const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
+          if (!hasAnyPayment) {
+            paymentGroups[teamKey].push({
+              _id: `mock-${parent._id}`,
+              parentId: parent._id,
+              parentName: parent.name,
+              parentEmail: parent.email,
+              amount: 0,
+              status: 'no_payment',
+              dueDate: new Date().toISOString(),
+              createdAt: parent.createdAt || Date.now(),
+              remindersSent: 0,
+              isMockEntry: true
+            })
+          }
+        }
+      }
+
+      // Unassigned parents with no payments → mock entries
       const unassignedParents = allParents.filter(p => !p.teamId)
-
-      // Create mock payment entries for parents without payments
-      const unassignedGroup = paymentGroups['Unassigned'] || []
-
-      unassignedParents.forEach(parent => {
-        // IMPROVED: Check if this parent already has ANY payment in the system (not just in this group)
-        // This includes payments from payment plans that might not be in the current group yet
-        const hasAnyPayment = deduplicatedPayments.some(payment => payment.parentId === parent._id)
-
+      for (const parent of unassignedParents) {
+        const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
         if (!hasAnyPayment) {
-          // Create a mock payment entry for display purposes only if parent has NO payments at all
-          unassignedGroup.push({
+          paymentGroups['Unassigned'].push({
             _id: `mock-${parent._id}`,
             parentId: parent._id,
             parentName: parent.name,
@@ -806,12 +823,11 @@ export default function PaymentsPage() {
             dueDate: new Date().toISOString(),
             createdAt: parent.createdAt || Date.now(),
             remindersSent: 0,
-            isMockEntry: true // Flag to identify mock entries
+            isMockEntry: true
           })
         }
-      })
+      }
 
-      paymentGroups['Unassigned'] = unassignedGroup
       return paymentGroups
     })() :
     { 'All Payments': deduplicatedPayments }
