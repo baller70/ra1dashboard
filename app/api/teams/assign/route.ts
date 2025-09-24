@@ -28,33 +28,15 @@ export async function POST(request: NextRequest) {
 
     let result;
 
-    if (teamId) {
-      // Assign to team using the team assignment mutation
-      console.log('🔍 Assigning parents to team:', teamId);
-      result = await convex.mutation(api.teams.assignParentsToTeam, {
-        teamId: teamId as any,
-        parentIds: parentIds as any[]
-      });
-    } else {
-      // Unassign from team using direct parent update
-      console.log('🔍 Unassigning parents from teams');
-      const updatedParents = [];
+    // Use a single Convex mutation for both assign and unassign.
+    // When teamId is null, pass undefined so the mutation clears the field.
+    const cleanedTeamId = teamId ?? undefined;
+    console.log('🔍 Calling teams.assignParentsToTeam with teamId:', cleanedTeamId);
+    result = await convex.mutation(api.teams.assignParentsToTeam, {
+      teamId: cleanedTeamId as any,
+      parentIds: parentIds as any[]
+    });
 
-      for (const parentId of parentIds) {
-        console.log('🔍 Updating parent:', parentId, 'to remove teamId');
-        const updatedParent = await convex.mutation(api.parents.updateParent, {
-          id: parentId as any,
-          teamId: undefined
-        });
-        updatedParents.push(updatedParent);
-      }
-
-      result = {
-        success: true,
-        assignedCount: parentIds.length,
-        parents: updatedParents
-      };
-    }
     console.log('🔍 Convex mutation result:', result);
 
     return NextResponse.json({
