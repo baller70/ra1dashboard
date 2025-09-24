@@ -488,6 +488,12 @@ export default function PaymentsPage() {
       return
     }
 
+    // Snapshot previous assignments for Undo
+    const prevAssignments = selectedParents.map((pid) => {
+      const prev = allParents.find((p: any) => p._id === pid)
+      return { parentId: pid, teamId: (prev?.teamId ?? null) as string | null }
+    })
+
     try {
       const response = await fetch('/api/teams/assign', {
         method: 'POST',
@@ -506,10 +512,37 @@ export default function PaymentsPage() {
         setShowParentAssignDialog(false)
         setSelectedParents([])
         setAssignToTeamId('')
-        toast({
+        const t = toast({
           title: '✅ Assignments Updated',
           description: result.message || 'Parents have been assigned successfully',
-          duration: 3000,
+          action: (
+            <ToastAction
+              altText="Undo"
+              onClick={async () => {
+                try {
+                  const undoRes = await fetch('/api/teams/assign', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assignments: prevAssignments })
+                  })
+                  const undoJson = await undoRes.json()
+                  if (undoRes.ok && undoJson?.success) {
+                    toast({ title: 'Reverted', description: 'Bulk assignment undone' })
+                    await fetchData(true)
+                  } else {
+                    toast({ title: 'Error', description: undoJson?.error || 'Undo failed', variant: 'destructive' })
+                  }
+                } catch (e) {
+                  console.error('Bulk undo failed:', e)
+                  toast({ title: 'Error', description: 'Undo failed', variant: 'destructive' })
+                } finally {
+                  t.dismiss()
+                }
+              }}
+            >
+              Undo
+            </ToastAction>
+          )
         })
         await fetchData(true)
       } else {
@@ -665,6 +698,13 @@ export default function PaymentsPage() {
     if (!confirm(confirmMsg)) return
 
     try {
+      // Snapshot teams and their parents for Undo
+      const deletionSnapshot = selectedTeamIds.map((id) => {
+        const team = teams.find((t: any) => t._id === id)
+        const parentIds = allParents.filter((p: any) => p.teamId === id).map((p: any) => p._id)
+        return { name: team?.name, description: team?.description, color: team?.color, parentIds }
+      })
+
       const res = await fetch('/api/teams/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -672,7 +712,50 @@ export default function PaymentsPage() {
       })
       const result = await res.json()
       if (res.ok && result?.success) {
-        toast({ title: 'Teams deleted', description: `${result.successCount} deleted. ${result.failCount} failed.` })
+        const t = toast({
+          title: 'Teams deleted',
+          description: `${result.successCount} deleted. ${result.failCount} failed.`,
+          action: (
+            <ToastAction
+              altText="Undo"
+              onClick={async () => {
+                try {
+                  // Recreate teams and reassign parents
+                  const assignments: { parentId: string, teamId: string | null }[] = []
+                  for (const snap of deletionSnapshot) {
+                    // Create team
+                    const createRes = await fetch('/api/teams', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ name: snap.name, description: snap.description, color: snap.color })
+                    })
+                    const createJson = await createRes.json()
+                    if (createRes.ok && createJson?.teamId) {
+                      const newTeamId = createJson.teamId as string
+                      for (const pid of snap.parentIds) assignments.push({ parentId: pid, teamId: newTeamId })
+                    }
+                  }
+                  if (assignments.length > 0) {
+                    const assignRes = await fetch('/api/teams/assign', {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ assignments })
+                    })
+                    const assignJson = await assignRes.json()
+                    if (!assignRes.ok || !assignJson?.success) throw new Error(assignJson?.error || 'Failed to reassign')
+                  }
+                  toast({ title: 'Restored', description: 'Deleted teams restored and parents reassigned.' })
+                  await fetchData(true)
+                } catch (e) {
+                  console.error('Undo bulk delete failed:', e)
+                  toast({ title: 'Error', description: 'Undo failed', variant: 'destructive' })
+                } finally {
+                  t.dismiss()
+                }
+              }}
+            >
+              Undo
+            </ToastAction>
+          )
+        })
         clearSelectedTeams()
         await fetchData(true)
       } else {
