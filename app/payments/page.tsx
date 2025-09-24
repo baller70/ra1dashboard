@@ -338,6 +338,7 @@ export default function PaymentsPage() {
 
   // Bulk team selection state
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+  const [showManageTeamsDialog, setShowManageTeamsDialog] = useState(false)
 
   const [showAiActions, setShowAiActions] = useState(false)
   const [groupByTeam, setGroupByTeam] = useState(true)
@@ -1339,6 +1340,9 @@ export default function PaymentsPage() {
                 }
               </div>
               <div className="ml-auto flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setShowManageTeamsDialog(true)} title="Select teams for bulk actions">
+                  Manage Teams
+                </Button>
                 <Button variant="destructive" size="sm" disabled={selectedTeamIds.length === 0} onClick={handleBulkDeleteTeams} title="Delete selected teams (parents moved to Unassigned)">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Selected Teams {selectedTeamIds.length > 0 ? `(${selectedTeamIds.length})` : ''}
@@ -1698,6 +1702,51 @@ export default function PaymentsPage() {
               </div>
             </TabsContent>
           ))}
+      {/* Manage Teams Dialog */
+      }
+      <Dialog open={showManageTeamsDialog} onOpenChange={setShowManageTeamsDialog}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Manage Teams</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Select teams to delete. Parents in deleted teams will be moved to Unassigned.
+              </div>
+              <div className="space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds(teams.map(t => t._id))}>Select All</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds([])}>Clear</Button>
+              </div>
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              {teams.length === 0 && (
+                <div className="text-sm text-muted-foreground">No teams yet.</div>
+              )}
+              {teams.map((team) => (
+                <div key={team._id} className="flex items-center justify-between p-2 border rounded-md">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={selectedTeamIds.includes(team._id)}
+                      onCheckedChange={(checked) => setSelectedTeamIds(prev => checked ? [...new Set([...prev, team._id])] : prev.filter(id => id !== team._id))}
+                    />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: team.color || '#f97316' }} />
+                    <span className="font-medium">{team.name}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{allParents.filter(p => p.teamId === team._id).length} parents</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowManageTeamsDialog(false)}>Close</Button>
+              <Button variant="destructive" disabled={selectedTeamIds.length === 0} onClick={async () => { await handleBulkDeleteTeams(); setShowManageTeamsDialog(false); }}>
+                <Trash2 className="mr-2 h-4 w-4" /> Delete Selected Teams {selectedTeamIds.length > 0 ? `(${selectedTeamIds.length})` : ''}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
         </Tabs>
 
       {/* Parent Assignment Dialog */}
