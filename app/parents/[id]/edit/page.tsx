@@ -82,7 +82,10 @@ export default function EditParentPage() {
     try {
       const response = await fetch(`/api/parents/${params.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
         body: JSON.stringify(formData)
       })
 
