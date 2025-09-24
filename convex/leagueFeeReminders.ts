@@ -286,17 +286,3 @@ export const sendReminderMessage = action({
   },
 });
 
-// Get pending reminders (internal query)
-export const getPendingReminders = query({
-  args: {},
-  handler: async (ctx) => {
-    const now = Date.now();
-
-    return await ctx.db
-      .query("leagueFeeReminders")
-      .withIndex("by_due_reminders", (q) =>
-        q.eq("status", "scheduled").lte("scheduledFor", now)
-      )
-      .collect();
-  },
-});

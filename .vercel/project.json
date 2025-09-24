@@ -1,1 +1,16 @@
-{"projectId":"prj_bysilCXYpMqe0sKHOgiu8wUYXy8E","orgId":"team_eGOix6DFUT4zKBUkDNJttmrG","projectName":"ra1dashboard"}
+{
+  "projectId": "prj_bysilCXYpMqe0sKHOgiu8wUYXy8E",
+  "orgId": "team_eGOix6DFUT4zKBUkDNJttmrG",
+  "projectName": "ra1dashboard",
+  "settings": {
+    "createdAt": 1753627618193,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "22.x"
+  }
+}

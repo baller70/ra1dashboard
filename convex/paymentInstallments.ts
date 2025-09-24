@@ -416,6 +416,8 @@ export const setManualInstallmentStatus = mutation({
     const installment = await ctx.db.get(args.installmentId);
     if (!installment) return { success: false, error: "Installment not found" };
 
+    const prevStatus = (installment as any).status;
+
     // Merge notes JSON with manualPayment info
     const existingNotes = (installment as any).notes || '';
     const existingParsed = (() => { try { return JSON.parse(existingNotes) } catch { return {} } })();
@@ -441,9 +443,15 @@ export const setManualInstallmentStatus = mutation({
       updatedAt: now,
     });
 
-    // If unmarking and parent payment was previously marked paid solely because all were paid, we leave parent status unchanged for safety.
-    // A follow-up job can recompute parent status if needed.
+    // Fetch updated record for return + debugging
+    const updated = await ctx.db.get(args.installmentId);
 
-    return { success: true, paid: args.markPaid };
+    return {
+      success: true,
+      paid: args.markPaid,
+      prevStatus,
+      status: (updated as any)?.status,
+      installmentId: args.installmentId,
+    };
   },
 });
