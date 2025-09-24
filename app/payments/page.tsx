@@ -3,7 +3,7 @@
 
 // Client component; no Next.js dynamic export in client files
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import nextDynamic from 'next/dynamic'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
