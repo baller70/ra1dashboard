@@ -91,6 +91,7 @@ export default function PaymentsPage() {
   const [teamsData, setTeamsData] = useState<any>(null)
   const [allParentsData, setAllParentsData] = useState<any>(null)
   const [plansTotals, setPlansTotals] = useState<{ total: number, activeParents: number } | null>(null)
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false)
 
   // Define fetchData as a standalone function
   const fetchData = useCallback(async (isManualRefresh = false) => {
@@ -520,6 +521,8 @@ export default function PaymentsPage() {
   }
 
   const handleCreateTeam = async () => {
+    if (isCreatingTeam) return;
+    setIsCreatingTeam(true);
     try {
       const response = await fetch('/api/teams', {
         method: 'POST',
@@ -533,20 +536,22 @@ export default function PaymentsPage() {
         })
       })
 
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
 
       if (response.ok) {
+        // Close dialog and refresh teams without full page reload
         setShowTeamDialog(false)
         setTeamForm({ name: '', description: '', color: '#f97316' })
-        alert("Team created successfully")
-        // Refresh the page to show the new team
-        window.location.reload()
+        await fetchData(true)
+        toast({ title: 'Team created', description: 'Your new team has been added.' })
       } else {
         alert('Failed to create team: ' + (result.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error creating team:', error)
       alert('Error creating team')
+    } finally {
+      setIsCreatingTeam(false)
     }
   }
 
@@ -733,6 +738,17 @@ export default function PaymentsPage() {
       })
       
       paymentGroups['Unassigned'] = unassignedGroup
+
+      // Ensure every team appears as a group, even if it has no payments or parents yet
+      try {
+        if (Array.isArray(teams)) {
+          for (const t of teams) {
+            const key = t.name;
+            if (!paymentGroups[key]) paymentGroups[key] = [];
+          }
+        }
+      } catch {}
+
       return paymentGroups
     })() : 
     { 'All Payments': deduplicatedPayments }
@@ -1330,8 +1346,11 @@ export default function PaymentsPage() {
                         <Button variant="outline" onClick={() => setShowTeamDialog(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}>
-                          {editingTeam ? 'Update' : 'Create'} Team
+                        <Button
+                          onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}
+                          disabled={!editingTeam && (isCreatingTeam || !teamForm.name?.trim())}
+                        >
+                          {editingTeam ? 'Update' : (isCreatingTeam ? 'Creating…' : 'Create')} Team
                         </Button>
                       </div>
                     </div>
@@ -1588,16 +1607,25 @@ export default function PaymentsPage() {
                     ) : (
                       <div className="text-center py-8">
                         <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No payments found in this group</h3>
+                        <h3 className="text-lg font-semibold mb-2">
+                          {isUnassigned ? 'No payments found in this group' : 'No parents assigned to this team yet'}
+                        </h3>
                         <p className="text-muted-foreground mb-4">
-                          Try adjusting your search criteria or status filter.
+                          {isUnassigned ? 'Try adjusting your search criteria or status filter.' : 'Use Assign Parents to add players to this team.'}
                         </p>
-                        <Button asChild>
-                          <Link href="/payment-plans/new">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Payment Plan
-                          </Link>
-                        </Button>
+                        {isUnassigned ? (
+                          <Button asChild>
+                            <Link href="/payment-plans/new">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Create Payment Plan
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button onClick={() => { setAssignToTeamId(team?._id || ''); openParentAssignDialog(); }}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Assign Parents
+                          </Button>
+                        )}
                       </div>
                     )}
                   </CollapsibleContent>
