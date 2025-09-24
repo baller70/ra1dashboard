@@ -455,6 +455,7 @@ export default function PaymentsPage() {
 
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
+  const allParents = allParentsData?.parents || []
   // Teams actually referenced by parents (ensures dialog shows all active team groups)
   const derivedTeams = useMemo(() => {
     try {
@@ -466,8 +467,6 @@ export default function PaymentsPage() {
       return teams;
     }
   }, [allParents, teams])
-
-  const allParents = allParentsData?.parents || []
 
   // Debug logging for allParents
   React.useEffect(() => {
