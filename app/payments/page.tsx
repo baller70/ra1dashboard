@@ -1641,8 +1641,8 @@ export default function PaymentsPage() {
 
                                 </>
                               )}
-                              {/* Team action: either Remove (team groups) or Delete (Unassigned) */}
-                              {isUnassigned ? (
+                              {/* Row action: show Delete only if this parent truly has no team; else show Remove from Team */}
+                              {(!allParents.find(p => p._id === payment.parentId)?.teamId) ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
