@@ -336,6 +336,9 @@ export default function PaymentsPage() {
   const [selectedPayments, setSelectedPayments] = useState<string[]>([])
   const [bulkOperating, setBulkOperating] = useState(false)
 
+  // Bulk team selection state
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+
   const [showAiActions, setShowAiActions] = useState(false)
   const [groupByTeam, setGroupByTeam] = useState(true)
   const [showTeamDialog, setShowTeamDialog] = useState(false)
@@ -601,7 +604,7 @@ export default function PaymentsPage() {
   }
 
   const handleDeleteTeam = async (teamId: string) => {
-    if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this team? This action cannot be undone. Parents will be moved to Unassigned.')) {
       return
     }
 
@@ -612,9 +615,10 @@ export default function PaymentsPage() {
 
       if (response.ok) {
         toast({
-          title: "Success",
-          description: "Team deleted successfully"
+          title: "Team Deleted",
+          description: "The team was deleted. Parents were moved to Unassigned."
         })
+        await fetchData(true)
       } else {
         const error = await response.json()
         toast({
@@ -630,6 +634,40 @@ export default function PaymentsPage() {
         description: "Failed to delete team",
         variant: "destructive"
       })
+    }
+  }
+
+  const handleTeamCheckbox = (teamId: string, checked: boolean) => {
+    setSelectedTeamIds(prev => checked ? [...new Set([...prev, teamId])] : prev.filter(id => id !== teamId))
+  }
+
+  const clearSelectedTeams = () => setSelectedTeamIds([])
+
+  const handleBulkDeleteTeams = async () => {
+    if (selectedTeamIds.length === 0) {
+      alert('Please select teams to delete')
+      return
+    }
+    const confirmMsg = `Delete ${selectedTeamIds.length} team${selectedTeamIds.length > 1 ? 's' : ''}? Parents in those teams will be moved to Unassigned.`
+    if (!confirm(confirmMsg)) return
+
+    try {
+      const res = await fetch('/api/teams/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamIds: selectedTeamIds })
+      })
+      const result = await res.json()
+      if (res.ok && result?.success) {
+        toast({ title: 'Teams deleted', description: `${result.successCount} deleted. ${result.failCount} failed.` })
+        clearSelectedTeams()
+        await fetchData(true)
+      } else {
+        toast({ title: 'Error', description: result?.error || 'Failed to delete teams', variant: 'destructive' })
+      }
+    } catch (e) {
+      console.error('Bulk delete error:', e)
+      toast({ title: 'Error', description: 'Failed to delete teams', variant: 'destructive' })
     }
   }
 
@@ -1301,6 +1339,10 @@ export default function PaymentsPage() {
                 }
               </div>
               <div className="ml-auto flex items-center space-x-2">
+                <Button variant="destructive" size="sm" disabled={selectedTeamIds.length === 0} onClick={handleBulkDeleteTeams} title="Delete selected teams (parents moved to Unassigned)">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected Teams {selectedTeamIds.length > 0 ? `(${selectedTeamIds.length})` : ''}
+                </Button>
                 <Button variant="outline" size="sm" onClick={openParentAssignDialog}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   Assign Parents
@@ -1424,6 +1466,13 @@ export default function PaymentsPage() {
                       <CollapsibleTrigger asChild>
                         <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors">
                           <div className="flex items-center space-x-3">
+                            {!isUnassigned && (
+                              <Checkbox
+                                checked={selectedTeamIds.includes(team!._id)}
+                                onCheckedChange={(checked) => { handleTeamCheckbox(team!._id, !!checked); }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            )}
                             <div
                               className="w-4 h-4 rounded-full"
                               style={{
