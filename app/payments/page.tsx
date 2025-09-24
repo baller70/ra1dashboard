@@ -1726,15 +1726,15 @@ export default function PaymentsPage() {
                 Select teams to delete. Parents in deleted teams will be moved to Unassigned.
               </div>
               <div className="space-x-2">
-                <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds(derivedTeams.map((t: any) => t._id))}>Select All</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds(teams.map((t: any) => t._id))}>Select All</Button>
                 <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds([])}>Clear</Button>
               </div>
             </div>
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-              {derivedTeams.length === 0 && (
+              {teams.length === 0 && (
                 <div className="text-sm text-muted-foreground">No teams yet.</div>
               )}
-              {derivedTeams.map((team: any) => (
+              {teams.map((team: any) => (
                 <div key={team._id} className="flex items-center justify-between p-2 border rounded-md">
                   <div className="flex items-center space-x-2">
                     <Checkbox
