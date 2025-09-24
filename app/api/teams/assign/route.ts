@@ -30,15 +30,23 @@ export async function POST(request: NextRequest) {
     let result;
     if (teamId) {
       // Assign to team
+      console.log('🔍 Calling assignParentsToTeam with:', { teamId, parentIds });
       result = await convex.mutation(api.teams.assignParentsToTeam, {
         teamId: teamId as any,
         parentIds: parentIds as any[]
       });
     } else {
       // Unassign from teams
-      result = await convex.mutation(api.teams.unassignParentsFromTeams, {
-        parentIds: parentIds as any[]
-      });
+      console.log('🔍 Calling unassignParentsFromTeams with:', { parentIds });
+      try {
+        result = await convex.mutation(api.teams.unassignParentsFromTeams, {
+          parentIds: parentIds as any[]
+        });
+        console.log('🔍 Unassign result:', result);
+      } catch (unassignError) {
+        console.error('🔍 Unassign error:', unassignError);
+        throw unassignError;
+      }
     }
     console.log('🔍 Convex mutation result:', result);
 
