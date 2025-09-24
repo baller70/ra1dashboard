@@ -25,10 +25,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const includeParents = searchParams.get('includeParents') === 'true';
 
-    // Get teams from Convex
+    // Get teams from Convex — raise limit so all teams are available in UI selections
+    const limitParam = Number(new URL(request.url).searchParams.get('limit') || '10000');
     const teams = await convex.query(api.teams.getTeams, {
       includeParents,
-      limit: 100
+      limit: limitParam
     });
 
     return NextResponse.json({
