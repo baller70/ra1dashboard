@@ -505,12 +505,14 @@ export default function PaymentsPage() {
 
   const handleUnassignParent = async (parentId: string) => {
     try {
-      const res = await fetch('/api/teams/assign', {
+      console.log('🔍 Unassigning parent:', parentId)
+      const res = await fetch(`/api/parents/${parentId}/unassign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId: null, parentIds: [parentId] })
+        headers: { 'Content-Type': 'application/json' }
       })
       const result = await res.json()
+      console.log('🔍 Unassign response:', result)
+
       if (res.ok && result.success) {
         toast({
           title: 'Removed from Team',
