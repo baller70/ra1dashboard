@@ -141,11 +141,16 @@ export const assignParentsToTeam = mutation({
     // Update all parents with the new team assignment
     const updatedParents = [];
     for (const parentId of parentIds) {
-      console.log('🔍 Patching parent:', parentId, 'with teamId:', teamId || undefined);
-      await ctx.db.patch(parentId, {
-        teamId: teamId || undefined,
+      console.log('🔍 Patching parent:', parentId, 'with teamId:', teamId);
+      const patchData: any = {
         updatedAt: Date.now()
-      });
+      };
+      if (teamId) {
+        patchData.teamId = teamId;
+      } else {
+        patchData.teamId = undefined;
+      }
+      await ctx.db.patch(parentId, patchData);
       
       // Get updated parent with team info
       const updatedParent = await ctx.db.get(parentId);
