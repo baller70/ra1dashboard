@@ -19,11 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog'
 import { Label } from '../../components/ui/label'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible'
-import {
-  Plus,
-  Search,
-  Filter,
-  Calendar,
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  Calendar, 
   DollarSign,
   AlertTriangle,
   Clock,
@@ -54,7 +54,6 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  UserMinus,
   ChevronDown,
   ChevronUp,
   Loader2
@@ -92,7 +91,6 @@ export default function PaymentsPage() {
   const [teamsData, setTeamsData] = useState<any>(null)
   const [allParentsData, setAllParentsData] = useState<any>(null)
   const [plansTotals, setPlansTotals] = useState<{ total: number, activeParents: number } | null>(null)
-  const [isCreatingTeam, setIsCreatingTeam] = useState(false)
 
   // Define fetchData as a standalone function
   const fetchData = useCallback(async (isManualRefresh = false) => {
@@ -102,12 +100,12 @@ export default function PaymentsPage() {
       if (isManualRefresh) {
         setRefreshing(true)
       }
-
+      
       // Ultra-aggressive cache busting
       const timestamp = Date.now() + Math.random() * 10000
       const cacheKey = `cache-bust-${timestamp}`
       console.log('🔄 Fetching with cache key:', cacheKey)
-
+      
       // Clear any existing cache entries
       if (typeof window !== 'undefined') {
         localStorage.removeItem('payments-cache')
@@ -121,7 +119,7 @@ export default function PaymentsPage() {
         }),
         fetch(`/api/payments/analytics?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
-          headers: {
+          headers: { 
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'x-api-key': 'ra1-dashboard-api-key-2024'
           }
@@ -145,19 +143,19 @@ export default function PaymentsPage() {
 
       const [paymentsResult, analyticsResult, teamsResult, parentsResult, plansResult] = await Promise.all([
         paymentsRes.json(),
-        analyticsRes.json(),
+        analyticsRes.json(), 
         teamsRes.json(),
         parentsRes.json(),
         plansRes.ok ? plansRes.json() : []
       ])
-
+      
       console.log('📊 Data fetched:', {
         payments: paymentsResult.success,
         analytics: analyticsResult.success,
         teams: teamsResult.success,
         parents: parentsResult.success
       })
-
+      
       if (paymentsResult.success) setPaymentsData(paymentsResult.data)
       if (analyticsResult.success) setAnalytics(analyticsResult.data)
       if (teamsResult.success) setTeamsData(teamsResult.data)
@@ -190,7 +188,7 @@ export default function PaymentsPage() {
       } catch {}
       if (parentsResult.success) {
         setAllParentsData(parentsResult.data)
-
+        
         // Debug logging
         const parentCount = parentsResult.data?.parents?.length || 0
         const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
@@ -199,7 +197,7 @@ export default function PaymentsPage() {
           unassignedParents: unassignedCount,
           parentsWithTeams: parentCount - unassignedCount
         })
-
+        
         // Show success notification with team counts
         toast({
           title: "✅ Data Refreshed Successfully",
@@ -238,7 +236,7 @@ export default function PaymentsPage() {
       console.log('Parent deleted event received, refreshing data...')
       fetchData()
     }
-
+    
     window.addEventListener('parent-deleted', handleParentDeleted)
     return () => window.removeEventListener('parent-deleted', handleParentDeleted)
   }, [fetchData])
@@ -249,7 +247,7 @@ export default function PaymentsPage() {
       const eventData = event.detail || {}
       console.log('🔄 Payment plan created event received:', eventData)
       console.log('🔄 Refreshing data for parent:', eventData.parentName || 'Unknown')
-
+      
       // Add a longer delay to ensure the payment plan and payments are fully created
       setTimeout(() => {
         console.log('🔄 Fetching updated data after payment plan creation...')
@@ -261,7 +259,7 @@ export default function PaymentsPage() {
         fetchData()
       }, 1000) // Increased delay to 1 second
     }
-
+    
     window.addEventListener('payment-plan-created', handlePaymentPlanCreated)
     console.log('👂 Payment plan event listener added')
     return () => {
@@ -299,13 +297,13 @@ export default function PaymentsPage() {
       // Clear all possible caches
       localStorage.clear()
       sessionStorage.clear()
-
+      
       // Clear browser cache if supported
       if ('caches' in window) {
         const cacheNames = await caches.keys()
         await Promise.all(cacheNames.map(name => caches.delete(name)))
       }
-
+      
       // Clear any IndexedDB data
       if ('indexedDB' in window) {
         try {
@@ -323,7 +321,7 @@ export default function PaymentsPage() {
           console.log('IndexedDB clear failed:', e)
         }
       }
-
+      
       // Force hard reload with cache bypass
       window.location.href = window.location.href + '?forceRefresh=' + Date.now()
     } catch (error) {
@@ -331,7 +329,7 @@ export default function PaymentsPage() {
       window.location.href = window.location.href + '?forceRefresh=' + Date.now()
     }
   }
-
+  
   const [selectedTeam, setSelectedTeam] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -353,10 +351,10 @@ export default function PaymentsPage() {
   // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
     console.log('🚀 DELETE BUTTON CLICKED! Parent:', parentId, parentName)
-
+    
     const confirmResult = confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone and will remove all associated payments and data.`)
     console.log('❓ User confirmation result:', confirmResult)
-
+    
     if (!confirmResult) {
       console.log('❌ User cancelled deletion')
       return
@@ -364,7 +362,7 @@ export default function PaymentsPage() {
 
     setDeleteLoading(parentId)
     console.log('🗑️ Starting delete process for parent:', parentId, parentName)
-
+    
     try {
       // Try dynamic route first
       console.log('🔄 Attempting delete via dynamic route...')
@@ -396,15 +394,15 @@ export default function PaymentsPage() {
         const result = await response.json()
         console.log('✅ Delete successful:', result)
         console.log('🔄 About to refresh data...')
-
+        
         // Refresh all data to ensure consistency across both pages
         await fetchData()
         console.log('✅ Data refreshed successfully')
-
+        
         // Dispatch event to update dashboard and analytics pages
         window.dispatchEvent(new Event('parent-deleted'))
         console.log('🔔 Dispatched parent-deleted event from payments page')
-
+        
         console.log('🍞 About to show success toast...')
         toast({
           title: '✅ Parent Deleted Successfully',
@@ -416,7 +414,7 @@ export default function PaymentsPage() {
         const errorData = await response.json()
         console.error('❌ Delete failed:', errorData)
         console.log('🍞 About to show error toast...')
-
+        
         // Check if parent was already deleted (404) or doesn't exist
         if (response.status === 404 || (errorData.details && errorData.details.includes('not found'))) {
           toast({
@@ -450,11 +448,11 @@ export default function PaymentsPage() {
       setDeleteLoading(null)
     }
   }
-
+  
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
   const allParents = allParentsData?.parents || []
-
+  
   // Debug logging for allParents
   React.useEffect(() => {
     if (allParents.length > 0) {
@@ -492,47 +490,17 @@ export default function PaymentsPage() {
         setShowParentAssignDialog(false)
         setSelectedParents([])
         setAssignToTeamId('')
-        toast({ title: 'Parents assigned', description: result.message || 'Assignments saved.' })
-        // Refresh the data to show updated assignments without full reload
-        await fetchData(true)
+        alert(result.message)
+        // Refresh the data to show updated assignments
+        window.location.reload()
       } else {
-        toast({ title: 'Failed to assign parents', description: result.error || 'Unknown error', variant: 'destructive' })
+        alert('Failed to assign parents to team: ' + (result.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error assigning parents:', error)
       alert('Error assigning parents to team')
     }
-
-  const handleUnassignParent = async (parentId: string) => {
-    try {
-      console.log('🔍 Unassigning parent:', parentId)
-      const res = await fetch('/api/teams/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId: null, parentIds: [parentId] })
-      })
-      const result = await res.json()
-      console.log('🔍 Unassign response:', result)
-
-      if (res.ok && result.success) {
-        toast({
-          title: 'Removed from Team',
-          description: 'Parent moved to Unassigned pool'
-        })
-        await fetchData(true)
-      } else {
-        toast({
-          title: 'Error',
-          description: result?.error || 'Failed to remove from team',
-          variant: 'destructive'
-        })
-      }
-    } catch (e) {
-      console.error('Error unassigning parent:', e)
-      toast({ title: 'Error', description: 'Failed to remove from team', variant: 'destructive' })
-    }
   }
-
 
   const openParentAssignDialog = () => {
     // fetchAllParents() // This function is no longer needed as allParents is fetched directly
@@ -552,8 +520,6 @@ export default function PaymentsPage() {
   }
 
   const handleCreateTeam = async () => {
-    if (isCreatingTeam) return;
-    setIsCreatingTeam(true);
     try {
       const response = await fetch('/api/teams', {
         method: 'POST',
@@ -567,31 +533,29 @@ export default function PaymentsPage() {
         })
       })
 
-      const result = await response.json().catch(() => ({}))
+      const result = await response.json()
 
       if (response.ok) {
-        // Close dialog and refresh teams without full page reload
         setShowTeamDialog(false)
         setTeamForm({ name: '', description: '', color: '#f97316' })
-        await fetchData(true)
-        toast({ title: 'Team created', description: 'Your new team has been added.' })
+        alert("Team created successfully")
+        // Refresh the page to show the new team
+        window.location.reload()
       } else {
         alert('Failed to create team: ' + (result.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error creating team:', error)
       alert('Error creating team')
-    } finally {
-      setIsCreatingTeam(false)
     }
   }
 
   const handleEditTeam = (team: any) => {
     setEditingTeam(team)
-    setTeamForm({
-      name: team.name,
-      description: team.description || '',
-      color: team.color || '#f97316'
+    setTeamForm({ 
+      name: team.name, 
+      description: team.description || '', 
+      color: team.color || '#f97316' 
     })
     setShowTeamDialog(true)
   }
@@ -642,9 +606,8 @@ export default function PaymentsPage() {
       if (response.ok) {
         toast({
           title: "Success",
-          description: "Team deleted successfully; assigned parents were moved to Unassigned"
+          description: "Team deleted successfully"
         })
-        await fetchData(true)
       } else {
         const error = await response.json()
         toast({
@@ -667,29 +630,29 @@ export default function PaymentsPage() {
     const matchesSearch = (payment.parentName || payment.parent?.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (payment.parentEmail || payment.parent?.email || '')?.toLowerCase().includes(searchTerm.toLowerCase())
     const searchMatch = searchTerm ? matchesSearch : true
-
+    
     // Team filter
     if (selectedTeam === 'all') {
       return searchMatch
     }
-
+    
     const parent = allParents.find(p => p._id === payment.parentId)
     if (selectedTeam === 'unassigned') {
       return searchMatch && !parent?.teamId
     }
-
+    
     return searchMatch && parent?.teamId === selectedTeam
   })
 
   // Enhance payments with parent data from the database
       const enhancedPayments = filteredPayments.map(payment => {
       // Find matching parent from allParents
-      const dbParent = allParents.find(parent =>
-        parent._id === payment.parentId ||
+      const dbParent = allParents.find(parent => 
+        parent._id === payment.parentId || 
         parent.email === payment.parentEmail ||
         parent.name === payment.parentName
       );
-
+    
     if (dbParent) {
       return {
         ...payment,
@@ -704,7 +667,7 @@ export default function PaymentsPage() {
         }
       };
     }
-
+    
     return payment;
   });
 
@@ -725,7 +688,7 @@ export default function PaymentsPage() {
   }, [])
 
   // Group payments by team if enabled, but also include all unassigned parents
-  const groupedPayments = groupByTeam ?
+  const groupedPayments = groupByTeam ? 
     (() => {
       // First group payments by team as before
       const paymentGroups = deduplicatedPayments.reduce((groups: Record<string, any[]>, payment) => {
@@ -733,7 +696,7 @@ export default function PaymentsPage() {
         const parent = allParents.find(p => p._id === payment.parentId)
         const team = teams.find(t => t._id === parent?.teamId)
         const teamKey = team ? team.name : 'Unassigned'
-
+        
         if (!groups[teamKey]) {
           groups[teamKey] = []
         }
@@ -743,15 +706,15 @@ export default function PaymentsPage() {
 
       // Now add ALL unassigned parents (even those without payments) to the Unassigned group
       const unassignedParents = allParents.filter(p => !p.teamId)
-
+      
       // Create mock payment entries for parents without payments
       const unassignedGroup = paymentGroups['Unassigned'] || []
-
+      
       unassignedParents.forEach(parent => {
         // IMPROVED: Check if this parent already has ANY payment in the system (not just in this group)
         // This includes payments from payment plans that might not be in the current group yet
         const hasAnyPayment = deduplicatedPayments.some(payment => payment.parentId === parent._id)
-
+        
         if (!hasAnyPayment) {
           // Create a mock payment entry for display purposes only if parent has NO payments at all
           unassignedGroup.push({
@@ -768,48 +731,10 @@ export default function PaymentsPage() {
           })
         }
       })
-
+      
       paymentGroups['Unassigned'] = unassignedGroup
-
-      // Ensure every team appears as a group, even if it has no payments or parents yet
-      try {
-        if (Array.isArray(teams)) {
-          for (const t of teams) {
-            const key = t.name
-            if (!paymentGroups[key]) paymentGroups[key] = []
-          }
-        }
-      } catch {}
-
-      // Also add mock entries for parents assigned to a team that have NO payments yet
-      try {
-        if (Array.isArray(teams)) {
-          for (const t of teams) {
-            const key = t.name
-            const parentsInTeam = allParents.filter(p => p.teamId === t._id)
-            parentsInTeam.forEach(parent => {
-              const hasAnyPayment = deduplicatedPayments.some(payment => payment.parentId === parent._id)
-              if (!hasAnyPayment) {
-                paymentGroups[key].push({
-                  _id: `mock-${parent._id}`,
-                  parentId: parent._id,
-                  parentName: parent.name,
-                  parentEmail: parent.email,
-                  amount: 0,
-                  status: 'no_payment',
-                  dueDate: new Date().toISOString(),
-                  createdAt: parent.createdAt || Date.now(),
-                  remindersSent: 0,
-                  isMockEntry: true
-                })
-              }
-            })
-          }
-        }
-      } catch {}
-
       return paymentGroups
-    })() :
+    })() : 
     { 'All Payments': deduplicatedPayments }
 
   const handlePaymentSelection = (paymentId: string, selected: boolean) => {
@@ -931,11 +856,11 @@ export default function PaymentsPage() {
 
   const calculateSummary = () => {
     const now = Date.now()
-
+    
     const total = deduplicatedPayments.reduce((sum, payment) => sum + Number(payment.amount), 0)
     const paid = deduplicatedPayments.filter(p => p.status === 'paid').reduce((sum, payment) => sum + Number(payment.amount), 0)
     const pending = deduplicatedPayments.filter(p => p.status === 'pending').reduce((sum, payment) => sum + Number(payment.amount), 0)
-
+    
     // Use consistent overdue logic: status='overdue' OR (status='pending' AND past due date)
     const overdue = deduplicatedPayments.filter(payment => {
       if (payment.status === 'overdue') {
@@ -1058,9 +983,9 @@ export default function PaymentsPage() {
               <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
               {refreshing ? 'Updating...' : 'Live'}
             </div>
-            <Button
-              onClick={handleManualRefresh}
-              variant="outline"
+            <Button 
+              onClick={handleManualRefresh} 
+              variant="outline" 
               size="sm"
               disabled={refreshing}
             >
@@ -1068,7 +993,7 @@ export default function PaymentsPage() {
               {refreshing ? 'Updating...' : 'Refresh'}
             </Button>
             {selectedPayments.length > 0 && (
-              <Button
+              <Button 
                 onClick={generateAIReminders}
                 disabled={bulkOperating}
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
@@ -1089,7 +1014,7 @@ export default function PaymentsPage() {
                 Payment Plans
               </Link>
             </Button>
-            <Button
+            <Button 
               onClick={() => setShowParentCreationModal(true)}
               variant="outline"
             >
@@ -1109,8 +1034,8 @@ export default function PaymentsPage() {
         <Tabs value={activeProgram} onValueChange={setActiveProgram} className="w-full">
           <TabsList className="grid w-full grid-cols-9 h-auto p-1">
             {PROGRAMS.map((program) => (
-              <TabsTrigger
-                key={program.id}
+              <TabsTrigger 
+                key={program.id} 
                 value={program.id}
                 className="text-xs px-2 py-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
               >
@@ -1245,8 +1170,8 @@ export default function PaymentsPage() {
                   </Button>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
+                  <Button 
+                    variant="outline" 
                     size="sm"
                     onClick={() => performBulkOperation('markPaid')}
                     disabled={bulkOperating}
@@ -1254,8 +1179,8 @@ export default function PaymentsPage() {
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Mark as Paid
                   </Button>
-                  <Button
-                    variant="outline"
+                  <Button 
+                    variant="outline" 
                     size="sm"
                     onClick={() => performBulkOperation('sendReminder')}
                     disabled={bulkOperating}
@@ -1327,7 +1252,7 @@ export default function PaymentsPage() {
               </select>
               {/* Single source of truth: header refresh handles manual refresh */}
             </div>
-
+            
             {/* Team Organization Toggle */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -1341,7 +1266,7 @@ export default function PaymentsPage() {
                 </label>
               </div>
               <div className="text-sm text-muted-foreground">
-                {selectedTeam !== 'all'
+                {selectedTeam !== 'all' 
                   ? `Showing ${selectedTeam === 'unassigned' ? 'unassigned parents' : teams.find(t => t._id === selectedTeam)?.name || 'selected team'}`
                   : `${teams.length} teams available`
                 }
@@ -1405,17 +1330,14 @@ export default function PaymentsPage() {
                         <Button variant="outline" onClick={() => setShowTeamDialog(false)}>
                           Cancel
                         </Button>
-                        <Button
-                          onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}
-                          disabled={!editingTeam && (isCreatingTeam || !teamForm.name?.trim())}
-                        >
-                          {editingTeam ? 'Update' : (isCreatingTeam ? 'Creating…' : 'Create')} Team
+                        <Button onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}>
+                          {editingTeam ? 'Update' : 'Create'} Team
                         </Button>
                       </div>
                     </div>
                   </DialogContent>
                 </Dialog>
-
+                        
                         {teams.length > 0 && (
                           <div className="flex items-center space-x-1">
                             {teams.slice(0, 3).map((team) => {
@@ -1464,9 +1386,9 @@ export default function PaymentsPage() {
                     <div className="space-y-4">
                       {Object.entries(groupedPayments).map(([groupName, groupPayments]) => {
                 const team = teams.find(t => t.name === groupName)
-                const isUnassigned = !team
+                const isUnassigned = groupName === 'Unassigned'
                 const isCollapsed = collapsedTeams.has(groupName)
-
+                
                 return (
                   <Collapsible key={groupName} open={!isCollapsed} onOpenChange={() => toggleTeamCollapse(groupName)}>
                     <div className="space-y-4">
@@ -1475,7 +1397,7 @@ export default function PaymentsPage() {
                           <div className="flex items-center space-x-3">
                             <div
                               className="w-4 h-4 rounded-full"
-                              style={{
+                              style={{ 
                                 backgroundColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                               }}
                             />
@@ -1509,10 +1431,10 @@ export default function PaymentsPage() {
                           )}
                         </div>
                       </CollapsibleTrigger>
-
+                      
                       <CollapsibleContent className="space-y-3">
                         {groupPayments.length > 0 ? (
-                          <div className="space-y-3 border-l-4 pl-4 ml-2" style={{
+                          <div className="space-y-3 border-l-4 pl-4 ml-2" style={{ 
                             borderColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                           }}>
                             {groupPayments.map((payment) => (
@@ -1592,7 +1514,7 @@ export default function PaymentsPage() {
                                 </div>
                               </div>
                             </div>
-
+                            
                             <div className="text-right">
                               {payment.isMockEntry ? (
                                 <div className="text-center">
@@ -1618,7 +1540,7 @@ export default function PaymentsPage() {
                                 </>
                               )}
                             </div>
-
+                            
                             <div className="flex items-center space-x-2">
                               {payment.isMockEntry ? (
                                 <Button asChild variant="default" size="sm">
@@ -1644,34 +1566,21 @@ export default function PaymentsPage() {
 
                                 </>
                               )}
-                              {/* Row action: show Remove from Team if parent has a team; else show Delete */}
-                              {(allParents.find(p => p._id === payment.parentId)?.teamId) ? (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => handleUnassignParent(payment.parentId)}
-                                  title="Remove from this team (keeps parent; moves to Unassigned)"
-                                >
-                                  <UserMinus className="mr-2 h-4 w-4" />
-                                  Remove from Team
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
-                                  disabled={deleteLoading === payment.parentId}
-                                  title="Delete entire parent from system (including all payments)"
-                                  className="text-red-800 hover:text-red-900"
-                                >
-                                  {deleteLoading === payment.parentId ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              )}
-
+                              {/* Delete parent button for all entries (both mock and real) */}
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
+                                disabled={deleteLoading === payment.parentId}
+                                title="Delete entire parent (including all payments)"
+                                className="text-red-800 hover:text-red-900"
+                              >
+                                {deleteLoading === payment.parentId ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -1679,25 +1588,16 @@ export default function PaymentsPage() {
                     ) : (
                       <div className="text-center py-8">
                         <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">
-                          {isUnassigned ? 'No payments found in this group' : 'No parents assigned to this team yet'}
-                        </h3>
+                        <h3 className="text-lg font-semibold mb-2">No payments found in this group</h3>
                         <p className="text-muted-foreground mb-4">
-                          {isUnassigned ? 'Try adjusting your search criteria or status filter.' : 'Use Assign Parents to add players to this team.'}
+                          Try adjusting your search criteria or status filter.
                         </p>
-                        {isUnassigned ? (
-                          <Button asChild>
-                            <Link href="/payment-plans/new">
-                              <Plus className="mr-2 h-4 w-4" />
-                              Create Payment Plan
-                            </Link>
-                          </Button>
-                        ) : (
-                          <Button onClick={() => { setAssignToTeamId(team?._id || ''); openParentAssignDialog(); }}>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            Assign Parents
-                          </Button>
-                        )}
+                        <Button asChild>
+                          <Link href="/payment-plans/new">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Payment Plan
+                          </Link>
+                        </Button>
                       </div>
                     )}
                   </CollapsibleContent>
@@ -1712,7 +1612,7 @@ export default function PaymentsPage() {
             </TabsContent>
           ))}
         </Tabs>
-
+      
       {/* Parent Assignment Dialog */}
       <Dialog open={showParentAssignDialog} onOpenChange={setShowParentAssignDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -1754,49 +1654,35 @@ export default function PaymentsPage() {
                 </SelectContent>
               </Select>
             </div>
-
+            
             <div>
               <Label>Select Parents to Assign</Label>
               <div className="border rounded-md p-4 max-h-96 overflow-y-auto">
                 <div className="space-y-2">
                   {Array.isArray(allParents) && allParents.length > 0 ? (
-                    allParents.map((parent) => {
-                      const isSelected = selectedParents.includes(parent._id)
-                      return (
-                        <div
-                          key={parent._id}
-                          className="flex items-center space-x-3 p-2 hover:bg-muted rounded cursor-pointer"
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedParents(selectedParents.filter(id => id !== parent._id))
-                            } else {
+                    allParents.map((parent) => (
+                      <div key={parent._id} className="flex items-center space-x-3 p-2 hover:bg-muted rounded">
+                        <Checkbox
+                          checked={selectedParents.includes(parent._id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
                               setSelectedParents([...selectedParents, parent._id])
+                            } else {
+                              setSelectedParents(selectedParents.filter(id => id !== parent._id))
                             }
                           }}
-                        >
-                          <Checkbox
-                            checked={isSelected}
-                            onClick={(e) => e.stopPropagation()}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedParents([...selectedParents, parent._id])
-                              } else {
-                                setSelectedParents(selectedParents.filter(id => id !== parent._id))
-                              }
-                            }}
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium">{parent.name}</div>
-                            <div className="text-sm text-muted-foreground">{parent.email}</div>
-                            {parent.teamId && (
-                              <div className="text-xs text-muted-foreground">
-                                Team ID: {parent.teamId}
-                              </div>
-                            )}
-                          </div>
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{parent.name}</div>
+                          <div className="text-sm text-muted-foreground">{parent.email}</div>
+                          {parent.teamId && (
+                            <div className="text-xs text-muted-foreground">
+                              Team ID: {parent.teamId}
+                            </div>
+                          )}
                         </div>
-                      )
-                    })
+                      </div>
+                    ))
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       {allParents === null ? (
@@ -1809,7 +1695,7 @@ export default function PaymentsPage() {
                 </div>
               </div>
             </div>
-
+            
             <div className="flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
                 {selectedParents.length} parent(s) selected
@@ -1833,30 +1719,30 @@ export default function PaymentsPage() {
         onOpenChange={setShowParentCreationModal}
         onParentCreated={async (newParent) => {
           console.log('🎉 New parent created:', newParent)
-
+          
           // Show immediate success notification
           toast({
             title: "✅ Parent Created Successfully!",
             description: `${newParent.name} has been created and will appear in UNASSIGNED section`,
             variant: "default",
           })
-
+          
           // Close the modal first
           setShowParentCreationModal(false)
-
+          
           // Refresh data with aggressive cache busting
           try {
             setLoading(true)
-
+            
             const timestamp = Date.now() + Math.random() * 10000
             const cacheKey = `parent-created-${timestamp}`
-
+            
             // Clear any existing cache entries
             if (typeof window !== 'undefined') {
               localStorage.removeItem('payments-cache')
               sessionStorage.removeItem('payments-cache')
             }
-
+            
             const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
               fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}&limit=1000`, {
                 cache: 'no-store',
@@ -1875,27 +1761,27 @@ export default function PaymentsPage() {
                 headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
               })
             ])
-
+            
             const paymentsResult = await paymentsRes.json()
             const analyticsResult = await analyticsRes.json()
             const teamsResult = await teamsRes.json()
             const parentsResult = await parentsRes.json()
-
+            
             if (paymentsResult.success) setPaymentsData(paymentsResult.data)
             if (analyticsResult.success) setAnalytics(analyticsResult.data)
             if (teamsResult.success) setTeamsData(teamsResult.data)
             if (parentsResult.success) {
               setAllParentsData(parentsResult.data)
-
+              
               const parentCount = parentsResult.data?.parents?.length || 0
               const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
-
+              
               console.log('🔄 Data refreshed after parent creation:', {
                 totalParents: parentCount,
                 unassignedParents: unassignedCount,
                 newParentFound: parentsResult.data?.parents?.find((p: any) => p.name === newParent.name)
               })
-
+              
               // Show confirmation that parent appears in UNASSIGNED
               toast({
                 title: "🎯 Parent Now Visible!",
@@ -1903,7 +1789,7 @@ export default function PaymentsPage() {
                 variant: "default",
               })
             }
-
+            
             setLoading(false)
           } catch (error) {
             console.error('Error refreshing data after parent creation:', error)
@@ -1921,8 +1807,4 @@ export default function PaymentsPage() {
     </div>
   </AppLayout>
   )
-}
-
-
-
 }
