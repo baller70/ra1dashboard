@@ -59,11 +59,8 @@ export async function POST(request: NextRequest) {
       color
     });
 
-    // Get the created team
-    const teams = await convex.query(api.teams.getTeams, {});
-    const createdTeam = teams.find(team => team._id === teamId);
-
-    return NextResponse.json(createdTeam, { status: 201 });
+    // Return success without re-query to avoid any race/consistency flake
+    return NextResponse.json({ success: true, teamId }, { status: 201 });
   } catch (error) {
     console.error('Error creating team:', error);
     
@@ -161,12 +158,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if ((team as any).parents && (team as any).parents.length > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete team with assigned parents. Please reassign parents first.' },
-        { status: 400 }
-      );
-    }
+    // If team has assigned parents, proceed and let the Convex mutation unassign them automatically
+    // (Parents will remain in the system and move to Unassigned)
+    // Previously this returned 400; behavior updated per product requirements.
 
     // Delete team in Convex
     await convex.mutation(api.teams.deleteTeam, {

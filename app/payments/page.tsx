@@ -611,8 +611,9 @@ export default function PaymentsPage() {
       if (response.ok) {
         toast({
           title: "Success",
-          description: "Team deleted successfully"
+          description: "Team deleted successfully; assigned parents were moved to Unassigned"
         })
+        await fetchData(true)
       } else {
         const error = await response.json()
         toast({
