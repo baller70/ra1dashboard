@@ -22,13 +22,16 @@ const bulkAssignSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('🔍 Assign API received body:', body);
     const { teamId, parentIds } = assignParentsSchema.parse(body);
+    console.log('🔍 Parsed teamId:', teamId, 'parentIds:', parentIds);
 
     // Use the Convex assignParentsToTeam mutation
     const result = await convex.mutation(api.teams.assignParentsToTeam, {
       teamId: teamId as any,
       parentIds: parentIds as any[]
     });
+    console.log('🔍 Convex mutation result:', result);
 
     return NextResponse.json({
       success: true,
