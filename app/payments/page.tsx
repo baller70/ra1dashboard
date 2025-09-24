@@ -1641,8 +1641,18 @@ export default function PaymentsPage() {
 
                                 </>
                               )}
-                              {/* Row action: show Delete only if this parent truly has no team; else show Remove from Team */}
-                              {(!allParents.find(p => p._id === payment.parentId)?.teamId) ? (
+                              {/* Row action: show Remove from Team if parent has a team; else show Delete */}
+                              {(allParents.find(p => p._id === payment.parentId)?.teamId) ? (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleUnassignParent(payment.parentId)}
+                                  title="Remove from this team (keeps parent; moves to Unassigned)"
+                                >
+                                  <UserMinus className="mr-2 h-4 w-4" />
+                                  Remove from Team
+                                </Button>
+                              ) : (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1656,16 +1666,6 @@ export default function PaymentsPage() {
                                   ) : (
                                     <Trash2 className="h-4 w-4" />
                                   )}
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => handleUnassignParent(payment.parentId)}
-                                  title="Remove from this team (keeps parent; moves to Unassigned)"
-                                >
-                                  <UserMinus className="mr-2 h-4 w-4" />
-                                  Remove from Team
                                 </Button>
                               )}
 
