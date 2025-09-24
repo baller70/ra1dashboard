@@ -97,8 +97,8 @@ test('Payments: remove parent from team moves them to Unassigned (keeps parent)'
   // To be robust, search globally for parentName and ensure it still exists but not under the previous team section
   await expect(page.getByText(parentName)).toBeVisible();
 
-  // Optionally, assert that within the original team section the parent no longer exists
-  // (Avoid flakiness by allowing brief delay)
+  // Ensure the parent no longer appears under the original team section
   await page.waitForTimeout(500);
+  await expect(teamSection.getByText(parentName, { exact: true })).toHaveCount(0);
 });
 
