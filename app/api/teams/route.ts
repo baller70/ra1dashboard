@@ -49,16 +49,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description, color } = createTeamSchema.parse(body);
 
-    // Check if team name already exists by getting all teams
-    const existingTeams = await convex.query(api.teams.getTeams, {});
-    const existingTeam = existingTeams.find(team => team.name === name);
-
-    if (existingTeam) {
-      return NextResponse.json(
-        { error: 'Team name already exists' },
-        { status: 400 }
-      );
-    }
+    // Allow duplicate team names; remove prior uniqueness guard
+    // If you want to re-enable uniqueness, enforce it at the UI or via a dedicated index/constraint
 
     // Create team in Convex
     const teamId = await convex.mutation(api.teams.createTeam, {
