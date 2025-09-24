@@ -27,11 +27,14 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Parsed teamId:', teamId, 'parentIds:', parentIds);
 
     // Use the Convex assignParentsToTeam mutation
-    // Convert null to undefined for Convex compatibility
-    const result = await convex.mutation(api.teams.assignParentsToTeam, {
-      teamId: teamId || undefined,
+    // Only pass teamId if it's not null/undefined
+    const mutationArgs: any = {
       parentIds: parentIds as any[]
-    });
+    };
+    if (teamId) {
+      mutationArgs.teamId = teamId;
+    }
+    const result = await convex.mutation(api.teams.assignParentsToTeam, mutationArgs);
     console.log('🔍 Convex mutation result:', result);
 
     return NextResponse.json({
