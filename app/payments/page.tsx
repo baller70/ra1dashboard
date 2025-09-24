@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog'
 import { Label } from '../../components/ui/label'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible'
+import { ToastAction } from '../../components/ui/toast'
 import {
   Plus,
   Search,
@@ -705,7 +706,39 @@ export default function PaymentsPage() {
       })
       const result = await res.json()
       if (res.ok && result?.success) {
-        toast({ title: 'Removed from Team', description: `${parentName} moved to Unassigned`, duration: 2500 })
+        const t = toast({
+          title: 'Removed from Team',
+          description: `${parentName} moved to Unassigned`,
+          action: (
+            <ToastAction
+              altText="Undo"
+              onClick={async () => {
+                try {
+                  if (!prevTeamId) return
+                  const resp = await fetch('/api/teams/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId: prevTeamId, parentIds: [parentId] })
+                  })
+                  const rj = await resp.json()
+                  if (resp.ok && rj?.success) {
+                    toast({ title: 'Reassigned', description: `${parentName} moved back to previous team` })
+                    await fetchData(true)
+                  } else {
+                    toast({ title: 'Error', description: rj?.error || 'Failed to undo', variant: 'destructive' })
+                  }
+                } catch (e) {
+                  console.error('Undo unassign failed:', e)
+                  toast({ title: 'Error', description: 'Failed to undo', variant: 'destructive' })
+                } finally {
+                  t.dismiss()
+                }
+              }}
+            >
+              Undo
+            </ToastAction>
+          )
+        })
         await fetchData(true)
       } else {
         toast({ title: 'Error', description: result?.error || 'Failed to remove from team', variant: 'destructive' })
