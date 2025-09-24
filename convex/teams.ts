@@ -172,3 +172,44 @@ export const assignParentsToTeam = mutation({
     };
   },
 });
+
+// Separate mutation for unassigning parents from teams
+export const unassignParentsFromTeams = mutation({
+  args: {
+    parentIds: v.array(v.id("parents"))
+  },
+  handler: async (ctx, args) => {
+    const { parentIds } = args;
+    console.log('🔍 Convex unassignParentsFromTeams called with:', { parentIds });
+
+    // Verify all parent IDs exist
+    const parents = [];
+    for (const parentId of parentIds) {
+      const parent = await ctx.db.get(parentId);
+      if (!parent) {
+        throw new Error(`Parent with ID ${parentId} not found`);
+      }
+      parents.push(parent);
+    }
+
+    // Update all parents to remove team assignment
+    const updatedParents = [];
+    for (const parentId of parentIds) {
+      console.log('🔍 Unassigning parent:', parentId);
+      await ctx.db.patch(parentId, {
+        teamId: undefined,
+        updatedAt: Date.now()
+      });
+
+      // Get updated parent
+      const updatedParent = await ctx.db.get(parentId);
+      updatedParents.push(updatedParent);
+    }
+
+    return {
+      success: true,
+      unassignedCount: parentIds.length,
+      parents: updatedParents
+    };
+  },
+});
