@@ -199,12 +199,14 @@ export default function PaymentsPage() {
           parentsWithTeams: parentCount - unassignedCount
         })
 
-        // Show success notification with team counts
-        toast({
-          title: "✅ Data Refreshed Successfully",
-          description: `Loaded ${parentCount} parents (${unassignedCount} unassigned) with fresh team assignments`,
-          duration: 3000,
-        })
+        // Show success notification only on manual refresh to reduce noise
+        if (isManualRefresh) {
+          toast({
+            title: "✅ Data Refreshed",
+            description: `Loaded ${parentCount} parents (${unassignedCount} unassigned)`,
+            duration: 2000,
+          })
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching data:', error)
@@ -225,9 +227,9 @@ export default function PaymentsPage() {
     fetchData(true)
   }
 
-  // Auto-refresh every 5 minutes (reduced frequency)
+  // Auto-refresh every 30 minutes (much less frequent to avoid navigation disruption)
   useEffect(() => {
-    const interval = setInterval(() => fetchData(), 300 * 1000) // 5 minutes instead of 30 seconds
+    const interval = setInterval(() => fetchData(), 1800 * 1000)
     return () => clearInterval(interval)
   }, [fetchData])
 
@@ -269,24 +271,21 @@ export default function PaymentsPage() {
     }
   }, [fetchData])
 
-  // Listen for page focus to refresh data when returning from other pages (with debounce)
-  useEffect(() => {
-    let focusTimeout: NodeJS.Timeout
-    const handlePageFocus = () => {
-      // Debounce focus events to prevent excessive refreshing
-      clearTimeout(focusTimeout)
-      focusTimeout = setTimeout(() => {
-        console.log('Page focused, refreshing payment data...')
-        fetchData()
-      }, 2000) // Wait 2 seconds before refreshing
-    }
-
-    window.addEventListener('focus', handlePageFocus)
-    return () => {
-      window.removeEventListener('focus', handlePageFocus)
-      clearTimeout(focusTimeout)
-    }
-  }, [fetchData])
+  // Focus-based auto-refresh removed to avoid disrupting navigation
+  // useEffect(() => {
+  //   let focusTimeout: NodeJS.Timeout
+  //   const handlePageFocus = () => {
+  //     clearTimeout(focusTimeout)
+  //     focusTimeout = setTimeout(() => {
+  //       fetchData()
+  //     }, 2000)
+  //   }
+  //   window.addEventListener('focus', handlePageFocus)
+  //   return () => {
+  //     window.removeEventListener('focus', handlePageFocus)
+  //     clearTimeout(focusTimeout)
+  //   }
+  // }, [fetchData])
 
   // Fetch data using API routes instead of direct Convex queries
   useEffect(() => {
@@ -528,7 +527,15 @@ export default function PaymentsPage() {
                   const undoJson = await undoRes.json()
                   if (undoRes.ok && undoJson?.success) {
                     toast({ title: 'Reverted', description: 'Bulk assignment undone' })
-                    await fetchData(true)
+                    // Revert local assignments
+                    setAllParentsData((prev: any) => {
+                      if (!prev?.parents) return prev
+                      const byId = new Map(prevAssignments.map(a => [a.parentId, a.teamId]))
+                      const newParents = prev.parents.map((p: any) =>
+                        byId.has(p._id) ? { ...p, teamId: byId.get(p._id) || undefined } : p
+                      )
+                      return { ...prev, parents: newParents }
+                    })
                   } else {
                     toast({ title: 'Error', description: undoJson?.error || 'Undo failed', variant: 'destructive' })
                   }
@@ -544,7 +551,16 @@ export default function PaymentsPage() {
             </ToastAction>
           )
         })
-        await fetchData(true)
+        // Optimistically update assignments locally to avoid full-page refresh
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const newParents = prev.parents.map((p: any) =>
+            selectedParents.includes(p._id)
+              ? { ...p, teamId: assignToTeamId === 'unassigned' ? undefined : assignToTeamId }
+              : p
+          )
+          return { ...prev, parents: newParents }
+        })
       } else {
         alert('Failed to assign parents to team: ' + (result.error || 'Unknown error'))
       }
@@ -664,7 +680,13 @@ export default function PaymentsPage() {
           title: "Team Deleted",
           description: "The team was deleted. Parents were moved to Unassigned."
         })
-        await fetchData(true)
+        // Optimistically update local state
+        setTeamsData((prev: any[]) => Array.isArray(prev) ? prev.filter((t: any) => t._id !== id) : prev)
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const newParents = prev.parents.map((p: any) => p.teamId === id ? { ...p, teamId: undefined } : p)
+          return { ...prev, parents: newParents }
+        })
       } else {
         const error = await response.json()
         toast({
@@ -743,7 +765,24 @@ export default function PaymentsPage() {
                     if (!assignRes.ok || !assignJson?.success) throw new Error(assignJson?.error || 'Failed to reassign')
                   }
                   toast({ title: 'Restored', description: 'Deleted teams restored and parents reassigned.' })
-                  await fetchData(true)
+                  // Optimistically add recreated teams and update parent assignments locally
+                  setTeamsData((prev: any[]) => {
+                    const next = Array.isArray(prev) ? [...prev] : []
+                    for (const snap of deletionSnapshot) {
+                      // Find the new team id used for this snapshot by looking at assignments we created
+                      const firstAssignment = assignments.find(a => snap.parentIds.includes(a.parentId))
+                      if (firstAssignment) {
+                        next.push({ _id: firstAssignment.teamId, name: snap.name, description: snap.description, color: snap.color })
+                      }
+                    }
+                    return next
+                  })
+                  setAllParentsData((prev: any) => {
+                    if (!prev?.parents) return prev
+                    const byId = new Map(assignments.map(a => [a.parentId, a.teamId]))
+                    const newParents = prev.parents.map((p: any) => byId.has(p._id) ? { ...p, teamId: byId.get(p._id) } : p)
+                    return { ...prev, parents: newParents }
+                  })
                 } catch (e) {
                   console.error('Undo bulk delete failed:', e)
                   toast({ title: 'Error', description: 'Undo failed', variant: 'destructive' })
@@ -757,7 +796,14 @@ export default function PaymentsPage() {
           )
         })
         clearSelectedTeams()
-        await fetchData(true)
+        // Optimistically remove deleted teams and unassign their parents locally
+        setTeamsData((prev: any[]) => Array.isArray(prev) ? prev.filter((t: any) => !selectedTeamIds.includes(t._id)) : prev)
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const selected = new Set(selectedTeamIds)
+          const newParents = prev.parents.map((p: any) => selected.has(p.teamId) ? { ...p, teamId: undefined } : p)
+          return { ...prev, parents: newParents }
+        })
       } else {
         toast({ title: 'Error', description: result?.error || 'Failed to delete teams', variant: 'destructive' })
       }
@@ -806,7 +852,11 @@ export default function PaymentsPage() {
                   const rj = await resp.json()
                   if (resp.ok && rj?.success) {
                     toast({ title: 'Reassigned', description: `${parentName} moved back to previous team` })
-                    await fetchData(true)
+                    setAllParentsData((prev: any) => {
+                      if (!prev?.parents) return prev
+                      const newParents = prev.parents.map((p: any) => p._id === parentId ? { ...p, teamId: prevTeamId } : p)
+                      return { ...prev, parents: newParents }
+                    })
                   } else {
                     toast({ title: 'Error', description: rj?.error || 'Failed to undo', variant: 'destructive' })
                   }
@@ -822,7 +872,12 @@ export default function PaymentsPage() {
             </ToastAction>
           )
         })
-        await fetchData(true)
+        // Optimistically move the parent to Unassigned locally
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const newParents = prev.parents.map((p: any) => p._id === parentId ? { ...p, teamId: undefined } : p)
+          return { ...prev, parents: newParents }
+        })
       } else {
         toast({ title: 'Error', description: result?.error || 'Failed to remove from team', variant: 'destructive' })
       }
