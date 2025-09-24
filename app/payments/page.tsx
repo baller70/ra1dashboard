@@ -743,8 +743,35 @@ export default function PaymentsPage() {
       try {
         if (Array.isArray(teams)) {
           for (const t of teams) {
-            const key = t.name;
-            if (!paymentGroups[key]) paymentGroups[key] = [];
+            const key = t.name
+            if (!paymentGroups[key]) paymentGroups[key] = []
+          }
+        }
+      } catch {}
+
+      // Also add mock entries for parents assigned to a team that have NO payments yet
+      try {
+        if (Array.isArray(teams)) {
+          for (const t of teams) {
+            const key = t.name
+            const parentsInTeam = allParents.filter(p => p.teamId === t._id)
+            parentsInTeam.forEach(parent => {
+              const hasAnyPayment = deduplicatedPayments.some(payment => payment.parentId === parent._id)
+              if (!hasAnyPayment) {
+                paymentGroups[key].push({
+                  _id: `mock-${parent._id}`,
+                  parentId: parent._id,
+                  parentName: parent.name,
+                  parentEmail: parent.email,
+                  amount: 0,
+                  status: 'no_payment',
+                  dueDate: new Date().toISOString(),
+                  createdAt: parent.createdAt || Date.now(),
+                  remindersSent: 0,
+                  isMockEntry: true
+                })
+              }
+            })
           }
         }
       } catch {}
