@@ -43,7 +43,11 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error assigning parents to team:', error);
+    console.error('❌ Error assigning parents to team:', error);
+    console.error('❌ Error type:', typeof error);
+    console.error('❌ Error constructor:', error?.constructor?.name);
+    console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -62,13 +66,13 @@ export async function POST(request: NextRequest) {
 
       // Return the actual error message for debugging
       return NextResponse.json(
-        { error: 'Failed to assign parents to team', details: error.message },
+        { error: 'Failed to assign parents to team', details: error.message, stack: error.stack },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to assign parents to team', details: 'Unknown error' },
+      { error: 'Failed to assign parents to team', details: String(error) },
       { status: 500 }
     );
   }
