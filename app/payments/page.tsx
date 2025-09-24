@@ -1461,7 +1461,7 @@ export default function PaymentsPage() {
                     <div className="space-y-4">
                       {Object.entries(groupedPayments).map(([groupName, groupPayments]) => {
                 const team = teams.find(t => t.name === groupName)
-                const isUnassigned = groupName === 'Unassigned'
+                const isUnassigned = !team
                 const isCollapsed = collapsedTeams.has(groupName)
 
                 return (
