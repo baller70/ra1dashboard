@@ -506,9 +506,10 @@ export default function PaymentsPage() {
   const handleUnassignParent = async (parentId: string) => {
     try {
       console.log('🔍 Unassigning parent:', parentId)
-      const res = await fetch(`/api/parents/${parentId}/unassign`, {
+      const res = await fetch('/api/teams/assign', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId: null, parentIds: [parentId] })
       })
       const result = await res.json()
       console.log('🔍 Unassign response:', result)

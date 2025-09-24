@@ -113,7 +113,7 @@ export const deleteTeam = mutation({
 // Assign parents to team function
 export const assignParentsToTeam = mutation({
   args: {
-    teamId: v.optional(v.id("teams")),
+    teamId: v.optional(v.string()),
     parentIds: v.array(v.id("parents"))
   },
   handler: async (ctx, args) => {
@@ -123,7 +123,7 @@ export const assignParentsToTeam = mutation({
 
     // Verify team exists if teamId is provided
     if (teamId) {
-      const team = await ctx.db.get(teamId);
+      const team = await ctx.db.get(teamId as any);
       if (!team) {
         throw new Error("Team not found");
       }
