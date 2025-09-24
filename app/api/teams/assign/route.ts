@@ -26,33 +26,19 @@ export async function POST(request: NextRequest) {
     const { teamId, parentIds } = assignParentsSchema.parse(body);
     console.log('🔍 Parsed teamId:', teamId, 'parentIds:', parentIds);
 
-    // Use different mutations for assign vs unassign
-    let result;
+    // Use the assignParentsToTeam mutation for both assign and unassign
+    // When teamId is null, don't pass it to Convex at all
+    console.log('🔍 Calling assignParentsToTeam with teamId:', teamId, 'parentIds:', parentIds);
+    const mutationArgs: any = { parentIds: parentIds as any[] };
     if (teamId) {
-      // Assign to team
-      console.log('🔍 Calling assignParentsToTeam with:', { teamId, parentIds });
-      result = await convex.mutation(api.teams.assignParentsToTeam, {
-        teamId: teamId as any,
-        parentIds: parentIds as any[]
-      });
-    } else {
-      // Unassign from teams
-      console.log('🔍 Calling unassignParentsFromTeams with:', { parentIds });
-      try {
-        result = await convex.mutation(api.teams.unassignParentsFromTeams, {
-          parentIds: parentIds as any[]
-        });
-        console.log('🔍 Unassign result:', result);
-      } catch (unassignError) {
-        console.error('🔍 Unassign error:', unassignError);
-        throw unassignError;
-      }
+      mutationArgs.teamId = teamId as any;
     }
+    const result = await convex.mutation(api.teams.assignParentsToTeam, mutationArgs);
     console.log('🔍 Convex mutation result:', result);
 
     return NextResponse.json({
       success: true,
-      message: `Successfully ${teamId ? 'assigned' : 'unassigned'} ${result.assignedCount || result.unassignedCount} parent(s) ${teamId ? 'to team' : 'from teams'}`,
+      message: `Successfully ${teamId ? 'assigned' : 'unassigned'} ${result.assignedCount} parent(s) ${teamId ? 'to team' : 'from teams'}`,
       updatedParents: result.parents
     });
 
