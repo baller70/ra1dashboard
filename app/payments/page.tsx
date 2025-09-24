@@ -492,11 +492,11 @@ export default function PaymentsPage() {
         setShowParentAssignDialog(false)
         setSelectedParents([])
         setAssignToTeamId('')
-        alert(result.message)
-        // Refresh the data to show updated assignments
-        window.location.reload()
+        toast({ title: 'Parents assigned', description: result.message || 'Assignments saved.' })
+        // Refresh the data to show updated assignments without full reload
+        await fetchData(true)
       } else {
-        alert('Failed to assign parents to team: ' + (result.error || 'Unknown error'))
+        toast({ title: 'Failed to assign parents', description: result.error || 'Unknown error', variant: 'destructive' })
       }
     } catch (error) {
       console.error('Error assigning parents:', error)
