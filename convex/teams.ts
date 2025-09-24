@@ -118,7 +118,8 @@ export const assignParentsToTeam = mutation({
   },
   handler: async (ctx, args) => {
     const { teamId, parentIds } = args;
-    
+    console.log('🔍 Convex assignParentsToTeam called with:', { teamId, parentIds });
+
     // Verify team exists if teamId is provided
     if (teamId) {
       const team = await ctx.db.get(teamId);
@@ -140,6 +141,7 @@ export const assignParentsToTeam = mutation({
     // Update all parents with the new team assignment
     const updatedParents = [];
     for (const parentId of parentIds) {
+      console.log('🔍 Patching parent:', parentId, 'with teamId:', teamId || undefined);
       await ctx.db.patch(parentId, {
         teamId: teamId || undefined,
         updatedAt: Date.now()
