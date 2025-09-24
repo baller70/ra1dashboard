@@ -1641,8 +1641,23 @@ export default function PaymentsPage() {
 
                                 </>
                               )}
-                              {/* Remove from team (keeps parent; moves to Unassigned) */}
-                              {!isUnassigned && (
+                              {/* Team action: either Remove (team groups) or Delete (Unassigned) */}
+                              {isUnassigned ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
+                                  disabled={deleteLoading === payment.parentId}
+                                  title="Delete entire parent from system (including all payments)"
+                                  className="text-red-800 hover:text-red-900"
+                                >
+                                  {deleteLoading === payment.parentId ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : (
                                 <Button
                                   variant="secondary"
                                   size="sm"
@@ -1654,21 +1669,6 @@ export default function PaymentsPage() {
                                 </Button>
                               )}
 
-                              {/* Delete entire parent record (including all payments) */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
-                                disabled={deleteLoading === payment.parentId}
-                                title="Delete entire parent (including all payments)"
-                                className="text-red-800 hover:text-red-900"
-                              >
-                                {deleteLoading === payment.parentId ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
                             </div>
                           </div>
                         ))}
