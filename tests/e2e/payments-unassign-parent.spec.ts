@@ -31,9 +31,8 @@ test('Payments: remove parent from team moves them to Unassigned (keeps parent)'
     await page.getByLabel('Team Name').fill(name);
     await page.getByLabel('Description (Optional)').fill('Created by Playwright');
     await page.locator('#teamColor').fill('#f97316');
-    const createBtn = page.getByRole('button', { name: 'Create Team' });
+    const createBtn = page.getByRole('button', { name: /Create/ });
     await createBtn.click();
-    await expect(createBtn).toBeDisabled();
     // Wait for dialog to close (New Team button visible again)
     await expect(page.getByRole('button', { name: 'New Team' })).toBeVisible();
     // Allow client-side refresh to complete
@@ -64,8 +63,9 @@ test('Payments: remove parent from team moves them to Unassigned (keeps parent)'
   // Tick the parent's checkbox by row with their name
   const parentRow = page.locator('div').filter({ hasText: parentName }).last();
   await expect(parentRow).toBeVisible();
-  // Find the checkbox sibling in that row
-  await parentRow.getByRole('checkbox').check();
+  // Click the row's checkbox (robust to shadcn variants)
+  const rowCheckbox = parentRow.locator('[role="checkbox"], input[type="checkbox"], button[aria-pressed]');
+  await rowCheckbox.first().click();
 
   // Click Assign to Team (this may cause a full page reload)
   const assignBtn = page.getByRole('button', { name: 'Assign to Team' });

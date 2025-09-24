@@ -1757,29 +1757,43 @@ export default function PaymentsPage() {
               <div className="border rounded-md p-4 max-h-96 overflow-y-auto">
                 <div className="space-y-2">
                   {Array.isArray(allParents) && allParents.length > 0 ? (
-                    allParents.map((parent) => (
-                      <div key={parent._id} className="flex items-center space-x-3 p-2 hover:bg-muted rounded">
-                        <Checkbox
-                          checked={selectedParents.includes(parent._id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedParents([...selectedParents, parent._id])
-                            } else {
+                    allParents.map((parent) => {
+                      const isSelected = selectedParents.includes(parent._id)
+                      return (
+                        <div
+                          key={parent._id}
+                          className="flex items-center space-x-3 p-2 hover:bg-muted rounded cursor-pointer"
+                          onClick={() => {
+                            if (isSelected) {
                               setSelectedParents(selectedParents.filter(id => id !== parent._id))
+                            } else {
+                              setSelectedParents([...selectedParents, parent._id])
                             }
                           }}
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium">{parent.name}</div>
-                          <div className="text-sm text-muted-foreground">{parent.email}</div>
-                          {parent.teamId && (
-                            <div className="text-xs text-muted-foreground">
-                              Team ID: {parent.teamId}
-                            </div>
-                          )}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onClick={(e) => e.stopPropagation()}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedParents([...selectedParents, parent._id])
+                              } else {
+                                setSelectedParents(selectedParents.filter(id => id !== parent._id))
+                              }
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">{parent.name}</div>
+                            <div className="text-sm text-muted-foreground">{parent.email}</div>
+                            {parent.teamId && (
+                              <div className="text-xs text-muted-foreground">
+                                Team ID: {parent.teamId}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       {allParents === null ? (
