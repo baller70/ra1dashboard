@@ -1922,3 +1922,5 @@ export default function PaymentsPage() {
   </AppLayout>
   )
 }
+
+}
