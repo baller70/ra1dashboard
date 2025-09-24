@@ -22,13 +22,22 @@ const bulkAssignSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('🔍 Assign API received body:', body);
     const { teamId, parentIds } = assignParentsSchema.parse(body);
+    console.log('🔍 Parsed teamId:', teamId, 'parentIds:', parentIds);
 
-    // Use the Convex assignParentsToTeam mutation
-    const result = await convex.mutation(api.teams.assignParentsToTeam, {
-      teamId: teamId as any,
+    let result;
+
+    // Use a single Convex mutation for both assign and unassign.
+    // When teamId is null, pass undefined so the mutation clears the field.
+    const cleanedTeamId = teamId ?? undefined;
+    console.log('🔍 Calling teams.assignParentsToTeam with teamId:', cleanedTeamId);
+    result = await convex.mutation(api.teams.assignParentsToTeam, {
+      teamId: cleanedTeamId as any,
       parentIds: parentIds as any[]
     });
+
+    console.log('🔍 Convex mutation result:', result);
 
     return NextResponse.json({
       success: true,
@@ -37,15 +46,19 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error assigning parents to team:', error);
-    
+    console.error('❌ Error assigning parents to team:', error);
+    console.error('❌ Error type:', typeof error);
+    console.error('❌ Error constructor:', error?.constructor?.name);
+    console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid data', details: error.errors },
         { status: 400 }
       );
     }
-    
+
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
         return NextResponse.json(
@@ -53,10 +66,16 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
+
+      // Return the actual error message for debugging
+      return NextResponse.json(
+        { error: 'Failed to assign parents to team', details: error.message, stack: error.stack },
+        { status: 500 }
+      );
     }
-    
+
     return NextResponse.json(
-      { error: 'Failed to assign parents to team' },
+      { error: 'Failed to assign parents to team', details: String(error) },
       { status: 500 }
     );
   }

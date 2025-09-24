@@ -113,15 +113,17 @@ export const deleteTeam = mutation({
 // Assign parents to team function
 export const assignParentsToTeam = mutation({
   args: {
-    teamId: v.optional(v.id("teams")),
+    teamId: v.optional(v.string()),
     parentIds: v.array(v.id("parents"))
   },
   handler: async (ctx, args) => {
     const { teamId, parentIds } = args;
-    
+    console.log('🔍 Convex assignParentsToTeam called with:', { teamId, parentIds });
+    console.log('🔍 teamId type:', typeof teamId, 'value:', teamId);
+
     // Verify team exists if teamId is provided
     if (teamId) {
-      const team = await ctx.db.get(teamId);
+      const team = await ctx.db.get(teamId as any);
       if (!team) {
         throw new Error("Team not found");
       }
@@ -140,10 +142,14 @@ export const assignParentsToTeam = mutation({
     // Update all parents with the new team assignment
     const updatedParents = [];
     for (const parentId of parentIds) {
-      await ctx.db.patch(parentId, {
-        teamId: teamId || undefined,
+      console.log('🔍 Patching parent:', parentId, 'with teamId:', teamId);
+      const patchData: any = {
         updatedAt: Date.now()
-      });
+      };
+      // Always set teamId - either to the provided value or undefined for unassign
+      patchData.teamId = teamId || undefined;
+      console.log('🔍 Patch data:', patchData);
+      await ctx.db.patch(parentId, patchData);
       
       // Get updated parent with team info
       const updatedParent = await ctx.db.get(parentId);
@@ -161,6 +167,47 @@ export const assignParentsToTeam = mutation({
     return {
       success: true,
       assignedCount: parentIds.length,
+      parents: updatedParents
+    };
+  },
+});
+
+// Separate mutation for unassigning parents from teams
+export const unassignParentsFromTeams = mutation({
+  args: {
+    parentIds: v.array(v.id("parents"))
+  },
+  handler: async (ctx, args) => {
+    const { parentIds } = args;
+    console.log('🔍 Convex unassignParentsFromTeams called with:', { parentIds });
+
+    // Verify all parent IDs exist
+    const parents = [];
+    for (const parentId of parentIds) {
+      const parent = await ctx.db.get(parentId);
+      if (!parent) {
+        throw new Error(`Parent with ID ${parentId} not found`);
+      }
+      parents.push(parent);
+    }
+
+    // Update all parents to remove team assignment
+    const updatedParents = [];
+    for (const parentId of parentIds) {
+      console.log('🔍 Unassigning parent:', parentId);
+      await ctx.db.patch(parentId, {
+        teamId: undefined,
+        updatedAt: Date.now()
+      });
+
+      // Get updated parent
+      const updatedParent = await ctx.db.get(parentId);
+      updatedParents.push(updatedParent);
+    }
+
+    return {
+      success: true,
+      unassignedCount: parentIds.length,
       parents: updatedParents
     };
   },

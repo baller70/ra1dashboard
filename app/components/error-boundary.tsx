@@ -40,11 +40,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <div className="text-center p-8 max-w-md">
             <div className="text-destructive text-6xl mb-4">⚠️</div>
             <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
-            <p className="text-muted-foreground mb-6">
-              {process.env.NODE_ENV === 'development' 
-                ? `Error: ${this.state.error?.message || 'Unknown error'}`
-                : 'We encountered an unexpected error. Please refresh the page or try again later.'
-              }
+            <p className="text-muted-foreground mb-6 whitespace-pre-wrap text-left">
+              {`Error: ${this.state.error?.message || 'Unknown error'}`}
+              {this.state.error?.stack ? `\n\n${this.state.error.stack.split('\n').slice(0, 3).join('\n')}` : ''}
             </p>
             <button
               onClick={() => {
