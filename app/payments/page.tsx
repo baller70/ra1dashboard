@@ -455,6 +455,18 @@ export default function PaymentsPage() {
 
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
+  // Teams actually referenced by parents (ensures dialog shows all active team groups)
+  const derivedTeams = useMemo(() => {
+    try {
+      const ids = Array.from(new Set(allParents.filter((p: any) => p.teamId).map((p: any) => String(p.teamId))));
+      const byId = new Map(teams.map((t: any) => [String(t._id), t]));
+      const list = ids.map(id => byId.get(id)).filter(Boolean);
+      return list.length ? list : teams; // fallback to all teams if none linked
+    } catch {
+      return teams;
+    }
+  }, [allParents, teams])
+
   const allParents = allParentsData?.parents || []
 
   // Debug logging for allParents
@@ -1715,15 +1727,15 @@ export default function PaymentsPage() {
                 Select teams to delete. Parents in deleted teams will be moved to Unassigned.
               </div>
               <div className="space-x-2">
-                <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds(teams.map(t => t._id))}>Select All</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds(derivedTeams.map((t: any) => t._id))}>Select All</Button>
                 <Button variant="outline" size="sm" onClick={() => setSelectedTeamIds([])}>Clear</Button>
               </div>
             </div>
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-              {teams.length === 0 && (
+              {derivedTeams.length === 0 && (
                 <div className="text-sm text-muted-foreground">No teams yet.</div>
               )}
-              {teams.map((team) => (
+              {derivedTeams.map((team: any) => (
                 <div key={team._id} className="flex items-center justify-between p-2 border rounded-md">
                   <div className="flex items-center space-x-2">
                     <Checkbox
