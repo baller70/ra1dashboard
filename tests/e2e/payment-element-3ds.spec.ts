@@ -58,12 +58,21 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   const payment = pickPaymentForOneTime(payments)
   expect(payment, 'No suitable payment found for Kevin').toBeTruthy()
 
+  // Capture browser logs early
+  page.on('console', (msg) => console.log('BROWSER:', msg.type(), msg.text()))
+  page.on('pageerror', (err) => console.log('PAGEERROR:', err.message))
+
   // Seed API key for protected preview APIs
   await page.addInitScript(() => {
     try { localStorage.setItem('X_API_KEY', 'M8KfyCsbYBtgA12U1NIksAqZ') } catch {}
   })
   // Ensure Vercel preview access cookie is set (shared link)
   try { await page.goto(`/?_vercel_share=M8KfyCsbYBtgA12U1NIksAqZ`, { waitUntil: 'domcontentloaded' }) } catch {}
+
+  // Sanity: confirm PK reachable from preview
+  const cfgRes = await page.request.get('/api/stripe/config')
+  const cfgJson = await cfgRes.json().catch(() => ({}))
+  console.log('Preview Stripe PK length:', (cfgJson?.publishableKey || '').length)
 
   // Go to payment detail
   await page.goto(`/payments/${payment._id}`, { waitUntil: 'domcontentloaded' })
