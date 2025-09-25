@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         stripePaymentMethodId: pmId,
       })
 
-      const idemKey = paymentId ? `pi:${String(paymentId)}${achEnabled ? ':ach' : ''}` : undefined
+      const idemKey = paymentId ? `pi:${String(paymentId)}:pe2` : undefined
       const baseParams: Stripe.PaymentIntentCreateParams = {
         amount: Number(amount),
         currency: 'usd',
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       await convex.mutation(api.parents.updateParent as any, { id: parent._id, stripeCustomerId })
     }
 
-      const idemKey = paymentId ? `pi:${String(paymentId)}${achEnabled ? ':ach' : ''}` : undefined
+      const idemKey = paymentId ? `pi:${String(paymentId)}:pe2` : undefined
     const baseParams: Stripe.PaymentIntentCreateParams = {
       amount: Number(amount),
       currency: 'usd',
