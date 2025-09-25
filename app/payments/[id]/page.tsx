@@ -1095,28 +1095,62 @@ The Basketball Factory Inc.`
         }
         setTimeout(() => { window.location.reload() }, 2000)
       } else if (selectedPaymentOption === 'stripe_ach') {
-        // Handle ACH/Bank Transfer
-        const response = await fetch('/api/stripe/create-payment-link', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId: payment.id,
-            amount: Math.round(paymentAmount * 100),
-            paymentMethod: 'bank_transfer',
-            schedule: selectedPaymentSchedule,
-            installments: installmentCount
+        // ACH via Stripe Payment Element (one-time only). For schedules, fallback to legacy path for now.
+        if (selectedPaymentSchedule === 'full') {
+          const response = await fetch('/api/stripe/payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId: (payment.parent as any)?._id || payment.parent?.id,
+              parentEmail: (payment.parent as any)?.email,
+              parentName: (payment.parent as any)?.name,
+              parentPhone: (payment.parent as any)?.phone,
+              paymentId: (payment as any)._id || payment.id,
+              amount: Math.round(paymentAmount * 100),
+              description: `ACH payment for ${payment.parent?.name || 'Parent'} - ${payment.id}`,
+            })
           })
-        })
 
-        if (!response.ok) {
-          throw new Error('Failed to create bank transfer payment')
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.error || 'Failed to create ACH payment intent')
+          }
+
+          const { clientSecret } = await response.json()
+          setStripeClientSecret(clientSecret)
+          try {
+            const cfgRes = await fetch('/api/stripe/config')
+            const cfg = await cfgRes.json().catch(() => ({}))
+            if (cfg?.publishableKey && String(cfg.publishableKey).length > 0) {
+              setStripePk(cfg.publishableKey)
+            } else if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+              setStripePk(String(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY))
+            }
+          } catch {}
+          toast({ title: 'Secure Bank Payment Ready', description: 'Select bank account in the Stripe form, then confirm.' })
+          setProcessingPayment(false)
+          return
+        } else {
+          // Legacy path for non-full schedules
+          const response = await fetch('/api/stripe/create-payment-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: payment.id,
+              amount: Math.round(paymentAmount * 100),
+              paymentMethod: 'bank_transfer',
+              schedule: selectedPaymentSchedule,
+              installments: installmentCount
+            })
+          })
+          if (!response.ok) {
+            throw new Error('Failed to create bank transfer payment')
+          }
+          const { url } = await response.json()
+          if (url) {
+            window.open(url, '_blank')
+          }
         }
-
-        const { url } = await response.json()
-        if (url) {
-          window.open(url, '_blank')
-        }
-
       } else {
         // Handle check and cash payments
         if (selectedPaymentOption === 'check' && selectedPaymentSchedule === 'custom') {
