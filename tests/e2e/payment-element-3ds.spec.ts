@@ -85,7 +85,7 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   await expect(chooseBtn).toBeVisible({ timeout: 15000 })
   await chooseBtn.click()
   // Select specific option and schedule by visible text
-  await page.getByRole('dialog').getByText(/Credit Card/i).click()
+  await page.getByRole('dialog').getByText(/Credit\/?Debit Card/i).click()
   await page.getByRole('dialog').getByText(/Full Payment/i).click()
 
   // Trigger PI creation -> shows Payment Element
