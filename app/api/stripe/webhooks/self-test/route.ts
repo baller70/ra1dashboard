@@ -12,12 +12,12 @@ export async function POST() {
     }
 
     const secret = process.env.STRIPE_WEBHOOK_SECRET
-    const sk = process.env.STRIPE_SECRET_KEY
-    if (!secret || !sk) {
+    if (!secret) {
       return NextResponse.json({ ok: true, configured: false, verified: false })
     }
 
-    const stripe = new Stripe(sk as string, { apiVersion: '2024-06-20' } as any)
+    // We don't need a real API key to generate/verify a test header
+    const stripe = new Stripe('sk_test_dummy' as any, { apiVersion: '2024-06-20' } as any)
     const payload = {
       id: 'evt_test_' + Date.now(),
       type: 'checkout.session.completed',
