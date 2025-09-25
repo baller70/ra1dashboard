@@ -87,6 +87,11 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   if (!piOk) throw new Error('PI create failed: ' + (piJson?.error || piRes.status()))
   if (!piJson?.clientSecret) throw new Error('PI create returned no clientSecret')
 
+  // Check publishable key availability for diagnostics
+  const cfgRes = await page.request.get('/api/stripe/config')
+  const cfgJson = await cfgRes.json().catch(() => ({}))
+  console.log('Stripe publishable key length:', (cfgJson?.publishableKey || '').length)
+
   // Wait for Stripe Payment Element to render (iframe presence) or capture error toast
   const iframeVisible = page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment" i]', { timeout: 20000 })
   const errorToastVisible = page.getByText(/Failed to create payment intent|Payment Processing Failed/i).first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => null)
