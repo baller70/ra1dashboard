@@ -422,6 +422,13 @@ export default function PaymentsPage() {
           return { ...prev, parents: filtered }
         })
 
+        // Also remove any payments for this parent from local state so UI shrinks immediately
+        setPaymentsData((prev: any) => {
+          if (!prev?.payments) return prev
+          const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
+          return { ...prev, payments: filtered }
+        })
+
         // Dispatch event to notify other pages
         window.dispatchEvent(new Event('parent-deleted'))
 
@@ -450,6 +457,12 @@ export default function PaymentsPage() {
             if (!prev?.parents) return prev
             const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
             return { ...prev, parents: filtered }
+          })
+          // Also strip any payments referencing this parent
+          setPaymentsData((prev: any) => {
+            if (!prev?.payments) return prev
+            const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
+            return { ...prev, payments: filtered }
           })
           toast({
             title: '✅ Already Deleted',
