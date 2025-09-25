@@ -46,7 +46,12 @@ import { ReminderReviewDialog } from '../../../components/ui/reminder-review-dia
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Label } from '../../../components/ui/label'
 
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+
 import { Textarea } from '../../../components/ui/textarea'
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+
 
 interface Payment {
   id: string
@@ -373,11 +378,41 @@ export default function PaymentDetailPage() {
     return null
   }
 
+  // Stripe Payment Element state
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
+
   // Payment scheduling state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("")
   const [selectedPaymentSchedule, setSelectedPaymentSchedule] = useState<string>("")
   const [customAmount, setCustomAmount] = useState<string>("")
   const [customInstallmentCount, setCustomInstallmentCount] = useState<number>(1)
+  // Button to confirm card payment using Stripe Elements
+  function ConfirmStripeButton({ onDone }: { onDone?: () => Promise<void> | void }) {
+    const stripe = useStripe()
+    const elements = useElements()
+    const [submitting, setSubmitting] = useState(false)
+    return (
+      <Button
+        className="bg-orange-600 hover:bg-orange-700"
+        disabled={!stripe || !elements || submitting}
+        onClick={async () => {
+          if (!stripe || !elements) return
+          setSubmitting(true)
+          const result = await stripe.confirmPayment({ elements, redirect: 'if_required' })
+          if ((result as any)?.error) {
+            toast({ title: 'Card Error', description: (result as any).error.message || 'Payment failed', variant: 'destructive' })
+            setSubmitting(false)
+            return
+          }
+          try { await onDone?.() } catch {}
+          setSubmitting(false)
+        }}
+      >
+        {submitting ? 'Confirming…' : 'Confirm Card Payment'}
+      </Button>
+    )
+  }
+
   const [customPaymentFrequency, setCustomPaymentFrequency] = useState<number>(1)
   const [checkDetails, setCheckDetails] = useState({
     checkNumbers: [],
@@ -437,6 +472,25 @@ export default function PaymentDetailPage() {
               })
             }
             toast({ title: '✅ Payment Successful', description: 'Your one-time payment was completed.' })
+            // Optimistically reflect one-time card payment in history immediately
+            try {
+              setPaymentHistory(prev => [
+                {
+                  id: `card_full_${Date.now()}`,
+                  action: 'Payment Received',
+                  description: `One-time payment processed successfully via credit card`,
+                  performedAt: new Date().toISOString(),
+                  performedBy: payment.parent?.name || 'Parent',
+                  amount: payment?.amount || 0,
+                  status: 'paid',
+                  metadata: { method: 'credit_card', optimistic: true },
+                } as any,
+                ...prev,
+              ])
+              setIsPaymentHistoryOpen(true)
+              setHistoryLoading(false)
+            } catch {}
+
             await Promise.all([fetchPaymentDetails(), fetchPaymentHistory(), fetchPaymentProgress()])
           } catch {}
         })()
@@ -967,23 +1021,9 @@ The Basketball Factory Inc.`
           }
 
           const { clientSecret } = await response.json()
-          // Here we would confirm the payment with Stripe.js. Since we avoid external deps,
-          // we simulate success and mark as paid on server.
-          const completeResp = await fetch(`/api/payments/${(payment as any)._id || payment.id}/complete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentMethod: 'stripe_card', paymentPlan: 'full', sessionId: clientSecret })
-          })
-          if (!completeResp.ok) {
-            // Fallback: directly PATCH the payment as paid if complete endpoint fails
-            await fetch(`/api/payments/${(payment as any)._id || payment.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'paid', paidAt: new Date().toISOString(), notes: 'Auto-complete fallback (PI)' })
-            })
-          }
-          toast({ title: '✅ Payment Successful', description: `One-time payment of $${paymentAmount.toFixed(2)} completed.` })
-          await Promise.all([fetchPaymentDetails(), fetchPaymentHistory(), fetchPaymentProgress()])
+          setStripeClientSecret(clientSecret)
+          toast({ title: 'Secure Card Form Ready', description: 'Enter your card in the secure Stripe form, then confirm.' })
+          setProcessingPayment(false)
           return
         }
 
@@ -2606,7 +2646,17 @@ The Basketball Factory Inc.`
                 </div>
 
                 <div className="space-y-4">
-                  {/* Card Details */}
+                  {/* Stripe Payment Element (secure) */}
+                  {stripeClientSecret && (
+                    <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise}>
+                      <div className="space-y-4 bg-white p-4 rounded border">
+                        <PaymentElement />
+                      </div>
+                    </Elements>
+                  )}
+
+                  {/* Legacy native inputs hidden when using Stripe */}
+                  {!stripeClientSecret && (
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="cardholderName">Cardholder Name *</Label>
@@ -2673,7 +2723,10 @@ The Basketball Factory Inc.`
                     </div>
                   </div>
 
+                  )}
+
                   {/* Billing Address */}
+                  {!stripeClientSecret && (
                   <div className="space-y-4">
                     <h4 className="font-medium text-blue-900">Billing Address</h4>
                     <div className="grid grid-cols-1 gap-4">
@@ -2745,6 +2798,20 @@ The Basketball Factory Inc.`
                       </div>
                     </div>
                   </div>
+                  )}
+                  {stripeClientSecret && (
+                    <div className="pt-4">
+                      <ConfirmStripeButton onDone={async () => {
+                        try {
+                          toast({ title: '✅ Payment Confirmed', description: 'Card payment confirmed. Syncing...' })
+                          await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
+                        } catch {}
+                        setPaymentOptionsOpen(false)
+                        try { await (window as any).refreshParentData?.() } catch {}
+                      }} />
+                    </div>
+                  )}
+
 
                   {/* Payment Summary */}
                   <div className="p-4 bg-white border border-blue-300 rounded-lg">
@@ -2819,7 +2886,8 @@ The Basketball Factory Inc.`
                 !selectedPaymentOption ||
                 !selectedPaymentSchedule ||
                 processingPayment ||
-                (selectedPaymentOption === 'stripe_card' && (
+                (selectedPaymentOption === 'stripe_card' && Boolean(stripeClientSecret)) ||
+                (selectedPaymentOption === 'stripe_card' && !stripeClientSecret && (
                   !creditCardForm.cardNumber ||
                   !creditCardForm.expiryDate ||
                   !creditCardForm.cvv ||
@@ -3001,6 +3069,26 @@ The Basketball Factory Inc.`
                       description: `Installment #${payingInstallment.installmentNumber} payment of $${payingInstallment.amount.toFixed(2)} processed successfully.`,
                       duration: 5000,
                     })
+
+                    // Optimistically reflect in Payment History immediately
+                    try {
+                      setPaymentHistory(prev => [
+                        {
+                          id: `card_${(payingInstallment as any)?._id || 'inst'}_${Date.now()}`,
+                          action: 'Payment Received',
+                          description: `Installment #${payingInstallment.installmentNumber} payment processed successfully via credit card`,
+                          performedAt: new Date().toISOString(),
+                          performedBy: payment.parent?.name || 'Parent',
+                          amount: payingInstallment.amount,
+                          status: 'paid',
+                          metadata: { installmentId: (payingInstallment as any)?._id, method: 'credit_card', optimistic: true },
+                        } as any,
+                        ...prev,
+                      ])
+                      setIsPaymentHistoryOpen(true)
+                      setHistoryLoading(false)
+                    } catch {}
+
 
                     // Close dialog and refresh data
                     setInstallmentPaymentOpen(false)

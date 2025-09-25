@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       amount: Number(amount),
       currency: 'usd',
       customer: stripeCustomerId,
+      setup_future_usage: 'off_session',
       automatic_payment_methods: { enabled: true },
       metadata: {
         source: 'one_time_inapp',
