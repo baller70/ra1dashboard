@@ -46,7 +46,7 @@ import { ReminderReviewDialog } from '../../../components/ui/reminder-review-dia
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Label } from '../../../components/ui/label'
 
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { Elements, PaymentElement, ElementsConsumer, useStripe, useElements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 
 import { Textarea } from '../../../components/ui/textarea'
@@ -2684,14 +2684,26 @@ The Basketball Factory Inc.`
                       <div className="space-y-4 bg-white p-4 rounded border">
                         <PaymentElement />
                         <div className="pt-4">
-                          <ConfirmStripeButton onDone={async () => {
-                            try {
-                              toast({ title: '✅ Payment Confirmed', description: 'Card payment confirmed. Syncing...' })
-                              await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
-                            } catch {}
-                            setPaymentOptionsOpen(false)
-                            try { await (window as any).refreshParentData?.() } catch {}
-                          }} />
+                          <ElementsConsumer>
+                            {({ stripe, elements }) => (
+                              <Button
+                                className="bg-orange-600 hover:bg-orange-700"
+                                disabled={!stripe || !elements}
+                                onClick={async () => {
+                                  const result: any = await stripe?.confirmPayment({ elements: elements!, redirect: 'if_required' })
+                                  if (result?.error) {
+                                    toast({ title: 'Card Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
+                                    return
+                                  }
+                                  try { await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()]) } catch {}
+                                  setPaymentOptionsOpen(false)
+                                  try { await (window as any).refreshParentData?.() } catch {}
+                                }}
+                              >
+                                Confirm Card Payment
+                              </Button>
+                            )}
+                          </ElementsConsumer>
                         </div>
                       </div>
                     </Elements>
