@@ -414,17 +414,24 @@ export default function PaymentsPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Delete successful:', result)
-        console.log('🔄 About to refresh data...')
 
-        // Refresh all data to ensure consistency across both pages
-        await fetchData()
-        console.log('✅ Data refreshed successfully')
+        // Optimistically remove from local state immediately
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
+          return { ...prev, parents: filtered }
+        })
 
-        // Dispatch event to update dashboard and analytics pages
+        // Dispatch event to notify other pages
         window.dispatchEvent(new Event('parent-deleted'))
-        console.log('🔔 Dispatched parent-deleted event from payments page')
 
-        console.log('🍞 About to show success toast...')
+        // Background refresh to ensure consistency across analytics/other data
+        try {
+          await fetchData()
+        } catch (e) {
+          console.warn('Background refresh after delete failed (non-blocking):', e)
+        }
+
         toast({
           title: '✅ Parent Deleted Successfully',
           description: `${parentName} and all associated payments have been permanently removed.`,
@@ -438,13 +445,19 @@ export default function PaymentsPage() {
 
         // Check if parent was already deleted (404) or doesn't exist
         if (response.status === 404 || (errorData.details && errorData.details.includes('not found'))) {
+          // Optimistically remove locally if it still exists
+          setAllParentsData((prev: any) => {
+            if (!prev?.parents) return prev
+            const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
+            return { ...prev, parents: filtered }
+          })
           toast({
             title: '✅ Already Deleted',
-            description: `${parentName} was already deleted. Refreshing the page...`,
+            description: `${parentName} was already deleted. Refreshed the page data.`,
             duration: 3000,
           })
-          // Refresh data since parent was already deleted
-          await fetchData(true)
+          // Background refresh (non-blocking)
+          fetchData().catch(() => {})
         } else {
           toast({
             title: '❌ Delete Failed',
