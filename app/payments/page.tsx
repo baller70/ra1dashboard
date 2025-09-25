@@ -2217,19 +2217,19 @@ export default function PaymentsPage() {
             const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
               fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}&limit=1000`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
               fetch(`/api/payments/analytics?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
               fetch(`/api/teams?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
               fetch(`/api/parents?limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               })
             ])
 
@@ -2243,7 +2243,7 @@ export default function PaymentsPage() {
             if (teamsResult.success) setTeamsData(teamsResult.data)
             if (parentsResult.success) {
               const normalizedParents = Array.isArray(parentsResult.data?.parents)
-                ? parentsResult.data.parents.map((p: any) => ({ ...p, _id: String(p._id ?? (p as any).id ?? '') }))
+                ? parentsResult.data.parents.map((p: any) => ({ ...p, _id: String(p._id ?? (p as any).id ?? ''), teamId: p.teamId ? String(p.teamId) : undefined }))
                 : []
               setAllParentsData({ ...parentsResult.data, parents: normalizedParents })
 
