@@ -73,6 +73,16 @@ test('Payment Element ACH (US bank account) is available in Preview and confirm 
   }
   expect(achVisible, 'ACH method not visible in Payment Element').toBeTruthy()
 
+  // Select ACH tab inside the Payment Element
+  let clicked = false
+  for (const f of page.frames()) {
+    try {
+      const achTab = await f.$('text=/US bank account|Bank account|Bank/i')
+      if (achTab) { await achTab.click(); clicked = true; break }
+    } catch {}
+  }
+  expect(clicked, 'Failed to click ACH tab').toBeTruthy()
+
   // Confirm payment (will redirect or go into processing). We do not assert final paid state here.
   const confirmBtn = page.getByRole('button', { name: /Confirm (Card )?Payment/i })
   await expect(confirmBtn).toBeEnabled({ timeout: 15000 })
