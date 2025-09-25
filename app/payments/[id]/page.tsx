@@ -2831,7 +2831,7 @@ The Basketball Factory Inc.`
                     </div>
                   </div>
                   )}
-                  {stripeClientSecret && (
+                  {stripeClientSecret && stripePk && (
                     <div className="pt-4">
                       <ConfirmStripeButton onDone={async () => {
                         try {
