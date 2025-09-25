@@ -427,7 +427,7 @@ export default function PaymentDetailPage() {
           setSubmitting(false)
         }}
       >
-        {submitting ? 'Confirming…' : 'Confirm Card Payment'}
+        {submitting ? 'Confirming…' : 'Confirm Payment'}
       </Button>
     )
   }
