@@ -69,8 +69,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     return NextResponse.json({ success: true, paymentIntentId: intent.id, status: intent.status })
   } catch (error: any) {
-    console.error('Off-session installment charge error:', error)
-    return NextResponse.json({ error: error?.message || 'Failed to charge installment off_session' }, { status: 500 })
+    const details = {
+      message: error?.message,
+      type: error?.type,
+      code: error?.code,
+      decline_code: error?.decline_code,
+      raw: error?.raw ? { message: error.raw.message, code: error.raw.code, decline_code: error.raw.decline_code } : undefined,
+    }
+    console.error('Off-session installment charge error:', details)
+    const status = error?.statusCode && Number(error.statusCode) >= 400 && Number(error.statusCode) < 600 ? Number(error.statusCode) : 500
+    return NextResponse.json({ error: details }, { status })
   }
 }
 
