@@ -417,7 +417,7 @@ export default function PaymentDetailPage() {
         onClick={async () => {
           if (!stripe || !elements) return
           setSubmitting(true)
-          const result = await stripe.confirmPayment({ elements, redirect: 'if_required' })
+          const result = await stripe.confirmPayment({ elements, confirmParams: { return_url: window.location.href }, redirect: 'if_required' })
           if ((result as any)?.error) {
             toast({ title: 'Card Error', description: (result as any).error.message || 'Payment failed', variant: 'destructive' })
             setSubmitting(false)
@@ -2690,7 +2690,7 @@ The Basketball Factory Inc.`
                                 className="bg-orange-600 hover:bg-orange-700"
                                 disabled={!stripe || !elements}
                                 onClick={async () => {
-                                  const result: any = await stripe?.confirmPayment({ elements: elements!, redirect: 'if_required' })
+                                  const result: any = await stripe?.confirmPayment({ elements: elements!, confirmParams: { return_url: window.location.href }, redirect: 'if_required' })
                                   if (result?.error) {
                                     toast({ title: 'Card Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
                                     return
