@@ -1,0 +1,83 @@
+import { test, expect } from '@playwright/test'
+import { getKevinParent, getPaymentsForParent, pickPaymentForOneTime } from './helpers/api'
+
+// Light-touch ACH test with Payment Element: verifies ACH method is available in Preview
+// and that confirming does not error (may go into processing; reconciliation is deferred).
+
+test('Payment Element ACH (US bank account) is available in Preview and confirm triggers processing', async ({ page, request }) => {
+  // Discover target payment via API
+  const kevin = await getKevinParent(request)
+  const payments = await getPaymentsForParent(request, kevin._id)
+  const payment = pickPaymentForOneTime(payments)
+  expect(payment, 'No suitable payment found for Kevin').toBeTruthy()
+
+  // Capture browser logs early
+  page.on('console', (msg) => console.log('BROWSER:', msg.type(), msg.text()))
+  page.on('pageerror', (err) => console.log('PAGEERROR:', err.message))
+
+  // Seed API key for protected preview APIs
+  await page.addInitScript(() => {
+    try { localStorage.setItem('X_API_KEY', 'M8KfyCsbYBtgA12U1NIksAqZ') } catch {}
+  })
+  // Ensure Vercel preview access cookie is set (shared link)
+  try { await page.goto(`/?_vercel_share=M8KfyCsbYBtgA12U1NIksAqZ`, { waitUntil: 'domcontentloaded' }) } catch {}
+
+  // ACH config should be true in Preview
+  const achCfg = await page.request.get('/api/ach/config')
+  const achJson = await achCfg.json().catch(() => ({}))
+  console.log('ACH enabled:', achJson?.enabled)
+  expect(achJson?.enabled).toBeTruthy()
+
+  // Go to payment detail
+  await page.goto(`/payments/${payment._id}`, { waitUntil: 'domcontentloaded' })
+  await expect(page.getByText(/PAYMENT DETAILS/i)).toBeVisible({ timeout: 20000 })
+
+  // Open Payment Options, choose ACH + Full Payment
+  const chooseBtn = page.getByRole('button', { name: /Choose payment option/i })
+  await expect(chooseBtn).toBeVisible({ timeout: 15000 })
+  await chooseBtn.click()
+  await page.getByRole('dialog').getByText(/Bank Transfer \(ACH\)/i).click()
+  await page.getByRole('dialog').getByText(/Full Payment/i).click()
+
+  // Trigger PI creation -> shows Payment Element with ACH available
+  const processBtn = page.getByRole('button', { name: /Process (Credit Card )?Payment/i })
+  await expect(processBtn).toBeEnabled({ timeout: 10000 })
+  const piResponsePromise = page.waitForResponse(res => res.url().endsWith('/api/stripe/payment-intent'), { timeout: 20000 })
+  await processBtn.click()
+  const piRes = await piResponsePromise.catch(() => null)
+  if (!piRes) throw new Error('No response from /api/stripe/payment-intent')
+  const piOk = piRes.ok()
+  let piJson: any = null
+  try { piJson = await piRes.json() } catch {}
+  console.log('PI status:', piRes.status(), 'ok:', piOk, 'json:', piJson)
+  if (!piOk) throw new Error('PI create failed: ' + (piJson?.error || piRes.status()))
+  if (!piJson?.clientSecret) throw new Error('PI create returned no clientSecret')
+
+  // Wait for Payment Element to render and verify ACH method is present
+  await page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment" i]', { timeout: 20000 })
+  // Try to find ACH method toggle text in any Stripe frame
+  let achVisible = false
+  const deadline = Date.now() + 15000
+  while (!achVisible && Date.now() < deadline) {
+    for (const f of page.frames()) {
+      try {
+        const achTab = await f.$('text=/US bank account|Bank account|Bank/i')
+        if (achTab) { achVisible = true; break }
+      } catch {}
+    }
+    if (!achVisible) await page.waitForTimeout(500)
+  }
+  expect(achVisible, 'ACH method not visible in Payment Element').toBeTruthy()
+
+  // Confirm payment (will redirect or go into processing). We do not assert final paid state here.
+  const confirmBtn = page.getByRole('button', { name: /Confirm (Card )?Payment/i })
+  await expect(confirmBtn).toBeEnabled({ timeout: 15000 })
+  await confirmBtn.click()
+
+  // Allow any redirect/processing to occur
+  await page.waitForTimeout(3000)
+
+  // Assert no immediate error banner appeared
+  expect(await page.getByText(/Payment failed|Card Error/i).isVisible().catch(() => false)).toBeFalsy()
+})
+
