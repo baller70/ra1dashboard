@@ -39,6 +39,9 @@ test('Payment Element ACH (US bank account) is available in Preview and confirm 
   await page.getByRole('dialog').getByText(/Bank Transfer \(ACH\)/i).click()
   await page.getByRole('dialog').getByText(/Full Payment/i).click()
 
+  // Give Vercel time to roll out updated preview chunks/routes
+  await page.waitForTimeout(25000)
+
   // Trigger PI creation -> shows Payment Element with ACH available
   const processBtn = page.getByRole('button', { name: /Process (Credit Card )?Payment/i })
   await expect(processBtn).toBeEnabled({ timeout: 10000 })
