@@ -303,10 +303,7 @@ export default function PaymentDetailPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  // Early return if no payment ID
-  if (!params?.id) {
-    return <div>Payment ID not found</div>
-  }
+  // Guarded flows handle missing payment ID later in effects/UI
   const [payment, setPayment] = useState<Payment | null>(null)
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([])
   const [communicationHistory, setCommunicationHistory] = useState<CommunicationRecord[]>([])
