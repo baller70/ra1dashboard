@@ -189,13 +189,21 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   await confirmBtn.click()
 
   if (!filled) {
-    // Fallback validation path: expect Stripe validation message inside iframe
+    // Fallback validation path: expect Stripe validation message (inside frame or surfaced on page)
     let sawValidation = false
-    const frames = page.frames()
-    for (const f of frames) {
+    const validationRegex = /card number is incomplete|enter a card number|complete card number|your card number is incomplete/i
+    // Check frames first
+    for (const f of page.frames()) {
       try {
-        const err = await f.locator('text=/card number is incomplete|Enter a card number|Complete card number/i').first()
-        if (await err.isVisible({ timeout: 2000 }).catch(() => false)) { sawValidation = true; break }
+        const err = f.locator('text=/card number is incomplete|Enter a card number|Complete card number|Your card number is incomplete/i').first()
+        if (await err.isVisible({ timeout: 1500 }).catch(() => false)) { sawValidation = true; break }
+      } catch {}
+    }
+    // Then check top-level page for surfaced validation
+    if (!sawValidation) {
+      try {
+        const pageErr = page.getByText(validationRegex).first()
+        if (await pageErr.isVisible({ timeout: 1500 }).catch(() => false)) sawValidation = true
       } catch {}
     }
     expect(sawValidation, 'Payment Element did not show card validation error; PE may not be mounted').toBeTruthy()
