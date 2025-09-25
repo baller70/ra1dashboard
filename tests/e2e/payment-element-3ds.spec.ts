@@ -72,7 +72,9 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   // Sanity: confirm PK reachable from preview
   const cfgRes = await page.request.get('/api/stripe/config')
   const cfgJson = await cfgRes.json().catch(() => ({}))
-  console.log('Preview Stripe PK length:', (cfgJson?.publishableKey || '').length)
+  const pkLen = (cfgJson?.publishableKey || '').length
+  console.log('Preview Stripe PK length:', pkLen)
+  expect(pkLen, 'Stripe publishable key is not configured in this Preview; Payment Element cannot render').toBeGreaterThan(0)
 
   // Go to payment detail
   await page.goto(`/payments/${payment._id}`, { waitUntil: 'domcontentloaded' })
