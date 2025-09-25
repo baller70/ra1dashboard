@@ -67,6 +67,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       },
     }, { idempotencyKey })
 
+    // Fallback reconciliation for previews where Stripe webhooks may not be configured
+    if (intent.status === 'succeeded') {
+      try {
+        await convex.mutation(api.paymentInstallments.markInstallmentPaid as any, {
+          installmentId: installmentId as any,
+          stripePaymentIntentId: intent.id,
+          paidAmount: amount,
+        })
+      } catch (e) {
+        console.warn('Installment mark paid fallback failed:', (e as any)?.message)
+      }
+    }
+
     return NextResponse.json({ success: true, paymentIntentId: intent.id, status: intent.status })
   } catch (error: any) {
     const details = {
