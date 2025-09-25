@@ -1055,6 +1055,17 @@ export default function PaymentsPage() {
     })() :
     { 'All Payments': deduplicatedPayments }
 
+  const unassignedRenderedParentCount = useMemo(() => {
+    try {
+      const arr = (groupedPayments['Unassigned'] || []) as any[]
+      const s = new Set(arr.map((e: any) => String(e.parentId)))
+      return s.size
+    } catch (e) {
+      return (allParents?.filter((p: any) => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length) || 0
+    }
+  }, [groupedPayments, allParents, unassignedHiddenParentIds])
+
+
   const handlePaymentSelection = (paymentId: string, selected: boolean) => {
     if (selected) {
       setSelectedPayments(prev => [...prev, paymentId])
@@ -1546,7 +1557,7 @@ export default function PaymentsPage() {
               >
                 <option value="all">All Teams</option>
                 <option value="unassigned">
-                  Unassigned ({allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length})
+                  Unassigned ({unassignedRenderedParentCount})
                 </option>
                 {teams.map((team) => {
                   const teamParentCount = allParents.filter(p => p.teamId === team._id).length
@@ -1734,7 +1745,7 @@ export default function PaymentsPage() {
                               }}
                             />
                             <h3 className="text-lg font-semibold text-orange-600">
-                              {groupName} ({isUnassigned ? (groupedPayments['Unassigned']?.length || 0) : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? (groupedPayments['Unassigned']?.length || 0) : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
+                              {groupName} ({isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
                             </h3>
                             {isCollapsed ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -2018,7 +2029,7 @@ export default function PaymentsPage() {
                       <div className="w-3 h-3 rounded-full bg-gray-400" />
                       <span>Unassigned</span>
                       <span className="text-muted-foreground">
-                        ({allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length} parents)
+                        ({unassignedRenderedParentCount} parents)
                       </span>
                     </div>
                   </SelectItem>
