@@ -188,11 +188,14 @@ export default function PaymentsPage() {
         setPlansTotals({ total: plansTotal, activeParents: uniquePlans.length })
       } catch {}
       if (parentsResult.success) {
-        setAllParentsData(parentsResult.data)
+        const normalizedParents = Array.isArray(parentsResult.data?.parents)
+          ? parentsResult.data.parents.map((p: any) => ({ ...p, _id: String(p._id ?? (p as any).id ?? '') }))
+          : []
+        setAllParentsData({ ...parentsResult.data, parents: normalizedParents })
 
         // Debug logging
-        const parentCount = parentsResult.data?.parents?.length || 0
-        const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+        const parentCount = normalizedParents.length || 0
+        const unassignedCount = normalizedParents.filter((p: any) => !p.teamId).length || 0
         console.log('🔍 PAYMENTS PAGE DEBUG:', {
           totalParents: parentCount,
           unassignedParents: unassignedCount,
@@ -240,6 +243,7 @@ export default function PaymentsPage() {
       fetchData()
     }
 
+
     window.addEventListener('parent-deleted', handleParentDeleted)
     return () => window.removeEventListener('parent-deleted', handleParentDeleted)
   }, [fetchData])
@@ -252,6 +256,8 @@ export default function PaymentsPage() {
       console.log('🔄 Refreshing data for parent:', eventData.parentName || 'Unknown')
 
       // Add a longer delay to ensure the payment plan and payments are fully created
+
+
       setTimeout(() => {
         console.log('🔄 Fetching updated data after payment plan creation...')
         // Force aggressive cache busting for payment plan updates
@@ -279,6 +285,17 @@ export default function PaymentsPage() {
   //     focusTimeout = setTimeout(() => {
   //       fetchData()
   //     }, 2000)
+
+  // Listen for parent creations from other pages/components
+  useEffect(() => {
+    const onCreated = () => {
+      console.log('Parent created event received, refreshing data...')
+      fetchData()
+    }
+    window.addEventListener('parent-created', onCreated)
+    return () => window.removeEventListener('parent-created', onCreated)
+  }, [fetchData])
+
   //   }
   //   window.addEventListener('focus', handlePageFocus)
   //   return () => {
@@ -681,10 +698,10 @@ export default function PaymentsPage() {
           description: "The team was deleted. Parents were moved to Unassigned."
         })
         // Optimistically update local state
-        setTeamsData((prev: any[]) => Array.isArray(prev) ? prev.filter((t: any) => t._id !== id) : prev)
+        setTeamsData((prev: any[]) => Array.isArray(prev) ? prev.filter((t: any) => t._id !== teamId) : prev)
         setAllParentsData((prev: any) => {
           if (!prev?.parents) return prev
-          const newParents = prev.parents.map((p: any) => p.teamId === id ? { ...p, teamId: undefined } : p)
+          const newParents = prev.parents.map((p: any) => p.teamId === teamId ? { ...p, teamId: undefined } : p)
           return { ...prev, parents: newParents }
         })
       } else {
@@ -2087,6 +2104,17 @@ export default function PaymentsPage() {
             if (typeof window !== 'undefined') {
               localStorage.removeItem('payments-cache')
               sessionStorage.removeItem('payments-cache')
+
+          // Optimistically add the new parent to local state to avoid any perceived lag
+          try {
+            const optimistic = { ...newParent, _id: String((newParent as any)._id ?? (newParent as any).id ?? ''), teamId: undefined }
+            setAllParentsData((prev: any) => {
+              const prevParents = Array.isArray(prev?.parents) ? prev.parents : []
+              if (prevParents.some((p: any) => String(p._id) === optimistic._id)) return prev
+              return { ...(prev || {}), parents: [optimistic, ...prevParents] }
+            })
+          } catch {}
+
             }
 
             const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
@@ -2117,15 +2145,18 @@ export default function PaymentsPage() {
             if (analyticsResult.success) setAnalytics(analyticsResult.data)
             if (teamsResult.success) setTeamsData(teamsResult.data)
             if (parentsResult.success) {
-              setAllParentsData(parentsResult.data)
+              const normalizedParents = Array.isArray(parentsResult.data?.parents)
+                ? parentsResult.data.parents.map((p: any) => ({ ...p, _id: String(p._id ?? (p as any).id ?? '') }))
+                : []
+              setAllParentsData({ ...parentsResult.data, parents: normalizedParents })
 
-              const parentCount = parentsResult.data?.parents?.length || 0
-              const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+              const parentCount = normalizedParents.length || 0
+              const unassignedCount = normalizedParents.filter((p: any) => !p.teamId).length || 0
 
               console.log('🔄 Data refreshed after parent creation:', {
                 totalParents: parentCount,
                 unassignedParents: unassignedCount,
-                newParentFound: parentsResult.data?.parents?.find((p: any) => p.name === newParent.name)
+                newParentFound: normalizedParents.find((p: any) => p.name === newParent.name)
               })
 
               // Show confirmation that parent appears in UNASSIGNED
