@@ -2683,6 +2683,16 @@ The Basketball Factory Inc.`
                     <Elements options={{ clientSecret: stripeClientSecret }} stripe={loadStripe(stripePk)}>
                       <div className="space-y-4 bg-white p-4 rounded border">
                         <PaymentElement />
+                        <div className="pt-4">
+                          <ConfirmStripeButton onDone={async () => {
+                            try {
+                              toast({ title: '✅ Payment Confirmed', description: 'Card payment confirmed. Syncing...' })
+                              await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
+                            } catch {}
+                            setPaymentOptionsOpen(false)
+                            try { await (window as any).refreshParentData?.() } catch {}
+                          }} />
+                        </div>
                       </div>
                     </Elements>
                   )}
@@ -2830,18 +2840,6 @@ The Basketball Factory Inc.`
                       </div>
                     </div>
                   </div>
-                  )}
-                  {stripeClientSecret && stripePk && (
-                    <div className="pt-4">
-                      <ConfirmStripeButton onDone={async () => {
-                        try {
-                          toast({ title: '✅ Payment Confirmed', description: 'Card payment confirmed. Syncing...' })
-                          await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()])
-                        } catch {}
-                        setPaymentOptionsOpen(false)
-                        try { await (window as any).refreshParentData?.() } catch {}
-                      }} />
-                    </div>
                   )}
 
 
