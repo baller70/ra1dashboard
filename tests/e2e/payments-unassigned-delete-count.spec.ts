@@ -32,6 +32,10 @@ test.describe('Payments: Unassigned delete updates count and removes row immedia
 
     // Filter to Unassigned only to avoid cross-group selector ambiguity
     await page.selectOption('select', 'unassigned')
+
+    // Wait for Unassigned header/count to render
+    await expect(page.locator('[data-testid="unassigned-count"]').first()).toBeVisible({ timeout: 20000 })
+
     // Ensure Unassigned section is visible/open
     await openUnassignedIfCollapsed(page)
 
