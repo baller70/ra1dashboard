@@ -385,6 +385,19 @@ export default function PaymentsPage() {
     setDeleteLoading(parentId)
     console.log('🗑️ Starting delete process for parent:', parentId, parentName)
 
+    // Optimistically remove immediately from all local views; on failure we'll re-sync
+    setDeletedParentIds((prev) => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
+    setAllParentsData((prev: any) => {
+      if (!prev?.parents) return prev
+      const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
+      return { ...prev, parents: filtered }
+    })
+    setPaymentsData((prev: any) => {
+      if (!prev?.payments) return prev
+      const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
+      return { ...prev, payments: filtered }
+    })
+
     try {
       // Try dynamic route first
       console.log('🔄 Attempting delete via dynamic route...')
@@ -415,23 +428,6 @@ export default function PaymentsPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Delete successful:', result)
-
-        // Optimistically remove from local state immediately
-        setAllParentsData((prev: any) => {
-          if (!prev?.parents) return prev
-          const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
-          return { ...prev, parents: filtered }
-        })
-
-        // Also remove any payments for this parent from local state so UI shrinks immediately
-        setPaymentsData((prev: any) => {
-          if (!prev?.payments) return prev
-          const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
-          return { ...prev, payments: filtered }
-        })
-
-        // Mark parent as deleted locally to ensure immediate removal across all derived views
-        setDeletedParentIds((prev) => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
 
         // Dispatch event to notify other pages
         window.dispatchEvent(new Event('parent-deleted'))
