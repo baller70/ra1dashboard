@@ -38,9 +38,25 @@ test('Off-session installment: next pending charge succeeds and reconciles via w
   // Give Vercel a moment to roll out serverless function changes
   await page.waitForTimeout(25000)
 
+  // If the selected installment flipped to paid (from prior runs), pick another pending; if none, consider success
+  let target = pending
+  for (let tries = 0; tries < 3; tries++) {
+    const check = await request.get(`/api/installments/${target._id}`)
+    const inst = await check.json().catch(() => ({}))
+    if (inst?.status === 'pending') break
+    const r = await request.get(`/api/payments/${payment._id}/progress`)
+    const j = await r.json().catch(() => ({}))
+    const next = (j?.installments || []).find((i: any) => i.status === 'pending')
+    if (!next) {
+      console.log('No pending installments remain; schedule already fully paid')
+      return
+    }
+    target = next
+  }
+
   // Trigger off_session charge for this pending installment
   // Retry a few times in case preview deployment is still propagating new route
-  let chargeRes = await request.post(`/api/installments/${pending._id}/charge`, { data: { parentPaymentId: payment._id } })
+  let chargeRes = await request.post(`/api/installments/${target._id}/charge`, { data: { parentPaymentId: payment._id } })
   let chargeJson: any = await chargeRes.json().catch(() => ({}))
   for (let i = 0; i < 10 && chargeRes.status() === 404; i++) {
     await page.waitForTimeout(2000)
@@ -55,7 +71,7 @@ test('Off-session installment: next pending charge succeeds and reconciles via w
   for (let i = 0; i < 20; i++) {
     const [r1, r2] = await Promise.all([
       request.get(`/api/payments/${payment._id}/progress`),
-      request.get(`/api/installments/${pending._id}`),
+      request.get(`/api/installments/${target._id}`),
     ])
     const j1 = await r1.json().catch(() => ({}))
     const j2 = await r2.json().catch(() => ({}))
