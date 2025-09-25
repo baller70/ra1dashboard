@@ -67,6 +67,8 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
 
   // Go to payment detail
   await page.goto(`/payments/${payment._id}`, { waitUntil: 'domcontentloaded' })
+  const htmlSnippet = (await page.content()).slice(0, 500)
+  console.log('Payment page HTML (first 500):', htmlSnippet)
   await expect(page.getByText(/PAYMENT DETAILS/i)).toBeVisible({ timeout: 20000 })
 
   // Open Payment Options, choose Card + Full Payment
