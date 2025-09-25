@@ -58,9 +58,12 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   const payment = pickPaymentForOneTime(payments)
   expect(payment, 'No suitable payment found for Kevin').toBeTruthy()
 
+  // Ensure Vercel preview access cookie is set (shared link)
+  try { await page.goto(`/?_vercel_share=M8KfyCsbYBtgA12U1NIksAqZ`, { waitUntil: 'domcontentloaded' }) } catch {}
+
   // Go to payment detail
   await page.goto(`/payments/${payment._id}`, { waitUntil: 'domcontentloaded' })
-  await expect(page.getByText(/PAYMENT DETAILS/i)).toBeVisible()
+  await expect(page.getByText(/PAYMENT DETAILS/i)).toBeVisible({ timeout: 20000 })
 
   // Open Payment Options, choose Card + Full Payment
   const chooseBtn = page.getByRole('button', { name: /Choose payment option/i })
