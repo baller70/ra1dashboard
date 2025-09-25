@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const amount = Math.round(Number(installment.amount || 0))
     if (!amount || amount <= 0) return NextResponse.json({ error: 'Invalid amount for installment' }, { status: 400 })
 
-    const idempotencyKey = `inst:${installmentId}`
+    const idempotencyKey = `inst:${installmentId}:${Date.now()}`
 
     // Create off_session PI and confirm immediately
     let intent: any
