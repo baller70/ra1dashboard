@@ -156,8 +156,16 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   let cardTabClicked = false
   for (const f of page.frames()) {
     try {
-      const cardTab = await f.$('text=/Card|Credit|Debit/i')
-      if (cardTab) { await cardTab.click(); cardTabClicked = true; break }
+      const tabRole = await f.$('[role="tab"]:has-text("Card")')
+      if (tabRole) { await tabRole.click(); cardTabClicked = true; break }
+    } catch {}
+    try {
+      const btn = await f.$('button:has-text("Card")')
+      if (btn) { await btn.click(); cardTabClicked = true; break }
+    } catch {}
+    try {
+      const anyText = await f.$('text=/Card|Credit|Debit/i')
+      if (anyText) { await anyText.click(); cardTabClicked = true; break }
     } catch {}
   }
   // Fill 3DS test card in Payment Element
