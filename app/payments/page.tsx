@@ -1734,7 +1734,7 @@ export default function PaymentsPage() {
                               }}
                             />
                             <h3 className="text-lg font-semibold text-orange-600">
-                              {groupName} ({isUnassigned ? allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
+                              {groupName} ({isUnassigned ? (groupedPayments['Unassigned']?.length || 0) : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? (groupedPayments['Unassigned']?.length || 0) : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
                             </h3>
                             {isCollapsed ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
