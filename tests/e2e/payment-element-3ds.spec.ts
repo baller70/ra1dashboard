@@ -70,7 +70,7 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   await page.getByRole('heading', { name: /Full Payment/i }).click()
 
   // Trigger PI creation -> shows Payment Element
-  const processBtn = page.getByRole('button', { name: /^Process Payment$/ })
+  const processBtn = page.getByRole('button', { name: /Process (Credit Card )?Payment/i })
   await expect(processBtn).toBeEnabled({ timeout: 10000 })
   await processBtn.click()
 
