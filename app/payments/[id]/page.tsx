@@ -400,6 +400,8 @@ export default function PaymentDetailPage() {
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
   const [stripePk, setStripePk] = useState<string | null>(null)
 
+  const stripePromise = useMemo(() => (stripePk ? loadStripe(stripePk) : null), [stripePk])
+
   // Payment scheduling state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("")
   const [selectedPaymentSchedule, setSelectedPaymentSchedule] = useState<string>("")
@@ -2719,7 +2721,7 @@ The Basketball Factory Inc.`
                 <div className="space-y-4">
                   {/* Stripe Payment Element (secure) */}
                   {stripeClientSecret && stripePk && (
-                    <Elements options={{ clientSecret: stripeClientSecret }} stripe={loadStripe(stripePk)}>
+                    <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
                       <div className="space-y-4 bg-white p-4 rounded border">
                         <PaymentElement />
                         <div className="pt-4">
