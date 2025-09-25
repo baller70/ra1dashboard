@@ -7,37 +7,44 @@ async function fillPaymentElementCard(page: import('@playwright/test').Page, { n
 
   // Keep trying for a few seconds as Stripe mounts fields asynchronously
   let filled = false
-  const deadline = Date.now() + 30000
+  const deadline = Date.now() + 45000
   while (!filled && Date.now() < deadline) {
     const frames = page.frames()
     for (const f of frames) {
       try {
+        // Try robust placeholder/label-based selectors first (Payment Element)
+        const numLoc = f.locator('input[placeholder*="Card" i], input[aria-label*="card" i]').first()
+        if (await numLoc.isVisible().catch(() => false)) {
+          await numLoc.fill(number)
+          const expLoc = f.locator('input[placeholder*="MM" i], input[aria-label*="exp" i], input[name="exp-date"], input[name="expiry"]').first()
+          if (await expLoc.isVisible().catch(() => false)) await expLoc.fill(exp)
+          const cvcLoc = f.locator('input[placeholder*="CVC" i], input[aria-label*="CVC" i], input[name="cvc"]').first()
+          if (await cvcLoc.isVisible().catch(() => false)) await cvcLoc.fill(cvc)
+          if (postal) {
+            const postalLoc = f.locator('input[placeholder*="ZIP" i], input[placeholder*="Postal" i], input[aria-label*="ZIP" i], input[name="postal"]').first()
+            if (await postalLoc.isVisible().catch(() => false)) await postalLoc.fill(postal)
+          }
+          filled = true
+          break
+        }
+
+        // Fallback to legacy Card Element-like selectors
         const numberSelectors = [
           'input[name="number"]',
           'input[autocomplete="cc-number"]',
-          'input[placeholder*="card" i]',
-          'input[aria-label*="card" i]',
           'input[inputmode="numeric"]'
         ]
         const expSelectors = [
           'input[name="exp-date"]',
-          'input[name="expiry"]',
-          'input[placeholder*="MM" i]',
-          'input[aria-label*="expiration" i]'
+          'input[name="expiry"]'
         ]
         const cvcSelectors = [
           'input[name="cvc"]',
-          'input[autocomplete="cc-csc"]',
-          'input[placeholder*="CVC" i]',
-          'input[aria-label*="CVC" i]'
+          'input[autocomplete="cc-csc"]'
         ]
         const postalSelectors = [
-          'input[name="postal"]',
-          'input[placeholder*="ZIP" i]',
-          'input[placeholder*="Postal" i]',
-          'input[aria-label*="ZIP" i]'
+          'input[name="postal"]'
         ]
-
         const num = await f.$(numberSelectors.join(','))
         if (num) {
           await num.fill(number)
@@ -54,7 +61,7 @@ async function fillPaymentElementCard(page: import('@playwright/test').Page, { n
         }
       } catch {}
     }
-    if (!filled) await page.waitForTimeout(500)
+    if (!filled) await page.waitForTimeout(600)
   }
   expect(filled, 'Could not locate Stripe card inputs in Payment Element').toBeTruthy()
 }
@@ -156,17 +163,22 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   let cardTabClicked = false
   for (const f of page.frames()) {
     try {
-      const tabRole = await f.$('[role="tab"]:has-text("Card")')
-      if (tabRole) { await tabRole.click(); cardTabClicked = true; break }
+      const tab = f.locator('[role="tab"]:has-text("Card"), button:has-text("Card"), [role="tablist"] >> text=/Card/i').first()
+      if (await tab.isVisible({ timeout: 200 }).catch(() => false)) {
+        await tab.click()
+        cardTabClicked = true
+        break
+      }
     } catch {}
-    try {
-      const btn = await f.$('button:has-text("Card")')
-      if (btn) { await btn.click(); cardTabClicked = true; break }
-    } catch {}
-    try {
-      const anyText = await f.$('text=/Card|Credit|Debit/i')
-      if (anyText) { await anyText.click(); cardTabClicked = true; break }
-    } catch {}
+  }
+  if (!cardTabClicked) {
+    // Best-effort: click any visible tab control to reveal methods, then retry once
+    for (const f of page.frames()) {
+      try {
+        const anyTabList = f.locator('[role="tablist"] [role="tab"]').first()
+        if (await anyTabList.isVisible().catch(() => false)) { await anyTabList.click(); break }
+      } catch {}
+    }
   }
   // Fill 3DS test card in Payment Element
   await fillPaymentElementCard(page, { number: '4000002760003184', exp: '12/34', cvc: '123', postal: '10001' })
