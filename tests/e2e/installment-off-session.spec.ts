@@ -37,7 +37,7 @@ test('Off-session installment: next pending charge succeeds and reconciles via w
 
   // Trigger off_session charge for this pending installment
   // Retry a few times in case preview deployment is still propagating new route
-  let chargeRes = await request.post(`/api/installments/${pending._id}/charge`, { data: {} })
+  let chargeRes = await request.post(`/api/installments/${pending._id}/charge`, { data: { parentPaymentId: payment._id } })
   let chargeJson: any = await chargeRes.json().catch(() => ({}))
   for (let i = 0; i < 10 && chargeRes.status() === 404; i++) {
     await page.waitForTimeout(2000)

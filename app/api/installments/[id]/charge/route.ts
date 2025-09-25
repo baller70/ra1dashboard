@@ -22,9 +22,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const stripe = getStripe()
 
-    // Fetch installment details
-    const installment: any = await convex.query(api.paymentInstallments.getInstallmentById as any, { installmentId: installmentId as any })
-    if (!installment) return NextResponse.json({ error: 'Installment not found' }, { status: 404 })
+    // Fetch installment details; allow parentPaymentId to be provided to avoid codegen lag
+    let installment: any = null
+    try {
+      installment = await convex.query(api.paymentInstallments.getInstallmentById as any, { installmentId: installmentId as any })
+    } catch {}
+    if (!installment) {
+      // Fallback: if parentPaymentId provided, fetch list and find
+      const body = await request.json().catch(() => ({}))
+      const parentPaymentId = body?.parentPaymentId
+      if (!parentPaymentId) return NextResponse.json({ error: 'Installment not found (and missing parentPaymentId fallback)' }, { status: 404 })
+      const list = await convex.query(api.paymentInstallments.getPaymentInstallments as any, { parentPaymentId: parentPaymentId as any })
+      installment = (list || []).find((i: any) => String(i._id) === String(installmentId))
+      if (!installment) return NextResponse.json({ error: 'Installment not found in parent payment' }, { status: 404 })
+    }
     if (installment.status !== 'pending') return NextResponse.json({ error: 'Installment is not pending' }, { status: 400 })
 
     // Fetch parent to get stored Stripe IDs
