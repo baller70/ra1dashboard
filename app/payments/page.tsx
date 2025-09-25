@@ -432,12 +432,10 @@ export default function PaymentsPage() {
         // Dispatch event to notify other pages
         window.dispatchEvent(new Event('parent-deleted'))
 
-        // Background refresh to ensure consistency across analytics/other data
-        try {
-          await fetchData()
-        } catch (e) {
+        // Background refresh to ensure consistency across analytics/other data (non-blocking)
+        fetchData().catch((e) => {
           console.warn('Background refresh after delete failed (non-blocking):', e)
-        }
+        })
 
         toast({
           title: '✅ Parent Deleted Successfully',
