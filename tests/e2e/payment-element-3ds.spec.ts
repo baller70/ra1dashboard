@@ -75,7 +75,17 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   // Trigger PI creation -> shows Payment Element
   const processBtn = page.getByRole('button', { name: /Process (Credit Card )?Payment/i })
   await expect(processBtn).toBeEnabled({ timeout: 10000 })
+  // Observe PI creation response for diagnostics
+  const piResponsePromise = page.waitForResponse(res => res.url().endsWith('/api/stripe/payment-intent'), { timeout: 20000 })
   await processBtn.click()
+  const piRes = await piResponsePromise.catch(() => null)
+  if (!piRes) throw new Error('No response from /api/stripe/payment-intent')
+  const piOk = piRes.ok()
+  let piJson: any = null
+  try { piJson = await piRes.json() } catch {}
+  console.log('PI status:', piRes.status(), 'ok:', piOk, 'json:', piJson)
+  if (!piOk) throw new Error('PI create failed: ' + (piJson?.error || piRes.status()))
+  if (!piJson?.clientSecret) throw new Error('PI create returned no clientSecret')
 
   // Wait for Stripe Payment Element to render (iframe presence) or capture error toast
   const iframeVisible = page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment" i]', { timeout: 20000 })
