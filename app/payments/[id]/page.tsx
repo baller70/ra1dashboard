@@ -2700,7 +2700,7 @@ The Basketball Factory Inc.`
                                   try { await (window as any).refreshParentData?.() } catch {}
                                 }}
                               >
-                                Confirm Card Payment
+                                Confirm Payment
                               </Button>
                             )}
                           </ElementsConsumer>
