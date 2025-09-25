@@ -127,11 +127,17 @@ export default function PaymentsPage() {
         }),
         fetch(`/api/teams?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
         }),
         fetch(`/api/parents?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
         }),
         fetch(`/api/payment-plans?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-store',
@@ -1744,8 +1750,13 @@ export default function PaymentsPage() {
                                 backgroundColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                               }}
                             />
-                            <h3 className="text-lg font-semibold text-orange-600">
-                              {groupName} ({isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
+                            <h3 className="text-lg font-semibold text-orange-600" data-testid={isUnassigned ? 'unassigned-header' : undefined}>
+                              {groupName} (
+                                <span data-testid={isUnassigned ? 'unassigned-count' : undefined}>
+                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length}
+                                </span>
+                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
+                              )
                             </h3>
                             {isCollapsed ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
