@@ -152,6 +152,14 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
     throw new Error('Stripe PI creation failed (saw error toast)')
   }
 
+  // Ensure Card tab is selected in the Payment Element (ACH may be default in Preview)
+  let cardTabClicked = false
+  for (const f of page.frames()) {
+    try {
+      const cardTab = await f.$('text=/Card|Credit|Debit/i')
+      if (cardTab) { await cardTab.click(); cardTabClicked = true; break }
+    } catch {}
+  }
   // Fill 3DS test card in Payment Element
   await fillPaymentElementCard(page, { number: '4000002760003184', exp: '12/34', cvc: '123', postal: '10001' })
 
