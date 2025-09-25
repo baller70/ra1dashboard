@@ -165,7 +165,12 @@ export default function PaymentsPage() {
 
       if (paymentsResult.success) setPaymentsData(paymentsResult.data)
       if (analyticsResult.success) setAnalytics(analyticsResult.data)
-      if (teamsResult.success) setTeamsData(teamsResult.data)
+      if (teamsResult.success) {
+        const normalizedTeams = Array.isArray(teamsResult.data)
+          ? teamsResult.data.map((t: any) => ({ ...t, _id: String(t._id ?? (t as any).id ?? '') }))
+          : []
+        setTeamsData(normalizedTeams)
+      }
       // Compute authoritative plans total (sum of largest plan per parent),
       // filtered to parents currently present on the Parents page
       try {
@@ -195,7 +200,11 @@ export default function PaymentsPage() {
       } catch {}
       if (parentsResult.success) {
         const normalizedParents = Array.isArray(parentsResult.data?.parents)
-          ? parentsResult.data.parents.map((p: any) => ({ ...p, _id: String(p._id ?? (p as any).id ?? '') }))
+          ? parentsResult.data.parents.map((p: any) => ({
+              ...p,
+              _id: String(p._id ?? (p as any).id ?? ''),
+              teamId: p.teamId ? String(p.teamId) : undefined,
+            }))
           : []
         setAllParentsData({ ...parentsResult.data, parents: normalizedParents })
 
