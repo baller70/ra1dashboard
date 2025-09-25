@@ -2886,17 +2886,8 @@ The Basketball Factory Inc.`
                 !selectedPaymentOption ||
                 !selectedPaymentSchedule ||
                 processingPayment ||
-                (selectedPaymentOption === 'stripe_card' && Boolean(stripeClientSecret)) ||
-                (selectedPaymentOption === 'stripe_card' && !stripeClientSecret && (
-                  !creditCardForm.cardNumber ||
-                  !creditCardForm.expiryDate ||
-                  !creditCardForm.cvv ||
-                  !creditCardForm.cardholderName ||
-                  !creditCardForm.billingAddress.line1 ||
-                  !creditCardForm.billingAddress.city ||
-                  !creditCardForm.billingAddress.state ||
-                  !creditCardForm.billingAddress.postalCode
-                ))
+                // When using Stripe card, allow creating PI without native inputs; disable only after PI exists
+                (selectedPaymentOption === 'stripe_card' && Boolean(stripeClientSecret))
               }
               className="flex-1 bg-orange-600 hover:bg-orange-700"
               size="lg"
