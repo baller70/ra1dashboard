@@ -50,7 +50,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js'
 
 import { Textarea } from '../../../components/ui/textarea'
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+const [stripePk, setStripePk] = useState<string | null>(null)
 
 
 interface Payment {
@@ -1025,6 +1025,12 @@ The Basketball Factory Inc.`
 
           const { clientSecret } = await response.json()
           setStripeClientSecret(clientSecret)
+          // Fetch publishable key at runtime so Elements can render in Preview
+          try {
+            const cfgRes = await fetch('/api/stripe/config')
+            const cfg = await cfgRes.json().catch(() => ({}))
+            if (cfg?.publishableKey) setStripePk(cfg.publishableKey)
+          } catch {}
           toast({ title: 'Secure Card Form Ready', description: 'Enter your card in the secure Stripe form, then confirm.' })
           setProcessingPayment(false)
           return
@@ -2650,8 +2656,8 @@ The Basketball Factory Inc.`
 
                 <div className="space-y-4">
                   {/* Stripe Payment Element (secure) */}
-                  {stripeClientSecret && (
-                    <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise}>
+                  {stripeClientSecret && stripePk && (
+                    <Elements options={{ clientSecret: stripeClientSecret }} stripe={loadStripe(stripePk)}>
                       <div className="space-y-4 bg-white p-4 rounded border">
                         <PaymentElement />
                       </div>
