@@ -4,11 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 function isMockAllowed() {
-  const env = process.env.VERCEL_ENV || process.env.NODE_ENV
-  const allow = process.env.ALLOW_MOCK_CARD === 'true'
-  // Never allow in production
-  if (env === 'production') return false
-  return allow
+  // Restored legacy behavior: allow mock processing in all environments
+  return true
 }
 
 export async function POST(request: NextRequest) {

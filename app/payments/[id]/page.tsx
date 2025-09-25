@@ -1061,12 +1061,7 @@ The Basketball Factory Inc.`
           return
         }
 
-        // For installment schedules, block legacy card processing for PCI compliance
-        if (selectedPaymentSchedule !== 'full') {
-          toast({ title: 'Card Installments Unavailable', description: 'For PCI compliance, card installments via native fields are disabled. Choose Full Payment (Stripe) or use ACH/Check/Zelle.', variant: 'destructive' })
-          setProcessingPayment(false)
-          return
-        }
+        // For installment schedules, keep current mock processing for now
         const response = await fetch('/api/payments/process-card', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2750,8 +2745,8 @@ The Basketball Factory Inc.`
                     </Elements>
                   )}
 
-                  {/* Legacy native inputs removed for PCI compliance */}
-                  {false && (
+                  {/* Legacy native inputs hidden when using Stripe */}
+                  {!stripeClientSecret && (
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="cardholderName">Cardholder Name *</Label>
