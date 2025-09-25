@@ -455,3 +455,12 @@ export const setManualInstallmentStatus = mutation({
     };
   },
 });
+
+
+// Get a single installment by id
+export const getInstallmentById = query({
+  args: { installmentId: v.id("paymentInstallments") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.installmentId);
+  },
+});
