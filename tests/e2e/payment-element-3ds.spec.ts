@@ -84,11 +84,9 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   const chooseBtn = page.getByRole('button', { name: /Choose payment option/i })
   await expect(chooseBtn).toBeVisible({ timeout: 15000 })
   await chooseBtn.click()
-  // Select option and schedule (robust selectors)
-  const optionTile = page.locator('div[role="dialog"] div.relative.p-6.border-2').first()
-  await optionTile.click()
-  const scheduleTile = page.locator('div[role="dialog"] div.p-5.border-2.rounded-xl').first()
-  await scheduleTile.click()
+  // Select specific option and schedule by visible text
+  await page.getByRole('dialog').getByText(/Credit Card/i).click()
+  await page.getByRole('dialog').getByText(/Full Payment/i).click()
 
   // Trigger PI creation -> shows Payment Element
   const processBtn = page.getByRole('button', { name: /Process (Credit Card )?Payment/i })
