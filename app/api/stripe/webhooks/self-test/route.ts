@@ -5,9 +5,9 @@ export const runtime = 'node'
 
 export async function POST() {
   try {
-    // Only allow in Preview or when explicitly enabled
-    const isPreview = process.env.VERCEL_ENV === 'preview'
-    if (!isPreview) {
+    // Allow in any non-production environment (Preview/Development)
+    const env = process.env.VERCEL_ENV || 'development'
+    if (env === 'production') {
       return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
     }
 
