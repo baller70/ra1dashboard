@@ -386,120 +386,163 @@ export default function PaymentsPage() {
   // Scoped only to Unassigned UI: hide these parentIds immediately without touching other teams
   const [unassignedHiddenParentIds, setUnassignedHiddenParentIds] = useState<string[]>([])
 
-  // Delete parent function with fallback for dynamic route issues
+  // Rate limit storage: parentId -> last attempt timestamp
+  const [deleteCooldowns, setDeleteCooldowns] = useState<Record<string, number>>({})
+
+  // Safer delete with validation, two-step confirm, audit logging, rollback, and rate limiting
   const handleDeleteParent = async (parentId: string, parentName: string) => {
-    console.log('🚀 DELETE BUTTON CLICKED! Parent:', parentId, parentName)
-
-    const confirmResult = confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone and will remove all associated payments and data.`)
-    console.log('❓ User confirmation result:', confirmResult)
-
-    if (!confirmResult) {
-      console.log('❌ User cancelled deletion')
-      return
-    }
-
-    setDeleteLoading(parentId)
-    console.log('🗑️ Starting delete process for parent:', parentId, parentName)
-
-    // Scoped optimistic hide only in Unassigned UI; do not touch global teams or allParents here
-    setUnassignedHiddenParentIds(prev => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
-
     try {
-      // Try dynamic route first
-      console.log('🔄 Attempting delete via dynamic route...')
+      const now = Date.now()
+      const last = deleteCooldowns[parentId] || 0
+      if (now - last < 2000) {
+        toast({ title: 'Please wait', description: 'Avoid rapid delete clicks', duration: 2000 })
+        return
+      }
+      setDeleteCooldowns(prev => ({ ...prev, [parentId]: now }))
+
+      setDeleteLoading(parentId)
+
+      // 1) Pre-validate and gather dependencies
+      let pre: any = null
+      try {
+        const preRes = await fetch(`/api/parents/${parentId}`)
+        if (!preRes.ok) {
+          if (preRes.status === 404) {
+            toast({ title: 'Not found', description: 'Parent was already removed', duration: 3000 })
+            return
+          }
+          throw new Error(`Lookup failed (${preRes.status})`)
+        }
+        pre = await preRes.json()
+      } catch (e) {
+        toast({ title: 'Lookup failed', description: 'Could not verify parent before delete', variant: 'destructive' })
+        return
+      }
+
+      const teamName = (() => {
+        const t = teams.find(t => String(t._id) === String(pre.teamId))
+        return t?.name || (pre.teamId ? 'Unknown team' : 'Unassigned')
+      })()
+      const depCounts = {
+        payments: (pre.payments || []).length,
+        messageLogs: (pre.messageLogs || []).length,
+        plans: (pre.paymentPlans || []).length,
+      }
+
+      // 2) Log attempt
+      fetch('/api/audit/parent-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+        body: JSON.stringify({ stage: 'attempt', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'info' })
+      }).catch(() => {})
+
+      // 3) Two-step confirmation
+      const archiveFirst = confirm(
+        `Safe action recommended:\n\nArchive ${parentName}?\n- Team: ${teamName}\n- Payments: ${depCounts.payments}\n- Logs: ${depCounts.messageLogs}\n\nArchiving hides the parent but keeps all data. Click OK to Archive, or Cancel for more options.`
+      )
+
+      // Optimistic hide in Unassigned section (archive or delete)
+      setUnassignedHiddenParentIds(prev => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
+
+      if (archiveFirst) {
+        // Archive path
+        try {
+          const res = await fetch(`/api/parents/${parentId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+            body: JSON.stringify({ status: 'archived' })
+          })
+          if (!res.ok) throw new Error(`Archive failed (${res.status})`)
+
+          // Log success
+          fetch('/api/audit/parent-delete', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+            body: JSON.stringify({ stage: 'archive', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'success' })
+          }).catch(() => {})
+
+          toast({ title: 'Parent archived', description: `${parentName} is hidden but recoverable.`, duration: 5000 })
+
+          // Allow undo restore
+          setTimeout(() => {
+            // background refresh for consistency
+            fetchData().catch(() => {})
+          }, 0)
+        } catch (e: any) {
+          // Revert optimistic hide
+          setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+          toast({ title: 'Archive failed', description: e?.message || 'Unknown error', variant: 'destructive' })
+        } finally {
+          setDeleteLoading(null)
+        }
+        return
+      }
+
+      const typed = prompt(`Type DELETE to permanently remove ${parentName} and ALL related data. This cannot be undone.`)
+      if (typed !== 'DELETE') {
+        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+        setDeleteLoading(null)
+        return
+      }
+
+      // 4) Rollback strategy: set archived first, then hard delete; on failure, restore status
+      let archivedBeforeDelete = false
+      try {
+        const resA = await fetch(`/api/parents/${parentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+          body: JSON.stringify({ status: 'archived' })
+        })
+        archivedBeforeDelete = resA.ok
+      } catch {}
+
+      // Proceed to hard delete
       let response = await fetch(`/api/parents/${parentId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'ra1-dashboard-api-key-2024'
-        }
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' }
       })
-
-      console.log('📡 Dynamic route response status:', response.status)
-
-      // If dynamic route fails with 404, use alternative endpoint
       if (!response.ok && response.status === 404) {
-        console.log('🔄 Dynamic route failed, using alternative delete endpoint')
         response = await fetch('/api/parents/delete', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': 'ra1-dashboard-api-key-2024'
-          },
+          headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
           body: JSON.stringify({ parentId })
         })
-        console.log('📡 Alternative route response status:', response.status)
       }
 
       if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Delete successful:', result)
+        fetch('/api/audit/parent-delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+          body: JSON.stringify({ stage: 'delete', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'success' })
+        }).catch(() => {})
 
-        // Dispatch event to notify other pages
         window.dispatchEvent(new Event('parent-deleted'))
-
-        // Background refresh to ensure consistency across analytics/other data (non-blocking)
-        fetchData().catch((e) => {
-          console.warn('Background refresh after delete failed (non-blocking):', e)
-        })
-
-        toast({
-          title: '✅ Parent Deleted Successfully',
-          description: `${parentName} and all associated payments have been permanently removed.`,
-          duration: 5000,
-        })
-        console.log('✅ Success toast shown!')
+        fetchData().catch(() => {})
+        toast({ title: 'Parent deleted', description: `${parentName} and related data were permanently removed.` })
       } else {
-        const errorData = await response.json()
-        console.error('❌ Delete failed:', errorData)
-        // Revert scoped optimistic hide for Unassigned
-        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
-        console.log('🍞 About to show error toast...')
+        const err = await response.json().catch(() => ({}))
+        fetch('/api/audit/parent-delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+          body: JSON.stringify({ stage: 'delete', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'error', error: err })
+        }).catch(() => {})
 
-        // Check if parent was already deleted (404) or doesn't exist
-        if (response.status === 404 || (errorData.details && errorData.details.includes('not found'))) {
-          // Optimistically remove locally if it still exists
-          setAllParentsData((prev: any) => {
-            if (!prev?.parents) return prev
-            const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
-            return { ...prev, parents: filtered }
-          })
-          // Also strip any payments referencing this parent
-          setPaymentsData((prev: any) => {
-            if (!prev?.payments) return prev
-            const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
-            return { ...prev, payments: filtered }
-          })
-          toast({
-            title: '✅ Already Deleted',
-            description: `${parentName} was already deleted. Refreshed the page data.`,
-            duration: 3000,
-          })
-          // Background refresh (non-blocking)
-          fetchData().catch(() => {})
-        } else {
-          toast({
-            title: '❌ Delete Failed',
-            description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
-            variant: 'destructive',
-            duration: 5000,
-          })
+        // Roll back status if we archived
+        if (archivedBeforeDelete) {
+          try {
+            await fetch(`/api/parents/${parentId}`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+              body: JSON.stringify({ status: pre.status || 'active' })
+            })
+          } catch {}
         }
-        console.log('❌ Error toast shown!')
+
+        // Revert optimistic hide
+        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+
+        toast({ title: 'Delete failed', description: err?.details || err?.error || 'Unknown error', variant: 'destructive' })
       }
-    } catch (error) {
-      console.error('💥 Error deleting parent:', error)
-      console.log('🍞 About to show exception toast...')
-      // Revert scoped optimistic hide for Unassigned on exception
+    } catch (e) {
       setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while deleting the parent',
-        variant: 'destructive'
-      })
-      console.log('💥 Exception toast shown!')
+      toast({ title: 'Error', description: 'Unexpected error during delete', variant: 'destructive' })
     } finally {
-      console.log('🏁 Delete process finished, clearing loading state')
       setDeleteLoading(null)
     }
   }
@@ -1022,7 +1065,7 @@ export default function PaymentsPage() {
       // Add mock entries for parents with no payments in each team
       for (const t of teams) {
         const teamKey = t.name
-        const parentsInTeam = allParents.filter(p => p.teamId === t._id)
+        const parentsInTeam = allParents.filter(p => p.status !== 'archived' && p.teamId === t._id)
         for (const parent of parentsInTeam) {
           const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
           if (!hasAnyPayment) {
@@ -1043,7 +1086,7 @@ export default function PaymentsPage() {
       }
 
       // Unassigned parents with no payments → mock entries
-      const unassignedParents = allParents.filter(p => !p.teamId)
+      const unassignedParents = allParents.filter(p => p.status !== 'archived' && !p.teamId)
       for (const parent of unassignedParents) {
         const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
         if (!hasAnyPayment) {
