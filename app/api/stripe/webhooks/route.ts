@@ -227,6 +227,17 @@ export async function POST(request: NextRequest) {
         break
       }
 
+      case 'payment_intent.processing': {
+        try {
+          const pi = event.data.object as Stripe.PaymentIntent
+          const pmType = (pi.payment_method_types && pi.payment_method_types[0]) || ''
+          if (pmType === 'us_bank_account') {
+            console.log('ACH processing event received; leaving status pending until succeeded', { id: pi.id })
+          }
+        } catch {}
+        break
+      }
+
       case 'invoice.payment_succeeded': {
         // Subscription payment succeeded. We can log for now; deeper linkage can be added later
         const invoice = event.data.object as Stripe.Invoice
