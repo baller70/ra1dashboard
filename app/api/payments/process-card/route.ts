@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+
+export const runtime = 'edge'
+
+function isMockAllowed() {
+  const env = process.env.VERCEL_ENV || process.env.NODE_ENV
+  const allow = process.env.ALLOW_MOCK_CARD === 'true'
+  // Never allow in production
+  if (env === 'production') return false
+  return allow
+}
+
 export async function POST(request: NextRequest) {
   try {
+    if (!isMockAllowed()) {
+      return NextResponse.json({ error: 'Mock card processing is disabled' }, { status: 403 })
+    }
     const body = await request.json()
-    console.log('=== MOCK PAYMENT PROCESSING ===')
+    console.log('=== MOCK PAYMENT PROCESSING (ALLOWED) ===')
     console.log('Received payment request body:', body)
-    
+
     const {
       paymentId,
       amount,
@@ -46,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < installments; i++) {
       const dueDate = new Date(currentDate)
-      
+
       // Calculate due dates based on schedule
       if (schedule === 'monthly') {
         dueDate.setMonth(currentDate.getMonth() + i)
@@ -115,13 +129,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Mock payment processing error:', error)
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to process payment',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
   }
-} 
+}
