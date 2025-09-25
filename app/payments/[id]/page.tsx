@@ -1009,6 +1009,9 @@ The Basketball Factory Inc.`
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               parentId: (payment.parent as any)?._id || payment.parent?.id,
+              parentEmail: (payment.parent as any)?.email || payment.parent?.email,
+              parentName: (payment.parent as any)?.name || payment.parent?.name,
+              parentPhone: (payment.parent as any)?.phone || payment.parent?.phone,
               paymentId: (payment as any)._id || payment.id,
               amount: Math.round(paymentAmount * 100), // cents
               description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
