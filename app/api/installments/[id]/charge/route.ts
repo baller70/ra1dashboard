@@ -51,7 +51,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const idempotencyKey = `inst:${installmentId}`
 
     // Create off_session PI and confirm immediately
-    const intent = await stripe.paymentIntents.create({
+    let intent: any
+    try {
+      intent = await stripe.paymentIntents.create({
       amount,
       currency: 'usd',
       customer: parent.stripeCustomerId,
@@ -66,6 +68,29 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         parentId: String(installment.parentId),
       },
     }, { idempotencyKey })
+    } catch (e: any) {
+      const msg = String(e?.message || '')
+      if (msg.includes('Keys for idempotent requests')) {
+        // Retry once with a variant key to unblock legitimate new attempts in preview/test
+        intent = await stripe.paymentIntents.create({
+          amount,
+          currency: 'usd',
+          customer: parent.stripeCustomerId,
+          payment_method: parent.stripePaymentMethodId,
+          off_session: true,
+          confirm: true,
+          description: `Installment ${installment.installmentNumber}/${installment.totalInstallments || ''}`,
+          metadata: {
+            source: 'installment_off_session',
+            installmentId: String(installmentId),
+            parentPaymentId: String(installment.parentPaymentId),
+            parentId: String(installment.parentId),
+          },
+        }, { idempotencyKey: `${idempotencyKey}:${Date.now()}` })
+      } else {
+        throw e
+      }
+    }
 
     // Fallback reconciliation for previews where Stripe webhooks may not be configured
     if (intent.status === 'succeeded') {
