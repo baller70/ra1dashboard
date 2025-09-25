@@ -3,28 +3,58 @@ import { getKevinParent, getPaymentsForParent, pickPaymentForOneTime } from './h
 
 async function fillPaymentElementCard(page: import('@playwright/test').Page, { number, exp, cvc, postal }: { number: string, exp: string, cvc: string, postal?: string }) {
   // Wait for any Stripe private frame to appear
-  await page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment"]', { timeout: 20000 })
+  await page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment" i], iframe[title*="Secure" i]', { timeout: 30000 })
 
-  // Try to locate inputs across Stripe iframes
-  const frames = page.frames()
+  // Keep trying for a few seconds as Stripe mounts fields asynchronously
   let filled = false
-  for (const f of frames) {
-    try {
-      const hasNumber = await f.$('input[name="number"], input[autocomplete="cc-number"], input[placeholder*="Card number" i]')
-      if (hasNumber) {
-        await hasNumber.fill(number)
-        const expInput = await (await f.$('input[name="exp-date"], input[name="expiry"], input[placeholder*="MM / YY" i], input[placeholder*="MM/YY" i]'))
-        if (expInput) await expInput.fill(exp)
-        const cvcInput = await (await f.$('input[name="cvc"], input[autocomplete="cc-csc"], input[placeholder*="CVC" i]'))
-        if (cvcInput) await cvcInput.fill(cvc)
-        if (postal) {
-          const postalInput = await f.$('input[name="postal"], input[placeholder*="ZIP" i], input[placeholder*="Postal" i]')
-          if (postalInput) await postalInput.fill(postal)
+  const deadline = Date.now() + 30000
+  while (!filled && Date.now() < deadline) {
+    const frames = page.frames()
+    for (const f of frames) {
+      try {
+        const numberSelectors = [
+          'input[name="number"]',
+          'input[autocomplete="cc-number"]',
+          'input[placeholder*="card" i]',
+          'input[aria-label*="card" i]',
+          'input[inputmode="numeric"]'
+        ]
+        const expSelectors = [
+          'input[name="exp-date"]',
+          'input[name="expiry"]',
+          'input[placeholder*="MM" i]',
+          'input[aria-label*="expiration" i]'
+        ]
+        const cvcSelectors = [
+          'input[name="cvc"]',
+          'input[autocomplete="cc-csc"]',
+          'input[placeholder*="CVC" i]',
+          'input[aria-label*="CVC" i]'
+        ]
+        const postalSelectors = [
+          'input[name="postal"]',
+          'input[placeholder*="ZIP" i]',
+          'input[placeholder*="Postal" i]',
+          'input[aria-label*="ZIP" i]'
+        ]
+
+        const num = await f.$(numberSelectors.join(','))
+        if (num) {
+          await num.fill(number)
+          const expInput = await f.$(expSelectors.join(','))
+          if (expInput) await expInput.fill(exp)
+          const cvcInput = await f.$(cvcSelectors.join(','))
+          if (cvcInput) await cvcInput.fill(cvc)
+          if (postal) {
+            const postalInput = await f.$(postalSelectors.join(','))
+            if (postalInput) await postalInput.fill(postal)
+          }
+          filled = true
+          break
         }
-        filled = true
-        break
-      }
-    } catch {}
+      } catch {}
+    }
+    if (!filled) await page.waitForTimeout(500)
   }
   expect(filled, 'Could not locate Stripe card inputs in Payment Element').toBeTruthy()
 }
