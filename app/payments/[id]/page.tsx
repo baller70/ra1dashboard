@@ -1051,7 +1051,11 @@ The Basketball Factory Inc.`
           try {
             const cfgRes = await fetch('/api/stripe/config')
             const cfg = await cfgRes.json().catch(() => ({}))
-            if (cfg?.publishableKey) setStripePk(cfg.publishableKey)
+            if (cfg?.publishableKey && String(cfg.publishableKey).length > 0) {
+              setStripePk(cfg.publishableKey)
+            } else if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+              setStripePk(String(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY))
+            }
           } catch {}
           toast({ title: 'Secure Card Form Ready', description: 'Enter your card in the secure Stripe form, then confirm.' })
           setProcessingPayment(false)
