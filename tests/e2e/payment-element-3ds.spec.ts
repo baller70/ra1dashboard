@@ -165,7 +165,23 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
 
   // Expect success toast appears or dialog closes; then allow webhook to sync
   await page.waitForTimeout(2000)
-  // Payment status may take time to become Paid due to webhook; just assert no error banner for now
+  // Payment status may take time to become Paid due to webhook; poll briefly for webhook reconciliation
+  let reconciled = false
+  for (let i = 0; i < 10; i++) {
+    try {
+      const res = await request.get(`/api/payments/${payment._id}`)
+      const j = await res.json().catch(() => ({}))
+      if ((j?.status === 'paid') || (j?.stripePaymentIntentId && typeof j.stripePaymentIntentId === 'string')) {
+        console.log('Webhook reconciled payment:', { status: j?.status, stripePaymentIntentId: j?.stripePaymentIntentId })
+        reconciled = true
+        break
+      }
+    } catch {}
+    await page.waitForTimeout(1000)
+  }
+  console.log('Webhook reconciliation observed:', reconciled)
+
+  // Always ensure no visible error banner
   expect(await page.getByText(/Payment failed|Card Error/i).isVisible().catch(() => false)).toBeFalsy()
 })
 

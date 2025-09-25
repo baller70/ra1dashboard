@@ -127,13 +127,18 @@ export async function POST(request: NextRequest) {
         // Handle regular one-time checkout payments
         else if (mode === 'payment' && paymentId) {
           try {
-            await convex.mutation(api.payments.updatePayment as any, {
-              id: paymentId as any,
-              status: 'paid',
-              paidAt: Date.now(),
-              stripePaymentIntentId: paymentIntentId || undefined,
-              notes: 'Marked paid via Stripe webhook (checkout.session.completed)'
-            })
+            const existing = await convex.query(api.payments.getPayment as any, { id: paymentId as any })
+            if (existing?.status === 'paid' && (!!existing?.stripePaymentIntentId && existing.stripePaymentIntentId === paymentIntentId)) {
+              console.log('Webhook no-op: payment already marked paid with same PI', { paymentId, paymentIntentId })
+            } else {
+              await convex.mutation(api.payments.updatePayment as any, {
+                id: paymentId as any,
+                status: 'paid',
+                paidAt: existing?.paidAt || Date.now(),
+                stripePaymentIntentId: paymentIntentId || existing?.stripePaymentIntentId || undefined,
+                notes: 'Marked paid via Stripe webhook (checkout.session.completed)'
+              })
+            }
           } catch (convexErr) {
             console.error('Convex updatePayment failed from webhook:', convexErr)
           }
@@ -148,13 +153,18 @@ export async function POST(request: NextRequest) {
         const paymentId = (pi.metadata as any)?.paymentId as string | undefined
         if (paymentId) {
           try {
-            await convex.mutation(api.payments.updatePayment as any, {
-              id: paymentId as any,
-              status: 'paid',
-              paidAt: Date.now(),
-              stripePaymentIntentId: pi.id,
-              notes: 'Marked paid via Stripe webhook (payment_intent.succeeded)'
-            })
+            const existing = await convex.query(api.payments.getPayment as any, { id: paymentId as any })
+            if (existing?.status === 'paid' && (!!existing?.stripePaymentIntentId && existing.stripePaymentIntentId === pi.id)) {
+              console.log('Webhook no-op: payment already marked paid with same PI', { paymentId, paymentIntentId: pi.id })
+            } else {
+              await convex.mutation(api.payments.updatePayment as any, {
+                id: paymentId as any,
+                status: 'paid',
+                paidAt: existing?.paidAt || Date.now(),
+                stripePaymentIntentId: pi.id,
+                notes: 'Marked paid via Stripe webhook (payment_intent.succeeded)'
+              })
+            }
           } catch (convexErr) {
             console.error('Convex updatePayment failed from webhook (PI):', convexErr)
           }

@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         stripePaymentMethodId: pmId,
       })
 
+      const idemKey = paymentId ? `pi:${String(paymentId)}` : undefined
       const intent = await stripe.paymentIntents.create({
         amount: Number(amount),
         currency: 'usd',
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
           paymentId: paymentId ? String(paymentId) : '',
         },
         description: description || 'One-time payment',
-      })
+      }, idemKey ? { idempotencyKey: idemKey } : undefined as any)
 
       return NextResponse.json({ success: true, clientSecret: intent.client_secret, paymentIntentId: intent.id })
     }
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       await convex.mutation(api.parents.updateParent as any, { id: parent._id, stripeCustomerId })
     }
 
+      const idemKey = paymentId ? `pi:${String(paymentId)}` : undefined
     const intent = await stripe.paymentIntents.create({
       amount: Number(amount),
       currency: 'usd',
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
         paymentId: paymentId ? String(paymentId) : '',
       },
       description: description || 'One-time payment',
-    })
+    }, idemKey ? { idempotencyKey: idemKey } : undefined as any)
 
     return NextResponse.json({ success: true, clientSecret: intent.client_secret, paymentIntentId: intent.id })
   } catch (error: any) {
