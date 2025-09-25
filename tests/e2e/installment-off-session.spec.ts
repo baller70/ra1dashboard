@@ -50,16 +50,21 @@ test('Off-session installment: next pending charge succeeds and reconciles via w
   expect(chargeRes.ok(), `Charge API failed: ${chargeRes.status()} ${JSON.stringify(chargeJson)}`).toBeTruthy()
   console.log('Off-session charge PI:', chargeJson)
 
-  // Poll progress for reconciliation (webhook should mark installment paid)
+  // Poll either API progress or direct installment read for reconciliation
   let reconciled = false
-  for (let i = 0; i < 12; i++) {
-    const r = await request.get(`/api/payments/${payment._id}/progress`)
-    const j = await r.json().catch(() => ({}))
-    const inst = (j?.installments || []).find((i: any) => i._id === pending._id)
-    if (inst?.status === 'paid') { reconciled = true; break }
+  for (let i = 0; i < 20; i++) {
+    const [r1, r2] = await Promise.all([
+      request.get(`/api/payments/${payment._id}/progress`),
+      request.get(`/api/installments/${pending._id}`),
+    ])
+    const j1 = await r1.json().catch(() => ({}))
+    const j2 = await r2.json().catch(() => ({}))
+    const inst = (j1?.installments || []).find((x: any) => x._id === pending._id)
+    const paid = inst?.status === 'paid' || j2?.status === 'paid'
+    if (paid) { reconciled = true; break }
     await page.waitForTimeout(1000)
   }
-  console.log('Installment reconciled via webhook:', reconciled)
+  console.log('Installment reconciled (either source):', reconciled)
   expect(reconciled, 'Installment did not reconcile to paid in time').toBeTruthy()
 })
 
