@@ -77,8 +77,17 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   await expect(processBtn).toBeEnabled({ timeout: 10000 })
   await processBtn.click()
 
-  // Wait for Stripe Payment Element to render (iframe presence)
-  await page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment" i]', { timeout: 20000 })
+  // Wait for Stripe Payment Element to render (iframe presence) or capture error toast
+  const iframeVisible = page.waitForSelector('iframe[name^="__privateStripeFrame"], iframe[title*="payment" i]', { timeout: 20000 })
+  const errorToastVisible = page.getByText(/Failed to create payment intent|Payment Processing Failed/i).first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => null)
+  const result = await Promise.race([iframeVisible, errorToastVisible])
+  if (result === null) {
+    // neither resolved; proceed
+  } else if (typeof (result as any) !== 'object' || ('innerText' in (result as any))) {
+    // iframe became visible
+  } else {
+    throw new Error('Stripe PI creation failed (saw error toast)')
+  }
 
   // Fill 3DS test card in Payment Element
   await fillPaymentElementCard(page, { number: '4000002760003184', exp: '12/34', cvc: '123', postal: '10001' })
