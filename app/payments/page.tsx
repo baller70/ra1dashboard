@@ -368,6 +368,7 @@ export default function PaymentsPage() {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [deletedParentIds, setDeletedParentIds] = useState<string[]>([])
 
   // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
@@ -428,6 +429,9 @@ export default function PaymentsPage() {
           const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
           return { ...prev, payments: filtered }
         })
+
+        // Mark parent as deleted locally to ensure immediate removal across all derived views
+        setDeletedParentIds((prev) => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
 
         // Dispatch event to notify other pages
         window.dispatchEvent(new Event('parent-deleted'))
@@ -496,7 +500,7 @@ export default function PaymentsPage() {
 
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
-  const allParents = allParentsData?.parents || []
+  const allParents = (allParentsData?.parents || []).filter((p: any) => !deletedParentIds.includes(String(p._id)))
   // Teams actually referenced by parents (ensures dialog shows all active team groups)
   const derivedTeams = useMemo(() => {
     try {
