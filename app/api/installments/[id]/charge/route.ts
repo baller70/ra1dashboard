@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       },
     }, { idempotencyKey })
     } catch (e: any) {
-      const msg = String(e?.message || '')
+      const msg = String(e?.message || e?.raw?.message || '')
       if (msg.includes('Keys for idempotent requests')) {
         // Retry once with a variant key to unblock legitimate new attempts in preview/test
         intent = await stripe.paymentIntents.create({
