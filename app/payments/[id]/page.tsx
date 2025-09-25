@@ -53,6 +53,28 @@ import { Textarea } from '../../../components/ui/textarea'
 const [stripePk, setStripePk] = useState<string | null>(null)
 
 
+// Inject x-api-key header for app-internal fetches when token is available
+if (typeof window !== 'undefined') {
+  try {
+    const token = (process.env.NEXT_PUBLIC_API_KEY as any) || window.localStorage.getItem('X_API_KEY')
+    if (token && !(window as any).__apiFetchPatched) {
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+        try {
+          const url = typeof input === 'string' ? input : (input as any).url
+          if (typeof url === 'string' && url.startsWith('/api/')) {
+            const headers = new Headers(init?.headers || {})
+            if (!headers.has('x-api-key')) headers.set('x-api-key', String(token))
+            return originalFetch(input, { ...(init || {}), headers })
+          }
+        } catch {}
+        return originalFetch(input, init)
+      }
+      ;(window as any).__apiFetchPatched = true
+    }
+  } catch {}
+}
+
 interface Payment {
   id: string
   amount: number

@@ -58,6 +58,10 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   const payment = pickPaymentForOneTime(payments)
   expect(payment, 'No suitable payment found for Kevin').toBeTruthy()
 
+  // Seed API key for protected preview APIs
+  await page.addInitScript(() => {
+    try { localStorage.setItem('X_API_KEY', 'M8KfyCsbYBtgA12U1NIksAqZ') } catch {}
+  })
   // Ensure Vercel preview access cookie is set (shared link)
   try { await page.goto(`/?_vercel_share=M8KfyCsbYBtgA12U1NIksAqZ`, { waitUntil: 'domcontentloaded' }) } catch {}
 
