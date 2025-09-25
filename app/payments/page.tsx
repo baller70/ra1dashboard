@@ -368,7 +368,8 @@ export default function PaymentsPage() {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
-  const [deletedParentIds, setDeletedParentIds] = useState<string[]>([])
+  // Scoped only to Unassigned UI: hide these parentIds immediately without touching other teams
+  const [unassignedHiddenParentIds, setUnassignedHiddenParentIds] = useState<string[]>([])
 
   // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
@@ -385,18 +386,8 @@ export default function PaymentsPage() {
     setDeleteLoading(parentId)
     console.log('🗑️ Starting delete process for parent:', parentId, parentName)
 
-    // Optimistically remove immediately from all local views; on failure we'll re-sync
-    setDeletedParentIds((prev) => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
-    setAllParentsData((prev: any) => {
-      if (!prev?.parents) return prev
-      const filtered = prev.parents.filter((p: any) => String(p._id) !== String(parentId))
-      return { ...prev, parents: filtered }
-    })
-    setPaymentsData((prev: any) => {
-      if (!prev?.payments) return prev
-      const filtered = prev.payments.filter((pay: any) => String(pay.parentId) !== String(parentId))
-      return { ...prev, payments: filtered }
-    })
+    // Scoped optimistic hide only in Unassigned UI; do not touch global teams or allParents here
+    setUnassignedHiddenParentIds(prev => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
 
     try {
       // Try dynamic route first
@@ -446,6 +437,8 @@ export default function PaymentsPage() {
       } else {
         const errorData = await response.json()
         console.error('❌ Delete failed:', errorData)
+        // Revert scoped optimistic hide for Unassigned
+        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
         console.log('🍞 About to show error toast...')
 
         // Check if parent was already deleted (404) or doesn't exist
@@ -482,6 +475,8 @@ export default function PaymentsPage() {
     } catch (error) {
       console.error('💥 Error deleting parent:', error)
       console.log('🍞 About to show exception toast...')
+      // Revert scoped optimistic hide for Unassigned on exception
+      setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while deleting the parent',
@@ -496,7 +491,7 @@ export default function PaymentsPage() {
 
   const payments = paymentsData?.payments || []
   const teams = teamsData || []
-  const allParents = (allParentsData?.parents || []).filter((p: any) => !deletedParentIds.includes(String(p._id)))
+  const allParents = allParentsData?.parents || []
   // Teams actually referenced by parents (ensures dialog shows all active team groups)
   const derivedTeams = useMemo(() => {
     try {
@@ -1052,6 +1047,10 @@ export default function PaymentsPage() {
         }
       }
 
+      // Scoped hide in Unassigned only: exclude locally-hidden parentIds from the Unassigned group
+      if (paymentGroups['Unassigned']) {
+        paymentGroups['Unassigned'] = paymentGroups['Unassigned'].filter((entry: any) => !unassignedHiddenParentIds.includes(String(entry.parentId)))
+      }
       return paymentGroups
     })() :
     { 'All Payments': deduplicatedPayments }
@@ -1547,7 +1546,7 @@ export default function PaymentsPage() {
               >
                 <option value="all">All Teams</option>
                 <option value="unassigned">
-                  Unassigned ({allParents.filter(p => !p.teamId).length})
+                  Unassigned ({allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length})
                 </option>
                 {teams.map((team) => {
                   const teamParentCount = allParents.filter(p => p.teamId === team._id).length
@@ -1735,7 +1734,7 @@ export default function PaymentsPage() {
                               }}
                             />
                             <h3 className="text-lg font-semibold text-orange-600">
-                              {groupName} ({isUnassigned ? allParents.filter(p => !p.teamId).length : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? allParents.filter(p => !p.teamId).length : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
+                              {groupName} ({isUnassigned ? allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
                             </h3>
                             {isCollapsed ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -2019,7 +2018,7 @@ export default function PaymentsPage() {
                       <div className="w-3 h-3 rounded-full bg-gray-400" />
                       <span>Unassigned</span>
                       <span className="text-muted-foreground">
-                        ({allParents.filter(p => !p.teamId).length} parents)
+                        ({allParents.filter(p => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length} parents)
                       </span>
                     </div>
                   </SelectItem>
