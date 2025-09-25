@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
 
     const stripe = getStripe()
 
+    const achEnabled = (process.env.NEXT_PUBLIC_ACH_ENABLED === 'true' || process.env.ACH_ENABLED === 'true')
+      || (process.env.VERCEL_ENV === 'preview')
+
     // Get parent from Convex; fall back to request-provided identity in preview if Convex is unavailable
     let parent: any = null
     try {
@@ -57,20 +60,33 @@ export async function POST(request: NextRequest) {
       })
 
       const idemKey = paymentId ? `pi:${String(paymentId)}` : undefined
-      const intent = await stripe.paymentIntents.create({
+      const baseParams: Stripe.PaymentIntentCreateParams = {
         amount: Number(amount),
         currency: 'usd',
         customer: customerId,
         payment_method: pmId,
         setup_future_usage: 'off_session',
-        automatic_payment_methods: { enabled: true },
         metadata: {
           source: 'one_time_inapp',
           parentId: String(parent._id || parentId),
           paymentId: paymentId ? String(paymentId) : '',
         },
         description: description || 'One-time payment',
-      }, idemKey ? { idempotencyKey: idemKey } : undefined as any)
+      }
+      const params = achEnabled
+        ? {
+            ...baseParams,
+            payment_method_types: ['card', 'us_bank_account'],
+            payment_method_options: {
+              us_bank_account: { verification_method: 'automatic' },
+            },
+          }
+        : { ...baseParams, automatic_payment_methods: { enabled: true } }
+
+      const intent = await stripe.paymentIntents.create(
+        params as any,
+        idemKey ? { idempotencyKey: idemKey } : undefined as any
+      )
 
       return NextResponse.json({ success: true, clientSecret: intent.client_secret, paymentIntentId: intent.id })
     }
@@ -89,19 +105,33 @@ export async function POST(request: NextRequest) {
     }
 
       const idemKey = paymentId ? `pi:${String(paymentId)}` : undefined
-    const intent = await stripe.paymentIntents.create({
+    const baseParams: Stripe.PaymentIntentCreateParams = {
       amount: Number(amount),
       currency: 'usd',
       customer: stripeCustomerId,
       setup_future_usage: 'off_session',
-      automatic_payment_methods: { enabled: true },
       metadata: {
         source: 'one_time_inapp',
         parentId: String(parent._id || parentId),
         paymentId: paymentId ? String(paymentId) : '',
       },
       description: description || 'One-time payment',
-    }, idemKey ? { idempotencyKey: idemKey } : undefined as any)
+    }
+
+    const params = achEnabled
+      ? {
+          ...baseParams,
+          payment_method_types: ['card', 'us_bank_account'],
+          payment_method_options: {
+            us_bank_account: { verification_method: 'automatic' },
+          },
+        }
+      : { ...baseParams, automatic_payment_methods: { enabled: true } }
+
+    const intent = await stripe.paymentIntents.create(
+      params as any,
+      idemKey ? { idempotencyKey: idemKey } : undefined as any
+    )
 
     return NextResponse.json({ success: true, clientSecret: intent.client_secret, paymentIntentId: intent.id })
   } catch (error: any) {
