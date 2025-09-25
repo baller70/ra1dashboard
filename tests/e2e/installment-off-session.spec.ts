@@ -32,6 +32,9 @@ test('Off-session installment: next pending charge succeeds and reconciles via w
   const pending = (progJson?.installments || []).find((i: any) => i.status === 'pending')
   expect(pending, 'No pending installment to charge').toBeTruthy()
 
+  // Ensure a default PaymentMethod is stored for parent (uses test-friendly fallback if needed)
+  await request.post(`/api/stripe/setup`, { data: { parentId: kevin._id, paymentMethodId: 'pm_test_placeholder' } })
+
   // Trigger off_session charge for this pending installment
   // Retry a few times in case preview deployment is still propagating new route
   let chargeRes = await request.post(`/api/installments/${pending._id}/charge`, { data: {} })
