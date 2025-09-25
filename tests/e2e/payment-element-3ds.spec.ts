@@ -156,7 +156,7 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
   await fillPaymentElementCard(page, { number: '4000002760003184', exp: '12/34', cvc: '123', postal: '10001' })
 
   // Confirm card payment
-  const confirmBtn = page.getByRole('button', { name: /Confirm Card Payment/i })
+  const confirmBtn = page.getByRole('button', { name: /Confirm (Card )?Payment/i })
   await expect(confirmBtn).toBeEnabled({ timeout: 10000 })
   await confirmBtn.click()
 
