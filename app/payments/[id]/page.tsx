@@ -50,7 +50,6 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js'
 
 import { Textarea } from '../../../components/ui/textarea'
-const [stripePk, setStripePk] = useState<string | null>(null)
 
 
 // Inject x-api-key header for app-internal fetches when token is available
@@ -402,6 +401,7 @@ export default function PaymentDetailPage() {
 
   // Stripe Payment Element state
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
+  const [stripePk, setStripePk] = useState<string | null>(null)
 
   // Payment scheduling state
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("")
