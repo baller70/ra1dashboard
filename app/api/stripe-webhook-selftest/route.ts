@@ -15,7 +15,7 @@ export async function POST() {
       return NextResponse.json({ ok: true, configured: false, verified: false })
     }
 
-    const stripe = new Stripe('sk_test_dummy' as any, { apiVersion: '2024-06-20' } as any)
+    const stripe = new Stripe('sk_live_dummy' as any, { apiVersion: '2024-06-20' } as any)
     const payload = {
       id: 'evt_test_' + Date.now(),
       type: 'checkout.session.completed',

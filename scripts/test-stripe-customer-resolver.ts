@@ -3,7 +3,7 @@
   Uses monkeypatching on the exported `stripe` instance.
 */
 
-process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_dummy';
+process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_live_dummy';
 
 (async () => {
   const { stripe, ensureCustomerByEmailAndFingerprint } = await import('../lib/stripe');

@@ -24,21 +24,22 @@ test.describe('Stripe two-factor resolver (email + card fingerprint)', () => {
     const before = await beforeRes.json()
     const prevCustomerId: string | undefined = before?.stripeCustomerId
 
-    // 3) Create a real test PaymentMethod in Stripe (if key provided); otherwise fallback to pm_card_visa
+    // 3) Create a real PaymentMethod in Stripe (works with both test and live keys)
     let pm: { id: string }
-    if (STRIPE_SECRET_KEY && /^sk_test_/.test(STRIPE_SECRET_KEY)) {
+    if (STRIPE_SECRET_KEY && (STRIPE_SECRET_KEY.startsWith('sk_test_') || STRIPE_SECRET_KEY.startsWith('sk_live_'))) {
       try {
         const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
-        const created = await stripe.paymentMethods.create({ type: 'card', card: { token: 'tok_visa' } })
+        const token = STRIPE_SECRET_KEY.startsWith('sk_live_') ? 'tok_visa_debit' : 'tok_visa';
+        const created = await stripe.paymentMethods.create({ type: 'card', card: { token } })
         pm = { id: created.id }
-        console.log('Created test PaymentMethod:', pm.id)
+        console.log('Created PaymentMethod:', pm.id)
       } catch (e) {
-        console.warn('Creating test PaymentMethod failed, falling back to pm_card_visa:', (e as any)?.message)
-        pm = { id: 'pm_card_visa' }
+        console.warn('Creating PaymentMethod failed, using fallback:', (e as any)?.message)
+        pm = { id: 'pm_card_visa_debit' }
       }
     } else {
-      pm = { id: 'pm_card_visa' }
-      console.warn('STRIPE_SECRET_KEY not provided; using pm_card_visa fallback (some flows may fail server-side).')
+      pm = { id: 'pm_card_visa_debit' }
+      console.warn('STRIPE_SECRET_KEY not configured properly.')
     }
 
     // 4) Call the setup resolver endpoint (no charge)

@@ -20,20 +20,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 })
     }
 
-    // For now, create a mock Stripe customer ID and store it
-    // This will be replaced with actual Stripe MCP integration when properly configured
-    const mockCustomerId = `cus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
-    // Update parent in Convex with mock Stripe customer ID
+    // Create real Stripe customer using production keys
+    const { stripe } = await import('../../../lib/stripe')
+
+    const customer = await stripe.customers.create({
+      email: parent.email,
+      name: parent.name,
+      metadata: {
+        source: 'ra1_dashboard',
+        parentId: parent._id,
+      }
+    })
+
+    // Update parent in Convex with real Stripe customer ID
     await convex.mutation(api.parents.updateParent, {
       id: parent._id,
-      stripeCustomerId: mockCustomerId
+      stripeCustomerId: customer.id
     })
 
     return NextResponse.json({
       success: true,
-      customerId: mockCustomerId,
-      message: 'Stripe customer created successfully (mock mode)'
+      customerId: customer.id,
+      message: 'Stripe customer created successfully'
     })
 
   } catch (error) {
