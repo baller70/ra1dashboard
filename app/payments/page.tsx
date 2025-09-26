@@ -1957,7 +1957,11 @@ export default function PaymentsPage() {
                                             size="sm"
                                             variant="ghost"
                                             className="h-6 w-6 p-0"
-                                            onClick={() => updatePaymentMethod(payment._id, tempPaymentMethod)}
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              updatePaymentMethod(payment._id, tempPaymentMethod)
+                                            }}
                                           >
                                             <CheckCircle className="h-3 w-3 text-green-600" />
                                           </Button>

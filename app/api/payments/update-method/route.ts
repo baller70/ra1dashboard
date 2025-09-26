@@ -20,6 +20,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Validate paymentId format (Convex IDs are typically long strings)
+    if (typeof paymentId !== 'string' || paymentId.length < 10) {
+      return NextResponse.json({
+        error: 'Invalid payment ID format',
+        paymentId,
+        expectedFormat: 'Convex ID string (e.g., "k17abc123...")'
+      }, { status: 400 })
+    }
+
     // Update payment method in Convex using existing updatePayment mutation
     const result = await convex.mutation(api.payments.updatePayment, {
       id: paymentId,
