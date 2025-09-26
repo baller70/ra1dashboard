@@ -68,7 +68,9 @@ test('Kevin: embedded payment element completes successfully (no redirect)', asy
   }
 
   // Common field variants across Card Element and Payment Element
-  await fillInAnyFrame('input[placeholder*="Card number" i], input[name="cardnumber"], input[id="Field-numberInput"]', '4242 4242 4242 4242');
+  // Use appropriate test card based on environment
+  const testCard = process.env.VERCEL_ENV === 'production' ? '4000 0000 0000 0002' : '4242 4242 4242 4242';
+  await fillInAnyFrame('input[placeholder*="Card number" i], input[name="cardnumber"], input[id="Field-numberInput"]', testCard);
   await fillInAnyFrame('input[placeholder*="MM / YY" i], input[name="exp-date"], input[id="Field-expiryInput"]', '12 / 34');
   await fillInAnyFrame('input[placeholder*="CVC" i], input[name="cvc"], input[id="Field-cvcInput"], input[id="Field-securityCodeInput"]', '123');
 

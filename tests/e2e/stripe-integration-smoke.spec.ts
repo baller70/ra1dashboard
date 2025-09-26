@@ -14,7 +14,9 @@ async function tryFillInstallmentDialog(page: import('@playwright/test').Page) {
   const cardNumber = page.getByRole('textbox', { name: /Card Number/i });
   if (!(await cardNumber.isVisible().catch(() => false))) return false;
 
-  await cardNumber.fill('4242 4242 4242 4242');
+  // Use test card only in non-production environments
+  const cardNum = process.env.VERCEL_ENV === 'production' ? '4000000000000002' : '4242 4242 4242 4242';
+  await cardNumber.fill(cardNum);
   await page.getByRole('textbox', { name: /Cardholder Name/i }).fill('Kevin Houston');
   await page.getByRole('textbox', { name: /Expiry Date/i }).fill('12/34');
   await page.getByRole('textbox', { name: /CVV/i }).fill('123');

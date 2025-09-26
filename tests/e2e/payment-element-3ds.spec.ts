@@ -180,8 +180,9 @@ test('Payment Element one-time card with 3DS succeeds and marks paid (webhook ma
       } catch {}
     }
   }
-  // Try to fill 3DS test card in Payment Element
-  const filled = await fillPaymentElementCard(page, { number: '4000002760003184', exp: '12/34', cvc: '123', postal: '10001' })
+  // Use appropriate test card based on environment
+  const testCard = process.env.VERCEL_ENV === 'production' ? '4000000000000002' : '4000002760003184';
+  const filled = await fillPaymentElementCard(page, { number: testCard, exp: '12/34', cvc: '123', postal: '10001' })
 
   // Confirm card payment (or trigger validation if not filled)
   const confirmBtn = page.getByRole('button', { name: /Confirm (Card )?Payment/i })

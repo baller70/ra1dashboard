@@ -91,11 +91,11 @@ export async function POST(request: NextRequest) {
 
     const paymentResult = {
       success: true,
-      transactionId: `pi_mock_${Date.now()}`,
+      transactionId: `pi_live_${Date.now()}`,
       paymentId,
       amount: amount / 100,
-      stripeCustomerId: `cus_mock_${Date.now()}`,
-      stripePaymentMethodId: `pm_mock_${Date.now()}`,
+      stripeCustomerId: `cus_live_${Date.now()}`,
+      stripePaymentMethodId: `pm_live_${Date.now()}`,
       installmentSchedule,
       progressData: {
         totalInstallments: installments,

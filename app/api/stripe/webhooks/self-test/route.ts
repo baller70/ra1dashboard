@@ -17,7 +17,7 @@ export async function POST() {
     }
 
     // We don't need a real API key to generate/verify a test header
-    const stripe = new Stripe('sk_test_dummy' as any, { apiVersion: '2024-06-20' } as any)
+    const stripe = new Stripe('sk_live_dummy' as any, { apiVersion: '2024-06-20' } as any)
     const payload = {
       id: 'evt_test_' + Date.now(),
       type: 'checkout.session.completed',
