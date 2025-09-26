@@ -14,8 +14,19 @@ export async function GET(request: NextRequest) {
   const allow = url.searchParams.get('allow')
   const cronKey = request.headers.get('x-cron-key')
   const requiredKey = process.env.CRON_SECRET
-  if (requiredKey && cronKey !== requiredKey && allow !== '1') {
-    return NextResponse.json({ error: 'Unauthorized cron invocation' }, { status: 401 })
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+
+  // Authorization logic:
+  // - If CRON_SECRET is set, accept either matching x-cron-key or a Vercel Cron request
+  // - If no CRON_SECRET, accept only Vercel Cron or explicit allow=1 (for manual testing)
+  if (requiredKey) {
+    if (cronKey !== requiredKey && !isVercelCron) {
+      return NextResponse.json({ error: 'Unauthorized cron invocation' }, { status: 401 })
+    }
+  } else {
+    if (!isVercelCron && allow !== '1') {
+      return NextResponse.json({ error: 'Unauthorized cron invocation' }, { status: 401 })
+    }
   }
 
   try {
