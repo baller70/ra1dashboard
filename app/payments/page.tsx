@@ -1788,7 +1788,7 @@ export default function PaymentsPage() {
                         {teams.length > 0 && (
                           <div className="flex items-center space-x-1">
                             {teams.slice(0, 3).map((team) => {
-                              const teamParentCount = allParents.filter(p => p.teamId === team._id).length
+                              const teamParentCount = allParents.filter(p => p.status !== 'archived' && p.teamId === team._id).length
                               return (
                                 <div
                                   key={team._id}
@@ -1858,9 +1858,9 @@ export default function PaymentsPage() {
                             <h3 className="text-lg font-semibold text-orange-600" data-testid={isUnassigned ? 'unassigned-header' : undefined}>
                               {groupName} (
                                 <span data-testid={isUnassigned ? 'unassigned-count' : undefined}>
-                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length}
+                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.status !== 'archived' && p.teamId === team?._id).length}
                                 </span>
-                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
+                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.status !== 'archived' && p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
                               )
                             </h3>
                             {isCollapsed ? (
@@ -2165,7 +2165,7 @@ export default function PaymentsPage() {
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: team.color || '#f97316' }} />
                     <span className="font-medium">{team.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{allParents.filter(p => p.teamId === team._id).length} parents</span>
+                  <span className="text-xs text-muted-foreground">{allParents.filter(p => p.status !== 'archived' && p.teamId === team._id).length} parents</span>
                 </div>
               ))}
             </div>
@@ -2205,7 +2205,7 @@ export default function PaymentsPage() {
                     </div>
                   </SelectItem>
                   {teams.map((team) => {
-                    const teamParentCount = allParents.filter(p => p.teamId === team._id).length
+                    const teamParentCount = allParents.filter(p => p.status !== 'archived' && p.teamId === team._id).length
                     return (
                       <SelectItem key={team._id} value={team._id}>
                         <div className="flex items-center space-x-2">
