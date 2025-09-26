@@ -63,6 +63,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Operational logging: record every received event id and type
+    try {
+      console.log('Stripe webhook received', { id: (event as any)?.id, type: event.type })
+    } catch {}
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
