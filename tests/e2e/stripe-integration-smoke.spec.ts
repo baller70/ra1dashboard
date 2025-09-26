@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { getKevinParent, getPaymentsForParent, pickPaymentForOneTime } from './helpers/api';
 
 // Stripe Integration Smoke Test (uses Stripe test card numbers)
-// Base URL is taken from PLAYWRIGHT_BASE_URL; requires PAYMENT_ID
-
-const PAYMENT_ID = process.env.PAYMENT_ID || '';
+// Base URL is taken from PLAYWRIGHT_BASE_URL; auto-discovers a payment for Kevin
 
 async function tryFillInstallmentDialog(page: import('@playwright/test').Page) {
   // Wait briefly for the dialog or its fields to appear
@@ -31,8 +30,13 @@ async function tryFillInstallmentDialog(page: import('@playwright/test').Page) {
 
 // MAIN smoke test
 
-test('Stripe integration smoke: renders Connected, pays with test card, status becomes Paid', async ({ page }) => {
-  test.skip(!PAYMENT_ID, 'PAYMENT_ID is required');
+test('Stripe integration smoke: renders Connected, pays with test card, status becomes Paid', async ({ page, request }) => {
+  // Auto-discover a suitable payment for Kevin
+  const parent = await getKevinParent(request);
+  const payments = await getPaymentsForParent(request, parent._id || parent.id);
+  test.skip(!payments?.length, 'No payments found for Kevin');
+  const payment = pickPaymentForOneTime(payments) || payments[0];
+  const PAYMENT_ID = String(payment._id || payment.id);
 
   await page.goto(`/payments/${PAYMENT_ID}`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByText(/PAYMENT DETAILS/i)).toBeVisible();

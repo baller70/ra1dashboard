@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'setup',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payments/${parentId}?setup=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payments/${parentId}?setup=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || (new URL(request.url)).origin}/payments/${parentId}?setup=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || (new URL(request.url)).origin}/payments/${parentId}?setup=cancelled`,
       payment_method_types: ['card'],
       metadata: {
         parentId: parent._id,

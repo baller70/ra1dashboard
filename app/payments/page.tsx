@@ -127,11 +127,17 @@ export default function PaymentsPage() {
         }),
         fetch(`/api/teams?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
         }),
         fetch(`/api/parents?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
         }),
         fetch(`/api/payment-plans?_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-store',
@@ -159,7 +165,12 @@ export default function PaymentsPage() {
 
       if (paymentsResult.success) setPaymentsData(paymentsResult.data)
       if (analyticsResult.success) setAnalytics(analyticsResult.data)
-      if (teamsResult.success) setTeamsData(teamsResult.data)
+      if (teamsResult.success) {
+        const normalizedTeams = Array.isArray(teamsResult.data)
+          ? teamsResult.data.map((t: any) => ({ ...t, _id: String(t._id ?? (t as any).id ?? '') }))
+          : []
+        setTeamsData(normalizedTeams)
+      }
       // Compute authoritative plans total (sum of largest plan per parent),
       // filtered to parents currently present on the Parents page
       try {
@@ -188,23 +199,32 @@ export default function PaymentsPage() {
         setPlansTotals({ total: plansTotal, activeParents: uniquePlans.length })
       } catch {}
       if (parentsResult.success) {
-        setAllParentsData(parentsResult.data)
+        const normalizedParents = Array.isArray(parentsResult.data?.parents)
+          ? parentsResult.data.parents.map((p: any) => ({
+              ...p,
+              _id: String(p._id ?? (p as any).id ?? ''),
+              teamId: p.teamId ? String(p.teamId) : undefined,
+            }))
+          : []
+        setAllParentsData({ ...parentsResult.data, parents: normalizedParents })
 
         // Debug logging
-        const parentCount = parentsResult.data?.parents?.length || 0
-        const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+        const parentCount = normalizedParents.length || 0
+        const unassignedCount = normalizedParents.filter((p: any) => !p.teamId).length || 0
         console.log('🔍 PAYMENTS PAGE DEBUG:', {
           totalParents: parentCount,
           unassignedParents: unassignedCount,
           parentsWithTeams: parentCount - unassignedCount
         })
 
-        // Show success notification with team counts
-        toast({
-          title: "✅ Data Refreshed Successfully",
-          description: `Loaded ${parentCount} parents (${unassignedCount} unassigned) with fresh team assignments`,
-          duration: 3000,
-        })
+        // Show success notification only on manual refresh to reduce noise
+        if (isManualRefresh) {
+          toast({
+            title: "✅ Data Refreshed",
+            description: `Loaded ${parentCount} parents (${unassignedCount} unassigned)`,
+            duration: 2000,
+          })
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching data:', error)
@@ -225,9 +245,9 @@ export default function PaymentsPage() {
     fetchData(true)
   }
 
-  // Auto-refresh every 5 minutes (reduced frequency)
+  // Auto-refresh every 30 minutes (much less frequent to avoid navigation disruption)
   useEffect(() => {
-    const interval = setInterval(() => fetchData(), 300 * 1000) // 5 minutes instead of 30 seconds
+    const interval = setInterval(() => fetchData(), 1800 * 1000)
     return () => clearInterval(interval)
   }, [fetchData])
 
@@ -237,6 +257,7 @@ export default function PaymentsPage() {
       console.log('Parent deleted event received, refreshing data...')
       fetchData()
     }
+
 
     window.addEventListener('parent-deleted', handleParentDeleted)
     return () => window.removeEventListener('parent-deleted', handleParentDeleted)
@@ -250,6 +271,8 @@ export default function PaymentsPage() {
       console.log('🔄 Refreshing data for parent:', eventData.parentName || 'Unknown')
 
       // Add a longer delay to ensure the payment plan and payments are fully created
+
+
       setTimeout(() => {
         console.log('🔄 Fetching updated data after payment plan creation...')
         // Force aggressive cache busting for payment plan updates
@@ -269,24 +292,32 @@ export default function PaymentsPage() {
     }
   }, [fetchData])
 
-  // Listen for page focus to refresh data when returning from other pages (with debounce)
-  useEffect(() => {
-    let focusTimeout: NodeJS.Timeout
-    const handlePageFocus = () => {
-      // Debounce focus events to prevent excessive refreshing
-      clearTimeout(focusTimeout)
-      focusTimeout = setTimeout(() => {
-        console.log('Page focused, refreshing payment data...')
-        fetchData()
-      }, 2000) // Wait 2 seconds before refreshing
-    }
+  // Focus-based auto-refresh removed to avoid disrupting navigation
+  // useEffect(() => {
+  //   let focusTimeout: NodeJS.Timeout
+  //   const handlePageFocus = () => {
+  //     clearTimeout(focusTimeout)
+  //     focusTimeout = setTimeout(() => {
+  //       fetchData()
+  //     }, 2000)
 
-    window.addEventListener('focus', handlePageFocus)
-    return () => {
-      window.removeEventListener('focus', handlePageFocus)
-      clearTimeout(focusTimeout)
+  // Listen for parent creations from other pages/components
+  useEffect(() => {
+    const onCreated = () => {
+      console.log('Parent created event received, refreshing data...')
+      fetchData()
     }
+    window.addEventListener('parent-created', onCreated)
+    return () => window.removeEventListener('parent-created', onCreated)
   }, [fetchData])
+
+  //   }
+  //   window.addEventListener('focus', handlePageFocus)
+  //   return () => {
+  //     window.removeEventListener('focus', handlePageFocus)
+  //     clearTimeout(focusTimeout)
+  //   }
+  // }, [fetchData])
 
   // Fetch data using API routes instead of direct Convex queries
   useEffect(() => {
@@ -352,104 +383,166 @@ export default function PaymentsPage() {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  // Scoped only to Unassigned UI: hide these parentIds immediately without touching other teams
+  const [unassignedHiddenParentIds, setUnassignedHiddenParentIds] = useState<string[]>([])
 
-  // Delete parent function with fallback for dynamic route issues
+  // Rate limit storage: parentId -> last attempt timestamp
+  const [deleteCooldowns, setDeleteCooldowns] = useState<Record<string, number>>({})
+
+  // Safer delete with validation, two-step confirm, audit logging, rollback, and rate limiting
   const handleDeleteParent = async (parentId: string, parentName: string) => {
-    console.log('🚀 DELETE BUTTON CLICKED! Parent:', parentId, parentName)
-
-    const confirmResult = confirm(`Are you sure you want to delete ${parentName}? This action cannot be undone and will remove all associated payments and data.`)
-    console.log('❓ User confirmation result:', confirmResult)
-
-    if (!confirmResult) {
-      console.log('❌ User cancelled deletion')
-      return
-    }
-
-    setDeleteLoading(parentId)
-    console.log('🗑️ Starting delete process for parent:', parentId, parentName)
-
     try {
-      // Try dynamic route first
-      console.log('🔄 Attempting delete via dynamic route...')
+      const now = Date.now()
+      const last = deleteCooldowns[parentId] || 0
+      if (now - last < 2000) {
+        toast({ title: 'Please wait', description: 'Avoid rapid delete clicks', duration: 2000 })
+        return
+      }
+      setDeleteCooldowns(prev => ({ ...prev, [parentId]: now }))
+
+      setDeleteLoading(parentId)
+
+      // 1) Pre-validate and gather dependencies
+      let pre: any = null
+      try {
+        const preRes = await fetch(`/api/parents/${parentId}`)
+        if (!preRes.ok) {
+          if (preRes.status === 404) {
+            toast({ title: 'Not found', description: 'Parent was already removed', duration: 3000 })
+            return
+          }
+          throw new Error(`Lookup failed (${preRes.status})`)
+        }
+        pre = await preRes.json()
+      } catch (e) {
+        toast({ title: 'Lookup failed', description: 'Could not verify parent before delete', variant: 'destructive' })
+        return
+      }
+
+      const teamName = (() => {
+        const t = teams.find(t => String(t._id) === String(pre.teamId))
+        return t?.name || (pre.teamId ? 'Unknown team' : 'Unassigned')
+      })()
+      const depCounts = {
+        payments: (pre.payments || []).length,
+        messageLogs: (pre.messageLogs || []).length,
+        plans: (pre.paymentPlans || []).length,
+      }
+
+      // 2) Log attempt
+      fetch('/api/audit/parent-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+        body: JSON.stringify({ stage: 'attempt', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'info' })
+      }).catch(() => {})
+
+      // 3) Two-step confirmation
+      const archiveFirst = confirm(
+        `Safe action recommended:\n\nArchive ${parentName}?\n- Team: ${teamName}\n- Payments: ${depCounts.payments}\n- Logs: ${depCounts.messageLogs}\n\nArchiving hides the parent but keeps all data. Click OK to Archive, or Cancel for more options.`
+      )
+
+      // Optimistic hide in Unassigned section (archive or delete)
+      setUnassignedHiddenParentIds(prev => prev.includes(String(parentId)) ? prev : [...prev, String(parentId)])
+
+      if (archiveFirst) {
+        // Archive path
+        try {
+          const res = await fetch(`/api/parents/${parentId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+            body: JSON.stringify({ status: 'archived' })
+          })
+          if (!res.ok) throw new Error(`Archive failed (${res.status})`)
+
+          // Log success
+          fetch('/api/audit/parent-delete', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+            body: JSON.stringify({ stage: 'archive', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'success' })
+          }).catch(() => {})
+
+          toast({ title: 'Parent archived', description: `${parentName} is hidden but recoverable.`, duration: 5000 })
+
+          // Allow undo restore
+          setTimeout(() => {
+            // background refresh for consistency
+            fetchData().catch(() => {})
+          }, 0)
+        } catch (e: any) {
+          // Revert optimistic hide
+          setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+          toast({ title: 'Archive failed', description: e?.message || 'Unknown error', variant: 'destructive' })
+        } finally {
+          setDeleteLoading(null)
+        }
+        return
+      }
+
+      const typed = prompt(`Type DELETE to permanently remove ${parentName} and ALL related data. This cannot be undone.`)
+      if (typed !== 'DELETE') {
+        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+        setDeleteLoading(null)
+        return
+      }
+
+      // 4) Rollback strategy: set archived first, then hard delete; on failure, restore status
+      let archivedBeforeDelete = false
+      try {
+        const resA = await fetch(`/api/parents/${parentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+          body: JSON.stringify({ status: 'archived' })
+        })
+        archivedBeforeDelete = resA.ok
+      } catch {}
+
+      // Proceed to hard delete
       let response = await fetch(`/api/parents/${parentId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'ra1-dashboard-api-key-2024'
-        }
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' }
       })
-
-      console.log('📡 Dynamic route response status:', response.status)
-
-      // If dynamic route fails with 404, use alternative endpoint
       if (!response.ok && response.status === 404) {
-        console.log('🔄 Dynamic route failed, using alternative delete endpoint')
         response = await fetch('/api/parents/delete', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': 'ra1-dashboard-api-key-2024'
-          },
+          headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
           body: JSON.stringify({ parentId })
         })
-        console.log('📡 Alternative route response status:', response.status)
       }
 
       if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Delete successful:', result)
-        console.log('🔄 About to refresh data...')
+        fetch('/api/audit/parent-delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+          body: JSON.stringify({ stage: 'delete', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'success' })
+        }).catch(() => {})
 
-        // Refresh all data to ensure consistency across both pages
-        await fetchData()
-        console.log('✅ Data refreshed successfully')
-
-        // Dispatch event to update dashboard and analytics pages
         window.dispatchEvent(new Event('parent-deleted'))
-        console.log('🔔 Dispatched parent-deleted event from payments page')
-
-        console.log('🍞 About to show success toast...')
-        toast({
-          title: '✅ Parent Deleted Successfully',
-          description: `${parentName} and all associated payments have been permanently removed.`,
-          duration: 5000,
-        })
-        console.log('✅ Success toast shown!')
+        fetchData().catch(() => {})
+        toast({ title: 'Parent deleted', description: `${parentName} and related data were permanently removed.` })
       } else {
-        const errorData = await response.json()
-        console.error('❌ Delete failed:', errorData)
-        console.log('🍞 About to show error toast...')
+        const err = await response.json().catch(() => ({}))
+        fetch('/api/audit/parent-delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+          body: JSON.stringify({ stage: 'delete', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'error', error: err })
+        }).catch(() => {})
 
-        // Check if parent was already deleted (404) or doesn't exist
-        if (response.status === 404 || (errorData.details && errorData.details.includes('not found'))) {
-          toast({
-            title: '✅ Already Deleted',
-            description: `${parentName} was already deleted. Refreshing the page...`,
-            duration: 3000,
-          })
-          // Refresh data since parent was already deleted
-          await fetchData(true)
-        } else {
-          toast({
-            title: '❌ Delete Failed',
-            description: errorData.details || errorData.error || `Failed to delete ${parentName}`,
-            variant: 'destructive',
-            duration: 5000,
-          })
+        // Roll back status if we archived
+        if (archivedBeforeDelete) {
+          try {
+            await fetch(`/api/parents/${parentId}`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
+              body: JSON.stringify({ status: pre.status || 'active' })
+            })
+          } catch {}
         }
-        console.log('❌ Error toast shown!')
+
+        // Revert optimistic hide
+        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+
+        toast({ title: 'Delete failed', description: err?.details || err?.error || 'Unknown error', variant: 'destructive' })
       }
-    } catch (error) {
-      console.error('💥 Error deleting parent:', error)
-      console.log('🍞 About to show exception toast...')
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while deleting the parent',
-        variant: 'destructive'
-      })
-      console.log('💥 Exception toast shown!')
+    } catch (e) {
+      setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+      toast({ title: 'Error', description: 'Unexpected error during delete', variant: 'destructive' })
     } finally {
-      console.log('🏁 Delete process finished, clearing loading state')
       setDeleteLoading(null)
     }
   }
@@ -528,7 +621,15 @@ export default function PaymentsPage() {
                   const undoJson = await undoRes.json()
                   if (undoRes.ok && undoJson?.success) {
                     toast({ title: 'Reverted', description: 'Bulk assignment undone' })
-                    await fetchData(true)
+                    // Revert local assignments
+                    setAllParentsData((prev: any) => {
+                      if (!prev?.parents) return prev
+                      const byId = new Map(prevAssignments.map(a => [a.parentId, a.teamId]))
+                      const newParents = prev.parents.map((p: any) =>
+                        byId.has(p._id) ? { ...p, teamId: byId.get(p._id) || undefined } : p
+                      )
+                      return { ...prev, parents: newParents }
+                    })
                   } else {
                     toast({ title: 'Error', description: undoJson?.error || 'Undo failed', variant: 'destructive' })
                   }
@@ -544,7 +645,16 @@ export default function PaymentsPage() {
             </ToastAction>
           )
         })
-        await fetchData(true)
+        // Optimistically update assignments locally to avoid full-page refresh
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const newParents = prev.parents.map((p: any) =>
+            selectedParents.includes(p._id)
+              ? { ...p, teamId: assignToTeamId === 'unassigned' ? undefined : assignToTeamId }
+              : p
+          )
+          return { ...prev, parents: newParents }
+        })
       } else {
         alert('Failed to assign parents to team: ' + (result.error || 'Unknown error'))
       }
@@ -664,7 +774,13 @@ export default function PaymentsPage() {
           title: "Team Deleted",
           description: "The team was deleted. Parents were moved to Unassigned."
         })
-        await fetchData(true)
+        // Optimistically update local state
+        setTeamsData((prev: any[]) => Array.isArray(prev) ? prev.filter((t: any) => t._id !== teamId) : prev)
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const newParents = prev.parents.map((p: any) => p.teamId === teamId ? { ...p, teamId: undefined } : p)
+          return { ...prev, parents: newParents }
+        })
       } else {
         const error = await response.json()
         toast({
@@ -743,7 +859,24 @@ export default function PaymentsPage() {
                     if (!assignRes.ok || !assignJson?.success) throw new Error(assignJson?.error || 'Failed to reassign')
                   }
                   toast({ title: 'Restored', description: 'Deleted teams restored and parents reassigned.' })
-                  await fetchData(true)
+                  // Optimistically add recreated teams and update parent assignments locally
+                  setTeamsData((prev: any[]) => {
+                    const next = Array.isArray(prev) ? [...prev] : []
+                    for (const snap of deletionSnapshot) {
+                      // Find the new team id used for this snapshot by looking at assignments we created
+                      const firstAssignment = assignments.find(a => snap.parentIds.includes(a.parentId))
+                      if (firstAssignment) {
+                        next.push({ _id: firstAssignment.teamId, name: snap.name, description: snap.description, color: snap.color })
+                      }
+                    }
+                    return next
+                  })
+                  setAllParentsData((prev: any) => {
+                    if (!prev?.parents) return prev
+                    const byId = new Map(assignments.map(a => [a.parentId, a.teamId]))
+                    const newParents = prev.parents.map((p: any) => byId.has(p._id) ? { ...p, teamId: byId.get(p._id) } : p)
+                    return { ...prev, parents: newParents }
+                  })
                 } catch (e) {
                   console.error('Undo bulk delete failed:', e)
                   toast({ title: 'Error', description: 'Undo failed', variant: 'destructive' })
@@ -757,7 +890,14 @@ export default function PaymentsPage() {
           )
         })
         clearSelectedTeams()
-        await fetchData(true)
+        // Optimistically remove deleted teams and unassign their parents locally
+        setTeamsData((prev: any[]) => Array.isArray(prev) ? prev.filter((t: any) => !selectedTeamIds.includes(t._id)) : prev)
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const selected = new Set(selectedTeamIds)
+          const newParents = prev.parents.map((p: any) => selected.has(p.teamId) ? { ...p, teamId: undefined } : p)
+          return { ...prev, parents: newParents }
+        })
       } else {
         toast({ title: 'Error', description: result?.error || 'Failed to delete teams', variant: 'destructive' })
       }
@@ -806,7 +946,11 @@ export default function PaymentsPage() {
                   const rj = await resp.json()
                   if (resp.ok && rj?.success) {
                     toast({ title: 'Reassigned', description: `${parentName} moved back to previous team` })
-                    await fetchData(true)
+                    setAllParentsData((prev: any) => {
+                      if (!prev?.parents) return prev
+                      const newParents = prev.parents.map((p: any) => p._id === parentId ? { ...p, teamId: prevTeamId } : p)
+                      return { ...prev, parents: newParents }
+                    })
                   } else {
                     toast({ title: 'Error', description: rj?.error || 'Failed to undo', variant: 'destructive' })
                   }
@@ -822,7 +966,12 @@ export default function PaymentsPage() {
             </ToastAction>
           )
         })
-        await fetchData(true)
+        // Optimistically move the parent to Unassigned locally
+        setAllParentsData((prev: any) => {
+          if (!prev?.parents) return prev
+          const newParents = prev.parents.map((p: any) => p._id === parentId ? { ...p, teamId: undefined } : p)
+          return { ...prev, parents: newParents }
+        })
       } else {
         toast({ title: 'Error', description: result?.error || 'Failed to remove from team', variant: 'destructive' })
       }
@@ -916,7 +1065,7 @@ export default function PaymentsPage() {
       // Add mock entries for parents with no payments in each team
       for (const t of teams) {
         const teamKey = t.name
-        const parentsInTeam = allParents.filter(p => p.teamId === t._id)
+        const parentsInTeam = allParents.filter(p => p.status !== 'archived' && p.teamId === t._id)
         for (const parent of parentsInTeam) {
           const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
           if (!hasAnyPayment) {
@@ -937,7 +1086,7 @@ export default function PaymentsPage() {
       }
 
       // Unassigned parents with no payments → mock entries
-      const unassignedParents = allParents.filter(p => !p.teamId)
+      const unassignedParents = allParents.filter(p => p.status !== 'archived' && !p.teamId)
       for (const parent of unassignedParents) {
         const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
         if (!hasAnyPayment) {
@@ -956,9 +1105,24 @@ export default function PaymentsPage() {
         }
       }
 
+      // Scoped hide in Unassigned only: exclude locally-hidden parentIds from the Unassigned group
+      if (paymentGroups['Unassigned']) {
+        paymentGroups['Unassigned'] = paymentGroups['Unassigned'].filter((entry: any) => !unassignedHiddenParentIds.includes(String(entry.parentId)))
+      }
       return paymentGroups
     })() :
     { 'All Payments': deduplicatedPayments }
+
+  const unassignedRenderedParentCount = useMemo(() => {
+    try {
+      const arr = (groupedPayments['Unassigned'] || []) as any[]
+      const s = new Set(arr.map((e: any) => String(e.parentId)))
+      return s.size
+    } catch (e) {
+      return (allParents?.filter((p: any) => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length) || 0
+    }
+  }, [groupedPayments, allParents, unassignedHiddenParentIds])
+
 
   const handlePaymentSelection = (paymentId: string, selected: boolean) => {
     if (selected) {
@@ -1451,7 +1615,7 @@ export default function PaymentsPage() {
               >
                 <option value="all">All Teams</option>
                 <option value="unassigned">
-                  Unassigned ({allParents.filter(p => !p.teamId).length})
+                  Unassigned ({unassignedRenderedParentCount})
                 </option>
                 {teams.map((team) => {
                   const teamParentCount = allParents.filter(p => p.teamId === team._id).length
@@ -1638,8 +1802,13 @@ export default function PaymentsPage() {
                                 backgroundColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                               }}
                             />
-                            <h3 className="text-lg font-semibold text-orange-600">
-                              {groupName} ({isUnassigned ? allParents.filter(p => !p.teamId).length : allParents.filter(p => p.teamId === team?._id).length} {(isUnassigned ? allParents.filter(p => !p.teamId).length : allParents.filter(p => p.teamId === team?._id).length) === 1 ? 'parent' : 'parents'})
+                            <h3 className="text-lg font-semibold text-orange-600" data-testid={isUnassigned ? 'unassigned-header' : undefined}>
+                              {groupName} (
+                                <span data-testid={isUnassigned ? 'unassigned-count' : undefined}>
+                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length}
+                                </span>
+                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
+                              )
                             </h3>
                             {isCollapsed ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -1923,7 +2092,7 @@ export default function PaymentsPage() {
                       <div className="w-3 h-3 rounded-full bg-gray-400" />
                       <span>Unassigned</span>
                       <span className="text-muted-foreground">
-                        ({allParents.filter(p => !p.teamId).length} parents)
+                        ({unassignedRenderedParentCount} parents)
                       </span>
                     </div>
                   </SelectItem>
@@ -2032,24 +2201,35 @@ export default function PaymentsPage() {
             if (typeof window !== 'undefined') {
               localStorage.removeItem('payments-cache')
               sessionStorage.removeItem('payments-cache')
+
+          // Optimistically add the new parent to local state to avoid any perceived lag
+          try {
+            const optimistic = { ...newParent, _id: String((newParent as any)._id ?? (newParent as any).id ?? ''), teamId: undefined }
+            setAllParentsData((prev: any) => {
+              const prevParents = Array.isArray(prev?.parents) ? prev.parents : []
+              if (prevParents.some((p: any) => String(p._id) === optimistic._id)) return prev
+              return { ...(prev || {}), parents: [optimistic, ...prevParents] }
+            })
+          } catch {}
+
             }
 
             const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
               fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}&limit=1000`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
               fetch(`/api/payments/analytics?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
               fetch(`/api/teams?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
               fetch(`/api/parents?limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               })
             ])
 
@@ -2062,15 +2242,18 @@ export default function PaymentsPage() {
             if (analyticsResult.success) setAnalytics(analyticsResult.data)
             if (teamsResult.success) setTeamsData(teamsResult.data)
             if (parentsResult.success) {
-              setAllParentsData(parentsResult.data)
+              const normalizedParents = Array.isArray(parentsResult.data?.parents)
+                ? parentsResult.data.parents.map((p: any) => ({ ...p, _id: String(p._id ?? (p as any).id ?? ''), teamId: p.teamId ? String(p.teamId) : undefined }))
+                : []
+              setAllParentsData({ ...parentsResult.data, parents: normalizedParents })
 
-              const parentCount = parentsResult.data?.parents?.length || 0
-              const unassignedCount = parentsResult.data?.parents?.filter((p: any) => !p.teamId).length || 0
+              const parentCount = normalizedParents.length || 0
+              const unassignedCount = normalizedParents.filter((p: any) => !p.teamId).length || 0
 
               console.log('🔄 Data refreshed after parent creation:', {
                 totalParents: parentCount,
                 unassignedParents: unassignedCount,
-                newParentFound: parentsResult.data?.parents?.find((p: any) => p.name === newParent.name)
+                newParentFound: normalizedParents.find((p: any) => p.name === newParent.name)
               })
 
               // Show confirmation that parent appears in UNASSIGNED

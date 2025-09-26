@@ -1,7 +1,7 @@
 import { APIRequestContext, expect } from '@playwright/test';
 
 export async function getKevinParent(request: APIRequestContext) {
-  const res = await request.get('/api/parents?search=' + encodeURIComponent('Kevin Houston') + '&limit=1');
+  const res = await request.get('/api/parents?search=' + encodeURIComponent('Kevin Van Houston') + '&limit=1', { headers: { 'x-api-key': process.env.PREVIEW_X_API_KEY || 'M8KfyCsbYBtgA12U1NIksAqZ' } });
   expect(res.ok()).toBeTruthy();
   const json = await res.json();
   const parent = json?.data?.parents?.[0];
@@ -10,7 +10,7 @@ export async function getKevinParent(request: APIRequestContext) {
 }
 
 export async function getPaymentsForParent(request: APIRequestContext, parentId: string) {
-  const res = await request.get(`/api/payments?parentId=${encodeURIComponent(parentId)}&limit=25`);
+  const res = await request.get(`/api/payments?parentId=${encodeURIComponent(parentId)}&limit=25`, { headers: { 'x-api-key': process.env.PREVIEW_X_API_KEY || 'M8KfyCsbYBtgA12U1NIksAqZ' } });
   expect(res.ok()).toBeTruthy();
   const json = await res.json();
   return json?.data?.payments || [];

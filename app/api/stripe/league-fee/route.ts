@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback: Return a local payment form URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (new URL(request.url)).origin
     const fallbackUrl = `${baseUrl}/payments/league-fee/${leagueFee._id}?parent=${parent._id}`
 
     return NextResponse.json({

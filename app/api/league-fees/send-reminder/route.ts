@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Build Stripe payment link (fallback to local payment page if Stripe not configured)
     const stripe = getStripe()
-    let paymentLink = `${getBaseUrl()}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
+    let paymentLink = `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
 
     if (stripe) {
       try {
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           after_completion: {
             type: 'redirect',
             redirect: {
-              url: `${getBaseUrl()}/payments/success?fee=${fee._id}`,
+              url: `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/payments/success?fee=${fee._id}`,
             },
           },
         })
@@ -154,14 +154,14 @@ export async function POST(request: NextRequest) {
           </div>
           <div style="text-align: center; margin: 24px 0;">
             <a href="${paymentLink}" style="background:#2563eb;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;margin:0 6px 8px;">Pay Online</a>
-            <a href="${getBaseUrl()}/pay/facility/${fee._id}?parent=${parent._id}" style="background:#111827;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;margin:0 6px 8px;">Pay at Facility</a>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/facility/${fee._id}?parent=${parent._id}" style="background:#111827;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;margin:0 6px 8px;">Pay at Facility</a>
           </div>
           <p style="font-size: 14px; color: #374151; margin: 0;">Thank you!<br/>RA1 Basketball</p>
         </div>
       </div>`
 
     // Prepare plain text fallback
-    const text = `Dear ${parent.name},\n\nThis is a friendly reminder about your league fee for ${season?.name || 'the season'}.\n\nAmount: $${fee.amount}\n${fee.processingFee ? `Processing Fee: $${fee.processingFee}\n` : ''}Total: $${fee.totalAmount || fee.amount}\nDue Date: ${new Date(fee.dueDate).toLocaleDateString()}\n\nPay Online: ${paymentLink}\nPay at Facility: ${getBaseUrl()}/pay/facility/${fee._id}?parent=${parent._id}\n\nThank you!\nRA1 Basketball`;
+    const text = `Dear ${parent.name},\n\nThis is a friendly reminder about your league fee for ${season?.name || 'the season'}.\n\nAmount: $${fee.amount}\n${fee.processingFee ? `Processing Fee: $${fee.processingFee}\n` : ''}Total: $${fee.totalAmount || fee.amount}\nDue Date: ${new Date(fee.dueDate).toLocaleDateString()}\n\nPay Online: ${paymentLink}\nPay at Facility: ${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/facility/${fee._id}?parent=${parent._id}\n\nThank you!\nRA1 Basketball`;
 
     // Send email via Resend
     const resend = getResend()

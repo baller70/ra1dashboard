@@ -63,6 +63,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Operational logging: record every received event id and type
+    try {
+      console.log('Stripe webhook received', { id: (event as any)?.id, type: event.type })
+    } catch {}
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
@@ -127,13 +131,18 @@ export async function POST(request: NextRequest) {
         // Handle regular one-time checkout payments
         else if (mode === 'payment' && paymentId) {
           try {
-            await convex.mutation(api.payments.updatePayment as any, {
-              id: paymentId as any,
-              status: 'paid',
-              paidAt: Date.now(),
-              stripePaymentIntentId: paymentIntentId || undefined,
-              notes: 'Marked paid via Stripe webhook (checkout.session.completed)'
-            })
+            const existing = await convex.query(api.payments.getPayment as any, { id: paymentId as any })
+            if (existing?.status === 'paid' && (!!existing?.stripePaymentIntentId && existing.stripePaymentIntentId === paymentIntentId)) {
+              console.log('Webhook no-op: payment already marked paid with same PI', { paymentId, paymentIntentId })
+            } else {
+              await convex.mutation(api.payments.updatePayment as any, {
+                id: paymentId as any,
+                status: 'paid',
+                paidAt: existing?.paidAt || Date.now(),
+                stripePaymentIntentId: paymentIntentId || existing?.stripePaymentIntentId || undefined,
+                notes: 'Marked paid via Stripe webhook (checkout.session.completed)'
+              })
+            }
           } catch (convexErr) {
             console.error('Convex updatePayment failed from webhook:', convexErr)
           }
@@ -142,19 +151,44 @@ export async function POST(request: NextRequest) {
       }
 
       case 'payment_intent.succeeded': {
+        // Persist parent Stripe IDs on success if available
+        try {
+          const pi = event.data.object as Stripe.PaymentIntent
+          const md: any = pi.metadata || {}
+          const parentId = md.parentId as string | undefined
+          const customerId = typeof pi.customer === 'string' ? pi.customer : (pi.customer as any)?.id
+          const paymentMethodId = typeof pi.payment_method === 'string' ? pi.payment_method : (pi.payment_method as any)?.id
+          if (parentId && (customerId || paymentMethodId)) {
+            try {
+              await convex.mutation(api.parents.updateParent as any, {
+                id: parentId as any,
+                ...(customerId ? { stripeCustomerId: customerId } : {}),
+                ...(paymentMethodId ? { stripePaymentMethodId: paymentMethodId } : {}),
+              })
+            } catch (e) {
+              console.warn('Parent update from PI success failed (non-fatal):', (e as any)?.message)
+            }
+          }
+        } catch {}
+
         const pi = event.data.object as Stripe.PaymentIntent
 
         // Handle regular payment updates
         const paymentId = (pi.metadata as any)?.paymentId as string | undefined
         if (paymentId) {
           try {
-            await convex.mutation(api.payments.updatePayment as any, {
-              id: paymentId as any,
-              status: 'paid',
-              paidAt: Date.now(),
-              stripePaymentIntentId: pi.id,
-              notes: 'Marked paid via Stripe webhook (payment_intent.succeeded)'
-            })
+            const existing = await convex.query(api.payments.getPayment as any, { id: paymentId as any })
+            if (existing?.status === 'paid' && (!!existing?.stripePaymentIntentId && existing.stripePaymentIntentId === pi.id)) {
+              console.log('Webhook no-op: payment already marked paid with same PI', { paymentId, paymentIntentId: pi.id })
+            } else {
+              await convex.mutation(api.payments.updatePayment as any, {
+                id: paymentId as any,
+                status: 'paid',
+                paidAt: existing?.paidAt || Date.now(),
+                stripePaymentIntentId: pi.id,
+                notes: 'Marked paid via Stripe webhook (payment_intent.succeeded)'
+              })
+            }
           } catch (convexErr) {
             console.error('Convex updatePayment failed from webhook (PI):', convexErr)
           }
@@ -178,6 +212,33 @@ export async function POST(request: NextRequest) {
             console.error('Convex league fee update failed from webhook (PI):', convexErr)
           }
         }
+        // Mark installment paid if metadata.installmentId present
+        try {
+          const pi = event.data.object as Stripe.PaymentIntent
+          const md: any = pi.metadata || {}
+          const installmentId = md.installmentId as string | undefined
+          if (installmentId) {
+            try {
+              await convex.mutation(api.paymentInstallments.markInstallmentPaid as any, {
+                installmentId: installmentId as any,
+                stripePaymentIntentId: pi.id,
+              })
+            } catch (convexErr) {
+              console.error('Convex markInstallmentPaid failed from webhook (PI):', convexErr)
+            }
+          }
+        } catch {}
+        break
+      }
+
+      case 'payment_intent.processing': {
+        try {
+          const pi = event.data.object as Stripe.PaymentIntent
+          const pmType = (pi.payment_method_types && pi.payment_method_types[0]) || ''
+          if (pmType === 'us_bank_account') {
+            console.log('ACH processing event received; leaving status pending until succeeded', { id: pi.id })
+          }
+        } catch {}
         break
       }
 
@@ -185,6 +246,24 @@ export async function POST(request: NextRequest) {
         // Subscription payment succeeded. We can log for now; deeper linkage can be added later
         const invoice = event.data.object as Stripe.Invoice
         console.log('Subscription invoice paid:', { invoiceId: invoice.id, customer: invoice.customer })
+        break
+      }
+
+      case 'payment_intent.payment_failed': {
+        try {
+          const pi = event.data.object as Stripe.PaymentIntent
+          const md: any = pi.metadata || {}
+          const installmentId = md.installmentId as string | undefined
+          if (installmentId) {
+            try {
+              await convex.mutation(api.paymentInstallments.markInstallmentOverdue as any, {
+                installmentId: installmentId as any,
+              })
+            } catch (convexErr) {
+              console.error('Convex markInstallmentOverdue failed from webhook (PI failed):', convexErr)
+            }
+          }
+        } catch {}
         break
       }
 

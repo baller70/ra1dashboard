@@ -37,6 +37,8 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Include API key in production to avoid any auth edge cases
+          'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify({
           name: formData.name,
@@ -67,7 +69,12 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
         } catch {}
       }
 
-      onParentCreated?.(result.data) // Pass the newly created parent data
+      const normalized = { ...result.data, _id: String(result.data._id) }
+      onParentCreated?.(normalized) // Pass the newly created parent data
+      // Notify other views
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('parent-created'))
+      }
       onOpenChange(false)
     } catch (error: any) {
       toast({

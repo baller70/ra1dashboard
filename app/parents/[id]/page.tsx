@@ -248,6 +248,89 @@ export default function ParentDetailPage() {
   const [executingAction, setExecutingAction] = useState<string | null>(null)
 
   const [formData, setFormData] = useState<Partial<ParentData>>({})
+  const [showEditContact, setShowEditContact] = useState(false)
+  const [showEditEmergency, setShowEditEmergency] = useState(false)
+  const [savingContact, setSavingContact] = useState(false)
+  const [savingEmergency, setSavingEmergency] = useState(false)
+  const [contactForm, setContactForm] = useState({ email: '', phone: '', address: '' })
+  const [emergencyForm, setEmergencyForm] = useState({ emergencyContact: '', emergencyPhone: '', parentEmail: '' })
+
+  const openEditContact = () => {
+    if (!parent) return
+    setContactForm({
+      email: parent.email || '',
+      phone: parent.phone || '',
+      address: parent.address || ''
+    })
+    setShowEditContact(true)
+  }
+
+  const openEditEmergency = () => {
+    if (!parent) return
+    setEmergencyForm({
+      emergencyContact: parent.emergencyContact || '',
+      emergencyPhone: parent.emergencyPhone || '',
+      parentEmail: (parent as any).parentEmail || ''
+    })
+    setShowEditEmergency(true)
+  }
+
+  const saveContact = async () => {
+    try {
+      setSavingContact(true)
+      const updates: any = {
+        email: contactForm.email,
+        phone: contactForm.phone || undefined,
+        address: contactForm.address || undefined,
+      }
+      const res = await fetch(`/api/parents/${parentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
+        body: JSON.stringify(updates)
+      })
+      if (!res.ok) throw new Error('Failed to save contact info')
+      setParent((prev: any) => (prev ? { ...prev, ...updates } : prev))
+      toast({ title: 'Saved', description: 'Contact information updated.' })
+      setShowEditContact(false)
+    } catch (e) {
+      console.error(e)
+      toast({ title: 'Save failed', description: 'Unable to update contact info.', variant: 'destructive' })
+    } finally {
+      setSavingContact(false)
+    }
+  }
+
+  const saveEmergency = async () => {
+    try {
+      setSavingEmergency(true)
+      const updates: any = {
+        emergencyContact: emergencyForm.emergencyContact || undefined,
+        emergencyPhone: emergencyForm.emergencyPhone || undefined,
+        parentEmail: emergencyForm.parentEmail || undefined,
+      }
+      const res = await fetch(`/api/parents/${parentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
+        body: JSON.stringify(updates)
+      })
+      if (!res.ok) throw new Error('Failed to save emergency contact')
+      setParent((prev: any) => (prev ? { ...prev, ...updates } : prev))
+      toast({ title: 'Saved', description: 'Emergency contact updated.' })
+      setShowEditEmergency(false)
+    } catch (e) {
+      console.error(e)
+      toast({ title: 'Save failed', description: 'Unable to update emergency contact.', variant: 'destructive' })
+    } finally {
+      setSavingEmergency(false)
+    }
+  }
+
 
   // Extract data from queries
   // const payments = paymentsData?.payments || []
@@ -465,8 +548,11 @@ export default function ParentDetailPage() {
 
   const updateRiskStatus = async () => {
     const response = await fetch(`/api/parents/${parentId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'ra1-dashboard-api-key-2024'
+      },
       body: JSON.stringify({
         riskLevel: aiAnalysis?.riskLevel,
         lastRiskAssessment: new Date()
@@ -702,8 +788,11 @@ export default function ParentDetailPage() {
         <div className="grid gap-6 md:grid-cols-3">
           {/* Contact Information */}
           <Card>
-            <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Contact Information</CardTitle>
+              <Button variant="outline" size="sm" onClick={openEditContact}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -736,8 +825,11 @@ export default function ParentDetailPage() {
 
           {/* Emergency Contact */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Emergency Contact</CardTitle>
+              <Button variant="outline" size="sm" onClick={openEditEmergency}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {parent.emergencyContact && (
@@ -1208,6 +1300,75 @@ export default function ParentDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Contact Information Dialog */}
+      <Dialog open={showEditContact} onOpenChange={setShowEditContact}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Contact Information</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="editEmail">Email</Label>
+              <Input id="editEmail" type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="editPhone">Phone</Label>
+              <Input id="editPhone" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="editAddress">Address</Label>
+              <Input id="editAddress" value={contactForm.address} onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowEditContact(false)}>Cancel</Button>
+              <Button onClick={saveContact} disabled={savingContact}>
+                {savingContact ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {savingContact ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Emergency Contact Dialog */}
+      <Dialog open={showEditEmergency} onOpenChange={setShowEditEmergency}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Emergency Contact</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="editEmergencyContact">Contact Person</Label>
+              <Input id="editEmergencyContact" value={emergencyForm.emergencyContact} onChange={(e) => setEmergencyForm({ ...emergencyForm, emergencyContact: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="editParentEmail">Parent Email</Label>
+              <Input id="editParentEmail" type="email" value={emergencyForm.parentEmail} onChange={(e) => setEmergencyForm({ ...emergencyForm, parentEmail: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="editEmergencyPhone">Emergency Phone</Label>
+              <Input id="editEmergencyPhone" value={emergencyForm.emergencyPhone} onChange={(e) => setEmergencyForm({ ...emergencyForm, emergencyPhone: e.target.value })} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowEditEmergency(false)}>Cancel</Button>
+              <Button onClick={saveEmergency} disabled={savingEmergency}>
+                {savingEmergency ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {savingEmergency ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   )
 }

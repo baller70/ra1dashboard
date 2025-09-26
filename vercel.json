@@ -19,12 +19,18 @@
       "destination": "/api/payments/[id]"
     },
     {
-      "source": "/api/contracts/:id", 
+      "source": "/api/contracts/:id",
       "destination": "/api/contracts/[id]"
     },
     {
       "source": "/api/templates/:id",
       "destination": "/api/templates/[id]"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/installments/charge-overdue",
+      "schedule": "0 12 * * *"
     }
   ]
 }

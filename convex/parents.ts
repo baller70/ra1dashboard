@@ -211,3 +211,27 @@ export const updateParent = mutation({
     return await ctx.db.get(id);
   },
 });
+
+// Simple mutation to unassign parent from team
+export const unassignFromTeam = mutation({
+  args: {
+    parentId: v.id("parents")
+  },
+  handler: async (ctx, args) => {
+    const { parentId } = args;
+
+    console.log('🔍 Unassigning parent from team:', parentId);
+
+    // Simply patch the parent to remove teamId
+    await ctx.db.patch(parentId, {
+      teamId: undefined,
+      updatedAt: Date.now()
+    });
+
+    // Return the updated parent
+    const updatedParent = await ctx.db.get(parentId);
+    console.log('✅ Parent unassigned:', updatedParent);
+
+    return updatedParent;
+  },
+});

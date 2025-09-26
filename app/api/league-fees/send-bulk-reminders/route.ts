@@ -68,7 +68,7 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
 
   if (!stripe) {
     // Fallback to local payment page if Stripe is not configured
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin
     return `${baseUrl}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
   }
 
@@ -129,7 +129,7 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/payments/success?fee=${fee._id}`
+          url: `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/payments/success?fee=${fee._id}`
         }
       }
     })
@@ -139,14 +139,14 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
   } catch (error) {
     console.error('Error creating Stripe payment link:', error)
     // Fallback to local payment page
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin
     return `${baseUrl}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
   }
 }
 
 // Generate AI-powered personalized email content
 const generatePersonalizedEmail = async (parent: any, fee: any, paymentLink: string) => {
-  const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${fee._id}?parent=${parent._id}`
+  const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/facility/${fee._id}?parent=${parent._id}`
   
   // AI-generated personalized email content
   const emailContent = `

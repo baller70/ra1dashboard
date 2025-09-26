@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
     const emailTemplate = await generatePersonalizedEmail(sampleParent, sampleFee, samplePaymentLink)
     
     // Create facility payment link
-    const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${sampleFee._id}?parent=${sampleParent._id}`
+    const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/facility/${sampleFee._id}?parent=${sampleParent._id}`
 
     const emailPreviewData = {
       subject: emailTemplate.subject,
