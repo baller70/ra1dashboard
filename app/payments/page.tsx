@@ -1118,7 +1118,7 @@ export default function PaymentsPage() {
       // Add mock entries for parents with no payments in each team
       for (const t of teams) {
         const teamKey = t.name
-        const parentsInTeam = allParents.filter(p => p.status !== 'archived' && p.teamId === t._id)
+        const parentsInTeam = allParents.filter(p => p.teamId === t._id)
         for (const parent of parentsInTeam) {
           const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
           if (!hasAnyPayment) {
@@ -1139,7 +1139,7 @@ export default function PaymentsPage() {
       }
 
       // Unassigned parents with no payments → mock entries
-      const unassignedParents = allParents.filter(p => p.status !== 'archived' && !p.teamId)
+      const unassignedParents = allParents.filter(p => !p.teamId)
       for (const parent of unassignedParents) {
         const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
         if (!hasAnyPayment) {
@@ -1788,7 +1788,7 @@ export default function PaymentsPage() {
                         {teams.length > 0 && (
                           <div className="flex items-center space-x-1">
                             {teams.slice(0, 3).map((team) => {
-                              const teamParentCount = allParents.filter(p => p.status !== 'archived' && p.teamId === team._id).length
+                              const teamParentCount = allParents.filter(p => p.teamId === team._id).length
                               return (
                                 <div
                                   key={team._id}
@@ -1858,9 +1858,9 @@ export default function PaymentsPage() {
                             <h3 className="text-lg font-semibold text-orange-600" data-testid={isUnassigned ? 'unassigned-header' : undefined}>
                               {groupName} (
                                 <span data-testid={isUnassigned ? 'unassigned-count' : undefined}>
-                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.status !== 'archived' && p.teamId === team?._id).length}
+                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length}
                                 </span>
-                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.status !== 'archived' && p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
+                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
                               )
                             </h3>
                             {isCollapsed ? (
@@ -1892,6 +1892,8 @@ export default function PaymentsPage() {
                       </CollapsibleTrigger>
 
                       <CollapsibleContent className="space-y-3">
+                        {/* Debug: Log group payments for RA1 5th/6th Boys */}
+                        {groupName === 'RA1 5th/6th Boys' && console.log('RA1 5th/6th Boys groupPayments:', groupPayments.length, groupPayments)}
                         {groupPayments.length > 0 ? (
                           <div className="space-y-3 border-l-4 pl-4 ml-2" style={{
                             borderColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
@@ -2165,7 +2167,7 @@ export default function PaymentsPage() {
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: team.color || '#f97316' }} />
                     <span className="font-medium">{team.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{allParents.filter(p => p.status !== 'archived' && p.teamId === team._id).length} parents</span>
+                  <span className="text-xs text-muted-foreground">{allParents.filter(p => p.teamId === team._id).length} parents</span>
                 </div>
               ))}
             </div>
@@ -2205,7 +2207,7 @@ export default function PaymentsPage() {
                     </div>
                   </SelectItem>
                   {teams.map((team) => {
-                    const teamParentCount = allParents.filter(p => p.status !== 'archived' && p.teamId === team._id).length
+                    const teamParentCount = allParents.filter(p => p.teamId === team._id).length
                     return (
                       <SelectItem key={team._id} value={team._id}>
                         <div className="flex items-center space-x-2">
