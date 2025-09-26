@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Update payment method in Convex
-    const result = await convex.mutation(api.payments.updatePaymentMethod, {
-      paymentId,
+    // Update payment method in Convex using existing updatePayment mutation
+    const result = await convex.mutation(api.payments.updatePayment, {
+      id: paymentId,
       paymentMethod
     })
 
