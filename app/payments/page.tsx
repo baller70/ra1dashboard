@@ -57,7 +57,8 @@ import {
   UserPlus,
   ChevronDown,
   ChevronUp,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { PaymentWithRelations, PaymentStats, PaymentAnalytics } from '../../lib/types'
@@ -388,6 +389,8 @@ export default function PaymentsPage() {
 
   // Rate limit storage: parentId -> last attempt timestamp
   const [deleteCooldowns, setDeleteCooldowns] = useState<Record<string, number>>({})
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState<string | null>(null)
+  const [tempPaymentMethod, setTempPaymentMethod] = useState<string>('')
 
   // Safer delete with validation, two-step confirm, audit logging, rollback, and rate limiting
   const handleDeleteParent = async (parentId: string, parentName: string) => {
@@ -979,6 +982,41 @@ export default function PaymentsPage() {
       console.error('Error unassigning parent:', e)
       toast({ title: 'Error', description: 'Failed to remove from team', variant: 'destructive' })
     }
+  }
+
+  const updatePaymentMethod = async (paymentId: string, newMethod: string) => {
+    try {
+      const response = await fetch('/api/payments/update-method', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
+        body: JSON.stringify({
+          paymentId,
+          paymentMethod: newMethod
+        })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Payment method updated successfully",
+        })
+        // Refresh data to show updated payment method
+        fetchData()
+      } else {
+        throw new Error('Failed to update payment method')
+      }
+    } catch (error) {
+      console.error('Error updating payment method:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update payment method",
+        variant: "destructive",
+      })
+    }
+    setEditingPaymentMethod(null)
   }
 
   const filteredPayments = payments.filter(payment => {
@@ -1880,19 +1918,70 @@ export default function PaymentsPage() {
                               <div>
                                   <div className="flex items-center space-x-2">
                                   <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
-                                      <Badge className={getPaymentMethodColor((payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card'))}>
-                                        {(() => {
-                                          const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card');
-                                          return {
-                                            'stripe_card': 'Credit Card',
-                                            'credit_card': 'Credit Card',
-                                            'card': 'Credit Card',
-                                            'check': 'Check',
-                                            'cheque': 'Check',
-                                            'cash': 'Cash',
-                                          }[method] || 'Credit Card'
-                                        })()}
-                                      </Badge>
+
+                                      {/* Editable Payment Method */}
+                                      {editingPaymentMethod === payment._id ? (
+                                        <div className="flex items-center gap-1">
+                                          <Select
+                                            value={tempPaymentMethod}
+                                            onValueChange={setTempPaymentMethod}
+                                          >
+                                            <SelectTrigger className="h-6 text-xs w-28">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="stripe_card">Credit Card</SelectItem>
+                                              <SelectItem value="check">Check</SelectItem>
+                                              <SelectItem value="cash">Cash</SelectItem>
+                                              <SelectItem value="ach">ACH/Bank</SelectItem>
+                                              <SelectItem value="venmo">Venmo</SelectItem>
+                                              <SelectItem value="zelle">Zelle</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 w-6 p-0"
+                                            onClick={() => updatePaymentMethod(payment._id, tempPaymentMethod)}
+                                          >
+                                            <CheckCircle className="h-3 w-3 text-green-600" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 w-6 p-0"
+                                            onClick={() => setEditingPaymentMethod(null)}
+                                          >
+                                            <X className="h-3 w-3 text-gray-400" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-1">
+                                          <Badge
+                                            className={`${getPaymentMethodColor((payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card'))} cursor-pointer hover:opacity-80`}
+                                            onClick={() => {
+                                              setEditingPaymentMethod(payment._id)
+                                              setTempPaymentMethod(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card')
+                                            }}
+                                          >
+                                            {(() => {
+                                              const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card');
+                                              return {
+                                                'stripe_card': 'Credit Card',
+                                                'credit_card': 'Credit Card',
+                                                'card': 'Credit Card',
+                                                'check': 'Check',
+                                                'cheque': 'Check',
+                                                'cash': 'Cash',
+                                                'ach': 'ACH/Bank',
+                                                'venmo': 'Venmo',
+                                                'zelle': 'Zelle'
+                                              }[method] || 'Credit Card'
+                                            })()}
+                                          </Badge>
+                                          <Edit className="h-3 w-3 text-gray-400" />
+                                        </div>
+                                      )}
                                   {!payment.isMockEntry && payment.status === 'overdue' && (
                                     <Badge variant="destructive" className="text-xs font-bold">
                                       OVERDUE

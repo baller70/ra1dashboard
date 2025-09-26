@@ -39,7 +39,8 @@ import {
   Shield,
   Target,
   Send,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '../../../hooks/use-toast'
@@ -254,6 +255,8 @@ export default function ParentDetailPage() {
   const [savingEmergency, setSavingEmergency] = useState(false)
   const [contactForm, setContactForm] = useState({ email: '', phone: '', address: '' })
   const [emergencyForm, setEmergencyForm] = useState({ emergencyContact: '', emergencyPhone: '', parentEmail: '' })
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState<string | null>(null)
+  const [tempPaymentMethod, setTempPaymentMethod] = useState<string>('')
 
   const openEditContact = () => {
     if (!parent) return
@@ -273,6 +276,45 @@ export default function ParentDetailPage() {
       parentEmail: (parent as any).parentEmail || ''
     })
     setShowEditEmergency(true)
+  }
+
+  const updatePaymentMethod = async (paymentId: string, newMethod: string) => {
+    try {
+      const response = await fetch('/api/payments/update-method', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ra1-dashboard-api-key-2024'
+        },
+        body: JSON.stringify({
+          paymentId,
+          paymentMethod: newMethod
+        })
+      })
+
+      if (response.ok) {
+        // Update local state
+        setPayments(prev => prev.map(payment =>
+          payment._id === paymentId
+            ? { ...payment, paymentMethod: newMethod }
+            : payment
+        ))
+        toast({
+          title: "Success",
+          description: "Payment method updated successfully",
+        })
+      } else {
+        throw new Error('Failed to update payment method')
+      }
+    } catch (error) {
+      console.error('Error updating payment method:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update payment method",
+        variant: "destructive",
+      })
+    }
+    setEditingPaymentMethod(null)
   }
 
   const saveContact = async () => {
@@ -1217,6 +1259,73 @@ export default function ParentDetailPage() {
                               Paid: {new Date(payment.paidAt).toLocaleDateString()}
                             </p>
                           )}
+
+                          {/* Payment Method - Editable */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-muted-foreground">Method:</span>
+                            {editingPaymentMethod === payment._id ? (
+                              <div className="flex items-center gap-1">
+                                <Select
+                                  value={tempPaymentMethod}
+                                  onValueChange={setTempPaymentMethod}
+                                >
+                                  <SelectTrigger className="h-6 text-xs w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="stripe_card">Credit Card</SelectItem>
+                                    <SelectItem value="check">Check</SelectItem>
+                                    <SelectItem value="cash">Cash</SelectItem>
+                                    <SelectItem value="ach">ACH/Bank</SelectItem>
+                                    <SelectItem value="venmo">Venmo</SelectItem>
+                                    <SelectItem value="zelle">Zelle</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => updatePaymentMethod(payment._id, tempPaymentMethod)}
+                                >
+                                  <CheckCircle className="h-3 w-3 text-green-600" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setEditingPaymentMethod(null)}
+                                >
+                                  <X className="h-3 w-3 text-gray-400" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs cursor-pointer hover:bg-gray-50"
+                                  onClick={() => {
+                                    setEditingPaymentMethod(payment._id)
+                                    setTempPaymentMethod(payment.paymentMethod || 'stripe_card')
+                                  }}
+                                >
+                                  {(() => {
+                                    const method = payment.paymentMethod || 'stripe_card'
+                                    return {
+                                      'stripe_card': 'Credit Card',
+                                      'credit_card': 'Credit Card',
+                                      'card': 'Credit Card',
+                                      'check': 'Check',
+                                      'cash': 'Cash',
+                                      'ach': 'ACH/Bank',
+                                      'venmo': 'Venmo',
+                                      'zelle': 'Zelle'
+                                    }[method] || 'Credit Card'
+                                  })()}
+                                </Badge>
+                                <Edit className="h-3 w-3 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                   </div>

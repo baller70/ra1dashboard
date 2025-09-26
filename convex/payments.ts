@@ -1081,4 +1081,38 @@ export const cleanupTestPaymentPlans = mutation({
             }
         },
     });
-    
+
+export const updatePaymentMethod = mutation({
+  args: {
+    paymentId: v.id("payments"),
+    paymentMethod: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { paymentId, paymentMethod } = args;
+
+    await ctx.db.patch(paymentId, {
+      paymentMethod,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+export const updatePaymentDescription = mutation({
+  args: {
+    paymentId: v.id("payments"),
+    description: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { paymentId, description } = args;
+
+    // Update the payment with new description
+    await ctx.db.patch(paymentId, {
+      description,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
