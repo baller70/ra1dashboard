@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create real Stripe customer using production keys
-    const { stripe } = await import('../../../lib/stripe')
+    const { stripe } = await import('@/lib/stripe')
 
     const customer = await stripe.customers.create({
       email: parent.email,
