@@ -17,8 +17,7 @@ export async function POST(
     // Simple direct patch to remove team assignment
     await convex.mutation(api.parents.updateParent, {
       id: parentId as any,
-      teamId: undefined,
-      updatedAt: Date.now()
+      teamId: undefined
     });
 
     console.log('✅ Successfully unassigned parent:', parentId);

@@ -119,8 +119,8 @@ export default function ParentsPage() {
         const result = await response.json()
         console.log('✅ Delete successful:', result)
 
-        // Remove the parent from the local state
-        setParents(prevParents => prevParents.filter(p => p._id !== parentId))
+        // Remove the parent from the local state (normalize id types)
+        setParents(prevParents => prevParents.filter(p => String(p._id) !== String(parentId)))
 
         // Immediately dispatch event for dashboard refresh
         window.dispatchEvent(new Event('parent-deleted'))
@@ -189,7 +189,10 @@ export default function ParentsPage() {
           directParentsLength: data.parents?.length
         })
         // API returns { success: true, data: { parents: [...] } }
-        const parentsArray = data.data?.parents || data.parents || []
+        const parentsArray = (data.data?.parents || data.parents || []).map((p: any) => ({
+          ...p,
+          _id: String((p as any)._id)
+        }))
         console.log('Setting parents array:', parentsArray.length, 'parents')
         setParents(parentsArray)
       } else {
@@ -204,6 +207,18 @@ export default function ParentsPage() {
 
   useEffect(() => {
     fetchParents()
+  }, [])
+
+  // Listen for external create/delete events to stay in sync
+  useEffect(() => {
+    const onCreated = () => fetchParents()
+    const onDeleted = () => fetchParents()
+    window.addEventListener('parent-created', onCreated)
+    window.addEventListener('parent-deleted', onDeleted)
+    return () => {
+      window.removeEventListener('parent-created', onCreated)
+      window.removeEventListener('parent-deleted', onDeleted)
+    }
   }, [])
 
   // Debug log when parents state changes
@@ -661,15 +676,16 @@ export default function ParentsPage() {
   }
 
   const handleParentSelection = (parentId: string, selected: boolean) => {
+    const id = String(parentId)
     if (selected) {
-      setSelectedParents(prev => [...prev, parentId])
+      setSelectedParents(prev => [...prev, id])
     } else {
-      setSelectedParents(prev => prev.filter(id => id !== parentId))
+      setSelectedParents(prev => prev.filter(existing => existing !== id))
     }
   }
 
   const selectAllParents = () => {
-    setSelectedParents(filteredParents.map(p => p._id))
+    setSelectedParents(filteredParents.map(p => String(p._id)))
   }
 
   const clearSelection = () => {
@@ -1204,15 +1220,15 @@ export default function ParentsPage() {
         <div className="grid gap-4">
           {filteredParents.length > 0 ? (
             filteredParents.map((parent) => (
-                              <Card key={parent._id} className={`hover:shadow-md transition-shadow ${selectedParents.includes(parent._id) ? 'ring-2 ring-purple-200 bg-purple-50' : ''}`}>
+                              <Card key={String(parent._id)} className={`hover:shadow-md transition-shadow ${selectedParents.includes(String(parent._id)) ? 'ring-2 ring-purple-200 bg-purple-50' : ''}`}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          checked={selectedParents.includes(parent._id)}
-                          onChange={(e) => handleParentSelection(parent._id, e.target.checked)}
+                          checked={selectedParents.includes(String(parent._id))}
+                          onChange={(e) => handleParentSelection(String(parent._id), e.target.checked)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
                         <div className="relative">
@@ -1900,8 +1916,11 @@ export default function ParentsPage() {
         open={showParentCreationModal}
         onOpenChange={setShowParentCreationModal}
         onParentCreated={(newParent) => {
-          // Add the new parent to the current list and refresh
-          setParents(prev => [...prev, newParent])
+          const normalized = { ...newParent, _id: String(newParent._id) }
+          // Add the new parent to the beginning and refresh
+          setParents(prev => [normalized, ...prev])
+          // Ensure all views refresh
+          window.dispatchEvent(new Event('parent-created'))
         }}
       />
     </AppLayout>

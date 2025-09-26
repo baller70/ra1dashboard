@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
             quantity: 1,
           },
         ],
-        success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payments/${parentId}?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payments/${parentId}`,
+        success_url: `${process.env.NEXT_PUBLIC_BASE_URL || (new URL(request.url)).origin}/payments/${parentId}?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || (new URL(request.url)).origin}/payments/${parentId}`,
         metadata: {
           parentId: parent._id,
         },

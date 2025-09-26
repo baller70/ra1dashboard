@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const parentId = searchParams.get('parentId');
-    const returnUrl = searchParams.get('returnUrl') || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payments`;
+    const returnUrl = searchParams.get('returnUrl') || `${process.env.NEXT_PUBLIC_BASE_URL || (new URL(request.url)).origin}/payments`;
 
     if (!parentId) {
       return NextResponse.json({ error: 'Parent ID is required' }, { status: 400 });

@@ -29,6 +29,22 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Execute only at 12:00 America/New_York (DST-aware). We schedule hourly in UTC and gate here.
+  try {
+    const now = new Date()
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now)
+    const hour = Number(parts.find((p) => p.type === 'hour')?.value)
+    const minute = Number(parts.find((p) => p.type === 'minute')?.value)
+    if (!(hour === 12 && minute === 0)) {
+      return NextResponse.json({ ok: true, skipped: true, reason: 'Not 12:00 America/New_York', hour, minute })
+    }
+  } catch {}
+
   try {
     // Fetch overdue installments
     const overdue: any[] = await convexHttp.query(api.paymentInstallments.getOverdueInstallments as any, {})

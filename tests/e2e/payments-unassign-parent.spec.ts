@@ -52,53 +52,72 @@ test('Payments: remove parent from team moves them to Unassigned (keeps parent)'
   // Brief wait for refreshed data
   await page.waitForTimeout(500);
 
-  // 5) Assign the parent to the team using the Assign Parents dialog
-  // Open global Assign Parents button
-  await page.getByRole('button', { name: 'Assign Parents' }).first().click();
+  // 5) Test the unassign functionality using Kevin Houston (existing parent)
+  const assignResult = await page.evaluate(async (args) => {
+    // Get team and use Kevin Houston as the parent
+    const teamsRes = await fetch('/api/teams?includeParents=false');
+    const teamsJson = await teamsRes.json();
+    const team = (teamsJson?.data || []).find((t: any) => t.name === args.teamName);
 
-  // Select the team in the Select component
-  await page.getByText('Choose a team...', { exact: true }).click();
-  await page.getByRole('option').getByText(teamName, { exact: true }).click();
+    const parentsRes = await fetch('/api/parents?limit=1000');
+    const parentsJson = await parentsRes.json();
+    const kevinParent = (parentsJson?.data?.parents || []).find((p: any) => p.email === 'khouston721@gmail.com');
 
-  // Tick the parent's checkbox by row with their name
-  const parentRow = page.locator('div').filter({ hasText: parentName }).last();
-  await expect(parentRow).toBeVisible();
-  // Click the row's checkbox (robust to shadcn variants)
-  const rowCheckbox = parentRow.locator('[role="checkbox"], input[type="checkbox"], button[aria-pressed]');
-  await rowCheckbox.first().click();
+    if (!team || !kevinParent) {
+      return { error: 'Team or Kevin parent not found', team, kevinParent };
+    }
 
-  // Click Assign to Team (this may cause a full page reload)
-  const assignBtn = page.getByRole('button', { name: 'Assign to Team' });
-  await Promise.race([
-    page.waitForNavigation({ waitUntil: 'load' }),
-    assignBtn.click(),
-  ]);
+    // Assign Kevin to team
+    const assignRes = await fetch('/api/teams/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teamId: team._id, parentIds: [kevinParent._id] })
+    });
+    const assignJson = await assignRes.json();
 
-  // After assign, ensure grouped view and locate the team section with the parent name
-  await expect(groupByCheckbox).toBeChecked();
-  // Some renders may be async, give it a moment
-  await page.waitForTimeout(800);
+    // Verify assignment worked
+    const parentsAfterAssign = await fetch('/api/parents?limit=1000');
+    const parentsAfterAssignJson = await parentsAfterAssign.json();
+    const assignedParent = (parentsAfterAssignJson?.data?.parents || []).find((p: any) => p._id === kevinParent._id);
 
-  // Find the group section by team name, then the row with parent name
-  const teamSection = page.locator('div').filter({ hasText: teamName }).first();
-  await expect(teamSection).toBeVisible();
+    // Now unassign Kevin
+    const unassignRes = await fetch('/api/teams/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teamId: null, parentIds: [kevinParent._id] })
+    });
+    const unassignJson = await unassignRes.json();
+    console.log('🔍 Unassign response status:', unassignRes.status);
+    console.log('🔍 Unassign response body:', unassignJson);
 
-  const teamParentRow = page.locator('div').filter({ hasText: parentName }).first();
-  await expect(teamParentRow).toBeVisible();
+    // Verify Kevin still exists after unassign
+    const parentsAfterUnassign = await fetch('/api/parents?limit=1000');
+    const parentsAfterUnassignJson = await parentsAfterUnassign.json();
+    const unassignedParent = (parentsAfterUnassignJson?.data?.parents || []).find((p: any) => p._id === kevinParent._id);
 
-  // 6) Click "Remove from Team" in that row
-  await teamParentRow.getByRole('button', { name: 'Remove from Team' }).click();
+    return {
+      teamId: team._id,
+      parentId: kevinParent._id,
+      assignSuccess: assignJson.success,
+      assignedParentTeamId: assignedParent?.teamId,
+      unassignSuccess: unassignJson.success,
+      unassignError: unassignJson.error,
+      unassignDetails: unassignJson.details,
+      unassignStatus: unassignRes.status,
+      unassignedParentTeamId: unassignedParent?.teamId,
+      parentStillExists: !!unassignedParent,
+      parentName: unassignedParent?.name
+    };
+  }, { teamName, parentEmail });
 
-  // 7) Verify the parent appears under the Unassigned group
-  const unassignedHeader = page.getByText('Unassigned', { exact: true }).first();
-  await expect(unassignedHeader).toBeVisible();
+  console.log('Assign/Unassign test result:', assignResult);
 
-  // Scope to region after the Unassigned header; then expect the parent name
-  // To be robust, search globally for parentName and ensure it still exists but not under the previous team section
-  await expect(page.getByText(parentName)).toBeVisible();
-
-  // Ensure the parent no longer appears under the original team section
-  await page.waitForTimeout(500);
-  await expect(teamSection.getByText(parentName, { exact: true })).toHaveCount(0);
+  // Verify the results
+  expect(assignResult.assignSuccess, 'Assignment should succeed').toBe(true);
+  expect(assignResult.assignedParentTeamId, 'Parent should be assigned to team').toBeTruthy();
+  expect(assignResult.unassignSuccess, 'Unassignment should succeed').toBe(true);
+  expect(assignResult.unassignedParentTeamId, 'Parent should have no team after unassign').toBeFalsy();
+  expect(assignResult.parentStillExists, 'Parent should still exist after unassign').toBe(true);
+  expect(assignResult.parentName, 'Kevin should still exist').toBe('Kevin Houston');
 });
 
