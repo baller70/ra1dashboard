@@ -986,6 +986,8 @@ export default function PaymentsPage() {
 
   const updatePaymentMethod = async (paymentId: string, newMethod: string) => {
     try {
+      console.log('Updating payment method:', { paymentId, newMethod })
+
       const response = await fetch('/api/payments/update-method', {
         method: 'POST',
         headers: {
@@ -998,15 +1000,28 @@ export default function PaymentsPage() {
         })
       })
 
+      const result = await response.json()
+      console.log('API response:', result)
+
       if (response.ok) {
+        // Update local state immediately
+        setPayments(prev => prev.map(payment =>
+          payment._id === paymentId
+            ? { ...payment, paymentMethod: newMethod }
+            : payment
+        ))
+
         toast({
           title: "Success",
           description: "Payment method updated successfully",
         })
-        // Refresh data to show updated payment method
-        fetchData()
+
+        // Also refresh data to ensure consistency
+        setTimeout(() => {
+          fetchData()
+        }, 500)
       } else {
-        throw new Error('Failed to update payment method')
+        throw new Error(result.error || 'Failed to update payment method')
       }
     } catch (error) {
       console.error('Error updating payment method:', error)

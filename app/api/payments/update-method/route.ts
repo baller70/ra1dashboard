@@ -14,20 +14,26 @@ export async function POST(request: NextRequest) {
     }
 
     const { paymentId, paymentMethod } = await request.json()
+    console.log('API received:', { paymentId, paymentMethod })
 
     if (!paymentId || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     // Update payment method in Convex
-    await convex.mutation(api.payments.updatePaymentMethod, {
+    const result = await convex.mutation(api.payments.updatePaymentMethod, {
       paymentId,
       paymentMethod
     })
 
-    return NextResponse.json({ success: true })
+    console.log('Convex mutation result:', result)
+
+    return NextResponse.json({ success: true, result })
   } catch (error) {
     console.error('Error updating payment method:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
