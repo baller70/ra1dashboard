@@ -1217,6 +1217,26 @@ export default function PaymentsPage() {
     }
   }, [groupedPayments, allParents, unassignedHiddenParentIds])
 
+  // Unique visible parents across all groups (respects current filters and excludes archived)
+  const displayedParentCount = useMemo(() => {
+    try {
+      const ids = new Set<string>()
+      for (const arr of Object.values(groupedPayments) as any[]) {
+        (arr as any[]).forEach((e: any) => {
+          const pid = String(e?.parentId || '')
+          if (!pid) return
+          const parent = allParents.find((p: any) => String(p._id) === pid)
+          const status = String((parent?.status || 'active')).toLowerCase()
+          if (status !== 'archived') ids.add(pid)
+        })
+      }
+      return ids.size
+    } catch {
+      return 0
+    }
+  }, [groupedPayments, allParents])
+
+
 
   const handlePaymentSelection = (paymentId: string, selected: boolean) => {
     if (selected) {
@@ -1384,7 +1404,7 @@ export default function PaymentsPage() {
   // Choose displayed values: if API returns > 0 use it, otherwise use plan-based fallback
   const uiCollected = ((analytics?.collectedPayments ?? 0) > 0)
     ? Number(analytics?.collectedPayments)
-    : Number(planAdj.collected)
+    : Number(summary.paid)
   const uiPending = ((analytics?.pendingPayments ?? 0) > 0)
     ? Number(analytics?.pendingPayments)
     : Number(planAdj.pending)
@@ -1544,7 +1564,7 @@ export default function PaymentsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {loading ? '—' : allParents.length}
+                        {loading ? '—' : displayedParentCount}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {loading ? 'Loading...' : 'Connected to parents page'}
@@ -1608,7 +1628,7 @@ export default function PaymentsPage() {
                       <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{payments.filter(p => p.paymentPlan).length}</div>
+                      <div className="text-2xl font-bold">{uiActivePlans}</div>
                       <p className="text-xs text-muted-foreground">payment plans</p>
                     </CardContent>
                   </Card>
