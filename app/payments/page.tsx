@@ -1545,8 +1545,8 @@ export default function PaymentsPage() {
             ))}
           </TabsList>
 
-          {/* Tab Content - Same content for each program */}
-          {PROGRAMS.map((program) => (
+          {/* Tab Content - Render only the active program's content to ensure scoped analytics */}
+          {PROGRAMS.filter(p => p.id === activeProgram).map((program) => (
             <TabsContent key={program.id} value={program.id} className="mt-6">
               <div className="space-y-6">
                 {/* Show current program name in title */}
