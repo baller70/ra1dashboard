@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const parentId = searchParams.get('parentId');
     const program = searchParams.get('program') || undefined;
 
-    // Get payments without relying on backend program filtering; we'll apply robust inference here
+    // Get payments without relying on backend program filtering; apply STRICT matching here
     const base = await (convexHttp as any).query(api.payments.getPayments, {
       page: 1,
       limit: Math.max(limit * 5, 500),
@@ -42,23 +42,19 @@ export async function GET(request: NextRequest) {
 
     let payments = (base?.payments || []) as any[];
 
-    // Build team map for fallback inference via parent.teamId
-    let teamMap = new Map<string, any>();
-    try {
-      const teams = await (convexHttp as any).query(api.teams.getTeams as any, { limit: 1000 });
-      for (const t of teams as any[]) teamMap.set(String((t as any)._id || ''), t);
-    } catch (_) {}
-
+    // STRICT program isolation (no team fallback):
+    // - Non-yearly tabs: include ONLY if explicit plan.program OR parent.program equals requested
+    // - Yearly tab: include if explicit program is 'yearly-program' OR no explicit program at all
     if (program) {
       const requested = String(program);
       payments = payments.filter((p: any) => {
         const planProg = String((p?.paymentPlan as any)?.program || '').trim();
-        if (planProg) return planProg === requested;
         const parentProg = String((p?.parent as any)?.program || '').trim();
-        if (parentProg) return parentProg === requested;
-        const team = teamMap.get(String((p?.parent as any)?.teamId || ''));
-        const tProg = String((team as any)?.program || '').trim();
-        return tProg ? tProg === requested : requested === 'yearly-program';
+        const explicit = planProg || parentProg;
+        if (requested === 'yearly-program') {
+          return !explicit || explicit === 'yearly-program';
+        }
+        return explicit === requested;
       });
     }
 

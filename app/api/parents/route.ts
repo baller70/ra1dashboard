@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const page = Math.floor(parseInt(searchParams.get('offset') || '0') / limit) + 1
 
-    // Fetch from Convex (do not rely on backend program filter; we'll apply robust inference here)
+    // Fetch from Convex (do not rely on backend program filter; we'll apply strict matching here)
     const baseResult = await convex.query(api.parents.getParents, {
       page: 1, // fetch from the beginning; we'll paginate after filtering
       limit: Math.max(limit * 5, 500), // grab a wider slice to ensure enough after filtering
@@ -40,24 +40,17 @@ export async function GET(request: Request) {
 
     let parents = baseResult.parents as any[];
 
-    // Build team map to infer program when parent.program is missing
-    let teamMap = new Map<string, any>();
-    try {
-      const teams = await convex.query(api.teams.getTeams as any, { limit: 1000 });
-      for (const t of teams as any[]) {
-        teamMap.set(String((t as any)._id || ''), t);
-      }
-    } catch (_) {}
-
-    // Apply program isolation using inference: parent.program -> team.program -> default 'yearly-program'
+    // STRICT program isolation (no team fallback):
+    // - Non-yearly tabs: include ONLY records with explicit parent.program === requested
+    // - Yearly tab: include records with parent.program === 'yearly-program' OR missing/empty
     if (program) {
       const requested = String(program);
       parents = parents.filter((p: any) => {
-        const direct = String((p as any).program || '').trim();
-        if (direct) return direct === requested;
-        const team = teamMap.get(String((p as any).teamId || ''));
-        const tProg = String((team as any)?.program || '').trim();
-        return tProg ? tProg === requested : requested === 'yearly-program';
+        const pProg = String((p as any).program || '').trim();
+        if (requested === 'yearly-program') {
+          return !pProg || pProg === 'yearly-program';
+        }
+        return pProg === requested;
       });
     }
 
