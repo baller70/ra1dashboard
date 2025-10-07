@@ -1420,21 +1420,40 @@ export default function PaymentsPage() {
     ? Number(analytics?.pendingPayments)
     : Number(planAdj.pending)
   const uiActivePlans = planAdj.activePlansCount
+
   // Total Revenue should reflect potential revenue from plans; prefer authoritative plansTotals
   // For non-Yearly tabs, ignore any cross-program totals and use plan-derived only
   const preferPlanTotals = activeProgram !== 'yearly-program'
   const uiTotalRevenue = preferPlanTotals
     ? Number(planAdj.totalPlanAmount || 0)
     : Number(planAdj.totalPlanAmount ?? plansTotals?.total ?? analytics?.totalRevenue ?? summary.total)
+
   // Pending should be computed from potential (plan totals) minus collected
   const pendingBasis = preferPlanTotals
     ? Number(planAdj.totalPlanAmount || 0)
     : Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
   const uiPendingFromTotal = Math.max(pendingBasis - uiCollected, 0)
+  const uiPendingFinal = uiPendingFromTotal
+
   // Potential revenue is simply the sum of all unique active/pending plan totals
   const uiPotentialRevenue = preferPlanTotals
     ? Number(planAdj.totalPlanAmount || 0)
     : Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
+
+  // Debug values in browser to verify program scoping of cards
+  if (typeof window !== 'undefined') {
+    try {
+      // eslint-disable-next-line no-console
+      console.log('🔍 PAYMENTS PAGE DEBUG (cards)', {
+        activeProgram,
+        preferPlanTotals,
+        planTotal: Number(planAdj.totalPlanAmount || 0),
+        collected: uiCollected,
+        pendingBasis,
+        uiPendingFromTotal,
+      })
+    } catch {}
+  }
 
   // AI Functions
 
@@ -1623,7 +1642,7 @@ export default function PaymentsPage() {
                       <Clock className="h-4 w-4 text-orange-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-orange-600">${uiPendingFromTotal.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-orange-600">${uiPendingFinal.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         Awaiting payment
                       </p>
