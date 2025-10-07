@@ -40,18 +40,10 @@ export async function GET(request: Request) {
 
     let parents = baseResult.parents as any[];
 
-    // STRICT program isolation (no team fallback):
-    // - Non-yearly tabs: include ONLY records with explicit parent.program === requested
-    // - Yearly tab: include records with parent.program === 'yearly-program' OR missing/empty
-    if (program) {
+    // Restore Yearly tab to original (no filtering). Non-yearly: strict explicit match only.
+    if (program && program !== 'yearly-program') {
       const requested = String(program);
-      parents = parents.filter((p: any) => {
-        const pProg = String((p as any).program || '').trim();
-        if (requested === 'yearly-program') {
-          return !pProg || pProg === 'yearly-program';
-        }
-        return pProg === requested;
-      });
+      parents = parents.filter((p: any) => String((p as any).program || '').trim() === requested);
     }
 
     // Recompute pagination after filtering

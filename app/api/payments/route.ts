@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const parentId = searchParams.get('parentId');
     const program = searchParams.get('program') || undefined;
 
-    // Get payments without relying on backend program filtering; apply STRICT matching here
+    // Get payments without relying on backend program filtering; apply matching here
     const base = await (convexHttp as any).query(api.payments.getPayments, {
       page: 1,
       limit: Math.max(limit * 5, 500),
@@ -42,18 +42,13 @@ export async function GET(request: NextRequest) {
 
     let payments = (base?.payments || []) as any[];
 
-    // STRICT program isolation (no team fallback):
-    // - Non-yearly tabs: include ONLY if explicit plan.program OR parent.program equals requested
-    // - Yearly tab: include if explicit program is 'yearly-program' OR no explicit program at all
-    if (program) {
+    // Restore Yearly tab to original (no filtering). Non-yearly: strict explicit match only.
+    if (program && program !== 'yearly-program') {
       const requested = String(program);
       payments = payments.filter((p: any) => {
         const planProg = String((p?.paymentPlan as any)?.program || '').trim();
         const parentProg = String((p?.parent as any)?.program || '').trim();
         const explicit = planProg || parentProg;
-        if (requested === 'yearly-program') {
-          return !explicit || explicit === 'yearly-program';
-        }
         return explicit === requested;
       });
     }
