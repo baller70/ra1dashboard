@@ -1421,11 +1421,20 @@ export default function PaymentsPage() {
     : Number(planAdj.pending)
   const uiActivePlans = planAdj.activePlansCount
   // Total Revenue should reflect potential revenue from plans; prefer authoritative plansTotals
-  const uiTotalRevenue = Number(planAdj.totalPlanAmount ?? plansTotals?.total ?? analytics?.totalRevenue ?? summary.total)
+  // For non-Yearly tabs, ignore any cross-program totals and use plan-derived only
+  const preferPlanTotals = activeProgram !== 'yearly-program'
+  const uiTotalRevenue = preferPlanTotals
+    ? Number(planAdj.totalPlanAmount || 0)
+    : Number(planAdj.totalPlanAmount ?? plansTotals?.total ?? analytics?.totalRevenue ?? summary.total)
   // Pending should be computed from potential (plan totals) minus collected
-  const uiPendingFromTotal = Math.max(Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0) - uiCollected, 0)
+  const pendingBasis = preferPlanTotals
+    ? Number(planAdj.totalPlanAmount || 0)
+    : Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
+  const uiPendingFromTotal = Math.max(pendingBasis - uiCollected, 0)
   // Potential revenue is simply the sum of all unique active/pending plan totals
-  const uiPotentialRevenue = Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
+  const uiPotentialRevenue = preferPlanTotals
+    ? Number(planAdj.totalPlanAmount || 0)
+    : Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
 
   // AI Functions
 
