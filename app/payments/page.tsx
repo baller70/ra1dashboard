@@ -126,21 +126,21 @@ export default function PaymentsPage() {
             'x-api-key': 'ra1-dashboard-api-key-2024'
           }
         }),
-        fetch(`/api/teams?_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/teams?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'x-api-key': 'ra1-dashboard-api-key-2024'
           }
         }),
-        fetch(`/api/parents?_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/parents?program=${activeProgram}&limit=1000&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'x-api-key': 'ra1-dashboard-api-key-2024'
           }
         }),
-        fetch(`/api/payment-plans?_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/payment-plans?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -324,6 +324,34 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+
+  // Defensive: On Yearly Program, ensure teams list covers all teamIds referenced by parents.
+  // If any parent has a teamId that isn't present in teamsData, refetch full teams and update state.
+  useEffect(() => {
+    try {
+      if (activeProgram !== 'yearly-program') return;
+      const parents = Array.isArray(allParentsData?.parents) ? allParentsData.parents : [];
+      const teamIdsFromParents = new Set<string>(parents.filter((p: any) => p?.teamId).map((p: any) => String(p.teamId)));
+      const teamIdsWeHave = new Set<string>((Array.isArray(teamsData) ? teamsData : []).map((t: any) => String(t?._id)));
+      const missing = [...teamIdsFromParents].filter(id => !teamIdsWeHave.has(id));
+      if (missing.length === 0) return;
+      // Refetch teams with cache-busting and replace teamsData
+      const ts = Date.now();
+      fetch(`/api/teams?program=yearly-program&limit=10000&cb=${ts}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
+      })
+        .then(res => res.json())
+        .then(json => {
+          if (json?.success && Array.isArray(json.data)) {
+            const normalized = json.data.map((t: any) => ({ ...t, _id: String(t._id ?? (t as any).id ?? '') }));
+            setTeamsData(normalized);
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  }, [activeProgram, allParentsData, teamsData]);
 
   const forceRefresh = async () => {
     try {
@@ -527,18 +555,10 @@ export default function PaymentsPage() {
           body: JSON.stringify({ stage: 'delete', parentId, parentEmail: pre.email, parentName: pre.name, teamId: pre.teamId, teamName, counts: depCounts, outcome: 'error', error: err })
         }).catch(() => {})
 
-        // Roll back status if we archived
-        if (archivedBeforeDelete) {
-          try {
-            await fetch(`/api/parents/${parentId}`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-api-key': 'ra1-dashboard-api-key-2024' },
-              body: JSON.stringify({ status: pre.status || 'active' })
-            })
-          } catch {}
-        }
+        // Keep archived state on failure to ensure parent stays hidden
+        // (No rollback to previous status)
 
-        // Revert optimistic hide
-        setUnassignedHiddenParentIds(prev => prev.filter(id => id !== String(parentId)))
+        // Keep hidden in Unassigned for this session to avoid flicker; background refresh will reconcile
 
         toast({ title: 'Delete failed', description: err?.details || err?.error || 'Unknown error', variant: 'destructive' })
       }
@@ -698,7 +718,8 @@ export default function PaymentsPage() {
         body: JSON.stringify({
           name: teamForm.name,
           description: teamForm.description,
-          color: teamForm.color
+          color: teamForm.color,
+          program: activeProgram
         })
       })
 
@@ -740,7 +761,8 @@ export default function PaymentsPage() {
           id: editingTeam._id,
           name: teamForm.name,
           description: teamForm.description,
-          color: teamForm.color
+          color: teamForm.color,
+          program: activeProgram
         })
       })
 
@@ -845,7 +867,7 @@ export default function PaymentsPage() {
                     // Create team
                     const createRes = await fetch('/api/teams', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ name: snap.name, description: snap.description, color: snap.color })
+                      body: JSON.stringify({ name: snap.name, description: snap.description, color: snap.color, program: activeProgram })
                     })
                     const createJson = await createRes.json()
                     if (createRes.ok && createJson?.teamId) {
@@ -1004,12 +1026,16 @@ export default function PaymentsPage() {
       console.log('API response:', result)
 
       if (response.ok) {
-        // Update local state immediately
-        setPayments(prev => prev.map(payment =>
-          payment._id === paymentId
-            ? { ...payment, paymentMethod: newMethod }
-            : payment
-        ))
+        // Update local state immediately (fix: use setPaymentsData vs undefined setPayments)
+        setPaymentsData((prev: any) => {
+          if (!prev?.payments) return prev
+          const next = prev.payments.map((p: any) =>
+            p._id === paymentId
+              ? { ...p, paymentMethod: newMethod }
+              : p
+          )
+          return { ...prev, payments: next }
+        })
 
         toast({
           title: "Success",
@@ -1047,7 +1073,9 @@ export default function PaymentsPage() {
 
     const parent = allParents.find(p => p._id === payment.parentId)
     if (selectedTeam === 'unassigned') {
-      return searchMatch && !parent?.teamId
+      // Exclude archived parents from Unassigned
+      const status = String((parent as any)?.status || 'active').toLowerCase()
+      return searchMatch && !parent?.teamId && status !== 'archived'
     }
 
     return searchMatch && parent?.teamId === selectedTeam
@@ -1099,30 +1127,31 @@ export default function PaymentsPage() {
   // Group payments by team if enabled, but also include all unassigned parents
   const groupedPayments = groupByTeam ?
     (() => {
-      // First group payments by team as before
-      const paymentGroups = deduplicatedPayments.reduce((groups: Record<string, any[]>, payment) => {
+      // Build groups keyed by teamId (or "unassigned"), then map to display names at the end.
+      const groupsById: Record<string, any[]> = {}
+
+      // Seed groups for all known teams and unassigned
+      for (const t of teams) groupsById[String(t._id)] = []
+      groupsById['unassigned'] = []
+
+      // Place one-most-recent payment per parent into their team group by parent.teamId (never push to Unassigned if a teamId exists)
+      for (const payment of deduplicatedPayments) {
         const parent = allParents.find(p => p._id === payment.parentId)
-        const team = teams.find(t => t._id === parent?.teamId)
-        const teamKey = team ? team.name : 'Unassigned'
-        if (!groups[teamKey]) groups[teamKey] = []
-        groups[teamKey].push(payment)
-        return groups
-      }, {})
-
-      // Ensure every team shows up, even if there are no payments
-      for (const t of teams) {
-        if (!paymentGroups[t.name]) paymentGroups[t.name] = []
+        const status = String((parent as any)?.status || 'active').toLowerCase()
+        if (status === 'archived') continue
+        const key = parent?.teamId ? String(parent.teamId) : 'unassigned'
+        if (!groupsById[key]) groupsById[key] = []
+        groupsById[key].push(payment)
       }
-      if (!paymentGroups['Unassigned']) paymentGroups['Unassigned'] = []
 
-      // Add mock entries for parents with no payments in each team
+      // Add mock entries for parents with no payments in each team (exclude archived)
       for (const t of teams) {
-        const teamKey = t.name
-        const parentsInTeam = allParents.filter(p => p.teamId === t._id)
+        const key = String(t._id)
+        const parentsInTeam = allParents.filter(p => p.teamId === key && String((p as any).status || 'active').toLowerCase() !== 'archived')
         for (const parent of parentsInTeam) {
-          const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
-          if (!hasAnyPayment) {
-            paymentGroups[teamKey].push({
+          const hasAny = (groupsById[key] || []).some(p => p.parentId === parent._id)
+          if (!hasAny) {
+            (groupsById[key] = groupsById[key] || []).push({
               _id: `mock-${parent._id}`,
               parentId: parent._id,
               parentName: parent.name,
@@ -1138,12 +1167,12 @@ export default function PaymentsPage() {
         }
       }
 
-      // Unassigned parents with no payments → mock entries
-      const unassignedParents = allParents.filter(p => !p.teamId)
+      // Unassigned parents with no payments → mock entries (exclude archived)
+      const unassignedParents = allParents.filter(p => !p.teamId && String((p as any).status || 'active').toLowerCase() !== 'archived')
       for (const parent of unassignedParents) {
-        const hasAnyPayment = deduplicatedPayments.some(p => p.parentId === parent._id)
-        if (!hasAnyPayment) {
-          paymentGroups['Unassigned'].push({
+        const hasAny = (groupsById['unassigned'] || []).some(p => p.parentId === parent._id)
+        if (!hasAny) {
+          groupsById['unassigned'].push({
             _id: `mock-${parent._id}`,
             parentId: parent._id,
             parentName: parent.name,
@@ -1159,10 +1188,22 @@ export default function PaymentsPage() {
       }
 
       // Scoped hide in Unassigned only: exclude locally-hidden parentIds from the Unassigned group
-      if (paymentGroups['Unassigned']) {
-        paymentGroups['Unassigned'] = paymentGroups['Unassigned'].filter((entry: any) => !unassignedHiddenParentIds.includes(String(entry.parentId)))
+      if (groupsById['unassigned']) {
+        groupsById['unassigned'] = groupsById['unassigned'].filter((entry: any) => !unassignedHiddenParentIds.includes(String(entry.parentId)))
       }
-      return paymentGroups
+
+      // Convert to display groups keyed by team name (or "Unassigned")
+      const displayGroups: Record<string, any[]> = {}
+      for (const [key, arr] of Object.entries(groupsById)) {
+        if (key === 'unassigned') {
+          displayGroups['Unassigned'] = arr
+        } else {
+          const t = teams.find(t => String(t._id) === key)
+          const name = t?.name || `Team ${key.slice(-6)}`
+          displayGroups[name] = arr
+        }
+      }
+      return displayGroups
     })() :
     { 'All Payments': deduplicatedPayments }
 
@@ -1172,7 +1213,7 @@ export default function PaymentsPage() {
       const s = new Set(arr.map((e: any) => String(e.parentId)))
       return s.size
     } catch (e) {
-      return (allParents?.filter((p: any) => !p.teamId && !unassignedHiddenParentIds.includes(String(p._id))).length) || 0
+      return (allParents?.filter((p: any) => !p.teamId && String((p as any).status || 'active').toLowerCase() !== 'archived' && !unassignedHiddenParentIds.includes(String(p._id))).length) || 0
     }
   }, [groupedPayments, allParents, unassignedHiddenParentIds])
 
@@ -1892,8 +1933,6 @@ export default function PaymentsPage() {
                       </CollapsibleTrigger>
 
                       <CollapsibleContent className="space-y-3">
-                        {/* Debug: Log group payments for RA1 5th/6th Boys */}
-                        {groupName === 'RA1 5th/6th Boys' && console.log('RA1 5th/6th Boys groupPayments:', groupPayments.length, groupPayments)}
                         {groupPayments.length > 0 ? (
                           <div className="space-y-3 border-l-4 pl-4 ml-2" style={{
                             borderColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
@@ -2287,6 +2326,7 @@ export default function PaymentsPage() {
       <ParentCreationModal
         open={showParentCreationModal}
         onOpenChange={setShowParentCreationModal}
+        program={activeProgram}
         onParentCreated={async (newParent) => {
           console.log('🎉 New parent created:', newParent)
 
@@ -2325,19 +2365,19 @@ export default function PaymentsPage() {
             }
 
             const [paymentsRes, analyticsRes, teamsRes, parentsRes] = await Promise.all([
-              fetch(`/api/payments?t=${timestamp}&nocache=true&cb=${cacheKey}&limit=1000`, {
+              fetch(`/api/payments?program=${activeProgram}&t=${timestamp}&nocache=true&cb=${cacheKey}&limit=1000`, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
-              fetch(`/api/payments/analytics?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+              fetch(`/api/payments/analytics?program=${activeProgram}&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
-              fetch(`/api/teams?t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+              fetch(`/api/teams?program=${activeProgram}&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               }),
-              fetch(`/api/parents?limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
+              fetch(`/api/parents?program=${activeProgram}&limit=1000&t=${timestamp}&nocache=true&cb=${cacheKey}`, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
               })
