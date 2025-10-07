@@ -570,10 +570,23 @@ export default function PaymentsPage() {
     }
   }
 
-  const payments = paymentsData?.payments || []
+  const paymentsBase = paymentsData?.payments || []
   const teams = teamsData || []
   const allParents = allParentsData?.parents || []
   // Teams actually referenced by parents (ensures dialog shows all active team groups)
+  // Program-scoped payments: Yearly shows all; others require explicit match by plan.program OR parent.program
+  const payments = React.useMemo(() => {
+    const norm = (s: any) => String(s || '').trim()
+    if (!Array.isArray(paymentsBase)) return []
+    if (activeProgram === 'yearly-program') return paymentsBase
+    return paymentsBase.filter((p: any) => {
+      const planProg = norm(p?.paymentPlan?.program)
+      const parent = p?.parent || (allParents || []).find((ap: any) => String(ap._id) === String(p.parentId))
+      const parentProg = norm(parent?.program)
+      return planProg === activeProgram || parentProg === activeProgram
+    })
+  }, [paymentsBase, allParents, activeProgram])
+
   const derivedTeams = useMemo(() => {
     try {
       const ids = Array.from(new Set(allParents.filter((p: any) => p.teamId).map((p: any) => String(p.teamId))));
@@ -1402,15 +1415,13 @@ export default function PaymentsPage() {
   const planAdj = calculatePlanAdjustments()
 
   // Choose displayed values: if API returns > 0 use it, otherwise use plan-based fallback
-  const uiCollected = ((analytics?.collectedPayments ?? 0) > 0)
-    ? Number(analytics?.collectedPayments)
-    : Number(summary.paid)
+  const uiCollected = Number(summary.paid)
   const uiPending = ((analytics?.pendingPayments ?? 0) > 0)
     ? Number(analytics?.pendingPayments)
     : Number(planAdj.pending)
-  const uiActivePlans = planAdj.activePlansCount || Number(analytics?.activePlans || 0)
+  const uiActivePlans = planAdj.activePlansCount
   // Total Revenue should reflect potential revenue from plans; prefer authoritative plansTotals
-  const uiTotalRevenue = Number((plansTotals?.total ?? analytics?.totalRevenue) ?? planAdj.totalPlanAmount ?? summary.total)
+  const uiTotalRevenue = Number(planAdj.totalPlanAmount ?? plansTotals?.total ?? analytics?.totalRevenue ?? summary.total)
   // Pending should be computed from potential (plan totals) minus collected
   const uiPendingFromTotal = Math.max(Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0) - uiCollected, 0)
   // Potential revenue is simply the sum of all unique active/pending plan totals
@@ -1615,7 +1626,7 @@ export default function PaymentsPage() {
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-red-600">${analytics?.overduePayments?.toLocaleString() || summary.overdue.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-red-600">${summary.overdue.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         Requires immediate attention
                       </p>
