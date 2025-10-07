@@ -29,18 +29,50 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const status = searchParams.get('status');
     const parentId = searchParams.get('parentId');
+    const program = searchParams.get('program') || undefined;
 
-    // Get payments from Convex
-    const result = await (convexHttp as any).query(api.payments.getPayments, {
-      page,
-      limit,
+    // Get payments without relying on backend program filtering; we'll apply robust inference here
+    const base = await (convexHttp as any).query(api.payments.getPayments, {
+      page: 1,
+      limit: Math.max(limit * 5, 500),
       status: status || undefined,
       parentId: (parentId as any) || undefined,
+      program: undefined,
     });
+
+    let payments = (base?.payments || []) as any[];
+
+    // Build team map for fallback inference via parent.teamId
+    let teamMap = new Map<string, any>();
+    try {
+      const teams = await (convexHttp as any).query(api.teams.getTeams as any, { limit: 1000 });
+      for (const t of teams as any[]) teamMap.set(String((t as any)._id || ''), t);
+    } catch (_) {}
+
+    if (program) {
+      const requested = String(program);
+      payments = payments.filter((p: any) => {
+        const planProg = String((p?.paymentPlan as any)?.program || '').trim();
+        if (planProg) return planProg === requested;
+        const parentProg = String((p?.parent as any)?.program || '').trim();
+        if (parentProg) return parentProg === requested;
+        const team = teamMap.get(String((p?.parent as any)?.teamId || ''));
+        const tProg = String((team as any)?.program || '').trim();
+        return tProg ? tProg === requested : requested === 'yearly-program';
+      });
+    }
+
+    // Recompute pagination
+    const total = payments.length;
+    const offset = (page - 1) * limit;
+    const paged = payments.slice(offset, offset + limit);
 
     return NextResponse.json({
       success: true,
-      data: result
+      data: {
+        payments: paged,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) }
+      }
     });
   } catch (error) {
     console.error('Error fetching payments:', error);

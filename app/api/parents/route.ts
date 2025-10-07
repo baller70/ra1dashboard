@@ -1,4 +1,3 @@
-
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
@@ -26,27 +25,56 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     const status = searchParams.get('status')
+    const program = searchParams.get('program') || undefined
     const limit = parseInt(searchParams.get('limit') || '50')
     const page = Math.floor(parseInt(searchParams.get('offset') || '0') / limit) + 1
 
-    // Get parents from Convex
-    const result = await convex.query(api.parents.getParents, {
-      page,
-      limit,
+    // Fetch from Convex (do not rely on backend program filter; we'll apply robust inference here)
+    const baseResult = await convex.query(api.parents.getParents, {
+      page: 1, // fetch from the beginning; we'll paginate after filtering
+      limit: Math.max(limit * 5, 500), // grab a wider slice to ensure enough after filtering
       search: search || undefined,
       status: status && status !== 'all' ? status : undefined,
+      program: undefined,
     });
 
-    // Transform response to match expected format
+    let parents = baseResult.parents as any[];
+
+    // Build team map to infer program when parent.program is missing
+    let teamMap = new Map<string, any>();
+    try {
+      const teams = await convex.query(api.teams.getTeams as any, { limit: 1000 });
+      for (const t of teams as any[]) {
+        teamMap.set(String((t as any)._id || ''), t);
+      }
+    } catch (_) {}
+
+    // Apply program isolation using inference: parent.program -> team.program -> default 'yearly-program'
+    if (program) {
+      const requested = String(program);
+      parents = parents.filter((p: any) => {
+        const direct = String((p as any).program || '').trim();
+        if (direct) return direct === requested;
+        const team = teamMap.get(String((p as any).teamId || ''));
+        const tProg = String((team as any)?.program || '').trim();
+        return tProg ? tProg === requested : requested === 'yearly-program';
+      });
+    }
+
+    // Recompute pagination after filtering
+    const total = parents.length;
+    const offset = (page - 1) * limit;
+    const pagedParents = parents.slice(offset, offset + limit);
+
     return NextResponse.json({
       success: true,
       data: {
-        parents: result.parents,
+        parents: pagedParents,
         pagination: {
-          total: result.pagination.total,
-          limit: result.pagination.limit,
-          offset: (result.pagination.page - 1) * result.pagination.limit,
-          hasMore: result.pagination.page < result.pagination.pages
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total
         }
       }
     });
@@ -103,6 +131,7 @@ export async function POST(request: Request) {
     const existingParents = await convex.query(api.parents.getParents, {
       page: 1,
       limit: 1000,
+      program: sanitizedData.program || 'yearly-program',
     });
     const normalize = (s: string) => (s || '').trim().toLowerCase();
     const existsSameCombo = existingParents.parents.some(
@@ -128,6 +157,7 @@ export async function POST(request: Request) {
       status: 'active',
       teamId: sanitizedData.teamId || undefined,
       notes: sanitizedData.notes || undefined,
+      program: sanitizedData.program || 'yearly-program',
     };
     
     const parentId = await convex.mutation(api.parents.createParent, createData);
