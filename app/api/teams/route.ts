@@ -11,6 +11,7 @@ const createTeamSchema = z.object({
   name: z.string().min(1, 'Team name is required'),
   description: z.string().optional(),
   color: z.string().optional(),
+  program: z.string().optional(),
 });
 
 const updateTeamSchema = z.object({
@@ -18,18 +19,23 @@ const updateTeamSchema = z.object({
   description: z.string().optional(),
   color: z.string().optional(),
   isActive: z.boolean().optional(),
+  program: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeParents = searchParams.get('includeParents') === 'true';
+    const program = searchParams.get('program') || undefined;
 
     // Get teams from Convex — raise limit so all teams are available in UI selections
     const limitParam = Number(new URL(request.url).searchParams.get('limit') || '10000');
+    // Yearly Program: no filtering (include all teams). Others: strict explicit match only.
+    const queryProgram = program && program !== 'yearly-program' ? program : undefined;
     const teams = await convex.query(api.teams.getTeams, {
       includeParents,
-      limit: limitParam
+      limit: limitParam,
+      program: queryProgram,
     });
 
     return NextResponse.json({
@@ -48,7 +54,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, color } = createTeamSchema.parse(body);
+    const { name, description, color, program } = createTeamSchema.parse(body);
 
     // Allow duplicate team names; remove prior uniqueness guard
     // If you want to re-enable uniqueness, enforce it at the UI or via a dedicated index/constraint
@@ -57,7 +63,8 @@ export async function POST(request: NextRequest) {
     const teamId = await convex.mutation(api.teams.createTeam, {
       name,
       description,
-      color
+      color,
+      program,
     });
 
     // Return success without re-query to avoid any race/consistency flake
@@ -93,9 +100,9 @@ export async function PUT(request: NextRequest) {
 
     const validatedData = updateTeamSchema.parse(updateData);
 
-    // If updating name, check for uniqueness
+    // If updating name, check for uniqueness within the same program
     if (validatedData.name) {
-      const existingTeams = await convex.query(api.teams.getTeams, {});
+      const existingTeams = await convex.query(api.teams.getTeams, { program: validatedData.program });
       const existingTeam = existingTeams.find(team => team.name === validatedData.name && team._id !== id);
 
       if (existingTeam) {
@@ -111,7 +118,8 @@ export async function PUT(request: NextRequest) {
       teamId: id as any,
       name: validatedData.name,
       description: validatedData.description,
-      color: validatedData.color
+      color: validatedData.color,
+      program: validatedData.program,
     });
 
     // Get updated team
