@@ -154,6 +154,20 @@ export async function POST(request: Request) {
       createdParent = await convex.query(api.parents.getParent, { id: parentId as any })
     } catch {}
 
+    // Defensive: if a non-yearly program was requested but the stored record lacks it, patch it now
+    try {
+      const requestedProgram = (typeof body?.program === 'string' && body.program.trim() && body.program.trim() !== 'yearly-program')
+        ? body.program.trim()
+        : undefined;
+      if (requestedProgram && (!createdParent || !String((createdParent as any).program || '').trim())) {
+        await convex.mutation(api.parents.updateParent, { id: parentId as any, program: requestedProgram });
+        // Re-fetch to return the corrected record
+        createdParent = await convex.query(api.parents.getParent, { id: parentId as any });
+      }
+    } catch (e) {
+      console.warn('Post-create program patch skipped/failed:', e);
+    }
+
     return createSuccessResponse(createdParent || { _id: parentId, name: sanitizedData.name, email: sanitizedData.email });
   } catch (error) {
     console.error('Parent creation error:', error)
