@@ -1944,8 +1944,8 @@ export default function PaymentsPage() {
                           <div className="flex items-center space-x-3">
                             {!isUnassigned && (
                               <Checkbox
-                                checked={selectedTeamIds.includes(team!._id)}
-                                onCheckedChange={(checked) => { handleTeamCheckbox(team!._id, !!checked); }}
+                                checked={team ? selectedTeamIds.includes(team._id) : false}
+                                onCheckedChange={(checked) => { if (team) handleTeamCheckbox(team._id, !!checked); }}
                                 onClick={(e) => e.stopPropagation()}
                               />
                             )}
