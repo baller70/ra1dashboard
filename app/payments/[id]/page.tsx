@@ -408,58 +408,6 @@ export default function PaymentDetailPage() {
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
   const [stripePk, setStripePk] = useState<string | null>(null)
 
-  // Auto-create a Stripe PaymentIntent as soon as a Stripe option + schedule is chosen,
-  // so the native inputs never render and Stripe's Payment Element shows immediately.
-  useEffect(() => {
-    const run = async () => {
-      try {
-        if (!payment) return
-        if (!selectedPaymentOption || !selectedPaymentSchedule) return
-        if (!(selectedPaymentOption === 'stripe_card' || selectedPaymentOption === 'stripe_ach')) return
-        if (stripeClientSecret) return // already prepared
-
-        const baseAmount = parseFloat(String(payment.amount)) || 1699.59
-        let paymentAmount = baseAmount
-        switch (selectedPaymentSchedule) {
-          case 'full':
-            paymentAmount = baseAmount
-            break
-          case 'quarterly':
-            paymentAmount = 566.74
-            break
-          case 'monthly':
-            paymentAmount = 189.11
-            break
-          case 'custom':
-            paymentAmount = baseAmount / (customInstallments || 1)
-            break
-        }
-
-        const resp = await fetch('/api/stripe/payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            parentId: (payment.parent as any)?._id || payment.parent?.id,
-            parentEmail: (payment.parent as any)?.email || payment.parent?.email,
-            parentName: (payment.parent as any)?.name || payment.parent?.name,
-            parentPhone: (payment.parent as any)?.phone || payment.parent?.phone,
-            paymentId: (payment as any)._id || payment.id,
-            amount: Math.round(paymentAmount * 100),
-            description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
-          }),
-        })
-        if (!resp.ok) return
-        const { clientSecret } = await resp.json()
-        if (clientSecret) setStripeClientSecret(clientSecret)
-        try {
-          const cfgRes = await fetch('/api/stripe/config')
-          const cfg = await cfgRes.json().catch(() => ({}))
-          if (cfg?.publishableKey) setStripePk(cfg.publishableKey)
-        } catch {}
-      } catch {}
-    }
-    run()
-  }, [payment, selectedPaymentOption, selectedPaymentSchedule, customInstallments, stripeClientSecret])
 
   const stripePromise = useMemo(() => (stripePk ? loadStripe(stripePk) : null), [stripePk])
 
@@ -520,6 +468,59 @@ export default function PaymentDetailPage() {
   // Enhanced UX states
   const [lastActionTime, setLastActionTime] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Auto-create a Stripe PaymentIntent as soon as a Stripe option + schedule is chosen,
+  // so the native inputs never render and Stripe's Payment Element shows immediately.
+  useEffect(() => {
+    const run = async () => {
+      try {
+        if (!payment) return
+        if (!selectedPaymentOption || !selectedPaymentSchedule) return
+        if (!(selectedPaymentOption === 'stripe_card' || selectedPaymentOption === 'stripe_ach')) return
+        if (stripeClientSecret) return // already prepared
+
+        const baseAmount = parseFloat(String(payment.amount)) || 1699.59
+        let paymentAmount = baseAmount
+        switch (selectedPaymentSchedule) {
+          case 'full':
+            paymentAmount = baseAmount
+            break
+          case 'quarterly':
+            paymentAmount = 566.74
+            break
+          case 'monthly':
+            paymentAmount = 189.11
+            break
+          case 'custom':
+            paymentAmount = baseAmount / (customInstallments || 1)
+            break
+        }
+
+        const resp = await fetch('/api/stripe/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentId: (payment.parent as any)?._id || payment.parent?.id,
+            parentEmail: (payment.parent as any)?.email || payment.parent?.email,
+            parentName: (payment.parent as any)?.name || payment.parent?.name,
+            parentPhone: (payment.parent as any)?.phone || payment.parent?.phone,
+            paymentId: (payment as any)._id || payment.id,
+            amount: Math.round(paymentAmount * 100),
+            description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
+          }),
+        })
+        if (!resp.ok) return
+        const { clientSecret } = await resp.json()
+        if (clientSecret) setStripeClientSecret(clientSecret)
+        try {
+          const cfgRes = await fetch('/api/stripe/config')
+          const cfg = await cfgRes.json().catch(() => ({}))
+          if (cfg?.publishableKey) setStripePk(cfg.publishableKey)
+        } catch {}
+      } catch {}
+    }
+    run()
+  }, [payment, selectedPaymentOption, selectedPaymentSchedule, customInstallments, stripeClientSecret])
 
   // When check is chosen, force schedule to custom so the check UI/flow is enabled
   useEffect(() => {
