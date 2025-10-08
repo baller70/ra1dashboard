@@ -1415,30 +1415,35 @@ export default function PaymentsPage() {
   const planAdj = calculatePlanAdjustments()
 
   // Choose displayed values: if API returns > 0 use it, otherwise use plan-based fallback
-  const uiCollected = Number(summary.paid)
-  const uiPending = ((analytics?.pendingPayments ?? 0) > 0)
-    ? Number(analytics?.pendingPayments)
-    : Number(planAdj.pending)
-  const uiActivePlans = planAdj.activePlansCount
+  // Prefer backend analytics when available for accuracy; fall back to local calculations
+  const uiCollected = Number((analytics?.collectedPayments ?? summary.paid))
 
-  // Total Revenue should reflect potential revenue from plans; prefer authoritative plansTotals
-  // For non-Yearly tabs, ignore any cross-program totals and use plan-derived only
+  const uiActivePlans = Number(analytics?.activePlans ?? planAdj.activePlansCount)
+
+  // Total Revenue should reflect potential revenue from plans; prefer authoritative analytics total
   const preferPlanTotals = activeProgram !== 'yearly-program'
-  const uiTotalRevenue = preferPlanTotals
-    ? Number(planAdj.totalPlanAmount || 0)
-    : Number(planAdj.totalPlanAmount ?? plansTotals?.total ?? analytics?.totalRevenue ?? summary.total)
+  const uiTotalRevenue = Number(
+    analytics?.totalRevenue ?? (
+      preferPlanTotals ? (planAdj.totalPlanAmount || 0) : (planAdj.totalPlanAmount ?? plansTotals?.total ?? summary.total)
+    )
+  )
 
-  // Pending should be computed from potential (plan totals) minus collected
+  // Pending: prefer backend analytics; otherwise compute from potential minus collected
   const pendingBasis = preferPlanTotals
     ? Number(planAdj.totalPlanAmount || 0)
     : Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
   const uiPendingFromTotal = Math.max(pendingBasis - uiCollected, 0)
-  const uiPendingFinal = uiPendingFromTotal
+  const uiPendingFinal = ((analytics?.pendingPayments ?? 0) > 0)
+    ? Number(analytics?.pendingPayments)
+    : uiPendingFromTotal
 
   // Potential revenue is simply the sum of all unique active/pending plan totals
   const uiPotentialRevenue = preferPlanTotals
     ? Number(planAdj.totalPlanAmount || 0)
     : Number((plansTotals?.total ?? planAdj.totalPlanAmount) || 0)
+
+  // Overdue: prefer backend analytics value when present
+  const uiOverdue = Number(analytics?.overduePayments ?? summary.overdue)
 
   // Debug values in browser to verify program scoping of cards
   if (typeof window !== 'undefined') {
@@ -1654,7 +1659,7 @@ export default function PaymentsPage() {
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-red-600">${summary.overdue.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-red-600">${uiOverdue.toLocaleString()}</div>
                       <p className="text-xs text-muted-foreground">
                         Requires immediate attention
                       </p>
