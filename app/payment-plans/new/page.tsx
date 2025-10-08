@@ -97,10 +97,10 @@ const paymentSchedules = [
   {
     value: "monthly",
     label: "Monthly",
-    amount: "$183.33",
-    description: "9 payments over 9 months (Total: $1,649.97)",
+    amount: "$189.11",
+    description: "9 payments over 9 months (Total: $1,701.99)",
     installments: 9,
-    installmentAmount: 183.33
+    installmentAmount: 189.11
   },
   {
     value: "custom",
@@ -164,8 +164,8 @@ export default function NewPaymentPlanPage() {
   const [formData, setFormData] = useState({
     parentId: '',
     type: 'monthly',
-    totalAmount: '1650',
-    installmentAmount: '183.33',
+    totalAmount: '1701.99',
+    installmentAmount: '189.11',
     installments: '9',
     startDate: new Date().toISOString().split('T')[0],
     description: '',
@@ -409,9 +409,9 @@ export default function NewPaymentPlanPage() {
         setFormData(prev => ({
           ...prev,
           type: value,
-          totalAmount: '1650',
+          totalAmount: '1701.99',
           installments: '9',
-          installmentAmount: '183.33'
+          installmentAmount: '189.11'
         }))
       } else if (value === 'custom') {
         setFormData(prev => ({
@@ -872,8 +872,8 @@ export default function NewPaymentPlanPage() {
                         },
                         body: JSON.stringify({
                           parentId: formData.parentId,
-                          totalAmount: 1650,
-                          installmentAmount: 183.33,
+                          totalAmount: 1701.99,
+                          installmentAmount: 189.11,
                           installments: 9,
                           startDate: new Date().toISOString().split('T')[0],
                           description: 'Monthly payment plan',
@@ -1191,7 +1191,7 @@ export default function NewPaymentPlanPage() {
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       type="number"
-                      placeholder="e.g., 183.33"
+                      placeholder="e.g., 189.11"
                       value={checkDetails.customAmount}
                       onChange={(e) => setCheckDetails(prev => ({ ...prev, customAmount: e.target.value }))}
                       className="pl-10 bg-white"
