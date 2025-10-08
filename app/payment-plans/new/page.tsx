@@ -4,7 +4,7 @@
 // Cache bust: 1753715500000
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '../../../components/app-layout'
 import { Button } from '../../../components/ui/button'
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Label } from '../../../components/ui/label'
 import { useToast } from '../../../hooks/use-toast'
 import { Toaster } from '../../../components/ui/toaster'
-import { 
+import {
   ArrowLeft,
   Calendar,
   DollarSign,
@@ -30,6 +30,8 @@ import Link from 'next/link'
 import { Parent } from '../../../lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { Elements, PaymentElement, ElementsConsumer } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 
 // Payment options configuration
 const paymentOptions = [
@@ -40,6 +42,14 @@ const paymentOptions = [
     icon: CreditCard,
     recommended: true,
     processingFee: "2.9% + $0.30"
+  },
+  {
+    id: "manual_card",
+    name: "Manual Credit Card / Debit",
+    description: "Record a card payment manually (no Stripe charge)",
+    icon: CreditCard,
+    recommended: false,
+    processingFee: "None"
   },
   {
     id: "stripe_ach",
@@ -68,32 +78,32 @@ const paymentOptions = [
 ]
 
 const paymentSchedules = [
-  { 
-    value: "full", 
+  {
+    value: "full",
     label: "Full Payment",
     amount: "$1,699.59",
     description: "Pay the full amount now",
     installments: 1,
     installmentAmount: 1699.59
   },
-  { 
-    value: "quarterly", 
+  {
+    value: "quarterly",
     label: "Quarterly",
     amount: "$566.74",
     description: "3 payments over 9 months (Total: $1,700.22)",
     installments: 3,
     installmentAmount: 566.74
   },
-  { 
-    value: "monthly", 
+  {
+    value: "monthly",
     label: "Monthly",
-    amount: "$183.33", 
+    amount: "$183.33",
     description: "9 payments over 9 months (Total: $1,649.97)",
     installments: 9,
     installmentAmount: 183.33
   },
-  { 
-    value: "custom", 
+  {
+    value: "custom",
     label: "Custom Schedule",
     amount: "Variable",
     description: "Set your own installments",
@@ -107,15 +117,20 @@ export default function NewPaymentPlanPage() {
   const { toast } = useToast()
   const [parents, setParents] = useState<Parent[]>([])
   const [loading, setLoading] = useState(false)
-  
+
   // Enhanced Payment Options Dialog State
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [selectedPaymentOption, setSelectedPaymentOption] = useState('stripe_card')
   const [selectedPaymentSchedule, setSelectedPaymentSchedule] = useState('monthly')
   const [customInstallments, setCustomInstallments] = useState(3)
+  // Stripe Payment Element state
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
+  const [stripePk, setStripePk] = useState<string | null>(null)
+  const stripePromise = useMemo(() => (stripePk ? loadStripe(stripePk) : null), [stripePk])
+
   const [customMonths, setCustomMonths] = useState(9)
   const [paymentReference, setPaymentReference] = useState('')
-  
+
   // State for check payments
   const [checkInstallments, setCheckInstallments] = useState<number>(1)
   const [checkFrequencyMonths, setCheckFrequencyMonths] = useState<number>(1)
@@ -130,7 +145,7 @@ export default function NewPaymentPlanPage() {
   const [cashDetails, setCashDetails] = useState({
     customAmount: '',
   })
-  
+
   // Credit card form states
   const [creditCardForm, setCreditCardForm] = useState({
     cardNumber: '',
@@ -145,7 +160,7 @@ export default function NewPaymentPlanPage() {
       country: 'US'
     }
   })
-  
+
   const [formData, setFormData] = useState({
     parentId: '',
     type: 'monthly',
@@ -165,12 +180,12 @@ export default function NewPaymentPlanPage() {
       meta.httpEquiv = 'Cache-Control'
       meta.content = 'no-cache, no-store, must-revalidate'
       document.head.appendChild(meta)
-      
+
       const meta2 = document.createElement('meta')
       meta2.httpEquiv = 'Pragma'
       meta2.content = 'no-cache'
       document.head.appendChild(meta2)
-      
+
       const meta3 = document.createElement('meta')
       meta3.httpEquiv = 'Expires'
       meta3.content = '0'
@@ -203,7 +218,7 @@ export default function NewPaymentPlanPage() {
       console.log('🔄 Fetching parents with API key authentication...')
       const response = await fetch('/api/parents?limit=1000', {
         cache: 'no-store',
-        headers: { 
+        headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'x-api-key': 'ra1-dashboard-api-key-2024'
         }
@@ -234,9 +249,9 @@ export default function NewPaymentPlanPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     console.log('Form submitted with data:', formData)
-    
+
     // Validate required fields
     if (!formData.parentId || !formData.totalAmount || !formData.installmentAmount) {
       toast({
@@ -255,10 +270,10 @@ export default function NewPaymentPlanPage() {
         installmentAmount: parseFloat(formData.installmentAmount),
         installments: parseInt(formData.installments)
       }
-      
+
       console.log('🚀 Sending API request with body:', requestBody)
       console.log('🔑 Using API key: ra1-dashboard-api-key-2024')
-      
+
       // Special case: one-time credit card payment should not create a plan
       if ((requestBody.type === 'full' || requestBody.type === 'one_time') && requestBody.paymentMethod === 'stripe_card') {
         try {
@@ -301,22 +316,22 @@ export default function NewPaymentPlanPage() {
           setLoading(false)
         }
       }
-      
+
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-api-key': 'ra1-dashboard-api-key-2024'
         },
         body: JSON.stringify(requestBody)
       })
-      
+
       console.log('📡 Response status:', response.status)
 
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Payment plan created:', result)
-        
+
         // Show success toast
         toast({
           title: "✅ Payment Plan Created Successfully!",
@@ -324,13 +339,13 @@ export default function NewPaymentPlanPage() {
           variant: "default",
           duration: 3000,
         })
-        
+
         // Get the payment ID for redirect
         const paymentId = result.paymentIds?.[0] || result.mainPaymentId
-        
+
         if (paymentId) {
           console.log(`Redirecting to payment detail page: /payments/${paymentId}`)
-          
+
           // Redirect to the parent's profile page with a refresh indicator
           setTimeout(() => {
             router.push(`/parents/${formData.parentId}?planCreated=true`);
@@ -342,12 +357,12 @@ export default function NewPaymentPlanPage() {
             description: "Payment plan created successfully. Redirecting to parent profile.",
             variant: "default",
           });
-          
+
           setTimeout(() => {
             router.push(`/parents/${formData.parentId}?planCreated=true`);
           }, 2000);
         }
-        
+
       } else {
         const error = await response.json()
         console.error('❌ API Error:', error)
@@ -371,36 +386,36 @@ export default function NewPaymentPlanPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    
+
     // Handle plan type changes with predefined amounts
     if (field === 'type') {
       if (value === 'pay-in-full') {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           type: value,
           totalAmount: '1650',
           installments: '1',
           installmentAmount: '1650'
         }))
       } else if (value === 'quarterly') {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           type: value,
           totalAmount: '1650',
           installments: '3',
           installmentAmount: '550'
         }))
       } else if (value === 'monthly') {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           type: value,
           totalAmount: '1650',
           installments: '9',
           installmentAmount: '183.33'
         }))
       } else if (value === 'custom') {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           type: value,
           totalAmount: '',
           installments: '',
@@ -414,7 +429,7 @@ export default function NewPaymentPlanPage() {
   const handleScheduleChange = (scheduleValue: string) => {
     setSelectedPaymentSchedule(scheduleValue)
     const schedule = paymentSchedules.find(s => s.value === scheduleValue)
-    
+
     if (schedule) {
       if (scheduleValue === 'custom') {
         // For custom, calculate based on user inputs
@@ -464,6 +479,62 @@ export default function NewPaymentPlanPage() {
       }
     } catch {}
   }, [])
+
+  // Prepare a PaymentIntent for Stripe when method + schedule are selected
+  useEffect(() => {
+    const run = async () => {
+      try {
+        if (!showPaymentOptions) return
+        if (!(selectedPaymentOption === 'stripe_card' || selectedPaymentOption === 'stripe_ach')) return
+        if (!selectedPaymentSchedule) return
+        if (!formData.parentId) return
+        if (stripeClientSecret) return
+
+        const baseAmount = Number(formData.totalAmount) || 1650
+        let paymentAmount = baseAmount
+        switch (selectedPaymentSchedule) {
+          case 'full':
+          case 'pay-in-full':
+            paymentAmount = baseAmount
+            break
+          case 'quarterly':
+            paymentAmount = Number(formData.installmentAmount) || 566.74
+            break
+          case 'monthly':
+            paymentAmount = Number(formData.installmentAmount) || 189.11
+            break
+          case 'custom':
+            paymentAmount = Number(formData.installmentAmount) || (baseAmount / (customInstallments || 1))
+            break
+        }
+
+        const resp = await fetch('/api/stripe/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentId: formData.parentId,
+            amount: Math.round(paymentAmount * 100),
+            description: 'Payment plan initial payment',
+            cardOnly: false,
+          }),
+        })
+        if (!resp.ok) return
+        const { clientSecret } = await resp.json()
+        if (clientSecret) setStripeClientSecret(clientSecret)
+        try {
+          const cfgRes = await fetch('/api/stripe/config')
+          const cfg = await cfgRes.json().catch(() => ({}))
+          if (cfg?.publishableKey) setStripePk(cfg.publishableKey)
+        } catch {}
+      } catch {}
+    }
+    run()
+  }, [showPaymentOptions, selectedPaymentOption, selectedPaymentSchedule, formData.parentId, formData.totalAmount, formData.installmentAmount, customInstallments, stripeClientSecret])
+
+  // Reset Stripe client secret when dialog closes
+  useEffect(() => {
+    if (!showPaymentOptions) setStripeClientSecret(null)
+  }, [showPaymentOptions])
 
   // Apply payment options from dialog - CREATE PAYMENT PLAN AND REDIRECT TO CHECKOUT
   const handleApplyPaymentOptions = async () => {
@@ -517,7 +588,7 @@ export default function NewPaymentPlanPage() {
         const installmentAmount = Number(selectedScheduleDetails?.installmentAmount || 0)
         const installments = Number(selectedScheduleDetails?.installments || 1)
         const totalAmount = installmentAmount * installments
-        
+
         paymentData = {
           ...paymentData,
           totalAmount,
@@ -584,7 +655,7 @@ export default function NewPaymentPlanPage() {
       // For all other schedules/methods: create the plan first, then branch as needed
       const response = await fetch('/api/payment-plans', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'x-api-key': 'ra1-dashboard-api-key-2024',
           'x-request-id': Math.random().toString(36).slice(2)
@@ -644,9 +715,9 @@ export default function NewPaymentPlanPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="parentId">Select Parent *</Label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     asChild
                   >
@@ -777,8 +848,8 @@ export default function NewPaymentPlanPage() {
                 <Button type="button" variant="outline" asChild>
                   <Link href="/payment-plans">Cancel</Link>
                 </Button>
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   disabled={loading}
                   onClick={async () => {
                     if (!formData.parentId) {
@@ -789,13 +860,13 @@ export default function NewPaymentPlanPage() {
                       })
                       return
                     }
-                    
+
                     setLoading(true)
                     try {
                       // Create payment plan with default monthly settings
                       const response = await fetch('/api/payment-plans', {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                           'Content-Type': 'application/json',
                           'x-api-key': 'ra1-dashboard-api-key-2024'
                         },
@@ -810,20 +881,20 @@ export default function NewPaymentPlanPage() {
                           type: 'monthly'
                         })
                       })
-                      
+
                       if (response.ok) {
                         const result = await response.json()
-                        
+
                         toast({
                           title: "✅ Payment Plan Created!",
                           description: "Redirecting to payment tracking...",
                           duration: 2000,
                         })
-                        
+
                         // REDIRECT TO PAYMENT DETAIL PAGE
                         const paymentId = result.mainPaymentId || result.paymentIds?.[0]
                         window.location.href = `/payments/${paymentId}`
-                        
+
                       } else {
                         const error = await response.json()
                         toast({
@@ -859,15 +930,15 @@ export default function NewPaymentPlanPage() {
             </form>
           </CardContent>
         </Card>
-        
+
         {/* Debug section for testing API */}
         <Card className="mt-4">
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full" 
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
                 onClick={() => {
                   console.log('🧪 Testing API connection...')
                   fetch('/api/health')
@@ -878,10 +949,10 @@ export default function NewPaymentPlanPage() {
               >
                 🧪 Test API Connection
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full" 
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
                 onClick={() => {
                   console.log('🔑 Testing authentication...')
                   fetch('/api/parents?limit=5', {
@@ -928,7 +999,7 @@ export default function NewPaymentPlanPage() {
                   <span className="font-medium">Processing Fee:</span> {paymentOptions.find(p => p.id === formData.paymentMethod)?.processingFee || '2.9% + $0.30'}
                 </div>
               </div>
-              
+
               {/* Payment Schedule Preview */}
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <h4 className="font-medium text-blue-900 mb-2">Payment Schedule</h4>
@@ -944,12 +1015,12 @@ export default function NewPaymentPlanPage() {
           </Card>
         )}
       </div>
-      
+
       {/* Enhanced Payment Options Dialog */}
       <Dialog open={showPaymentOptions} onOpenChange={setShowPaymentOptions}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-6">
-            <DialogTitle className="flex items-center gap-3 text-2xl">
+            <DialogTitle className="flex items-center gap-3 text-2xl tracking-wide uppercase">
               <CreditCard className="h-6 w-6 text-orange-600" />
               Payment Options
             </DialogTitle>
@@ -957,11 +1028,11 @@ export default function NewPaymentPlanPage() {
               Choose your preferred payment method and schedule for this payment plan
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Payment Methods */}
             <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">Select Payment Method</h3>
+              <h3 className="text-xl font-semibold text-gray-900 uppercase tracking-wide">Select Payment Method</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {paymentOptions.map((option) => (
                   <div
@@ -992,7 +1063,7 @@ export default function NewPaymentPlanPage() {
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                         <span className="text-sm font-medium text-gray-700">Processing Fee:</span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${option.processingFee === "None" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                        <span className={`text-xs px-3 py-1 rounded-full ${option.processingFee === "None" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
                           {option.processingFee}
                         </span>
                       </div>
@@ -1004,7 +1075,7 @@ export default function NewPaymentPlanPage() {
 
             {/* Payment Schedule */}
             <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">Payment Schedule</h3>
+              <h3 className="text-xl font-semibold text-gray-900 uppercase tracking-wide">Payment Schedule</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {paymentSchedules.map((schedule) => (
                   <div
@@ -1112,7 +1183,7 @@ export default function NewPaymentPlanPage() {
                     </Select>
                   </div>
                 </div>
-                
+
                 {/* Custom Amount */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Amount per Check</Label>
@@ -1174,7 +1245,7 @@ export default function NewPaymentPlanPage() {
                 )}
               </div>
             )}
-            
+
             {/* Cash Payment Fields */}
             {selectedPaymentOption === 'cash' && (
               <div className="space-y-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -1212,7 +1283,7 @@ export default function NewPaymentPlanPage() {
                     </Select>
                   </div>
                 </div>
-                
+
                 {/* Custom Amount */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Amount per Payment</Label>
@@ -1266,7 +1337,7 @@ export default function NewPaymentPlanPage() {
                 )}
               </div>
             )}
-            
+
             {(selectedPaymentOption === 'cash') && (
               <div className="space-y-3">
                 <Label htmlFor="paymentReference">
@@ -1281,200 +1352,22 @@ export default function NewPaymentPlanPage() {
               </div>
             )}
 
-            {/* Credit Card Form */}
-            {selectedPaymentOption === 'stripe_card' && (
-              <div className="space-y-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-4">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-blue-900">Credit Card Information</h3>
+            {/* Stripe Payment Element (secure) */}
+            {(selectedPaymentOption?.startsWith('stripe_')) && stripeClientSecret && stripePk && (
+              <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
+                <div className="space-y-4 bg-white p-4 rounded border">
+                  <PaymentElement />
                 </div>
-                
-                <div className="space-y-4">
-                  {/* Card Details */}
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardholderName">Cardholder Name *</Label>
-                      <Input
-                        id="cardholderName"
-                        value={creditCardForm.cardholderName}
-                        onChange={(e) => setCreditCardForm(prev => ({
-                          ...prev,
-                          cardholderName: e.target.value
-                        }))}
-                        placeholder="John Doe"
-                        className="bg-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">Card Number *</Label>
-                      <Input
-                        id="cardNumber"
-                        value={creditCardForm.cardNumber}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim()
-                          setCreditCardForm(prev => ({
-                            ...prev,
-                            cardNumber: value
-                          }))
-                        }}
-                        placeholder="4242 4242 4242 4242"
-                        maxLength={19}
-                        className="bg-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Expiry Date *</Label>
-                        <Input
-                          id="expiryDate"
-                          value={creditCardForm.expiryDate}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2')
-                            setCreditCardForm(prev => ({
-                              ...prev,
-                              expiryDate: value
-                            }))
-                          }}
-                          placeholder="MM/YY"
-                          maxLength={5}
-                          className="bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">CVV *</Label>
-                        <Input
-                          id="cvv"
-                          value={creditCardForm.cvv}
-                          onChange={(e) => setCreditCardForm(prev => ({
-                            ...prev,
-                            cvv: e.target.value.replace(/\D/g, '')
-                          }))}
-                          placeholder="123"
-                          maxLength={4}
-                          className="bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Billing Address */}
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-blue-900">Billing Address</h4>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="billingAddress">Street Address *</Label>
-                        <Input
-                          id="billingAddress"
-                          value={creditCardForm.billingAddress.line1}
-                          onChange={(e) => setCreditCardForm(prev => ({
-                            ...prev,
-                            billingAddress: {
-                              ...prev.billingAddress,
-                              line1: e.target.value
-                            }
-                          }))}
-                          placeholder="123 Main Street"
-                          className="bg-white"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City *</Label>
-                          <Input
-                            id="city"
-                            value={creditCardForm.billingAddress.city}
-                            onChange={(e) => setCreditCardForm(prev => ({
-                              ...prev,
-                              billingAddress: {
-                                ...prev.billingAddress,
-                                city: e.target.value
-                              }
-                            }))}
-                            placeholder="New York"
-                            className="bg-white"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State *</Label>
-                          <Input
-                            id="state"
-                            value={creditCardForm.billingAddress.state}
-                            onChange={(e) => setCreditCardForm(prev => ({
-                              ...prev,
-                              billingAddress: {
-                                ...prev.billingAddress,
-                                state: e.target.value
-                              }
-                            }))}
-                            placeholder="NY"
-                            className="bg-white"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="postalCode">Postal Code *</Label>
-                        <Input
-                          id="postalCode"
-                          value={creditCardForm.billingAddress.postalCode}
-                          onChange={(e) => setCreditCardForm(prev => ({
-                            ...prev,
-                            billingAddress: {
-                              ...prev.billingAddress,
-                              postalCode: e.target.value
-                            }
-                          }))}
-                          placeholder="10001"
-                          className="bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Summary */}
-                  <div className="p-4 bg-white border border-blue-300 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-3">Payment Summary</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Payment Method:</span>
-                        <span className="text-sm font-medium">Credit Card</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Schedule:</span>
-                        <span className="text-sm font-medium capitalize">
-                          {paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.label || selectedPaymentSchedule}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Amount:</span>
-                        <span className="text-sm font-medium">
-                          {selectedPaymentSchedule === 'custom' 
-                            ? `$${(1650 / customInstallments).toFixed(2)} per installment`
-                            : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$1650.00`
-                          }
-                        </span>
-                      </div>
-                      {selectedPaymentSchedule === 'custom' && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Installments:</span>
-                          <span className="text-sm font-medium">{customInstallments} payments</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between pt-2 border-t">
-                        <span className="text-sm font-semibold text-gray-900">Processing Fee:</span>
-                        <span className="text-sm font-semibold text-gray-900">2.9% + $0.30</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </Elements>
             )}
           </div>
 
           <DialogFooter className="flex gap-3 pt-6 border-t">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setShowPaymentOptions(false)
+                setStripeClientSecret(null)
                 // Reset form when closing
                 setCreditCardForm({
                   cardNumber: '',
@@ -1496,34 +1389,55 @@ export default function NewPaymentPlanPage() {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleApplyPaymentOptions}
-              disabled={
-                !selectedPaymentOption || 
-                !selectedPaymentSchedule ||
-                (selectedPaymentOption === 'stripe_card' && (
-                  !creditCardForm.cardNumber || 
-                  !creditCardForm.expiryDate || 
-                  !creditCardForm.cvv || 
-                  !creditCardForm.cardholderName ||
-                  !creditCardForm.billingAddress.line1 ||
-                  !creditCardForm.billingAddress.city ||
-                  !creditCardForm.billingAddress.state ||
-                  !creditCardForm.billingAddress.postalCode
-                ))
-              }
-              className="flex-1 bg-orange-600 hover:bg-orange-700"
-              size="lg"
-            >
-              Apply Payment Options
-            </Button>
+            {selectedPaymentOption?.startsWith('stripe_') && stripeClientSecret && stripePk ? (
+              <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
+                <ElementsConsumer>
+                  {({ stripe, elements }) => (
+                    <Button
+                      onClick={async () => {
+                        if (!stripe || !elements) return
+                        try {
+                          setLoading(true)
+                          const result: any = await stripe.confirmPayment({
+                            elements: elements!,
+                            confirmParams: { return_url: window.location.href },
+                            redirect: 'if_required',
+                          })
+                          if (result?.error) {
+                            toast({ title: '❌ Payment Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
+                            return
+                          }
+                          toast({ title: '✅ Payment Submitted', description: 'Stripe payment submitted successfully.' })
+                          setShowPaymentOptions(false)
+                        } finally {
+                          setLoading(false)
+                        }
+                      }}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                      size="lg"
+                    >
+                      Process Payment
+                    </Button>
+                  )}
+                </ElementsConsumer>
+              </Elements>
+            ) : (
+              <Button
+                onClick={handleApplyPaymentOptions}
+                disabled={!selectedPaymentOption || !selectedPaymentSchedule}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                size="lg"
+              >
+                Apply Payment Options
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Toaster />
     </AppLayout>
   )
-} 
+}
 
-// Component is already exported as default at line 104 
+// Component is already exported as default at line 104

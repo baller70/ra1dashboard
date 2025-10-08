@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+
 import { useState, useEffect, useRef, useMemo } from 'react'
 export const dynamic = 'force-dynamic'
 import { useParams, useRouter } from 'next/navigation'
@@ -922,23 +924,9 @@ export default function PaymentDetailPage() {
       ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
       : 0
 
-    // Generate a professional reminder message using emergency contact first name
+    // Generate a professional reminder message (simplified)
     const recipientName = getEmergencyContactFirstName(payment.parent)
-    const defaultMessage = `Dear ${recipientName},
-
-I hope this message finds you well. I wanted to reach out regarding your payment of $${payment.amount} that was due on ${new Date(payment.dueDate).toLocaleDateString()}.
-
-${payment.status === 'overdue' && daysOverdue > 0 ?
-  `This payment is currently ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue. ` :
-  'This payment is now due. '
-}
-
-We're here to help make this process as smooth as possible for you. If you have any questions about this payment or need assistance with payment options, please don't hesitate to reach out to us.
-
-Thank you for your time and continued support of our basketball program.
-
-Best regards,
-The Basketball Factory Inc.`
+    const defaultMessage = `Dear ${recipientName},\n\nThis is a friendly reminder about your payment. Please reach out if you need any assistance.\n\nBest regards,\nThe Basketball Factory Inc.`
 
     setAiGeneratedReminder({
       subject: 'Payment Reminder',
@@ -959,24 +947,8 @@ The Basketball Factory Inc.`
         ? Math.floor((new Date().getTime() - new Date(installment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
         : 0
 
-      // Generate professional installment reminder message instantly (no API call needed)
-      const installmentMessage = `Dear ${payment.parent.name || 'Parent'},
-
-I hope this message finds you well. I wanted to reach out regarding installment payment #${installment.installmentNumber} of $${installment.amount.toFixed(2)} that was due on ${new Date(installment.dueDate).toLocaleDateString()}.
-
-${installment.status === 'overdue' && daysOverdue > 0 ?
-  `This installment payment is currently ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue. ` :
-  'This installment payment is now due. '
-}
-
-This is installment ${installment.installmentNumber} of ${paymentProgress?.totalInstallments || 1} for your payment plan. We're here to help make this process as smooth as possible for you.
-
-If you have any questions about this installment or need assistance with payment options, please don't hesitate to reach out to us.
-
-Thank you for your time and continued support of our basketball program.
-
-Best regards,
-The Basketball Factory Inc.`
+      // Generate professional installment reminder message (simplified)
+      const installmentMessage = `Dear ${payment.parent.name || 'Parent'},\n\nThis is a friendly reminder about your installment payment. Please reach out if you need any assistance.\n\nBest regards,\nThe Basketball Factory Inc.`
 
       // Store installment context for the AI reminder dialog
       setSelectedInstallment(installment)
@@ -1474,6 +1446,8 @@ The Basketball Factory Inc.`
       toast({ title: 'Error', description: e?.message || 'Failed to update installment', variant: 'destructive' })
     }
   }
+
+  ;
 
 
   return (
@@ -3126,6 +3100,8 @@ The Basketball Factory Inc.`
                 ) : 'Process Payment'}
               </Button>
             )
+            }
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
