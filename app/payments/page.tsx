@@ -574,11 +574,10 @@ export default function PaymentsPage() {
   const teams = teamsData || []
   const allParents = allParentsData?.parents || []
   // Teams actually referenced by parents (ensures dialog shows all active team groups)
-  // Program-scoped payments: Yearly shows all; others require explicit match by plan.program OR parent.program
+  // Program-scoped payments: strict explicit match by plan.program OR parent.program for all programs
   const payments = React.useMemo(() => {
     const norm = (s: any) => String(s || '').trim()
     if (!Array.isArray(paymentsBase)) return []
-    if (activeProgram === 'yearly-program') return paymentsBase
     return paymentsBase.filter((p: any) => {
       const planProg = norm(p?.paymentPlan?.program)
       const parent = p?.parent || (allParents || []).find((ap: any) => String(ap._id) === String(p.parentId))

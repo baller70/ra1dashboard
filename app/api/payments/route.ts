@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
 
     let payments = (base?.payments || []) as any[];
 
-    // Restore Yearly tab to original (no filtering). Non-yearly: strict explicit match only.
-    if (program && program !== 'yearly-program') {
-      const requested = String(program);
+    // Strict program filtering for all programs, including Yearly
+    if (program) {
+      const requested = String(program).trim();
       payments = payments.filter((p: any) => {
         const planProg = String((p?.paymentPlan as any)?.program || '').trim();
         const parentProg = String((p?.parent as any)?.program || '').trim();
