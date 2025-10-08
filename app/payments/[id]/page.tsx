@@ -1032,7 +1032,7 @@ The Basketball Factory Inc.`
 
       if (selectedPaymentOption === 'stripe_card') {
         // If full one-time payment, process in-app via PaymentIntent (no redirect)
-        if (selectedPaymentSchedule === 'full') {
+        if (true) {
           const response = await fetch('/api/stripe/payment-intent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1106,7 +1106,7 @@ The Basketball Factory Inc.`
         setTimeout(() => { window.location.reload() }, 2000)
       } else if (selectedPaymentOption === 'stripe_ach') {
         // ACH via Stripe Payment Element (one-time only). For schedules, fallback to legacy path for now.
-        if (selectedPaymentSchedule === 'full') {
+        if (true) {
           const response = await fetch('/api/stripe/payment-intent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
