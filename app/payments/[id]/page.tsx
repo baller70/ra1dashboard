@@ -336,7 +336,7 @@ export default function PaymentDetailPage() {
   const [customInstallments, setCustomInstallments] = useState(3)
   const [customMonths, setCustomMonths] = useState(3)
 
-  // Credit card form states
+  // Credit card form states (kept only for legacy resets; UI hidden)
   const [showCreditCardForm, setShowCreditCardForm] = useState(false)
   const [creditCardForm, setCreditCardForm] = useState({
     cardNumber: '',
@@ -355,6 +355,8 @@ export default function PaymentDetailPage() {
   const [selectedInstallment, setSelectedInstallment] = useState<PaymentInstallment | null>(null)
   const [installmentPaymentOpen, setInstallmentPaymentOpen] = useState(false)
   const [payingInstallment, setPayingInstallment] = useState<PaymentInstallment | null>(null)
+  // Separate client secret for installment dialog
+  const [installmentClientSecret, setInstallmentClientSecret] = useState<string | null>(null)
   const [aiGeneratedReminder, setAiGeneratedReminder] = useState<{
     subject: string
     message: string
@@ -522,6 +524,48 @@ export default function PaymentDetailPage() {
     }
     run()
   }, [payment, selectedPaymentOption, selectedPaymentSchedule, customInstallments, stripeClientSecret])
+
+  // Prepare a PaymentIntent when paying a single installment
+  useEffect(() => {
+    const run = async () => {
+      try {
+        if (!payment || !installmentPaymentOpen || !payingInstallment) return
+        if (!(selectedPaymentOption?.startsWith('stripe_'))) return
+        if (installmentClientSecret) return
+
+        const amount = Math.round((payingInstallment.amount || 0) * 100)
+        const resp = await fetch('/api/stripe/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentId: (payment.parent as any)?._id || payment.parent?.id,
+            parentEmail: (payment.parent as any)?.email || payment.parent?.email,
+            parentName: (payment.parent as any)?.name || payment.parent?.name,
+            parentPhone: (payment.parent as any)?.phone || payment.parent?.phone,
+            paymentId: (payment as any)._id || payment.id,
+            amount,
+            description: `Installment #${payingInstallment.installmentNumber} for ${payment.parent?.name || 'tuition'}`,
+            cardOnly: false,
+          }),
+        })
+        if (!resp.ok) return
+        const { clientSecret } = await resp.json()
+        if (clientSecret) setInstallmentClientSecret(clientSecret)
+        try {
+          const cfgRes = await fetch('/api/stripe/config')
+          const cfg = await cfgRes.json().catch(() => ({}))
+          if (cfg?.publishableKey) setStripePk(cfg.publishableKey)
+        } catch {}
+      } catch {}
+    }
+    run()
+  }, [payment, installmentPaymentOpen, payingInstallment, selectedPaymentOption, installmentClientSecret])
+
+  // Reset installment client secret when closing dialog
+  useEffect(() => {
+    if (!installmentPaymentOpen) setInstallmentClientSecret(null)
+  }, [installmentPaymentOpen])
+
 
   // When check is chosen, force schedule to custom so the check UI/flow is enabled
   useEffect(() => {
@@ -1431,9 +1475,6 @@ The Basketball Factory Inc.`
     }
   }
 
-  const daysOverdue = (payment && payment.status === 'overdue')
-    ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -2471,7 +2512,10 @@ The Basketball Factory Inc.`
           status: selectedInstallment ? selectedInstallment.status : payment.status,
           daysPastDue: selectedInstallment && selectedInstallment.status === 'overdue'
             ? Math.floor((new Date().getTime() - new Date(selectedInstallment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
-            : daysOverdue
+            : ((payment && payment.status === 'overdue')
+              ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
+              : 0
+            )
         }}
         onSendReminder={handleSendReminder}
       />
@@ -3116,49 +3160,14 @@ The Basketball Factory Inc.`
               </div>
             </div>
 
-            {/* Credit Card Form */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="installment-card-number">Card Number</Label>
-                  <Input
-                    id="installment-card-number"
-                    placeholder="1234 5678 9012 3456"
-                    value={creditCardForm.cardNumber}
-                    onChange={(e) => setCreditCardForm(prev => ({ ...prev, cardNumber: e.target.value }))}
-                  />
+            {/* Stripe Payment Element for installment */}
+            {(selectedPaymentOption?.startsWith('stripe_')) && installmentClientSecret && stripePk && (
+              <Elements options={{ clientSecret: installmentClientSecret }} stripe={stripePromise as any}>
+                <div className="space-y-4 bg-white p-4 rounded border">
+                  <PaymentElement />
                 </div>
-                <div>
-                  <Label htmlFor="installment-cardholder-name">Cardholder Name</Label>
-                  <Input
-                    id="installment-cardholder-name"
-                    placeholder="John Doe"
-                    value={creditCardForm.cardholderName}
-                    onChange={(e) => setCreditCardForm(prev => ({ ...prev, cardholderName: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="installment-expiry">Expiry Date</Label>
-                  <Input
-                    id="installment-expiry"
-                    placeholder="MM/YY"
-                    value={creditCardForm.expiryDate}
-                    onChange={(e) => setCreditCardForm(prev => ({ ...prev, expiryDate: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="installment-cvv">CVV</Label>
-                  <Input
-                    id="installment-cvv"
-                    placeholder="123"
-                    value={creditCardForm.cvv}
-                    onChange={(e) => setCreditCardForm(prev => ({ ...prev, cvv: e.target.value }))}
-                  />
-                </div>
-              </div>
-            </div>
+              </Elements>
+            )}
 
             {/* Processing Fee */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
@@ -3203,122 +3212,53 @@ The Basketball Factory Inc.`
             >
               Cancel
             </Button>
-            <Button
-              onClick={async () => {
-                if (!payingInstallment || !payment) return
-
-                try {
-                  setProcessingPayment(true)
-
-                  const response = await fetch('/api/payments/process-card', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      paymentId: (payment as any)._id || payment.id,
-                      amount: Math.round(payingInstallment.amount * 100), // Convert to cents
-                      totalAmount: Math.round(payingInstallment.amount * 100), // Just this installment
-                      paymentMethod: 'credit_card',
-                      schedule: 'installment',
-                      installments: 1,
-                      installmentId: payingInstallment._id,
-                      creditCardDetails: {
-                        cardNumber: creditCardForm.cardNumber.replace(/\s/g, ''),
-                        expiryDate: creditCardForm.expiryDate,
-                        cvv: creditCardForm.cvv,
-                        cardholderName: creditCardForm.cardholderName,
-                        billingAddress: creditCardForm.billingAddress
-                      }
-                    })
-                  })
-
-                  if (response.ok) {
-                    const result = await response.json()
-
-                    toast({
-                      title: '✅ Payment Successful!',
-                      description: `Installment #${payingInstallment.installmentNumber} payment of $${payingInstallment.amount.toFixed(2)} processed successfully.`,
-                      duration: 5000,
-                    })
-
-                    // Optimistically reflect in Payment History immediately
-                    try {
-                      setPaymentHistory(prev => [
-                        {
-                          id: `card_${(payingInstallment as any)?._id || 'inst'}_${Date.now()}`,
-                          action: 'Payment Received',
-                          description: `Installment #${payingInstallment.installmentNumber} payment processed successfully via credit card`,
-                          performedAt: new Date().toISOString(),
-                          performedBy: payment.parent?.name || 'Parent',
-                          amount: payingInstallment.amount,
-                          status: 'paid',
-                          metadata: { installmentId: (payingInstallment as any)?._id, method: 'credit_card', optimistic: true },
-                        } as any,
-                        ...prev,
-                      ])
-                      setIsPaymentHistoryOpen(true)
-                      setHistoryLoading(false)
-                    } catch {}
-
-
-                    // Close dialog and refresh data
-                    setInstallmentPaymentOpen(false)
-                    setPayingInstallment(null)
-
-                    // Refresh payment data
-                    await Promise.all([
-                      fetchPaymentDetails(),
-                      fetchPaymentProgress(),
-                      fetchPaymentHistory()
-                    ])
-
-                    // Refresh parent profile data if the refresh function is available
-                    if (typeof window !== 'undefined' && (window as any).refreshParentData) {
-                      try {
-                        await (window as any).refreshParentData()
-                        console.log('Parent profile data refreshed after successful payment')
-                      } catch (error) {
-                        console.warn('Failed to refresh parent profile data:', error)
-                      }
-                    }
-                  } else {
-                    const errorData = await response.json()
-                    toast({
-                      title: '❌ Payment Failed',
-                      description: errorData.error || 'Payment processing failed. Please try again.',
-                      variant: 'destructive',
-                      duration: 7000,
-                    })
-                  }
-                } catch (error) {
-                  console.error('Payment error:', error)
-                  toast({
-                    title: '❌ Payment Error',
-                    description: 'An unexpected error occurred. Please try again.',
-                    variant: 'destructive',
-                    duration: 7000,
-                  })
-                } finally {
-                  setProcessingPayment(false)
-                }
-              }}
-              disabled={
-                !creditCardForm.cardNumber ||
-                !creditCardForm.expiryDate ||
-                !creditCardForm.cvv ||
-                !creditCardForm.cardholderName ||
-                processingPayment
-              }
-              className="flex-1 bg-orange-600 hover:bg-orange-700"
-            >
-              {processingPayment ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                `Pay $${payingInstallment?.amount.toFixed(2)}`
-              )}
-            </Button>
+            {selectedPaymentOption?.startsWith('stripe_') && installmentClientSecret && stripePk ? (
+              <Elements options={{ clientSecret: installmentClientSecret }} stripe={stripePromise as any}>
+                <ElementsConsumer>
+                  {({ stripe, elements }) => (
+                    <Button
+                      onClick={async () => {
+                        if (!stripe || !elements) return
+                        try {
+                          setProcessingPayment(true)
+                          const result: any = await stripe.confirmPayment({
+                            elements: elements!,
+                            confirmParams: { return_url: window.location.href },
+                            redirect: 'if_required',
+                          })
+                          if (result?.error) {
+                            toast({ title: '❌ Payment Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
+                            return
+                          }
+                          toast({ title: '✅ Payment Submitted', description: `Installment #${payingInstallment?.installmentNumber} submitted via Stripe.` })
+                          setInstallmentPaymentOpen(false)
+                          setPayingInstallment(null)
+                          try { await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()]) } catch {}
+                          try { await (window as any).refreshParentData?.() } catch {}
+                        } finally {
+                          setProcessingPayment(false)
+                        }
+                      }}
+                      disabled={!stripe || !elements || processingPayment}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    >
+                      {processingPayment ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        `Pay $${payingInstallment?.amount.toFixed(2)}`
+                      )}
+                    </Button>
+                  )}
+                </ElementsConsumer>
+              </Elements>
+            ) : (
+              <Button className="flex-1 bg-orange-600 hover:bg-orange-700" disabled>
+                {`Pay $${payingInstallment?.amount.toFixed(2)}`}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
