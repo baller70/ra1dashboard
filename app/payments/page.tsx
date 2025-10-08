@@ -1996,7 +1996,7 @@ export default function PaymentsPage() {
                           <div className="space-y-3 border-l-4 pl-4 ml-2" style={{
                             borderColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                           }}>
-                            {groupPayments.map((payment) => (
+                            {groupPayments.filter((p: any) => p && p._id).map((payment) => (
                           <div key={payment._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                             <div className="flex items-center space-x-4">
                               {!payment.isMockEntry && (
