@@ -146,7 +146,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+    const program = (searchParams.get('program') || '').trim();
+
     if (!id) {
       return NextResponse.json(
         { error: 'Team ID is required' },
@@ -154,10 +155,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Get team with parents to check if it can be deleted
+    // Confirm team exists
     const teams = await convex.query(api.teams.getTeams, { includeParents: true });
-    const team = teams.find(t => t._id === id);
-
+    const team = teams.find(t => String(t._id) === String(id));
     if (!team) {
       return NextResponse.json(
         { error: 'Team not found' },
@@ -165,16 +165,30 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // If team has assigned parents, proceed and let the Convex mutation unassign them automatically
-    // (Parents will remain in the system and move to Unassigned)
-    // Previously this returned 400; behavior updated per product requirements.
+    // If a program is specified, unassign only parents in that program and keep the team
+    if (program) {
+      // Fetch all parents and filter by this team
+      const parentsResp = await convex.query(api.parents.getParents, { page: 1, limit: 5000 });
+      const teamParents = (parentsResp?.parents || []).filter((p: any) => String(p.teamId || '') === String(id));
+      const inProgram = teamParents.filter((p: any) => String(p.program || '').trim() === program);
+      const otherProgramParents = teamParents.filter((p: any) => String(p.program || '').trim() !== program);
 
-    // Delete team in Convex
-    await convex.mutation(api.teams.deleteTeam, {
-      teamId: id as any
-    });
+      if (inProgram.length > 0) {
+        await convex.mutation(api.teams.unassignParentsFromTeams, { parentIds: inProgram.map((p: any) => p._id) });
+      }
 
-    return NextResponse.json({ success: true });
+      // If no parents remain on this team after unassigning, delete the team record; otherwise keep it for other programs
+      if (otherProgramParents.length === 0) {
+        await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
+        return NextResponse.json({ success: true, unassignedCount: inProgram.length, deletedTeam: true });
+      }
+
+      return NextResponse.json({ success: true, unassignedCount: inProgram.length, deletedTeam: false });
+    }
+
+    // No program specified: delete and unassign all parents using backend mutation
+    await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
+    return NextResponse.json({ success: true, unassignedCount: (team.parents || []).length, deletedTeam: true });
   } catch (error) {
     console.error('Error deleting team:', error);
     return NextResponse.json(

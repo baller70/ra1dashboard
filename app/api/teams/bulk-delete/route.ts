@@ -8,20 +8,39 @@ import { api } from '../../../../convex/_generated/api';
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const bulkDeleteSchema = z.object({
-  teamIds: z.array(z.string().min(1)).min(1)
+  teamIds: z.array(z.string().min(1)).min(1),
+  program: z.string().optional()
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { teamIds } = bulkDeleteSchema.parse(body);
+    const { teamIds, program } = bulkDeleteSchema.parse(body);
 
-    const results: { id: string; success: boolean; error?: string }[] = [];
+    const results: { id: string; success: boolean; deletedTeam?: boolean; unassignedCount?: number; error?: string }[] = [];
 
     for (const id of teamIds) {
       try {
-        await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
-        results.push({ id, success: true });
+        if (program && program.trim()) {
+          const parentsResp = await convex.query(api.parents.getParents, { page: 1, limit: 5000 });
+          const teamParents = (parentsResp?.parents || []).filter((p: any) => String(p.teamId || '') === String(id));
+          const inProgram = teamParents.filter((p: any) => String(p.program || '').trim() === program.trim());
+          const otherProgramParents = teamParents.filter((p: any) => String(p.program || '').trim() !== program.trim());
+
+          if (inProgram.length > 0) {
+            await convex.mutation(api.teams.unassignParentsFromTeams, { parentIds: inProgram.map((p: any) => p._id) });
+          }
+
+          if (otherProgramParents.length === 0) {
+            await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
+            results.push({ id, success: true, deletedTeam: true, unassignedCount: inProgram.length });
+          } else {
+            results.push({ id, success: true, deletedTeam: false, unassignedCount: inProgram.length });
+          }
+        } else {
+          await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
+          results.push({ id, success: true, deletedTeam: true });
+        }
       } catch (e: any) {
         console.error('Bulk delete error for team', id, e);
         results.push({ id, success: false, error: e?.message || 'Unknown error' });

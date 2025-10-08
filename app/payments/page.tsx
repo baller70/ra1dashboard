@@ -803,7 +803,7 @@ export default function PaymentsPage() {
     }
 
     try {
-      const response = await fetch(`/api/teams?id=${teamId}`, {
+      const response = await fetch(`/api/teams?id=${teamId}&program=${activeProgram}`, {
         method: 'DELETE'
       })
 
@@ -862,7 +862,7 @@ export default function PaymentsPage() {
       const res = await fetch('/api/teams/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamIds: selectedTeamIds })
+        body: JSON.stringify({ teamIds: selectedTeamIds, program: activeProgram })
       })
       const result = await res.json()
       if (res.ok && result?.success) {
