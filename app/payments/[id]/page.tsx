@@ -507,6 +507,7 @@ export default function PaymentDetailPage() {
             paymentId: (payment as any)._id || payment.id,
             amount: Math.round(paymentAmount * 100),
             description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
+            cardOnly: selectedPaymentOption === 'stripe_card',
           }),
         })
         if (!resp.ok) return

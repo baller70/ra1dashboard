@@ -19,7 +19,7 @@ function getStripe() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { parentId, parentEmail, parentName, parentPhone, paymentId, amount, description, paymentMethodId } = await request.json()
+    const { parentId, parentEmail, parentName, parentPhone, paymentId, amount, description, paymentMethodId, cardOnly } = await request.json()
     if (!parentId || !amount) {
       return NextResponse.json({ error: 'Missing required fields: parentId, amount' }, { status: 400 })
     }
@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
         },
         description: description || 'One-time payment',
       }
-      const params = achEnabled
+      const params = cardOnly
+        ? { ...baseParams, payment_method_types: ['card'] }
+        : achEnabled
         ? {
             ...baseParams,
             payment_method_types: ['card', 'us_bank_account'],
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
               us_bank_account: { verification_method: 'automatic' },
             },
           }
-        : { ...baseParams, automatic_payment_methods: { enabled: true } }
+        : { ...baseParams, payment_method_types: ['card'] }
 
       const intent = await stripe.paymentIntents.create(
         params as any,
@@ -118,7 +120,9 @@ export async function POST(request: NextRequest) {
       description: description || 'One-time payment',
     }
 
-    const params = achEnabled
+    const params = cardOnly
+      ? { ...baseParams, payment_method_types: ['card'] }
+      : achEnabled
       ? {
           ...baseParams,
           payment_method_types: ['card', 'us_bank_account'],
@@ -126,7 +130,7 @@ export async function POST(request: NextRequest) {
             us_bank_account: { verification_method: 'automatic' },
           },
         }
-      : { ...baseParams, automatic_payment_methods: { enabled: true } }
+      : { ...baseParams, payment_method_types: ['card'] }
 
     const intent = await stripe.paymentIntents.create(
       params as any,
