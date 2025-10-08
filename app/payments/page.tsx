@@ -1096,30 +1096,49 @@ export default function PaymentsPage() {
 
   // Enhance payments with parent data from the database
       const enhancedPayments = filteredPayments.map(payment => {
-      // Find matching parent from allParents
-      const dbParent = allParents.find(parent =>
-        parent._id === payment.parentId ||
-        parent.email === payment.parentEmail ||
-        parent.name === payment.parentName
-      );
+      // Robust parent resolution to avoid sibling mix-ups when sharing emails
+      const byId = allParents.find(p => String(p._id) === String(payment.parentId));
+      if (byId) {
+        return {
+          ...payment,
+          parentName: byId.name,
+          parentEmail: byId.email,
+          parent: { ...(payment.parent || {}), name: byId.name, email: byId.email, phone: byId.phone, status: byId.status }
+        };
+      }
 
-    if (dbParent) {
-      return {
-        ...payment,
-        parentName: dbParent.name,
-        parentEmail: dbParent.email,
-        parent: {
-          ...payment.parent,
-          name: dbParent.name,
-          email: dbParent.email,
-          phone: dbParent.phone,
-          status: dbParent.status
-        }
-      };
-    }
+      // If multiple parents share the same email (common for siblings), do not rely on email alone
+      const email = String(payment.parentEmail || '').trim();
+      let byEmail: any[] = [];
+      if (email) byEmail = allParents.filter(p => String(p.email || '').trim().toLowerCase() === email.toLowerCase());
 
-    return payment;
-  });
+      // Try exact name match first
+      const name = String(payment.parentName || '').trim();
+      const byName = name ? allParents.filter(p => String(p.name || '').trim() === name) : [];
+
+      let chosen = null as any;
+      if (byName.length === 1) {
+        chosen = byName[0];
+      } else if (byEmail.length === 1) {
+        chosen = byEmail[0];
+      } else if (byEmail.length > 1 && name) {
+        // Narrow by email + name if possible
+        const narrowed = byEmail.filter(p => String(p.name || '').trim() === name);
+        if (narrowed.length === 1) chosen = narrowed[0];
+      }
+
+      if (chosen) {
+        return {
+          ...payment,
+          parentName: chosen.name,
+          parentEmail: chosen.email,
+          parent: { ...(payment.parent || {}), name: chosen.name, email: chosen.email, phone: chosen.phone, status: chosen.status }
+        };
+      }
+
+      // Fallback: leave original payment name/email intact
+      return payment;
+    });
 
   // Deduplicate payments to show only the most recent payment per parent
   const deduplicatedPayments = enhancedPayments.reduce((unique: any[], payment) => {

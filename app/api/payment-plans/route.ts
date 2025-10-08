@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const parentId = searchParams.get('parentId') || undefined
     const status = searchParams.get('status') || undefined
+    const program = (searchParams.get('program') || '').trim()
 
     // Get payment plans from Convex with optional filters
     try {
@@ -24,7 +25,11 @@ export async function GET(request: Request) {
         parentId: parentId as any,
         status: status as any,
       } as any);
-      return NextResponse.json(paymentPlans || [])
+      // If program specified, filter by parent.program
+      const filtered = program
+        ? (Array.isArray(paymentPlans) ? paymentPlans.filter((p: any) => String((p?.parent as any)?.program || '').trim() === program) : [])
+        : paymentPlans
+      return NextResponse.json(filtered || [])
     } catch (e) {
       console.warn('payment-plans query failed, returning empty list:', (e as any)?.message || e)
       return NextResponse.json([])

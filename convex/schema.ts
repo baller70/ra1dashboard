@@ -75,6 +75,7 @@ export default defineSchema({
     status: v.optional(v.string()),
     stripeInvoiceId: v.optional(v.any()),
     stripePaymentId: v.optional(v.any()),
+    stripeScheduleId: v.optional(v.string()),
     paidAt: v.optional(v.number()),
     failureReason: v.optional(v.any()),
     remindersSent: v.optional(v.number()),

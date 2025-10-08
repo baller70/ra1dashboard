@@ -15,13 +15,15 @@ export async function GET(request: Request) {
     console.log('🔄 Payment analytics API called - fetching LIVE data from Convex...')
     
     // FETCH LIVE PAYMENT DATA FROM CONVEX
-    let paymentAnalytics = await convex.query(api.payments.getPaymentAnalytics, {});
+    const { searchParams } = new URL(request.url)
+    const program = (searchParams.get('program') || '').trim()
+    let paymentAnalytics = await convex.query(api.payments.getPaymentAnalytics, { program });
 
     // Post-process using authoritative plans list (never infer from parents)
     try {
       // Prefer using our own API endpoint to ensure consistency across environments
       const baseUrl = request.url.includes('localhost') ? 'http://localhost:3000' : `https://${request.headers.get('host')}`
-      const plansRes = await fetch(`${baseUrl}/api/payment-plans?_t=${Date.now()}`, {
+      const plansRes = await fetch(`${baseUrl}/api/payment-plans?_t=${Date.now()}${program ? `&program=${encodeURIComponent(program)}` : ''}`, {
         headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' },
         cache: 'no-store'
       })
@@ -59,7 +61,7 @@ export async function GET(request: Request) {
     
     console.log('📊 Live payment analytics (adjusted):', paymentAnalytics)
     
-    return NextResponse.json({ success: true, data: paymentAnalytics })
+    return NextResponse.json({ success: true, data: paymentAnalytics }, { headers: { 'Cache-Control': 'no-store, max-age=0, s-maxage=0, stale-while-revalidate=0' } })
   } catch (error) {
     console.error('Payment analytics error:', error)
     // Robust fallback so dashboard doesn't break if primary query fails
@@ -70,8 +72,8 @@ export async function GET(request: Request) {
       const parentsTotal = parentsRes?.pagination?.total || 0
 
       // Pending and paid payments sums
-      const pendingRes: any = await convex.query(api.payments.getPayments as any, { status: 'pending', page: 1, limit: 1000 })
-      const paidRes: any = await convex.query(api.payments.getPayments as any, { status: 'paid', page: 1, limit: 1000 })
+      const pendingRes: any = await convex.query(api.payments.getPayments as any, { status: 'pending', page: 1, limit: 1000, program })
+      const paidRes: any = await convex.query(api.payments.getPayments as any, { status: 'paid', page: 1, limit: 1000, program })
       const pendingPayments = Array.isArray(pendingRes?.payments) ? pendingRes.payments.reduce((s: number, p: any) => s + (p.amount || 0), 0) : 0
       const collectedPayments = Array.isArray(paidRes?.payments) ? paidRes.payments.reduce((s: number, p: any) => s + (p.amount || 0), 0) : 0
 
@@ -92,7 +94,7 @@ export async function GET(request: Request) {
         avgPaymentTime: 0,
       }
       console.log('✅ Derived payment analytics fallback:', fallback)
-      return NextResponse.json({ success: true, data: fallback })
+      return NextResponse.json({ success: true, data: fallback }, { headers: { 'Cache-Control': 'no-store, max-age=0, s-maxage=0, stale-while-revalidate=0' } })
     } catch (fallbackErr) {
       console.error('Fallback analytics failed:', fallbackErr)
       return NextResponse.json(
