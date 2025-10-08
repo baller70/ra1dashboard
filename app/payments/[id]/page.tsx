@@ -2185,6 +2185,44 @@ The Basketball Factory Inc.`
                   </Button>
                 </div>
 
+                  {/* Direct Stripe Pay (bottom button) */}
+                  <Button
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={async () => {
+                      if (!payment) return
+                      try {
+                        setProcessingPayment(true)
+                        const amountDollars = Number((paymentProgress?.nextDue?.amount ?? (payment as any).amount) || 0)
+                        const resp = await fetch('/api/stripe/create-payment-link', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            paymentId: (payment as any)._id || payment.id,
+                            parentId: (payment.parent as any)?._id || payment.parent?.id || payment.parentId,
+                            parentName: (payment.parent as any)?.name || payment.parent?.name || '',
+                            parentEmail: (payment.parent as any)?.email || payment.parent?.email || '',
+                            amount: Math.round(amountDollars * 100),
+                            description: `Payment ${((payment as any)._id || payment.id)}`,
+                          })
+                        })
+                        const json = await resp.json().catch(() => ({}))
+                        if (resp.ok && json?.url) {
+                          window.location.href = json.url
+                        } else {
+                          toast({ title: 'Error', description: json?.error || 'Could not create Stripe payment link', variant: 'destructive' })
+                        }
+                      } catch (e: any) {
+                        toast({ title: 'Error', description: e?.message || 'Failed to start Stripe checkout', variant: 'destructive' })
+                      } finally {
+                        setProcessingPayment(false)
+                      }
+                    }}
+                  >
+                    Pay with Stripe
+                  </Button>
+
+
                   {/* Admin: Mark Paid (visible with ?admin=1) */}
                   {typeof window !== 'undefined' && window.location.search.includes('admin=1') && payment?.status !== 'paid' && (
                     <div className="mt-2">
