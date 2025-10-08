@@ -247,7 +247,7 @@ const paymentOptions = [
   },
     {
       id: "manual_card",
-      name: "Manual Credit/Debit",
+      name: "Manual credit card / debit",
       description: "Record a card payment manually (no Stripe charge)",
       icon: CreditCard,
       recommended: false,
@@ -3262,7 +3262,7 @@ The Basketball Factory Inc.`
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
                     <SelectItem value="check">Check</SelectItem>
-                    <SelectItem value="manual_card">Manual Credit/Debit</SelectItem>
+                    <SelectItem value="manual_card">Manual credit card / debit</SelectItem>
                     <SelectItem value="zelle">Zelle</SelectItem>
                     <SelectItem value="venmo">Venmo</SelectItem>
                     <SelectItem value="bank">Bank Transfer</SelectItem>
