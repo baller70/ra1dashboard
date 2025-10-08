@@ -253,10 +253,27 @@ export const getPaymentAnalytics = query({
     // Potential revenue: sum of unique plans' totalAmount
     const totalRevenue = uniquePlans.reduce((sum, p: any) => sum + Number(p.totalAmount || 0), 0);
 
-    // Collected: only explicit paid payments (no automatic assumptions)
-    const collectedPayments = payments
-      .filter((p: any) => p.status === 'paid')
+    // Collected: sum PAID standalone payments (no installments) + PAID installments (for plans)
+    // 1) Load installments and index by parentPaymentId and by parentId
+    let installments = await ctx.db.query("paymentInstallments").collect();
+    if (program) {
+      // Filter installments by allowed parents for this program
+      installments = installments.filter((inst: any) => allowed.has(String(inst.parentId)));
+    }
+
+    const paymentIdsWithInstallments = new Set<string>(
+      installments.map((i: any) => String(i.parentPaymentId))
+    );
+
+    const paidInstallmentsTotal = installments
+      .filter((i: any) => String(i.status).toLowerCase() === 'paid')
+      .reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+
+    const paidStandalonePaymentsTotal = payments
+      .filter((p: any) => p.status === 'paid' && !paymentIdsWithInstallments.has(String(p._id)))
       .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+
+    const collectedPayments = paidStandalonePaymentsTotal + paidInstallmentsTotal;
 
     // Pending: remainder of plan totals after collected payments
     const pendingFromPlans = Math.max(totalRevenue - collectedPayments, 0);
