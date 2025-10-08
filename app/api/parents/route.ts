@@ -140,7 +140,10 @@ export async function POST(request: Request) {
       status: 'active',
       teamId: sanitizedData.teamId || undefined,
       notes: sanitizedData.notes || undefined,
-
+      // Assign program when provided (non-Yearly only)
+      program: (typeof body?.program === 'string' && body.program.trim() && body.program.trim() !== 'yearly-program')
+        ? body.program.trim()
+        : undefined,
     };
     
     const parentId = await convex.mutation(api.parents.createParent, createData);

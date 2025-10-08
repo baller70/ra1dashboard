@@ -35,6 +35,7 @@ export default defineSchema({
     stripeSubscriptionId: v.optional(v.string()),
     stripePaymentMethodId: v.optional(v.string()),
     teamId: v.optional(v.string()),
+    program: v.optional(v.string()),
     notes: v.optional(v.string()),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),

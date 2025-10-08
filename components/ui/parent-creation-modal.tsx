@@ -13,9 +13,10 @@ interface ParentCreationModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onParentCreated?: (parent: any) => void
+  program?: string
 }
 
-export function ParentCreationModal({ open, onOpenChange, onParentCreated }: ParentCreationModalProps) {
+export function ParentCreationModal({ open, onOpenChange, onParentCreated, program }: ParentCreationModalProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -48,7 +49,8 @@ export function ParentCreationModal({ open, onOpenChange, onParentCreated }: Par
           emergencyContact: formData.emergencyContact || undefined,
           emergencyPhone: formData.emergencyPhone || undefined,
           notes: formData.notes || undefined,
-          status: 'active'
+          status: 'active',
+          program
         }),
       })
 

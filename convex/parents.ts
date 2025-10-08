@@ -148,6 +148,7 @@ export const createParent = mutation({
     status: v.optional(v.string()),
     teamId: v.optional(v.string()),
     notes: v.optional(v.string()),
+    program: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -169,6 +170,7 @@ export const createParent = mutation({
       stripeCustomerId: undefined,
       teamId: args.teamId,
       notes: args.notes,
+      program: args.program,
       createdAt: now,
       updatedAt: now,
     });
@@ -195,6 +197,7 @@ export const updateParent = mutation({
     stripePaymentMethodId: v.optional(v.string()),
     teamId: v.optional(v.string()),
     notes: v.optional(v.string()),
+    program: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
