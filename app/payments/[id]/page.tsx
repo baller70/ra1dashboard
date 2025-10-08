@@ -2595,6 +2595,38 @@ The Basketball Factory Inc.`
               </div>
             </div>
 
+            {/* Stripe Payment Element under schedule */}
+            {selectedPaymentOption === 'stripe_card' && stripeClientSecret && stripePk && (
+              <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
+                <div className="mt-4 bg-white p-4 rounded border">
+                  <PaymentElement />
+                  <div className="pt-4">
+                    <ElementsConsumer>
+                      {({ stripe, elements }) => (
+                        <Button
+                          className="bg-orange-600 hover:bg-orange-700"
+                          disabled={!stripe || !elements}
+                          onClick={async () => {
+                            const result: any = await stripe?.confirmPayment({ elements: elements!, confirmParams: { return_url: window.location.href }, redirect: 'if_required' })
+                            if (result?.error) {
+                              toast({ title: 'Card Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
+                              return
+                            }
+                            try { await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()]) } catch {}
+                            setPaymentOptionsOpen(false)
+                            try { await (window as any).refreshParentData?.() } catch {}
+                          }}
+                        >
+                          Confirm Payment
+                        </Button>
+                      )}
+                    </ElementsConsumer>
+                  </div>
+                </div>
+              </Elements>
+            )}
+
+
             {/* Custom Installment Fields */}
             {selectedPaymentSchedule === 'custom' && (
               <div className="space-y-4 p-4 bg-gray-50 border rounded-lg">
@@ -2807,7 +2839,7 @@ The Basketball Factory Inc.`
             )}
 
             {/* Credit Card Form */}
-            {selectedPaymentOption === 'stripe_card' && (
+            {false && (
               <div className="space-y-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-4">
                   <CreditCard className="h-5 w-5 text-blue-600" />
