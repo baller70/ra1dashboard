@@ -34,8 +34,7 @@ export async function GET(request: Request) {
       page: 1, // fetch from the beginning; we'll paginate after filtering
       limit: Math.max(limit * 5, 500), // grab a wider slice to ensure enough after filtering
       search: search || undefined,
-      status: status && status !== 'all' ? status : undefined,
-      program: undefined,
+      status: status && status !== 'all' ? status : undefined
     });
 
     let parents = baseResult.parents as any[];
