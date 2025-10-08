@@ -163,8 +163,9 @@ export async function POST(request: Request) {
       return createErrorResponse(ApiErrors.DATABASE_ERROR)
     }
 
+    const errMsg = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to create parent', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: `Failed to create parent: ${errMsg}` },
       { status: 500 }
     )
   }

@@ -43,8 +43,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching teams:', error);
+    const errMsg = (error instanceof Error && error.message) ? error.message : 'Unknown error';
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch teams' },
+      { success: false, error: `Failed to fetch teams: ${errMsg}` },
       { status: 500 }
     );
   }
