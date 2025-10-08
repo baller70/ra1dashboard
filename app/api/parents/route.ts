@@ -39,8 +39,8 @@ export async function GET(request: Request) {
 
     let parents = baseResult.parents as any[];
 
-    // Program filtering for non-Yearly tabs only; Yearly shows all
-    if (program && String(program).trim() !== 'yearly-program') {
+    // Strict program filtering for all tabs, including Yearly
+    if (program) {
       const requested = String(program).trim();
       parents = parents.filter((p: any) => String((p as any).program || '').trim() === requested);
     }
@@ -140,11 +140,10 @@ export async function POST(request: Request) {
       status: 'active',
       teamId: sanitizedData.teamId || undefined,
       notes: sanitizedData.notes || undefined,
-      // Assign program when provided, but ignore 'yearly-program' (Yearly is catch-all)
-      program: (() => {
-        const req = typeof body?.program === 'string' ? body.program.trim() : undefined;
-        return req && req !== 'yearly-program' ? req : undefined;
-      })(),
+      // Assign program when provided (including Yearly)
+      program: (typeof body?.program === 'string' && body.program.trim())
+        ? body.program.trim()
+        : undefined,
     } as const;
 
     // Light PII-safe debug log
@@ -172,16 +171,12 @@ export async function POST(request: Request) {
       console.warn('Convex getParent after create failed:', e);
     }
 
-    // Defensive: if a non-Yearly program was requested but the stored record lacks it, patch it now
+    // Defensive: if a program was requested but the stored record lacks it, patch it now
     try {
       const requestedProgram = (typeof body?.program === 'string' && body.program.trim())
         ? body.program.trim()
         : undefined;
-      if (
-        requestedProgram &&
-        requestedProgram !== 'yearly-program' &&
-        (!createdParent || !String((createdParent as any).program || '').trim())
-      ) {
+      if (requestedProgram && (!createdParent || !String((createdParent as any).program || '').trim())) {
         await convex.mutation(api.parents.updateParent, { id: parentId as any, program: requestedProgram });
         createdParent = await convex.query(api.parents.getParent, { id: parentId as any });
       }
