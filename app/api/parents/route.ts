@@ -144,15 +144,32 @@ export async function POST(request: Request) {
       program: (typeof body?.program === 'string' && body.program.trim() && body.program.trim() !== 'yearly-program')
         ? body.program.trim()
         : undefined,
-    };
-    
-    const parentId = await convex.mutation(api.parents.createParent, createData);
+    } as const;
+
+    // Light PII-safe debug log
+    try {
+      console.debug('Parents POST createData keys:', Object.keys(createData));
+    } catch {}
+
+    let parentId: any;
+    try {
+      parentId = await convex.mutation(api.parents.createParent, createData);
+    } catch (e: any) {
+      console.error('Convex createParent failed:', e);
+      const msg = e?.message || String(e);
+      return NextResponse.json(
+        { error: `Convex createParent failed: ${msg}` },
+        { status: 500 }
+      );
+    }
 
     // Fetch full created parent for UI/state consistency
     let createdParent: any = null
     try {
       createdParent = await convex.query(api.parents.getParent, { id: parentId as any })
-    } catch {}
+    } catch (e) {
+      console.warn('Convex getParent after create failed:', e);
+    }
 
     // Defensive: if a non-yearly program was requested but the stored record lacks it, patch it now
     try {
