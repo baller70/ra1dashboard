@@ -1771,7 +1771,9 @@ export default function PaymentsPage() {
                   Unassigned ({unassignedRenderedParentCount})
                 </option>
                 {teams.map((team) => {
-                  const teamParentCount = allParents.filter(p => p.teamId === team._id).length
+                  const teamParentCount = (() => {
+                    try { return new Set(((groupedPayments[team.name] || []) as any[]).map((e: any) => String(e.parentId))).size } catch { return allParents.filter(p => p.teamId === team._id).length }
+                  })()
                   return (
                     <option key={team._id} value={team._id}>
                       {team.name} ({teamParentCount})
@@ -1958,9 +1960,23 @@ export default function PaymentsPage() {
                             <h3 className="text-lg font-semibold text-orange-600" data-testid={isUnassigned ? 'unassigned-header' : undefined}>
                               {groupName} (
                                 <span data-testid={isUnassigned ? 'unassigned-count' : undefined}>
-                                  {isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length}
+                                  {(() => {
+                                    if (isUnassigned) return unassignedRenderedParentCount
+                                    try {
+                                      const s = new Set((groupPayments as any[]).map((e: any) => String(e.parentId)))
+                                      return s.size
+                                    } catch {
+                                      return 0
+                                    }
+                                  })()}
                                 </span>
-                                {(isUnassigned ? unassignedRenderedParentCount : allParents.filter(p => p.teamId === team?._id).length) === 1 ? ' parent' : ' parents'}
+                                {(() => {
+                                  const count = (() => {
+                                    if (isUnassigned) return unassignedRenderedParentCount
+                                    try { return new Set((groupPayments as any[]).map((e: any) => String(e.parentId))).size } catch { return 0 }
+                                  })()
+                                  return count === 1 ? ' parent' : ' parents'
+                                })()}
                               )
                             </h3>
                             {isCollapsed ? (
@@ -2265,7 +2281,7 @@ export default function PaymentsPage() {
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: team.color || '#f97316' }} />
                     <span className="font-medium">{team.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{allParents.filter(p => p.teamId === team._id).length} parents</span>
+                  <span className="text-xs text-muted-foreground">{(() => { try { return new Set(((groupedPayments[team.name] || []) as any[]).map((e: any) => String(e.parentId))).size } catch { return allParents.filter(p => p.teamId === team._id).length }})()} parents</span>
                 </div>
               ))}
             </div>
