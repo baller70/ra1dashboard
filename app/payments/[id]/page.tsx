@@ -507,7 +507,7 @@ export default function PaymentDetailPage() {
             paymentId: (payment as any)._id || payment.id,
             amount: Math.round(paymentAmount * 100),
             description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
-            cardOnly: selectedPaymentOption === 'stripe_card',
+            cardOnly: false,
           }),
         })
         if (!resp.ok) return
@@ -1431,9 +1431,9 @@ The Basketball Factory Inc.`
     }
   }
 
-  const daysOverdue = payment.status === 'overdue'
+  const daysOverdue = (payment && payment.status === 'overdue')
     ? Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
-    : 0
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -2556,32 +2556,10 @@ The Basketball Factory Inc.`
             </div>
 
             {/* Stripe Payment Element under schedule */}
-            {selectedPaymentOption === 'stripe_card' && stripeClientSecret && stripePk && (
+            {(selectedPaymentOption?.startsWith('stripe_')) && stripeClientSecret && stripePk && (
               <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
                 <div className="mt-4 bg-white p-4 rounded border">
                   <PaymentElement />
-                  <div className="pt-4">
-                    <ElementsConsumer>
-                      {({ stripe, elements }) => (
-                        <Button
-                          className="bg-orange-600 hover:bg-orange-700"
-                          disabled={!stripe || !elements}
-                          onClick={async () => {
-                            const result: any = await stripe?.confirmPayment({ elements: elements!, confirmParams: { return_url: window.location.href }, redirect: 'if_required' })
-                            if (result?.error) {
-                              toast({ title: 'Card Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
-                              return
-                            }
-                            try { await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()]) } catch {}
-                            setPaymentOptionsOpen(false)
-                            try { await (window as any).refreshParentData?.() } catch {}
-                          }}
-                        >
-                          Confirm Payment
-                        </Button>
-                      )}
-                    </ElementsConsumer>
-                  </div>
                 </div>
               </Elements>
             )}
@@ -2808,7 +2786,7 @@ The Basketball Factory Inc.`
 
                 <div className="space-y-4">
                   {/* Stripe Payment Element (secure) */}
-                  {stripeClientSecret && stripePk && (
+                  {(selectedPaymentOption?.startsWith('stripe_')) && stripeClientSecret && stripePk && (
                     <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
                       <div className="space-y-4 bg-white p-4 rounded border">
                         <PaymentElement />
@@ -3051,28 +3029,59 @@ The Basketball Factory Inc.`
             >
               Cancel
             </Button>
-            <Button
-              onClick={handlePaymentProcess}
-              disabled={
-                !selectedPaymentOption ||
-                !selectedPaymentSchedule ||
-                processingPayment ||
-                (selectedPaymentOption?.startsWith('stripe_'))
-              }
-              className="flex-1 bg-orange-600 hover:bg-orange-700"
-              size="lg"
-            >
-              {processingPayment ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : selectedPaymentOption === 'stripe_card' ? (
-                `Process Credit Card Payment`
-              ) : (
-                'Process Payment'
-              )}
-            </Button>
+            {selectedPaymentOption?.startsWith('stripe_') && stripeClientSecret && stripePk ? (
+              <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
+                <ElementsConsumer>
+                  {({ stripe, elements }) => (
+                    <Button
+                      onClick={async () => {
+                        try {
+                          setProcessingPayment(true)
+                          const result: any = await stripe?.confirmPayment({
+                            elements: elements!,
+                            confirmParams: { return_url: window.location.href },
+                            redirect: 'if_required',
+                          })
+                          if (result?.error) {
+                            toast({ title: 'Payment Error', description: result.error.message || 'Payment failed', variant: 'destructive' })
+                            return
+                          }
+                          try { await Promise.all([fetchPaymentDetails(), fetchPaymentProgress(), fetchPaymentHistory()]) } catch {}
+                          setPaymentOptionsOpen(false)
+                          try { await (window as any).refreshParentData?.() } catch {}
+                        } finally {
+                          setProcessingPayment(false)
+                        }
+                      }}
+                      disabled={!stripe || !elements || processingPayment}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                      size="lg"
+                    >
+                      {processingPayment ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Processing...
+                        </>
+                      ) : 'Process Payment'}
+                    </Button>
+                  )}
+                </ElementsConsumer>
+              </Elements>
+            ) : (
+              <Button
+                onClick={handlePaymentProcess}
+                disabled={!selectedPaymentOption || !selectedPaymentSchedule || processingPayment}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                size="lg"
+              >
+                {processingPayment ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : 'Process Payment'}
+              </Button>
+            )
           </DialogFooter>
         </DialogContent>
       </Dialog>

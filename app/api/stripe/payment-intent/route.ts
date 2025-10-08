@@ -75,15 +75,7 @@ export async function POST(request: NextRequest) {
       }
       const params = cardOnly
         ? { ...baseParams, payment_method_types: ['card'] }
-        : achEnabled
-        ? {
-            ...baseParams,
-            payment_method_types: ['card', 'us_bank_account'],
-            payment_method_options: {
-              us_bank_account: { verification_method: 'automatic' },
-            },
-          }
-        : { ...baseParams, payment_method_types: ['card'] }
+        : { ...baseParams, automatic_payment_methods: { enabled: true } }
 
       const intent = await stripe.paymentIntents.create(
         params as any,
@@ -122,15 +114,7 @@ export async function POST(request: NextRequest) {
 
     const params = cardOnly
       ? { ...baseParams, payment_method_types: ['card'] }
-      : achEnabled
-      ? {
-          ...baseParams,
-          payment_method_types: ['card', 'us_bank_account'],
-          payment_method_options: {
-            us_bank_account: { verification_method: 'automatic' },
-          },
-        }
-      : { ...baseParams, payment_method_types: ['card'] }
+      : { ...baseParams, automatic_payment_methods: { enabled: true } }
 
     const intent = await stripe.paymentIntents.create(
       params as any,
