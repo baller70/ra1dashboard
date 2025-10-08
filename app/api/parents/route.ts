@@ -39,9 +39,9 @@ export async function GET(request: Request) {
 
     let parents = baseResult.parents as any[];
 
-    // Restore Yearly tab to original (no filtering). Non-yearly: strict explicit match only.
-    if (program && program !== 'yearly-program') {
-      const requested = String(program);
+    // Strict program filtering for all tabs, including Yearly
+    if (program) {
+      const requested = String(program).trim();
       parents = parents.filter((p: any) => String((p as any).program || '').trim() === requested);
     }
 
@@ -140,8 +140,8 @@ export async function POST(request: Request) {
       status: 'active',
       teamId: sanitizedData.teamId || undefined,
       notes: sanitizedData.notes || undefined,
-      // Assign program when provided (non-Yearly only)
-      program: (typeof body?.program === 'string' && body.program.trim() && body.program.trim() !== 'yearly-program')
+      // Assign program when provided (including Yearly)
+      program: (typeof body?.program === 'string' && body.program.trim())
         ? body.program.trim()
         : undefined,
     } as const;
@@ -171,9 +171,9 @@ export async function POST(request: Request) {
       console.warn('Convex getParent after create failed:', e);
     }
 
-    // Defensive: if a non-yearly program was requested but the stored record lacks it, patch it now
+    // Defensive: if a program was requested but the stored record lacks it, patch it now
     try {
-      const requestedProgram = (typeof body?.program === 'string' && body.program.trim() && body.program.trim() !== 'yearly-program')
+      const requestedProgram = (typeof body?.program === 'string' && body.program.trim())
         ? body.program.trim()
         : undefined;
       if (requestedProgram && (!createdParent || !String((createdParent as any).program || '').trim())) {
