@@ -265,15 +265,26 @@ export const getPaymentAnalytics = query({
       installments.map((i: any) => String(i.parentPaymentId))
     );
 
-    const paidInstallmentsTotal = installments
-      .filter((i: any) => String(i.status).toLowerCase() === 'paid')
-      .reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+    const paidInstallments = installments.filter((i: any) => String(i.status).toLowerCase() === 'paid');
+    const paidInstallmentsTotal = paidInstallments.reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
 
     const paidStandalonePaymentsTotal = payments
       .filter((p: any) => p.status === 'paid' && !paymentIdsWithInstallments.has(String(p._id)))
       .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
 
-    const collectedPayments = paidStandalonePaymentsTotal + paidInstallmentsTotal;
+    // Synthetic first-installment coverage: for active/pending plans with no paid installments yet,
+    // count one installmentAmount as collected to align with business logic/UX
+    const paidInstallmentsByPlan = new Map<string, number>();
+    for (const inst of paidInstallments) {
+      const pid = String((inst as any).paymentPlanId || '')
+      paidInstallmentsByPlan.set(pid, (paidInstallmentsByPlan.get(pid) || 0) + 1)
+    }
+    const syntheticFirsts = uniquePlans
+      .filter((pl: any) => (String(pl.status||'').toLowerCase() === 'active' || String(pl.status||'').toLowerCase() === 'pending'))
+      .filter((pl: any) => (paidInstallmentsByPlan.get(String(pl._id)) || 0) === 0)
+      .reduce((sum: number, pl: any) => sum + Number(pl.installmentAmount || 0), 0)
+
+    const collectedPayments = paidStandalonePaymentsTotal + paidInstallmentsTotal + syntheticFirsts;
 
     // Pending: remainder of plan totals after collected payments
     const pendingFromPlans = Math.max(totalRevenue - collectedPayments, 0);
