@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
     const teams = await convex.query(api.teams.getTeams, {
       includeParents,
       limit: limitParam,
-      program: queryProgram,
     });
 
     return NextResponse.json({
@@ -64,7 +63,6 @@ export async function POST(request: NextRequest) {
       name,
       description,
       color,
-      program,
     });
 
     // Return success without re-query to avoid any race/consistency flake
@@ -102,7 +100,7 @@ export async function PUT(request: NextRequest) {
 
     // If updating name, check for uniqueness within the same program
     if (validatedData.name) {
-      const existingTeams = await convex.query(api.teams.getTeams, { program: validatedData.program });
+      const existingTeams = await convex.query(api.teams.getTeams, {});
       const existingTeam = existingTeams.find(team => team.name === validatedData.name && team._id !== id);
 
       if (existingTeam) {
@@ -119,7 +117,6 @@ export async function PUT(request: NextRequest) {
       name: validatedData.name,
       description: validatedData.description,
       color: validatedData.color,
-      program: validatedData.program,
     });
 
     // Get updated team

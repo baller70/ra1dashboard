@@ -115,8 +115,7 @@ export async function POST(request: Request) {
     // Allow duplicate emails as long as the name is different
     const existingParents = await convex.query(api.parents.getParents, {
       page: 1,
-      limit: 1000,
-      program: sanitizedData.program || 'yearly-program',
+      limit: 1000
     });
     const normalize = (s: string) => (s || '').trim().toLowerCase();
     const existsSameCombo = existingParents.parents.some(
@@ -142,7 +141,7 @@ export async function POST(request: Request) {
       status: 'active',
       teamId: sanitizedData.teamId || undefined,
       notes: sanitizedData.notes || undefined,
-      program: sanitizedData.program || 'yearly-program',
+
     };
     
     const parentId = await convex.mutation(api.parents.createParent, createData);
