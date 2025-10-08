@@ -47,7 +47,7 @@ export async function PATCH(
     // Temporarily disabled for testing: await requireAuth()
 
     const body = await request.json()
-    const { status, paidAt, notes } = body
+    const { status, paidAt, notes, paymentMethod } = body
 
     console.log('PATCH request for payment ID:', params.id, 'with body:', body)
 
@@ -56,7 +56,8 @@ export async function PATCH(
       id: params.id as any,
       status,
       paidAt,
-      notes
+      notes,
+      paymentMethod
     });
 
     console.log('Payment updated successfully:', updatedPayment)

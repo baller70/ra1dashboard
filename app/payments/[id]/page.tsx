@@ -245,6 +245,14 @@ const paymentOptions = [
     recommended: true,
     processingFee: "2.9% + $0.30"
   },
+    {
+      id: "manual_card",
+      name: "Manual Credit/Debit",
+      description: "Record a card payment manually (no Stripe charge)",
+      icon: CreditCard,
+      recommended: false,
+      processingFee: "None"
+    },
   {
     id: "stripe_ach",
     name: "Bank Transfer (ACH)",
@@ -3254,6 +3262,7 @@ The Basketball Factory Inc.`
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
                     <SelectItem value="check">Check</SelectItem>
+                    <SelectItem value="manual_card">Manual Credit/Debit</SelectItem>
                     <SelectItem value="zelle">Zelle</SelectItem>
                     <SelectItem value="venmo">Venmo</SelectItem>
                     <SelectItem value="bank">Bank Transfer</SelectItem>

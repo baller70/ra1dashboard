@@ -2087,6 +2087,7 @@ export default function PaymentsPage() {
                                             </SelectTrigger>
                                             <SelectContent>
                                               <SelectItem value="stripe_card">Credit Card</SelectItem>
+                                              <SelectItem value="manual_card">Manual Credit/Debit</SelectItem>
                                               <SelectItem value="check">Check</SelectItem>
                                               <SelectItem value="cash">Cash</SelectItem>
                                               <SelectItem value="ach">ACH/Bank</SelectItem>
