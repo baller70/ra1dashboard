@@ -53,8 +53,16 @@ export async function GET(request: Request) {
         const paidStandalone = Array.isArray(paidRes?.payments) ? paidRes.payments : []
         const paidStandaloneSum = paidStandalone.reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
 
-        // Synthetic firsts: for each unique active/pending plan, count one installmentAmount
-        const syntheticFirsts = uniquePlans.reduce((s: number, pl: any) => s + Number(pl.installmentAmount || 0), 0)
+        // Synthetic firsts: for each unique active/pending plan, count one installment amount.
+        // Fallback if installmentAmount is missing: derive from totalAmount / installments (if available)
+        const syntheticFirsts = uniquePlans.reduce((s: number, pl: any) => {
+          const instAmt = Number(pl.installmentAmount)
+          if (isFinite(instAmt) && instAmt > 0) return s + instAmt
+          const total = Number(pl.totalAmount)
+          const count = Number(pl.installments)
+          const derived = isFinite(total) && isFinite(count) && count > 0 ? total / count : 0
+          return s + derived
+        }, 0)
 
         collected = paidStandaloneSum + syntheticFirsts
       } catch (calcErr) {
