@@ -45,8 +45,22 @@ export async function GET(request: Request) {
       const plansTotal = uniquePlans.reduce((s: number, p: any) => s + Number(p.totalAmount || 0), 0)
       const activePlans = new Set(uniquePlans.map((p: any) => p.parentId)).size
 
-      // Keep collected from backend (paid + first installments), recompute pending from authoritative totals
-      const collected = Number(paymentAnalytics?.collectedPayments || 0)
+      // Recompute collected on the API layer so production reflects correct numbers immediately
+      // collected = paid standalone payments + synthetic first-installment coverage for active/pending plans
+      let collected = 0
+      try {
+        const paidRes: any = await convex.query(api.payments.getPayments as any, { status: 'paid', page: 1, limit: 1000, program })
+        const paidStandalone = Array.isArray(paidRes?.payments) ? paidRes.payments : []
+        const paidStandaloneSum = paidStandalone.reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
+
+        // Synthetic firsts: for each unique active/pending plan, count one installmentAmount
+        const syntheticFirsts = uniquePlans.reduce((s: number, pl: any) => s + Number(pl.installmentAmount || 0), 0)
+
+        collected = paidStandaloneSum + syntheticFirsts
+      } catch (calcErr) {
+        console.warn('Collected recompute failed, falling back to backend value:', calcErr)
+        collected = Number(paymentAnalytics?.collectedPayments || 0)
+      }
 
       paymentAnalytics = {
         ...paymentAnalytics,
