@@ -1086,46 +1086,32 @@ The Basketball Factory Inc.`
       }
 
       if (selectedPaymentOption === 'stripe_card') {
-        // If full one-time payment, process in-app via PaymentIntent (no redirect)
-        if (true) {
-          const response = await fetch('/api/stripe/payment-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              parentId: (payment.parent as any)?._id || payment.parent?.id,
-              parentEmail: (payment.parent as any)?.email || payment.parent?.email,
-              parentName: (payment.parent as any)?.name || payment.parent?.name,
-              parentPhone: (payment.parent as any)?.phone || payment.parent?.phone,
-              paymentId: (payment as any)._id || payment.id,
-              amount: Math.round(paymentAmount * 100), // cents
-              description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
-            }),
-          })
+        // Redirect to Stripe's hosted Checkout page
+        const response = await fetch('/api/stripe/one-time', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentId: (payment.parent as any)?._id || payment.parent?.id,
+            paymentId: (payment as any)._id || payment.id,
+            amount: Math.round(paymentAmount * 100), // cents
+            description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
+          }),
+        })
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(errorData.error || 'Failed to create payment intent')
-          }
-
-          const { clientSecret } = await response.json()
-          setStripeClientSecret(clientSecret)
-          // Fetch publishable key at runtime so Elements can render in Preview
-          try {
-            const cfgRes = await fetch('/api/stripe/config')
-            const cfg = await cfgRes.json().catch(() => ({}))
-            if (cfg?.publishableKey && String(cfg.publishableKey).length > 0) {
-              setStripePk(cfg.publishableKey)
-            } else if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-              setStripePk(String(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY))
-            }
-          } catch {}
-          toast({ title: 'Secure Card Form Ready', description: 'Enter your card in the secure Stripe form, then confirm.' })
-          setProcessingPayment(false)
-          return
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || 'Failed to create checkout session')
         }
 
+        const data = await response.json().catch(() => ({}))
+        if (data?.url) {
+          window.location.href = data.url
+          return
+        }
+        throw new Error('No checkout URL returned')
+
         // For installment schedules, keep current mock processing for now
-        const response = await fetch('/api/payments/process-card', {
+        const resp2 = await fetch('/api/payments/process-card', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1142,12 +1128,12 @@ The Basketball Factory Inc.`
           })
         })
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+        if (!resp2.ok) {
+          const errorData = await resp2.json().catch(() => ({}))
           throw new Error(errorData.error || 'Failed to process payment')
         }
 
-        const result = await response.json()
+        const result = await resp2.json()
         toast({
           title: '✅ Payment Processed Successfully!',
           description: `Credit card payment of $${paymentAmount.toFixed(2)} has been processed. ${installmentCount > 1 ? `${installmentCount} installment schedule created.` : ''}`,
@@ -2249,21 +2235,23 @@ The Basketball Factory Inc.`
                       try {
                         setProcessingPayment(true)
                         const amountDollars = Number((paymentProgress?.nextDue?.amount ?? (payment as any).amount) || 0)
-                        const resp = await fetch('/api/stripe/create-payment-link', {
+                        const resp = await fetch('/api/stripe/one-time', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             paymentId: (payment as any)._id || payment.id,
                             parentId: (payment.parent as any)?._id || payment.parent?.id || payment.parentId,
-                            parentName: (payment.parent as any)?.name || payment.parent?.name || '',
-                            parentEmail: (payment.parent as any)?.email || payment.parent?.email || '',
                             amount: Math.round(amountDollars * 100),
-                            description: `Payment ${((payment as any)._id || payment.id)}`,
+                            description: `One-time payment for ${((payment.parent as any)?.name || payment.parent?.name || 'tuition')}`,
                           })
                         })
-                        const json = await resp.json().catch(() => ({}))
-                        if (resp.ok && json?.url) {
-                          window.location.href = json.url
+                        if (!resp.ok) {
+                          const data = await resp.json().catch(() => ({}))
+                          throw new Error(data.error || 'Failed to create checkout session')
+                        }
+                        const { url } = await resp.json().catch(() => ({}))
+                        if (url) {
+                          window.location.href = url
                         } else {
                           toast({ title: 'Error', description: json?.error || 'Could not create Stripe payment link', variant: 'destructive' })
                         }
@@ -2596,7 +2584,7 @@ The Basketball Factory Inc.`
             </div>
 
             {/* Stripe Payment Element under schedule */}
-            {selectedPaymentOption === 'stripe_card' && stripeClientSecret && stripePk && (
+            {false && (
               <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
                 <div className="mt-4 bg-white p-4 rounded border">
                   <PaymentElement />
@@ -3096,8 +3084,7 @@ The Basketball Factory Inc.`
               disabled={
                 !selectedPaymentOption ||
                 !selectedPaymentSchedule ||
-                processingPayment ||
-                (selectedPaymentOption?.startsWith('stripe_'))
+                processingPayment
               }
               className="flex-1 bg-orange-600 hover:bg-orange-700"
               size="lg"
