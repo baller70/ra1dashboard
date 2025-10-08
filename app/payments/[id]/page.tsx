@@ -2226,44 +2226,16 @@ The Basketball Factory Inc.`
                   </Button>
                 </div>
 
-                  {/* Direct Stripe Pay (bottom button) */}
-                  <Button
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={async () => {
-                      if (!payment) return
-                      try {
-                        setProcessingPayment(true)
-                        const amountDollars = Number((paymentProgress?.nextDue?.amount ?? (payment as any).amount) || 0)
-                        const resp = await fetch('/api/stripe/one-time', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            paymentId: (payment as any)._id || payment.id,
-                            parentId: (payment.parent as any)?._id || payment.parent?.id || payment.parentId,
-                            amount: Math.round(amountDollars * 100),
-                            description: `One-time payment for ${((payment.parent as any)?.name || payment.parent?.name || 'tuition')}`,
-                          })
-                        })
-                        if (!resp.ok) {
-                          const data = await resp.json().catch(() => ({}))
-                          throw new Error(data.error || 'Failed to create checkout session')
-                        }
-                        const { url } = await resp.json().catch(() => ({}))
-                        if (url) {
-                          window.location.href = url
-                        } else {
-                          toast({ title: 'Error', description: json?.error || 'Could not create Stripe payment link', variant: 'destructive' })
-                        }
-                      } catch (e: any) {
-                        toast({ title: 'Error', description: e?.message || 'Failed to start Stripe checkout', variant: 'destructive' })
-                      } finally {
-                        setProcessingPayment(false)
-                      }
-                    }}
-                  >
-                    Pay with Stripe
-                  </Button>
+                  {/* Direct Stripe Pay (bottom button) — disabled per request to use embedded Stripe element under schedule */}
+                  {false && (
+                    <Button
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={async () => {}}
+                    >
+                      Pay with Stripe
+                    </Button>
+                  )}
 
 
                   {/* Admin: Mark Paid (visible with ?admin=1) */}
@@ -2584,7 +2556,7 @@ The Basketball Factory Inc.`
             </div>
 
             {/* Stripe Payment Element under schedule */}
-            {false && (
+            {selectedPaymentOption === 'stripe_card' && stripeClientSecret && stripePk && (
               <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
                 <div className="mt-4 bg-white p-4 rounded border">
                   <PaymentElement />
@@ -3084,7 +3056,8 @@ The Basketball Factory Inc.`
               disabled={
                 !selectedPaymentOption ||
                 !selectedPaymentSchedule ||
-                processingPayment
+                processingPayment ||
+                (selectedPaymentOption?.startsWith('stripe_'))
               }
               className="flex-1 bg-orange-600 hover:bg-orange-700"
               size="lg"
