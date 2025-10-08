@@ -1416,7 +1416,9 @@ export default function PaymentsPage() {
 
   // Choose displayed values: if API returns > 0 use it, otherwise use plan-based fallback
   // Prefer backend analytics when available for accuracy; fall back to local calculations
-  const uiCollected = Number((analytics?.collectedPayments ?? summary.paid))
+  const uiCollected = ((analytics?.collectedPayments ?? 0) > 0)
+    ? Number(analytics!.collectedPayments)
+    : Number(planAdj.collected)
 
   const uiActivePlans = Number(analytics?.activePlans ?? planAdj.activePlansCount)
 
