@@ -116,6 +116,9 @@ const SeasonsPage = () => {
   const [showEmailPreviewDialog, setShowEmailPreviewDialog] = useState(false)
   const [emailPreviewData, setEmailPreviewData] = useState<any>(null)
   const [generatingEmailPreview, setGeneratingEmailPreview] = useState(false)
+  const [customSubject, setCustomSubject] = useState('')
+  const [customBody, setCustomBody] = useState('')
+
   const [formData, setFormData] = useState({
     name: '',
     type: 'summer_league',
@@ -350,6 +353,8 @@ const SeasonsPage = () => {
       const data = await response.json()
       if (data.success) {
         setEmailPreviewData(data.data.emailPreview)
+        setCustomSubject(data.data.emailPreview.subject || '')
+        setCustomBody(data.data.emailPreview.body || '')
         setShowEmailPreviewDialog(true)
         setShowParentSelectionDialog(false)
       } else {
@@ -990,13 +995,22 @@ const SeasonsPage = () => {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Email Content</h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600 mb-1">Subject:</div>
-                      <div className="font-medium">{emailPreviewData.subject}</div>
+                      <div className="text-sm text-gray-600 mb-1">Subject</div>
+                      <Input
+                        value={customSubject}
+                        onChange={(e) => setCustomSubject(e.target.value)}
+                        placeholder="Email subject"
+                      />
                     </div>
-                    <div className="bg-white border rounded-lg p-6">
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {emailPreviewData.body}
-                      </div>
+                    <div className="bg-white border rounded-lg p-4">
+                      <div className="text-sm text-gray-600 mb-1">Body</div>
+                      <Textarea
+                        value={customBody}
+                        onChange={(e) => setCustomBody(e.target.value)}
+                        rows={12}
+                        placeholder="Write your email..."
+                        className="whitespace-pre-wrap"
+                      />
                     </div>
                   </div>
 
@@ -1010,7 +1024,7 @@ const SeasonsPage = () => {
                       Cancel
                     </Button>
                     <Button
-                      onClick={() => handleSendEmailsWithCustomContent(emailPreviewData.subject, emailPreviewData.body)}
+                      onClick={() => handleSendEmailsWithCustomContent(customSubject, customBody)}
                       disabled={sendingEmails}
                       className="flex-1 bg-blue-600 hover:bg-blue-700"
                     >
