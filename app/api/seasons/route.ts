@@ -1,10 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { convexHttp } from "@/lib/convex-server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +10,9 @@ export async function GET(request: NextRequest) {
     const withStats = searchParams.get('withStats') === 'true'
 
     try {
-      const seasons = await convex.query(api.seasons.listSeasons, { withStats })
+      const seasons = withStats
+        ? await convexHttp.query(api.seasons.getSeasonsWithStats as any, {})
+        : await convexHttp.query(api.seasons.getSeasons as any, { includeInactive: true })
       return NextResponse.json({ success: true, data: seasons })
     } catch (e) {
       // Fallback to a minimal mock to avoid breaking UI if Convex is not configured yet
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const result = await convex.mutation(api.seasons.createSeason, {
+      const result = await convexHttp.mutation(api.seasons.createSeason as any, {
         name,
         type,
         year,
