@@ -389,13 +389,29 @@ const SeasonsPage = () => {
 
       const data = await response.json()
       if (data.success) {
-        toast({
-          title: 'Success',
-          description: `Sent ${data.data.sent} reminder emails successfully`,
-        })
-        setShowParentSelectionDialog(false)
-        setSelectedParents([])
-        setSelectAllParents(false)
+        const { sent, errors, results } = data.data || { sent: 0, errors: 0, results: [] }
+        if (sent > 0 && errors === 0) {
+          toast({
+            title: 'Success',
+            description: `Sent ${sent} reminder email${sent > 1 ? 's' : ''} successfully`,
+          })
+          setShowParentSelectionDialog(false)
+          setSelectedParents([])
+          setSelectAllParents(false)
+        } else if (sent > 0 && errors > 0) {
+          const firstErr = (results || []).find((r: any) => r.status === 'error')?.error || 'Some emails failed'
+          toast({
+            title: 'Partial success',
+            description: `Sent ${sent}, failed ${errors}. Example error: ${firstErr}`,
+          })
+        } else {
+          const firstErr = (results || []).find((r: any) => r.status === 'error')?.error || 'Failed to send reminders'
+          toast({
+            title: 'No emails sent',
+            description: firstErr,
+            variant: 'destructive',
+          })
+        }
       } else {
         throw new Error(data.error)
       }
@@ -435,14 +451,30 @@ const SeasonsPage = () => {
 
       const data = await response.json()
       if (data.success) {
-        toast({
-          title: 'Success',
-          description: `Sent ${data.data.sent} reminder emails successfully`,
-        })
-        setShowEmailPreviewDialog(false)
-        setSelectedParents([])
-        setSelectAllParents(false)
-        setEmailPreviewData(null)
+        const { sent, errors, results } = data.data || { sent: 0, errors: 0, results: [] }
+        if (sent > 0 && errors === 0) {
+          toast({
+            title: 'Success',
+            description: `Sent ${sent} reminder email${sent > 1 ? 's' : ''} successfully`,
+          })
+          setShowEmailPreviewDialog(false)
+          setSelectedParents([])
+          setSelectAllParents(false)
+          setEmailPreviewData(null)
+        } else if (sent > 0 && errors > 0) {
+          const firstErr = (results || []).find((r: any) => r.status === 'error')?.error || 'Some emails failed'
+          toast({
+            title: 'Partial success',
+            description: `Sent ${sent}, failed ${errors}. Example error: ${firstErr}`,
+          })
+        } else {
+          const firstErr = (results || []).find((r: any) => r.status === 'error')?.error || 'Failed to send emails'
+          toast({
+            title: 'No emails sent',
+            description: firstErr,
+            variant: 'destructive',
+          })
+        }
       } else {
         throw new Error(data.error)
       }
