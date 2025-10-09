@@ -166,13 +166,10 @@ export async function POST(request: NextRequest) {
     // Send email via Resend
     const resend = getResend()
     if (!resend) {
-      return NextResponse.json(
-        { success: false, error: 'Resend API key not configured on server' },
-        { status: 500 }
-      )
+      console.warn('RESEND_API_KEY not configured - attempting simulated send for dev, or failing in prod')
     }
 
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <khouston@thebasketballfactorynj.com>'
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <onboarding@resend.dev>'
 
     // Create message log (best-effort)
     const convex = getConvexClient()
@@ -199,19 +196,35 @@ export async function POST(request: NextRequest) {
 
     let sendResult: any
     try {
+      if (!resend) throw new Error('Resend not configured')
       sendResult = await resend.emails.send({
         from: fromAddress,
         to: [parent.email],
         subject,
         html,
         text,
-        // attach tags so webhook can correlate
         tags: [
           ...(messageLogId ? [{ name: 'message_log_id', value: String(messageLogId) }] : []),
           { name: 'parent_id', value: String(parent._id) },
           { name: 'type', value: 'league_fee_reminder' },
         ],
       } as any)
+
+      // If domain not verified or forbidden, retry with onboarding domain
+      if (sendResult?.error) {
+        const errStr = typeof sendResult.error === 'string' ? sendResult.error : JSON.stringify(sendResult.error)
+        const isDomainUnverified = errStr.includes('domain is not verified') || (sendResult.error as any)?.statusCode === 403
+        if (isDomainUnverified) {
+          const fb = await resend.emails.send({
+            from: 'RA1 Basketball <onboarding@resend.dev>',
+            to: [parent.email],
+            subject,
+            html,
+            text,
+          } as any)
+          if (!fb?.error) sendResult = fb
+        }
+      }
     } catch (e) {
       console.error('Resend send() threw:', e)
       if (messageLogId) {

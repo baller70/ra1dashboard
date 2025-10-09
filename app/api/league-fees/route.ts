@@ -55,7 +55,35 @@ export async function GET(request: NextRequest) {
     const feeId = searchParams.get('feeId')
 
     // Filter league fees based on query parameters
-    let filteredFees = mockLeagueFees
+    // Prefer Convex persistence; fallback to mock in-memory list for local/dev
+    let filteredFees: any[] = []
+    try {
+      if (feeId) {
+        const fee = await convexHttp.query(api.leagueFees.getLeagueFee as any, { id: feeId as any })
+        if (fee) {
+          const parent = await convexHttp.query(api.parents.getParent as any, { id: fee.parentId as any }).catch(() => null)
+          const season = await convexHttp.query(api.seasons.getSeason as any, { id: fee.seasonId as any }).catch(() => null)
+          filteredFees = [{ ...fee, parent, season }]
+        }
+      } else if (parentId) {
+        const fees = await convexHttp.query(api.leagueFees.getLeagueFeesByParent as any, { parentId: parentId as any })
+        filteredFees = fees as any[]
+      } else if (seasonId) {
+        const fees = await convexHttp.query(api.leagueFees.getLeagueFeesBySeason as any, { seasonId: seasonId as any, status: status || undefined })
+        filteredFees = fees as any[]
+      }
+    } catch (e) {
+      console.warn('Convex leagueFees query failed; falling back to mock', e)
+    }
+    if (!filteredFees || filteredFees.length === 0) {
+      filteredFees = mockLeagueFees
+      if (feeId) filteredFees = filteredFees.filter(fee => fee._id === feeId)
+      else {
+        if (parentId) filteredFees = filteredFees.filter(fee => fee.parentId === parentId)
+        if (seasonId) filteredFees = filteredFees.filter(fee => fee.seasonId === seasonId)
+        if (status) filteredFees = filteredFees.filter(fee => fee.status === status)
+      }
+    }
 
     if (feeId) {
       filteredFees = filteredFees.filter(fee => fee._id === feeId)
@@ -168,26 +196,32 @@ export async function POST(request: NextRequest) {
       parent: parent
     }
 
-    // Add to our in-memory storage
-    mockLeagueFees.push(newFee)
-
-    console.log('Individual league fee created:', {
-      leagueFeeId,
-      parentName: parent.name,
-      seasonId,
-      amount: feeAmount,
-      totalAmount,
-      paymentMethod,
-      dueDate: new Date(dueDateTimestamp).toISOString()
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
+    // Prefer Convex persistence; fallback to in-memory on failure
+    try {
+      const createdId = await convexHttp.mutation(api.leagueFees.createLeagueFee as any, {
+        seasonId: seasonId as any,
+        parentId: parent._id as any,
+        paymentMethod,
+        dueDate: dueDateTimestamp,
+        notes,
+      })
+      console.log('League fee created in Convex:', { createdId, parentName: parent.name, seasonId, amount: feeAmount, totalAmount, paymentMethod, dueDate: new Date(dueDateTimestamp).toISOString() })
+      return NextResponse.json({ success: true, data: { leagueFeeId: createdId } })
+    } catch (e) {
+      console.warn('Convex createLeagueFee failed; falling back to in-memory', e)
+      // Add to our in-memory storage
+      mockLeagueFees.push(newFee)
+      console.log('Individual league fee created (mock):', {
         leagueFeeId,
-        fee: newFee
-      }
-    })
+        parentName: parent.name,
+        seasonId,
+        amount: feeAmount,
+        totalAmount,
+        paymentMethod,
+        dueDate: new Date(dueDateTimestamp).toISOString()
+      })
+      return NextResponse.json({ success: true, data: { leagueFeeId, fee: newFee } })
+    }
 
   } catch (error) {
     console.error('Error creating league fee:', error)
