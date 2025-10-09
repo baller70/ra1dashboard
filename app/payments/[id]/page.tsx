@@ -3431,7 +3431,7 @@ export default function PaymentDetailPage() {
                     </div>
                   )}
 
-                  {fee.status !== 'paid' && (
+                  {fee.status !== 'paid' ? (
                     <div className="flex gap-2 pt-3 border-t">
                       <Button
                         variant="outline"
@@ -3505,6 +3505,52 @@ export default function PaymentDetailPage() {
                           Pay Online
                         </Button>
                       )}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const resp = await fetch(`/api/league-fees/${fee._id}/status`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'paid' })
+                            })
+                            const json = await resp.json()
+                            if (!resp.ok || !json?.success) throw new Error(json?.error || 'Failed to mark paid')
+                            toast({ title: 'Marked Paid', description: `${fee.season.name} marked as paid.` })
+                            fetchLeagueFees()
+                          } catch (e) {
+                            toast({ title: 'Error', description: (e as any)?.message || 'Failed to mark paid', variant: 'destructive' })
+                          }
+                        }}
+                      >
+                        Mark Paid
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 pt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const resp = await fetch(`/api/league-fees/${fee._id}/status`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'pending' })
+                            })
+                            const json = await resp.json()
+                            if (!resp.ok || !json?.success) throw new Error(json?.error || 'Failed to revert')
+                            toast({ title: 'Reverted to Pending', description: `${fee.season.name} set back to pending.` })
+                            fetchLeagueFees()
+                          } catch (e) {
+                            toast({ title: 'Error', description: (e as any)?.message || 'Failed to revert', variant: 'destructive' })
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        Mark Pending
+                      </Button>
                     </div>
                   )}
                 </div>

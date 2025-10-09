@@ -1,35 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
-
-// Mock league fees data (should be shared with main route)
-let mockLeagueFees: any[] = [
-  {
-    _id: "temp_fee_1",
-    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-    seasonId: "temp_season_1",
-    amount: 95,
-    processingFee: 3.06,
-    totalAmount: 98.06,
-    paymentMethod: "online",
-    status: "pending",
-    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-    remindersSent: 0,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    season: {
-      _id: "temp_season_1",
-      name: "Summer League 2024",
-      type: "summer_league",
-      year: 2024
-    },
-    parent: {
-      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-      name: "Kevin Houston",
-      email: "khouston721@gmail.com"
-    }
-  }
-]
+import { convexHttp } from '@/lib/convex-server'
+import { api } from '@/convex/_generated/api'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,75 +10,51 @@ export async function POST(request: NextRequest) {
 
     if (!feeId || !parentId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Missing required fields: feeId, parentId'
-        },
+        { success: false, error: 'Missing required fields: feeId, parentId' },
         { status: 400 }
       )
     }
 
-    // Find the league fee
-    const feeIndex = mockLeagueFees.findIndex(fee => fee._id === feeId && fee.parentId === parentId)
-    
-    if (feeIndex === -1) {
+    // Fetch league fee from Convex
+    const fee = await (convexHttp as any).query(api.leagueFees.getLeagueFee as any, { id: feeId as any })
+    if (!fee || String(fee.parentId) !== String(parentId)) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'League fee not found'
-        },
+        { success: false, error: 'League fee not found' },
         { status: 404 }
       )
     }
 
-    const fee = mockLeagueFees[feeIndex]
-
-    // Check if already paid
     if (fee.status === 'paid') {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'This fee has already been paid'
-        },
+        { success: false, error: 'This fee has already been paid' },
         { status: 409 }
       )
     }
 
-    // Mark as paid and update payment method to facility
-    mockLeagueFees[feeIndex] = {
-      ...fee,
-      status: 'paid',
-      paymentMethod: 'facility',
-      paidAt: Date.now(),
-      updatedAt: Date.now(),
-      // Remove processing fee for facility payments
-      processingFee: 0,
-      totalAmount: fee.amount,
-      paymentNote: 'Paid at facility - confirmed by parent'
-    }
-
-    console.log('League fee marked as paid at facility:', {
-      feeId,
-      parentName: fee.parent.name,
-      amount: fee.amount,
-      season: fee.season.name
+    // Mark as paid in Convex (note: keeps existing amounts/method)
+    const updated = await (convexHttp as any).mutation(api.leagueFees.markLeagueFeePaid as any, {
+      id: feeId as any,
+      notes: 'Paid at facility - confirmed by parent'
     })
+
+    // Enrich with parent & season for UI
+    const [parent, season] = await Promise.all([
+      (convexHttp as any).query(api.parents.getParent as any, { id: parentId as any }),
+      (convexHttp as any).query(api.seasons.getSeason as any, { id: fee.seasonId as any })
+    ])
 
     return NextResponse.json({
       success: true,
       data: {
         message: 'Payment confirmed! Your league fee has been marked as paid.',
-        fee: mockLeagueFees[feeIndex]
+        fee: { ...updated, parent, season }
       }
     })
 
   } catch (error) {
     console.error('Error processing facility payment:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
   }
@@ -119,39 +68,30 @@ export async function GET(request: NextRequest) {
 
     if (!feeId || !parentId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Missing required parameters: feeId, parentId'
-        },
+        { success: false, error: 'Missing required parameters: feeId, parentId' },
         { status: 400 }
       )
     }
 
-    // Find the league fee
-    const fee = mockLeagueFees.find(f => f._id === feeId && f.parentId === parentId)
-    
-    if (!fee) {
+    const fee = await (convexHttp as any).query(api.leagueFees.getLeagueFee as any, { id: feeId as any })
+    if (!fee || String(fee.parentId) !== String(parentId)) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'League fee not found'
-        },
+        { success: false, error: 'League fee not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({
-      success: true,
-      data: fee
-    })
+    const [parent, season] = await Promise.all([
+      (convexHttp as any).query(api.parents.getParent as any, { id: parentId as any }),
+      (convexHttp as any).query(api.seasons.getSeason as any, { id: fee.seasonId as any })
+    ])
+
+    return NextResponse.json({ success: true, data: { ...fee, parent, season } })
 
   } catch (error) {
     console.error('Error fetching league fee for facility payment:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error'
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
   }

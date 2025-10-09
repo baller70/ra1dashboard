@@ -298,18 +298,20 @@ const SeasonsPage = () => {
     }
   }
 
-  const handleParentSelection = (season: Season) => {
+  const handleParentSelection = async (season: Season) => {
     setSelectedSeason(season)
     setShowParentSelectionDialog(true)
-    fetchParents()
+    await Promise.all([fetchParents(), fetchLeagueFees(season._id)])
     setSelectedParents([])
     setSelectAllParents(false)
   }
 
   const handleSelectAllParents = (checked: boolean) => {
     setSelectAllParents(checked)
+    const paidIds = new Set(leagueFees.filter(f => f.status === 'paid').map(f => f.parentId))
     if (checked) {
-      setSelectedParents(parents.filter(p => p.status === 'active').map(p => p._id))
+      const selectable = parents.filter(p => p.status === 'active' && !paidIds.has(p._id)).map(p => p._id)
+      setSelectedParents(selectable)
     } else {
       setSelectedParents([])
     }
@@ -875,23 +877,32 @@ const SeasonsPage = () => {
 
               <div className="border rounded-lg p-4 max-h-96 overflow-y-auto">
                 <div className="space-y-2">
-                  {parents.filter(p => p.status === 'active').map((parent) => (
-                    <div key={parent._id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-                      <Checkbox
-                        id={parent._id}
-                        checked={selectedParents.includes(parent._id)}
-                        onCheckedChange={() => handleParentToggle(parent._id)}
-                      />
-                      <div className="flex-1">
-                        <Label htmlFor={parent._id} className="font-medium cursor-pointer">
-                          {parent.name}
-                        </Label>
-                        <div className="text-sm text-muted-foreground">
-                          {parent.email}
+                  {parents.filter(p => p.status === 'active').map((parent) => {
+                    const isPaid = leagueFees.some(f => String(f.parentId) === String(parent._id) && f.status === 'paid')
+                    return (
+                      <div key={parent._id} className={`flex items-center space-x-3 p-2 rounded ${isPaid ? 'opacity-60' : 'hover:bg-gray-50'}`}>
+                        <Checkbox
+                          id={parent._id}
+                          checked={selectedParents.includes(parent._id)}
+                          onCheckedChange={() => !isPaid && handleParentToggle(parent._id)}
+                          disabled={isPaid}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={parent._id} className="font-medium cursor-pointer">
+                              {parent.name}
+                            </Label>
+                            {isPaid && (
+                              <Badge variant="default" className="text-xs">Paid</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {parent.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 

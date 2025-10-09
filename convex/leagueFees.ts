@@ -350,13 +350,13 @@ export const updateLeagueFee = mutation({
 export const getLeagueFeeStats = query({
   args: { seasonId: v.optional(v.id("seasons")) },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("leagueFees");
+    let q1 = ctx.db.query("leagueFees");
 
     if (args.seasonId) {
-      query = query.withIndex("by_season", (q) => q.eq("seasonId", args.seasonId));
+      q1 = q1.withIndex("by_season", (q) => q.eq("seasonId", args.seasonId));
     }
 
-    const fees = await query.collect();
+    const fees = await q1.collect();
 
     const stats = {
       total: fees.length,
@@ -378,5 +378,31 @@ export const getLeagueFeeStats = query({
       ...stats,
       paymentRate: stats.total > 0 ? (stats.paid / stats.total) * 100 : 0,
     };
+  },
+});
+
+// Get unpaid (pending or overdue) league fees with joined parent+season
+export const getUnpaidLeagueFees = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db
+      .query("leagueFees")
+      .filter((q) => q.or(
+        q.eq(q.field("status"), "pending"),
+        q.eq(q.field("status"), "overdue")
+      ))
+      .collect();
+
+    const withJoins = await Promise.all(
+      all.map(async (fee) => {
+        const [parent, season] = await Promise.all([
+          ctx.db.get(fee.parentId),
+          ctx.db.get(fee.seasonId),
+        ]);
+        return { ...fee, parent, season };
+      })
+    );
+
+    return withJoins;
   },
 });

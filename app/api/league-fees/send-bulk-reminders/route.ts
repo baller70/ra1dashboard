@@ -113,7 +113,10 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
 // Generate AI-powered personalized email content
 const generatePersonalizedEmail = async (parent: any, fee: any, paymentLink: string) => {
   const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${fee._id}?parent=${parent._id}`
-  
+  const emergencyLine = parent?.emergencyContact
+    ? `\nEmergency Contact: ${parent.emergencyContact}${parent?.emergencyPhone ? ` (${parent.emergencyPhone})` : ''}`
+    : ''
+
   // AI-generated personalized email content
   const emailContent = `
 Subject: League Fee Payment Reminder - ${fee.season.name}
@@ -126,14 +129,14 @@ I hope this message finds you well! This is a friendly reminder about your upcom
 • Amount: $${fee.amount}
 • Processing Fee: $${fee.processingFee}
 • Total Amount: $${fee.totalAmount}
-• Due Date: ${new Date(fee.dueDate).toLocaleDateString()}
+• Due Date: ${new Date(fee.dueDate).toLocaleDateString()}${emergencyLine}
 
 **Payment Options:**
 
-1. **Pay Online** (Recommended): 
+1. **Pay Online** (Recommended):
    Click here to pay securely with your credit card: ${paymentLink}
 
-2. **Pay at the Facility**: 
+2. **Pay at the Facility**:
    If you prefer to pay in person, click here to confirm: ${facilityPaymentLink}
    (This will mark your fee as paid and stop future reminders)
 
@@ -200,20 +203,38 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Build (or fetch) a fee model for this parent/season (no DB writes during bulk send)
+        // Ensure a real league fee exists for this parent+season
+        const existingFees = await (convexHttp as any).query(api.leagueFees.getLeagueFeesBySeason as any, { seasonId: seasonId as any })
+        let feeRecord = (existingFees || []).find((f: any) => String(f.parentId) === String(parentId))
+        if (!feeRecord) {
+          try {
+            const insertedId = await (convexHttp as any).mutation(api.leagueFees.createLeagueFee as any, {
+              seasonId: seasonId as any,
+              parentId: parentId as any,
+              paymentMethod: 'online'
+            })
+            // Re-query to get full record after insert
+            const freshFees = await (convexHttp as any).query(api.leagueFees.getLeagueFeesBySeason as any, { seasonId: seasonId as any })
+            feeRecord = (freshFees || []).find((f: any) => String(f._id) === String(insertedId)) || (freshFees || []).find((f: any) => String(f.parentId) === String(parentId))
+          } catch (e) {
+            console.error('Failed to create league fee:', e)
+          }
+        }
+
+        // Build a fee model based on the real record (fallback to defaults if missing)
         const timestamp = Date.now()
         const fee = {
-          _id: `temp_fee_${timestamp}_${parentId}`,
+          _id: feeRecord?._id || `temp_fee_${timestamp}_${parentId}`,
           parentId,
           seasonId,
-          amount: 95,
-          processingFee: 3.06,
-          totalAmount: 98.06,
-          paymentMethod: 'online',
-          status: 'pending',
-          dueDate: timestamp + (30 * 24 * 60 * 60 * 1000),
-          remindersSent: 0,
-          createdAt: timestamp,
+          amount: feeRecord?.amount ?? 95,
+          processingFee: feeRecord?.processingFee ?? 3.06,
+          totalAmount: feeRecord?.totalAmount ?? 98.06,
+          paymentMethod: feeRecord?.paymentMethod ?? 'online',
+          status: feeRecord?.status ?? 'pending',
+          dueDate: feeRecord?.dueDate ?? (timestamp + (30 * 24 * 60 * 60 * 1000)),
+          remindersSent: feeRecord?.remindersSent ?? 0,
+          createdAt: feeRecord?.createdAt ?? timestamp,
           updatedAt: timestamp,
           season,
           parent
@@ -277,9 +298,14 @@ export async function POST(request: NextRequest) {
           emailSent = true // Simulate success for development
         }
 
-        // Update reminder count
-        fee.remindersSent = (fee.remindersSent || 0) + 1
-        fee.updatedAt = Date.now()
+        // Persist reminder counters when successful
+        if (emailSent && fee?._id && !String(fee._id).startsWith('temp_fee_')) {
+          try {
+            await (convexHttp as any).mutation(api.leagueFees.incrementReminderCount as any, { id: fee._id as any })
+          } catch (e) {
+            console.warn('Non-fatal: failed to increment reminder count for fee', fee._id, e)
+          }
+        }
 
         // Update results based on email sending status
         if (emailSent) {

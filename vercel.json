@@ -31,6 +31,10 @@
     {
       "path": "/api/cron/installments/charge-overdue",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/league-fees/auto-reminders",
+      "schedule": "0 9 * * 1,3,5,0"
     }
   ]
 }
