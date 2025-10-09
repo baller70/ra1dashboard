@@ -1,15 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from "convex/browser"
+import { convexHttp } from "@/lib/convex-server"
 import { api } from "@/convex/_generated/api"
 import Stripe from 'stripe'
 import { Resend } from 'resend'
 
 function getConvexClient() {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL
-  if (!url) throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured')
-  return new ConvexHttpClient(url)
+  return convexHttp as any
 }
 
 function getStripe() {
