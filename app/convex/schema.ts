@@ -42,6 +42,23 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_team", ["teamId"]),
 
+  seasons: defineTable({
+    name: v.string(),
+    type: v.string(), // 'summer_league' | 'fall_tournament'
+    year: v.number(),
+    startDate: v.number(),
+    endDate: v.number(),
+    registrationDeadline: v.optional(v.number()),
+    isActive: v.boolean(),
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_type', ['type'])
+    .index('by_year', ['year'])
+    .index('by_active', ['isActive']),
+
+
   paymentPlans: defineTable({
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),

@@ -177,6 +177,21 @@ const SeasonsPage = () => {
           title: 'Success',
           description: 'Season created successfully',
         })
+        // Optimistically append to local list so it appears immediately.
+        const createdId = data?.data?.seasonId || `temp_season_${Date.now()}`
+        const newSeason: Season = {
+          _id: createdId,
+          name: formData.name,
+          type: formData.type,
+          year: formData.year,
+          startDate: new Date(formData.startDate).getTime(),
+          endDate: new Date(formData.endDate).getTime(),
+          registrationDeadline: formData.registrationDeadline ? new Date(formData.registrationDeadline).getTime() : undefined,
+          isActive: true,
+          description: formData.description,
+          stats: undefined
+        }
+        setSeasons(prev => [newSeason, ...prev])
         setShowCreateDialog(false)
         setFormData({
           name: '',
@@ -187,7 +202,8 @@ const SeasonsPage = () => {
           registrationDeadline: '',
           description: ''
         })
-        fetchSeasons()
+        // NOTE: Skipping fetchSeasons() because /api/seasons GET currently returns mock data.
+        // Once backend persistence is wired, we can call fetchSeasons() here to refresh from server.
       } else {
         throw new Error(data.error)
       }

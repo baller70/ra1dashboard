@@ -830,6 +830,44 @@ export default function PaymentDetailPage() {
     }
   }
 
+  const createTournamentFee = async () => {
+    try {
+      const parentId = payment?.parent?._id || payment?.parent?.id || (payment as any)?.parentId;
+      if (!parentId) {
+        toast({ title: 'Parent required', description: 'No parent found for this payment.', variant: 'destructive' });
+        return;
+      }
+      // Find a Fall Tournament season
+      const seasonsRes = await fetch('/api/seasons');
+      const seasonsJson = await seasonsRes.json().catch(() => ({} as any));
+      const seasons = (seasonsJson?.data as any[]) || [];
+      const tournament = seasons.find((s: any) => s?.type === 'fall_tournament') || seasons.find((s: any) => /tournament/i.test(String(s?.name)));
+      if (!tournament) {
+        toast({ title: 'No Tournament Season', description: 'Create a Fall Tournament season in Admin → Seasons first.', variant: 'destructive' });
+        return;
+      }
+      const resp = await fetch('/api/league-fees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seasonId: tournament._id || tournament.id,
+          parentId,
+          paymentMethod: 'online'
+        })
+      });
+      const json = await resp.json().catch(() => ({} as any));
+      if (!resp.ok || json?.success === false) {
+        throw new Error(json?.error || 'Failed to create tournament fee');
+      }
+      toast({ title: 'Tournament Fee Created', description: `${tournament.name}`, });
+      await fetchLeagueFees();
+      setLeagueFeesDialogOpen(true);
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'Failed to create tournament fee', variant: 'destructive' });
+    }
+  }
+
+
   const handleMarkAsPaid = async () => {
     if (!payment) return
 
@@ -2370,6 +2408,11 @@ export default function PaymentDetailPage() {
                       Manage League Fees
                     </Link>
                   </Button>
+
+		          <Button onClick={(e) => { e.stopPropagation?.(); createTournamentFee(); }} size="sm" className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white">
+		            Create Tournament Fee
+		          </Button>
+
                 </div>
 
                 {/* Communication */}
@@ -3471,7 +3514,13 @@ export default function PaymentDetailPage() {
                 <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No league fees found</p>
                 <p className="text-xs mt-1">League fees will appear here when seasons are created</p>
+                <div className="mt-4">
+                  <Button onClick={createTournamentFee} className="bg-orange-600 hover:bg-orange-700 text-white">
+                    Create Tournament Fee
+                  </Button>
+                </div>
               </div>
+
             )}
           </div>
         </DialogContent>
