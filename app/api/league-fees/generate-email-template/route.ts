@@ -1,35 +1,11 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from 'next/server'
+import { convexHttp } from '@/lib/convex-server'
+import { api } from '@/convex/_generated/api'
 
-// Mock data for league fees (same as in other endpoints)
-const mockLeagueFees = [
-  {
-    _id: 'fee_summer_2024_001',
-    parentId: 'j971g9n5ve0qqsby21a0k9n1js7n7tbx',
-    seasonId: 'season_summer_2024',
-    amount: 95,
-    processingFee: 3.06,
-    totalAmount: 98.06,
-    paymentMethod: 'online',
-    status: 'pending',
-    dueDate: new Date('2025-10-21').getTime(),
-    remindersSent: 0,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    season: {
-      _id: 'season_summer_2024',
-      name: 'Summer League 2024',
-      type: 'Summer League',
-      year: 2024,
-      status: 'active'
-    }
-  }
-]
-
-const mockParents = [
-  { _id: 'j971g9n5ve0qqsby21a0k9n1js7n7tbx', name: 'Kevin Houston', email: 'khouston721@gmail.com', phone: '9088101720', status: 'active' },
-  { _id: 'parent_002', name: 'Angelys Castillo', email: 'cellaumbrella@yahoo.com', phone: '5551234567', status: 'active' },
-  { _id: 'parent_003', name: 'Sterling Monaghan', email: 'monaghanclan82@gmail.com', phone: '5551234568', status: 'active' }
-]
+// Note: We no longer rely on mock data here. We fetch real data from Convex for season/parent.
 
 // Generate Stripe payment link (same logic as send-bulk-reminders)
 const generateStripePaymentLink = async (parent: any, fee: any) => {
@@ -187,40 +163,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find the season
-    const season = { _id: seasonId, name: 'Summer League 2024', type: 'Summer League', year: 2024, status: 'active' }
-
-    // Get the first parent to generate a sample email template
-    const sampleParentId = parentIds[0]
-    const sampleParent = mockParents.find(p => p._id === sampleParentId)
-    
-    if (!sampleParent) {
+    // Fetch real season and parent from Convex
+    const season = await (convexHttp as any).query(api.seasons.getSeason as any, { id: seasonId as any })
+    if (!season) {
       return NextResponse.json(
-        { success: false, error: 'Sample parent not found' },
+        { success: false, error: 'Season not found' },
         { status: 404 }
       )
     }
 
-    // Find or create league fee for sample parent
-    let sampleFee = mockLeagueFees.find(f => f.parentId === sampleParentId && f.seasonId === seasonId)
-    
-    if (!sampleFee) {
-      // Create a new league fee for the sample
-      sampleFee = {
-        _id: `fee_${seasonId}_${sampleParentId}`,
-        parentId: sampleParentId,
-        seasonId: seasonId,
-        amount: 95,
-        processingFee: 3.06,
-        totalAmount: 98.06,
-        paymentMethod: 'online',
-        status: 'pending',
-        dueDate: new Date('2025-10-21').getTime(),
-        remindersSent: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        season: season
-      }
+    const sampleParentId = parentIds[0]
+    const sampleParent = await (convexHttp as any).query(api.parents.getParent as any, { id: sampleParentId as any })
+    if (!sampleParent) {
+      return NextResponse.json(
+        { success: false, error: 'Parent not found' },
+        { status: 404 }
+      )
+    }
+
+    // Build a sample fee object (do not persist during preview)
+    const sampleFee = {
+      _id: `fee_${seasonId}_${sampleParentId}`,
+      parentId: sampleParentId,
+      seasonId: seasonId,
+      amount: 95,
+      processingFee: 3.06,
+      totalAmount: 98.06,
+      paymentMethod: 'online',
+      status: 'pending',
+      dueDate: new Date('2025-10-21').getTime(),
+      remindersSent: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      season
     }
 
     // Generate Stripe payment link for sample
@@ -230,7 +205,7 @@ export async function POST(request: NextRequest) {
     const emailTemplate = await generatePersonalizedEmail(sampleParent, sampleFee, samplePaymentLink)
     
     // Create facility payment link
-    const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/facility/${sampleFee._id}?parent=${sampleParent._id}`
+    const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${sampleFee._id}?parent=${sampleParent._id}`
 
     const emailPreviewData = {
       subject: emailTemplate.subject,

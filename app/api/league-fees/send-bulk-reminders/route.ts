@@ -1,8 +1,11 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
+import { convexHttp } from '@/lib/convex-server'
+import { api } from '@/convex/_generated/api'
 
 // Initialize Stripe
 function getStripe() {
@@ -24,51 +27,14 @@ function getResend() {
   return new Resend(apiKey)
 }
 
-// Mock parents data for league fee reminders
-const mockParents = [
-  { _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx", name: "Kevin Houston", email: "khouston721@gmail.com", status: "active" },
-  { _id: "j972g9n5ve0qqsby21a0k9n1js7n7tby", name: "Sarah Johnson", email: "sarah.johnson@email.com", status: "active" },
-  { _id: "j973g9n5ve0qqsby21a0k9n1js7n7tbz", name: "Mike Davis", email: "mike.davis@email.com", status: "active" },
-  { _id: "j974g9n5ve0qqsby21a0k9n1js7n7tc0", name: "Lisa Wilson", email: "lisa.wilson@email.com", status: "active" },
-  { _id: "j975g9n5ve0qqsby21a0k9n1js7n7tc1", name: "Tom Brown", email: "tom.brown@email.com", status: "active" }
-]
-
-// Mock league fees data (this should match the data from the main route)
-let mockLeagueFees: any[] = [
-  {
-    _id: "temp_fee_1",
-    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-    seasonId: "temp_season_1",
-    amount: 95,
-    processingFee: 3.06,
-    totalAmount: 98.06,
-    paymentMethod: "online",
-    status: "pending",
-    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-    remindersSent: 0,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    season: {
-      _id: "temp_season_1",
-      name: "Summer League 2024",
-      type: "summer_league",
-      year: 2024
-    },
-    parent: {
-      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-      name: "Kevin Houston",
-      email: "khouston721@gmail.com"
-    }
-  }
-]
-
+// Using real data from Convex; mock lists removed.
 // Generate actual Stripe payment link for a parent
 const generateStripePaymentLink = async (parent: any, fee: any) => {
   const stripe = getStripe()
 
   if (!stripe) {
     // Fallback to local payment page if Stripe is not configured
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
     return `${baseUrl}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
   }
 
@@ -146,7 +112,7 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
 
 // Generate AI-powered personalized email content
 const generatePersonalizedEmail = async (parent: any, fee: any, paymentLink: string) => {
-  const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/pay/facility/${fee._id}?parent=${parent._id}`
+  const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${fee._id}?parent=${parent._id}`
   
   // AI-generated personalized email content
   const emailContent = `
@@ -201,55 +167,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Enforce email configuration per environment variables
+    const resend = getResend()
+    const fromAddress = process.env.RESEND_FROM_EMAIL
+    if (!resend || !fromAddress) {
+      return NextResponse.json(
+        { success: false, error: 'Resend not configured: ensure RESEND_API_KEY and RESEND_FROM_EMAIL are set' },
+        { status: 500 }
+      )
+    }
+
+    // Fetch season details once
+    const season = await (convexHttp as any).query(api.seasons.getSeason as any, { id: seasonId as any })
+    if (!season) {
+      return NextResponse.json(
+        { success: false, error: 'Season not found' },
+        { status: 404 }
+      )
+    }
+
     const results = []
     let successCount = 0
     let errorCount = 0
 
     for (const parentId of parentIds) {
       try {
-        // Find the parent
-        const parent = mockParents.find(p => p._id === parentId)
+        // Fetch parent from Convex
+        const parent = await (convexHttp as any).query(api.parents.getParent as any, { id: parentId as any })
         if (!parent) {
-          results.push({
-            parentId,
-            status: 'error',
-            error: 'Parent not found'
-          })
+          results.push({ parentId, status: 'error', error: 'Parent not found' })
           errorCount++
           continue
         }
 
-        // Find or create league fee for this parent and season
-        let fee = mockLeagueFees.find(f => f.parentId === parentId && f.seasonId === seasonId)
-        
-        if (!fee) {
-          // Create a new fee if it doesn't exist
-          const timestamp = Date.now()
-          const feeId = `temp_fee_${timestamp}_${parentId}`
-          
-          fee = {
-            _id: feeId,
-            parentId: parentId,
-            seasonId: seasonId,
-            amount: 95,
-            processingFee: 3.06,
-            totalAmount: 98.06,
-            paymentMethod: "online",
-            status: "pending",
-            dueDate: timestamp + (30 * 24 * 60 * 60 * 1000),
-            remindersSent: 0,
-            createdAt: timestamp,
-            updatedAt: timestamp,
-            season: {
-              _id: seasonId,
-              name: seasonId === "temp_season_1" ? "Summer League 2024" : "New Season",
-              type: "summer_league",
-              year: 2024
-            },
-            parent: parent
-          }
-          
-          mockLeagueFees.push(fee)
+        // Build (or fetch) a fee model for this parent/season (no DB writes during bulk send)
+        const timestamp = Date.now()
+        const fee = {
+          _id: `temp_fee_${timestamp}_${parentId}`,
+          parentId,
+          seasonId,
+          amount: 95,
+          processingFee: 3.06,
+          totalAmount: 98.06,
+          paymentMethod: 'online',
+          status: 'pending',
+          dueDate: timestamp + (30 * 24 * 60 * 60 * 1000),
+          remindersSent: 0,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          season,
+          parent
         }
 
         // Generate personalized Stripe payment link
@@ -285,9 +252,9 @@ export async function POST(request: NextRequest) {
             let messageId: string | null = null
             let usedFallback = false
             const result = await resend.emails.send({
-              from: process.env.RESEND_FROM_EMAIL || 'RA1 Basketball <onboarding@resend.dev>',
+              from: fromAddress!,
               to: [parent.email],
-              subject: subject,
+              subject,
               text: body,
               html: body.replace(/\n/g, '<br>') // Simple HTML conversion
             })
