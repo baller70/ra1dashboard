@@ -76,6 +76,11 @@ export async function GET(request: Request) {
       },
       plans: plansSummary,
       analytics: analyticsSummary,
+      resend: {
+        hasApiKey: Boolean(process.env.RESEND_API_KEY),
+        apiKeyTail: process.env.RESEND_API_KEY ? String(process.env.RESEND_API_KEY).slice(-4) : null,
+        from: process.env.RESEND_FROM_EMAIL || null,
+      },
     })
   } catch (error) {
     return NextResponse.json({ error: 'debug failed' }, { status: 500 })

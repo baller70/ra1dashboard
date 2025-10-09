@@ -1,4 +1,6 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 
 import { NextRequest, NextResponse } from 'next/server'
 import { convexHttp } from "@/lib/convex-server"
@@ -30,9 +32,9 @@ export async function POST(request: NextRequest) {
 
     if (!leagueFeeId || !parentId) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Missing required fields: leagueFeeId, parentId' 
+          error: 'Missing required fields: leagueFeeId, parentId'
         },
         { status: 400 }
       )
@@ -276,7 +278,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error sending league fee reminder:', error)
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error'
       },
