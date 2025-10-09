@@ -95,7 +95,7 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin}/payments/success?fee=${fee._id}`
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/payments/success?fee=${fee._id}`
         }
       }
     })
@@ -105,7 +105,7 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
   } catch (error) {
     console.error('Error creating Stripe payment link:', error)
     // Fallback to local payment page
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (new URL(request.url)).origin
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'
     return `${baseUrl}/pay/league-fee/${fee._id}?parent=${parent._id}&amount=${fee.totalAmount}`
   }
 }
@@ -260,35 +260,9 @@ export async function POST(request: NextRequest) {
             })
 
             if (result.error) {
-              // If domain is not verified, retry with Resend's onboarding domain just for this send
-              const errStr = typeof result.error === 'string' ? result.error : JSON.stringify(result.error)
-              const isDomainUnverified = errStr.includes('domain is not verified') || (result.error as any)?.statusCode === 403
-              if (isDomainUnverified) {
-                try {
-                  const fb = await resend.emails.send({
-                    from: 'RA1 Basketball <onboarding@resend.dev>',
-                    to: [parent.email],
-                    subject: subject,
-                    text: body,
-                    html: body.replace(/\n/g, '<br>')
-                  })
-                  if (fb.error) {
-                    emailError = fb.error
-                    console.error(`Fallback send failed to ${parent.email}:`, fb.error)
-                  } else {
-                    emailSent = true
-                    usedFallback = true
-                    messageId = (fb as any).data?.id ?? null
-                    console.log(`✅ Email sent via fallback to ${parent.email}:`, (fb as any).data)
-                  }
-                } catch (e) {
-                  emailError = e
-                  console.error(`Fallback error sending email to ${parent.email}:`, e)
-                }
-              } else {
-                emailError = result.error
-                console.error(`Failed to send email to ${parent.email}:`, result.error)
-              }
+              // Do not fallback. Surface exact Resend error; user requires using their configured sender only.
+              emailError = result.error
+              console.error(`Failed to send email to ${parent.email}:`, result.error)
             } else {
               emailSent = true
               messageId = (result as any).data?.id ?? null
