@@ -202,8 +202,8 @@ const SeasonsPage = () => {
           registrationDeadline: '',
           description: ''
         })
-        // NOTE: Skipping fetchSeasons() because /api/seasons GET currently returns mock data.
-        // Once backend persistence is wired, we can call fetchSeasons() here to refresh from server.
+        // Now that /api/seasons is backed by Convex, refresh from server to ensure persistence
+        await fetchSeasons()
       } else {
         throw new Error(data.error)
       }
