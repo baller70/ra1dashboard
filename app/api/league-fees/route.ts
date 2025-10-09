@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
+import { convexHttp } from "@/lib/convex-server"
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -104,14 +105,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find the parent in our mock data
-    const parent = mockParents.find(p => p._id === parentId)
+    // Resolve parent from Convex first; fallback to mock for local dev
+    let parent: any = null
+    try {
+      parent = await convexHttp.query(api.parents.getParent as any, { id: parentId as any })
+    } catch (e) {
+      console.warn('Convex parents.getParent failed; falling back to mockParents', e)
+    }
+    if (!parent) {
+      parent = mockParents.find(p => p._id === parentId) || null
+    }
     if (!parent) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Parent not found'
-        },
+        { success: false, error: 'Parent not found' },
         { status: 404 }
       )
     }
