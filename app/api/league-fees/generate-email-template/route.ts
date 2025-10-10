@@ -108,7 +108,7 @@ const generatePersonalizedEmail = async (parent: any, fee: any, paymentLink: str
     : ''
 
   // AI-generated personalized email content
-  const contactName = (parent?.emergencyContact || parent?.name || '').trim()
+  const contactName = (parent?.emergencyContact || '').trim()
   const firstName = contactName.split(/\s+/)[0] || 'there'
   const body = `Dear ${firstName},
 
