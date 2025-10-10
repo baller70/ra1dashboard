@@ -113,13 +113,9 @@ const generateStripePaymentLink = async (parent: any, fee: any) => {
 // Generate AI-powered personalized email content
 const generatePersonalizedEmail = async (parent: any, fee: any, paymentLink: string) => {
   const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${fee._id}?parent=${parent._id}`
-  const emergencyLine = parent?.emergencyContact
-    ? `\nEmergency Contact: ${parent.emergencyContact}${parent?.emergencyPhone ? ` (${parent.emergencyPhone})` : ''}`
-    : ''
 
-  // AI-generated personalized email content
-  const contactName = (parent?.emergencyContact || '').trim()
-  const firstName = contactName.split(/\s+/)[0] || 'there'
+  // AI-generated personalized email content (no emergency contact in body)
+  const firstName = (parent?.name || '').trim().split(/\s+/)[0] || 'there'
   const emailContent = `
 Subject: League Fee Payment Reminder - ${fee.season.name}
 
@@ -131,7 +127,7 @@ I hope this message finds you well! This is a friendly reminder about your upcom
 • Amount: $${fee.amount}
 • Processing Fee: $${fee.processingFee}
 • Total Amount: $${fee.totalAmount}
-• Due Date: ${new Date(fee.dueDate).toLocaleDateString()}${emergencyLine}
+• Due Date: ${new Date(fee.dueDate).toLocaleDateString()}
 
 **Payment Options:**
 
