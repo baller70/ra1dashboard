@@ -137,7 +137,6 @@ export async function POST(request: Request) {
       address: sanitizedData.address || undefined,
       emergencyContact: sanitizedData.emergencyContact || undefined,
       emergencyPhone: sanitizedData.emergencyPhone || undefined,
-      emergencyEmail: (sanitizedData as any).emergencyEmail || undefined,
       status: 'active',
       teamId: sanitizedData.teamId || undefined,
       notes: sanitizedData.notes || undefined,
