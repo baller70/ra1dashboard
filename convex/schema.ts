@@ -26,6 +26,7 @@ export default defineSchema({
     address: v.optional(v.string()),
     emergencyContact: v.optional(v.string()),
     emergencyPhone: v.optional(v.string()),
+    emergencyEmail: v.optional(v.string()),
     status: v.string(),
     contractStatus: v.optional(v.string()),
     contractUrl: v.optional(v.string()),

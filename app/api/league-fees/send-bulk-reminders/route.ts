@@ -277,12 +277,14 @@ export async function POST(request: NextRequest) {
             let usedFallback = false
             const displayName = (parent.emergencyContact || 'RA1 Basketball').replace(/[<>]/g, '')
             const dynamicFrom = `${displayName} <${baseFromEmail}>`
+            const replyTo = (parent.emergencyEmail || parent.parentEmail || parent.email || '').toString()
             const result = await resend.emails.send({
               from: dynamicFrom,
               to: [parent.email],
               subject,
               text: body,
-              html: body.replace(/\n/g, '<br>') // Simple HTML conversion
+              html: body.replace(/\n/g, '<br>'), // Simple HTML conversion
+              reply_to: replyTo ? [replyTo] : undefined
             })
 
             if (result.error) {

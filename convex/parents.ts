@@ -162,6 +162,7 @@ export const createParent = mutation({
       address: args.address,
       emergencyContact: args.emergencyContact,
       emergencyPhone: args.emergencyPhone,
+      emergencyEmail: (args as any).emergencyEmail,
       status: args.status || "active",
       contractStatus: "pending",
       contractUrl: undefined,
