@@ -118,10 +118,12 @@ const generatePersonalizedEmail = async (parent: any, fee: any, paymentLink: str
     : ''
 
   // AI-generated personalized email content
+  const contactName = (parent?.emergencyContact || parent?.name || '').trim()
+  const firstName = contactName.split(/\s+/)[0] || 'there'
   const emailContent = `
 Subject: League Fee Payment Reminder - ${fee.season.name}
 
-Dear ${parent.name},
+Dear ${firstName},
 
 I hope this message finds you well! This is a friendly reminder about your upcoming league fee payment for ${fee.season.name}.
 
