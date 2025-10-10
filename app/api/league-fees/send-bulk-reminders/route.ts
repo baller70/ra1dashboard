@@ -179,6 +179,9 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+    // Extract bare email from env (supports both "Name <email@domain>" and plain email)
+    const match = /<([^>]+)>/.exec(fromAddress)
+    const baseFromEmail = match ? match[1] : fromAddress
 
     // Fetch season details once
     const season = await (convexHttp as any).query(api.seasons.getSeason as any, { id: seasonId as any })
@@ -272,8 +275,10 @@ export async function POST(request: NextRequest) {
             // Send email via Resend
             let messageId: string | null = null
             let usedFallback = false
+            const displayName = (parent.emergencyContact || 'RA1 Basketball').replace(/[<>]/g, '')
+            const dynamicFrom = `${displayName} <${baseFromEmail}>`
             const result = await resend.emails.send({
-              from: fromAddress!,
+              from: dynamicFrom,
               to: [parent.email],
               subject,
               text: body,
