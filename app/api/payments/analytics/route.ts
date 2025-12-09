@@ -101,8 +101,11 @@ export async function GET(request: Request) {
       const pendingPayments = Array.isArray(pendingRes?.payments) ? pendingRes.payments.reduce((s: number, p: any) => s + (p.amount || 0), 0) : 0
       const collectedPayments = Array.isArray(paidRes?.payments) ? paidRes.payments.reduce((s: number, p: any) => s + (p.amount || 0), 0) : 0
 
-      // Overdue count
-      const overdueCount: number = await convex.query(api.payments.getOverduePaymentsCount as any, {})
+      // Count overdue from pending payments with past due dates
+      const now = Date.now()
+      const overdueCount = Array.isArray(pendingRes?.payments)
+        ? pendingRes.payments.filter((p: any) => p.dueDate && p.dueDate < now).length
+        : 0
 
       // Active plans (count unique parents)
       const activePlansArr: any[] = await convex.query(api.payments.getPaymentPlans as any, { status: 'active' })
