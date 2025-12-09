@@ -1,12 +1,21 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is required');
+// Only initialize Stripe if we have a secret key - allows builds to succeed without the key
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+function getStripeInstance(): Stripe {
+  if (!stripeSecretKey) {
+    throw new Error('STRIPE_SECRET_KEY is required');
+  }
+  return new Stripe(stripeSecretKey, {
+    apiVersion: '2024-06-20',
+  });
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
-});
+// Lazy initialization to avoid build-time errors
+export const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, { apiVersion: '2024-06-20' })
+  : (null as unknown as Stripe);
 
 // Customer Management
 export async function createStripeCustomer(parentData: {
