@@ -2,7 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
-// Force redeploy - fixed allowed variable scope issue - v2
+// Force redeploy - fixed allowed variable scope issue - v3
 
 // Utility function to safely get parent data with ID validation
 async function safeGetParent(ctx: any, parentId: any) {
