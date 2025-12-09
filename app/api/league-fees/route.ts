@@ -17,7 +17,8 @@ const mockParents = [
 ]
 
 // TEMPORARY: In-memory storage for mock league fees until Convex functions are deployed
-let mockLeagueFees: any[] = [
+// Exported for use by send-reminder route
+export let mockLeagueFees: any[] = [
   {
     _id: "temp_fee_1",
     parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",

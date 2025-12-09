@@ -40,46 +40,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Try mock first when using temp fee ids to avoid Convex issues in serverless
+    // Load from Convex
+    const convex = getConvexClient()
     let fee: any = null
     let parent: any = null
     let season: any = null
-    try {
-      const idStr = String(leagueFeeId)
-      if (idStr.startsWith('temp_fee_')) {
-        const { mockLeagueFees } = await import('@/app/api/league-fees/route')
-        const mock = mockLeagueFees.find((f: any) => f._id === leagueFeeId && f.parentId === parentId)
-        if (mock) {
-          fee = mock
-          parent = mock.parent
-          season = mock.season
-        }
-      }
-    } catch (e) {
-      // ignore import errors
-    }
 
-    // Load from Convex if not resolved via mock
-    if (!fee || !parent) {
-      const convex = getConvexClient()
+    try {
       fee = await convex.query(api.leagueFees.getLeagueFee, { id: leagueFeeId as any })
       parent = await convex.query(api.parents.getParent, { id: parentId as any })
       season = fee?.seasonId ? await convex.query(api.seasons.getSeason, { id: fee.seasonId as any }) : null
-    }
-
-    // Fallback to mock as last resort
-    if (!fee || !parent) {
-      try {
-        const { mockLeagueFees } = await import('@/app/api/league-fees/route')
-        const mock = mockLeagueFees.find((f: any) => f._id === leagueFeeId && f.parentId === parentId)
-        if (mock) {
-          fee = mock
-          parent = mock.parent
-          season = mock.season
-        }
-      } catch (e) {
-        // ignore import errors
-      }
+    } catch (e) {
+      console.error('Error loading from Convex:', e)
     }
 
     if (!fee || !parent) {
@@ -181,7 +153,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create message log (best-effort)
-    const convex = getConvexClient()
     let messageLogId: any = null
     try {
       messageLogId = await convex.mutation(api.messageLogs.createMessageLog, {

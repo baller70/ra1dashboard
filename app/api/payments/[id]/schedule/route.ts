@@ -42,26 +42,35 @@ export async function PUT(
       }
     }
 
-    // Call the Convex mutation to modify the payment schedule
-    const result = await convexHttp.mutation(api.paymentInstallments.modifyPaymentSchedule as any, {
-      parentPaymentId: params.id as any,
+    // Prepare the mutation arguments
+    const mutationArgs = {
+      parentPaymentId: params.id,
       newSchedule: schedule.map((item: any) => ({
         installmentId: item.installmentId || undefined,
         amount: item.amount,
         dueDate: item.dueDate,
         installmentNumber: item.installmentNumber,
       })),
-    })
+    }
+
+    console.log('Calling modifyPaymentSchedule with args:', JSON.stringify(mutationArgs, null, 2))
+
+    // Call the Convex mutation to modify the payment schedule
+    const result = await convexHttp.mutation(api.paymentInstallments.modifyPaymentSchedule as any, mutationArgs as any)
+
+    console.log('modifyPaymentSchedule result:', result)
 
     return NextResponse.json({
       success: true,
       message: 'Payment schedule updated successfully',
       result,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error modifying payment schedule:', error)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
     return NextResponse.json(
-      { success: false, error: 'Failed to modify payment schedule' },
+      { success: false, error: 'Failed to modify payment schedule', detail: error?.message || String(error) },
       { status: 500 }
     )
   }
