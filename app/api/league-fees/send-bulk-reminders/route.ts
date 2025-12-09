@@ -248,7 +248,34 @@ export async function POST(request: NextRequest) {
         let emailContent
         if (customSubject && customBody) {
           // Use custom subject and body from email preview
-          emailContent = `Subject: ${customSubject}\n\n${customBody}`
+          // Replace placeholders with actual parent data for personalization
+          const firstName = (parent?.name || '').trim().split(/\s+/)[0] || 'there'
+          const facilityPaymentLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ra1dashboard.vercel.app'}/pay/facility/${fee._id}?parent=${parent._id}`
+
+          // Replace common placeholders in subject and body
+          const personalizedSubject = customSubject
+            .replace(/\{firstName\}/gi, firstName)
+            .replace(/\{name\}/gi, parent?.name || 'Parent')
+            .replace(/\{amount\}/gi, String(fee.totalAmount))
+            .replace(/\{seasonName\}/gi, fee.season?.name || '')
+
+          const personalizedBody = customBody
+            .replace(/\{firstName\}/gi, firstName)
+            .replace(/\{name\}/gi, parent?.name || 'Parent')
+            .replace(/\{amount\}/gi, String(fee.totalAmount))
+            .replace(/\{processingFee\}/gi, String(fee.processingFee))
+            .replace(/\{baseAmount\}/gi, String(fee.amount))
+            .replace(/\{seasonName\}/gi, fee.season?.name || '')
+            .replace(/\{dueDate\}/gi, new Date(fee.dueDate).toLocaleDateString())
+            .replace(/\{paymentLink\}/gi, paymentLink)
+            .replace(/\{facilityPaymentLink\}/gi, facilityPaymentLink)
+            // Also replace the first occurrence of a generic greeting with personalized one
+            .replace(/Dear Parent,/gi, `Dear ${firstName},`)
+            .replace(/Dear there,/gi, `Dear ${firstName},`)
+            .replace(/Hi Parent,/gi, `Hi ${firstName},`)
+            .replace(/Hello Parent,/gi, `Hello ${firstName},`)
+
+          emailContent = `Subject: ${personalizedSubject}\n\n${personalizedBody}`
         } else {
           // Generate AI-powered personalized email (returns full content including Subject line)
           emailContent = await generatePersonalizedEmail(parent, fee, paymentLink)

@@ -2484,7 +2484,18 @@ export default function PaymentDetailPage() {
         paymentId={payment.id}
         onSave={async (modifiedSchedule) => {
           console.log('Modified schedule:', modifiedSchedule)
-          window.location.reload()
+          // Call API to persist the schedule changes
+          const response = await fetch(`/api/payments/${payment.id}/schedule`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ schedule: modifiedSchedule }),
+          })
+          const result = await response.json()
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to save schedule changes')
+          }
+          // Refresh the payment progress data
+          await fetchPaymentProgress()
         }}
       />
 

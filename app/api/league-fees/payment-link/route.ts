@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { convexHttp } from '@/lib/convex-server'
+import { api } from '@/convex/_generated/api'
 
 // Initialize Stripe
 function getStripe() {
@@ -13,34 +15,16 @@ function getStripe() {
   return new Stripe(secret, { apiVersion: '2024-06-20' } as any)
 }
 
-// Mock league fees data (should match the data from other routes)
-let mockLeagueFees: any[] = [
-  {
-    _id: "temp_fee_1",
-    parentId: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-    seasonId: "temp_season_1",
-    amount: 95,
-    processingFee: 3.06,
-    totalAmount: 98.06,
-    paymentMethod: "online",
-    status: "pending",
-    dueDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-    remindersSent: 0,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    season: {
-      _id: "temp_season_1",
-      name: "Summer League 2024",
-      type: "summer_league",
-      year: 2024
-    },
-    parent: {
-      _id: "j971g9n5ve0qqsby21a0k9n1js7n7tbx",
-      name: "Kevin Houston",
-      email: "khouston721@gmail.com"
-    }
+// Helper to get mock league fees from the main route
+async function getMockLeagueFees() {
+  try {
+    const { mockLeagueFees } = await import('@/app/api/league-fees/route')
+    return mockLeagueFees
+  } catch (e) {
+    console.warn('Failed to import mockLeagueFees:', e)
+    return []
   }
-]
+}
 
 // Generate actual Stripe payment link for a league fee
 const generateStripePaymentLink = async (fee: any) => {
@@ -139,9 +123,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Find the league fee
-    const fee = mockLeagueFees.find(f => f._id === feeId && f.parentId === parentId)
-    
+    // Try to find the league fee from Convex first, then fallback to mock
+    let fee: any = null
+    let parent: any = null
+    let season: any = null
+
+    // Try Convex first
+    try {
+      fee = await convexHttp.query(api.leagueFees.getLeagueFee as any, { id: feeId as any })
+      if (fee) {
+        parent = await convexHttp.query(api.parents.getParent as any, { id: fee.parentId as any }).catch(() => null)
+        season = await convexHttp.query(api.seasons.getSeason as any, { id: fee.seasonId as any }).catch(() => null)
+        fee = { ...fee, parent, season }
+      }
+    } catch (e) {
+      console.warn('Convex query failed, trying mock data:', e)
+    }
+
+    // Fallback to mock data
+    if (!fee) {
+      const mockLeagueFees = await getMockLeagueFees()
+      fee = mockLeagueFees.find((f: any) => f._id === feeId && f.parentId === parentId)
+    }
+
     if (!fee) {
       return NextResponse.json(
         {
