@@ -768,6 +768,32 @@ export default function ParentDetailPage() {
     }
   }
 
+  // Delete payment plan handler - added for parent profile page
+  const handleDeletePaymentPlan = async (planId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!confirm('Are you sure you want to delete this payment plan?')) return
+
+    try {
+      const response = await fetch(`/api/payment-plans/${planId}`, {
+        method: 'DELETE',
+        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
+      })
+
+      if (response.ok) {
+        setPaymentPlans(prev => prev.filter(plan => (plan._id || plan.id) !== planId))
+        toast({ title: 'Success', description: 'Payment plan deleted successfully.' })
+      } else {
+        const data = await response.json()
+        toast({ title: 'Error', description: data.error || 'Failed to delete payment plan', variant: 'destructive' })
+      }
+    } catch (error) {
+      console.error('Error deleting payment plan:', error)
+      toast({ title: 'Error', description: 'Error deleting payment plan', variant: 'destructive' })
+    }
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -1163,48 +1189,58 @@ export default function ParentDetailPage() {
             {Array.isArray(paymentPlans) && paymentPlans.length > 0 ? (
               <div className="space-y-3">
                 {paymentPlans.map((plan) => (
-                  <Link
+                  <div
                     key={String(plan._id || plan.id)}
-                    href="#"
-                    className="block"
-                    onClick={(e) => { e.preventDefault(); openPlanDetail(plan) }}
+                    className="p-4 border rounded-lg hover:bg-gray-50 hover:border-orange-300 transition-colors group"
                   >
-                    <div className="p-4 border rounded-lg hover:bg-gray-50 hover:border-orange-300 transition-colors cursor-pointer group" role="button">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium group-hover:text-orange-600 transition-colors">
-                               {(plan as any).type || 'Installment'} Payment Plan
-                            </p>
-                            <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <ExternalLink className="h-4 w-4 text-gray-400" />
-                            </div>
+                    <div className="flex items-center justify-between">
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => openPlanDetail(plan)}
+                        role="button"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium group-hover:text-orange-600 transition-colors">
+                             {(plan as any).type || 'Installment'} Payment Plan
+                          </p>
+                          <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ExternalLink className="h-4 w-4 text-gray-400" />
                           </div>
-                           {plan.description && (
-                             <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
-                           )}
-                          <div className="flex items-center justify-between">
-                            <div className="text-right">
-                               <p className="font-semibold text-lg">${Number((plan as any).totalAmount || 0).toLocaleString()}</p>
-                              <p className="text-sm text-muted-foreground">
-                                ${Number((plan as any).installmentAmount || 0).toLocaleString()} x {(plan as any).installments} installments
-                              </p>
-                            </div>
-                             {(plan as any).status && (
-                              <Badge variant={(plan as any).status === 'active' ? 'default' : (plan as any).status === 'completed' ? 'secondary' : 'outline'}>
-                                {(plan as any).status}
-                              </Badge>
-                            )}
-                          </div>
-                           {(plan as any).nextDueDate && (
-                            <p className="text-xs text-orange-600 mt-1">
-                               Next payment due: {new Date((plan as any).nextDueDate).toLocaleDateString()}
+                        </div>
+                         {plan.description && (
+                           <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                         )}
+                        <div className="flex items-center justify-between">
+                          <div className="text-right">
+                             <p className="font-semibold text-lg">${Number((plan as any).totalAmount || 0).toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ${Number((plan as any).installmentAmount || 0).toLocaleString()} x {(plan as any).installments} installments
                             </p>
+                          </div>
+                           {(plan as any).status && (
+                            <Badge variant={(plan as any).status === 'active' ? 'default' : (plan as any).status === 'completed' ? 'secondary' : 'outline'}>
+                              {(plan as any).status}
+                            </Badge>
                           )}
                         </div>
+                         {(plan as any).nextDueDate && (
+                          <p className="text-xs text-orange-600 mt-1">
+                             Next payment due: {new Date((plan as any).nextDueDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="ml-4 flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={(e) => handleDeletePaymentPlan(String(plan._id || plan.id), e)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
 
                 {paymentPlans.length > 3 && (
