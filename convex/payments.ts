@@ -2,6 +2,8 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
+// Force redeploy - fixed allowed variable scope issue - v2
+
 // Utility function to safely get parent data with ID validation
 async function safeGetParent(ctx: any, parentId: any) {
   // Accept Convex string IDs which are typically 32-characters long. Only reject obviously malformed values.
@@ -222,15 +224,16 @@ export const getPaymentAnalytics = query({
 
     // If a program is specified, scope by parents in that program
     const program = (args.program || '').trim();
+    let allowed: Set<string> | null = null;
     if (program) {
       const parents = await ctx.db.query("parents").collect();
-      const allowed = new Set(
+      allowed = new Set(
         parents
           .filter((p: any) => String((p as any).program || '').trim() === program)
           .map((p: any) => String(p._id))
       );
-      payments = payments.filter((p: any) => allowed.has(String(p.parentId)));
-      paymentPlans = paymentPlans.filter((pl: any) => allowed.has(String(pl.parentId)));
+      payments = payments.filter((p: any) => allowed!.has(String(p.parentId)));
+      paymentPlans = paymentPlans.filter((pl: any) => allowed!.has(String(pl.parentId)));
     }
 
     // Include newly created plans that are not yet fully active (case-insensitive)
@@ -256,9 +259,9 @@ export const getPaymentAnalytics = query({
     // Collected: sum PAID standalone payments (no installments) + PAID installments (for plans)
     // 1) Load installments and index by parentPaymentId and by parentId
     let installments = await ctx.db.query("paymentInstallments").collect();
-    if (program) {
+    if (program && allowed) {
       // Filter installments by allowed parents for this program
-      installments = installments.filter((inst: any) => allowed.has(String(inst.parentId)));
+      installments = installments.filter((inst: any) => allowed!.has(String(inst.parentId)));
     }
 
     const paymentIdsWithInstallments = new Set<string>(

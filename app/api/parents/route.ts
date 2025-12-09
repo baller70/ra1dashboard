@@ -39,10 +39,22 @@ export async function GET(request: Request) {
 
     let parents = baseResult.parents as any[];
 
-    // Strict program filtering for all tabs, including Yearly
+    // Program filtering: if program is specified, filter parents
+    // For "yearly-program", include parents where no explicit program is set (default behavior)
     if (program) {
       const requested = String(program).trim();
-      parents = parents.filter((p: any) => String((p as any).program || '').trim() === requested);
+      parents = parents.filter((p: any) => {
+        const parentProg = String((p as any).program || '').trim();
+
+        // If requesting "yearly-program", include parents with no explicit program (default)
+        // as well as parents explicitly tagged as "yearly-program"
+        if (requested === 'yearly-program') {
+          return parentProg === '' || parentProg === 'yearly-program';
+        }
+
+        // For other programs, require explicit match
+        return parentProg === requested;
+      });
     }
 
     // Recompute pagination after filtering

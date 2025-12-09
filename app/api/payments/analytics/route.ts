@@ -9,14 +9,16 @@ import { api } from '../../../../convex/_generated/api';
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function GET(request: Request) {
+  // Extract program parameter outside try block so it's accessible in catch block
+  const { searchParams } = new URL(request.url)
+  const program = (searchParams.get('program') || '').trim()
+
   try {
     await requireAuthWithApiKeyBypass(request)
-    
+
     console.log('🔄 Payment analytics API called - fetching LIVE data from Convex...')
-    
+
     // FETCH LIVE PAYMENT DATA FROM CONVEX
-    const { searchParams } = new URL(request.url)
-    const program = (searchParams.get('program') || '').trim()
     let paymentAnalytics = await convex.query(api.payments.getPaymentAnalytics, { program });
 
     // Post-process using authoritative plans list (never infer from parents)

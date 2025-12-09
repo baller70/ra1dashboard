@@ -42,13 +42,22 @@ export async function GET(request: NextRequest) {
 
     let payments = (base?.payments || []) as any[];
 
-    // Strict program filtering for all programs, including Yearly
+    // Program filtering: if program is specified, filter payments
+    // For "yearly-program", include payments where no explicit program is set (default behavior)
     if (program) {
       const requested = String(program).trim();
       payments = payments.filter((p: any) => {
         const planProg = String((p?.paymentPlan as any)?.program || '').trim();
         const parentProg = String((p?.parent as any)?.program || '').trim();
         const explicit = planProg || parentProg;
+
+        // If requesting "yearly-program", include payments with no explicit program (default)
+        // as well as payments explicitly tagged as "yearly-program"
+        if (requested === 'yearly-program') {
+          return explicit === '' || explicit === 'yearly-program';
+        }
+
+        // For other programs, require explicit match
         return explicit === requested;
       });
     }

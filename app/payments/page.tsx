@@ -164,7 +164,15 @@ export default function PaymentsPage() {
         parents: parentsResult.success
       })
 
-      if (paymentsResult.success) setPaymentsData(paymentsResult.data)
+      if (paymentsResult.success) {
+        console.log('🔥🔥🔥 PAYMENTS DATA FROM API:', {
+          paymentsResultData: paymentsResult.data,
+          paymentsArray: paymentsResult.data?.payments,
+          paymentsCount: paymentsResult.data?.payments?.length,
+          qaTestParent: paymentsResult.data?.payments?.find((p: any) => p.parentName === 'QA Test Parent')
+        })
+        setPaymentsData(paymentsResult.data)
+      }
       if (analyticsResult.success) setAnalytics(analyticsResult.data)
       if (teamsResult.success) {
         const normalizedTeams = Array.isArray(teamsResult.data)
@@ -326,32 +334,11 @@ export default function PaymentsPage() {
   }, [fetchData])
 
 
+  // DISABLED: This useEffect was causing an infinite loop
+  // The teams data is already being fetched in the main data fetch useEffect
   // Defensive: On Yearly Program, ensure teams list covers all teamIds referenced by parents.
   // If any parent has a teamId that isn't present in teamsData, refetch full teams and update state.
-  useEffect(() => {
-    try {
-      if (activeProgram !== 'yearly-program') return;
-      const parents = Array.isArray(allParentsData?.parents) ? allParentsData.parents : [];
-      const teamIdsFromParents = new Set<string>(parents.filter((p: any) => p?.teamId).map((p: any) => String(p.teamId)));
-      const teamIdsWeHave = new Set<string>((Array.isArray(teamsData) ? teamsData : []).map((t: any) => String(t?._id)));
-      const missing = [...teamIdsFromParents].filter(id => !teamIdsWeHave.has(id));
-      if (missing.length === 0) return;
-      // Refetch teams with cache-busting and replace teamsData
-      const ts = Date.now();
-      fetch(`/api/teams?program=yearly-program&limit=10000&cb=${ts}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'x-api-key': 'ra1-dashboard-api-key-2024' }
-      })
-        .then(res => res.json())
-        .then(json => {
-          if (json?.success && Array.isArray(json.data)) {
-            const normalized = json.data.map((t: any) => ({ ...t, _id: String(t._id ?? (t as any).id ?? '') }));
-            setTeamsData(normalized);
-          }
-        })
-        .catch(() => {});
-    } catch {}
-  }, [activeProgram, allParentsData, teamsData]);
+  // NOTE: Completely disabled to prevent infinite loop - teams are fetched in main useEffect
 
   const forceRefresh = async () => {
     try {
@@ -573,17 +560,61 @@ export default function PaymentsPage() {
   const paymentsBase = paymentsData?.payments || []
   const teams = teamsData || []
   const allParents = allParentsData?.parents || []
+
+  // DEBUG: Log paymentsBase to see what's coming from API - ALWAYS LOG
+  React.useEffect(() => {
+    const qaPayment = paymentsBase.find((p: any) => p.parentName === 'QA Test Parent')
+    console.log('🔍🔍🔍 DEBUG paymentsBase (from API):', {
+      paymentsDataExists: !!paymentsData,
+      paymentsDataKeys: paymentsData ? Object.keys(paymentsData) : 'null',
+      totalPayments: paymentsBase.length,
+      allPaymentNames: paymentsBase.map((p: any) => p.parentName),
+      qaTestParentPayment: qaPayment ? {
+        _id: qaPayment._id,
+        parentId: qaPayment.parentId,
+        parentName: qaPayment.parentName,
+        hasPaymentPlan: !!qaPayment.paymentPlan,
+        paymentPlanProgram: qaPayment.paymentPlan?.program,
+        status: qaPayment.status
+      } : 'NOT FOUND IN paymentsBase'
+    })
+  }, [paymentsBase, paymentsData])
+
   // Teams actually referenced by parents (ensures dialog shows all active team groups)
-  // Program-scoped payments: strict explicit match by plan.program OR parent.program for all programs
+  // Program-scoped payments: filter by program, with "yearly-program" as default for untagged payments
   const payments = React.useMemo(() => {
     const norm = (s: any) => String(s || '').trim()
     if (!Array.isArray(paymentsBase)) return []
-    return paymentsBase.filter((p: any) => {
+    const filtered = paymentsBase.filter((p: any) => {
       const planProg = norm(p?.paymentPlan?.program)
       const parent = p?.parent || (allParents || []).find((ap: any) => String(ap._id) === String(p.parentId))
       const parentProg = norm(parent?.program)
-      return planProg === activeProgram || parentProg === activeProgram
+      const explicit = planProg || parentProg
+
+      // For "yearly-program", include payments with no explicit program (default behavior)
+      if (activeProgram === 'yearly-program') {
+        return explicit === '' || explicit === 'yearly-program'
+      }
+
+      // For other programs, require explicit match
+      return explicit === activeProgram
     })
+
+    // DEBUG: Log filtered payments
+    const qaPayment = filtered.find((p: any) => p.parentName === 'QA Test Parent')
+    console.log('🔍 DEBUG payments (after program filter):', {
+      activeProgram,
+      totalFiltered: filtered.length,
+      qaTestParentPayment: qaPayment ? {
+        _id: qaPayment._id,
+        parentId: qaPayment.parentId,
+        parentName: qaPayment.parentName,
+        hasPaymentPlan: !!qaPayment.paymentPlan,
+        status: qaPayment.status
+      } : 'NOT FOUND after filter'
+    })
+
+    return filtered
   }, [paymentsBase, allParents, activeProgram])
 
   const derivedTeams = useMemo(() => {
@@ -1072,6 +1103,24 @@ export default function PaymentsPage() {
     setEditingPaymentMethod(null)
   }
 
+  // DEBUG: Log payments before filtering
+  React.useEffect(() => {
+    if (payments.length > 0) {
+      const qaPayment = payments.find((p: any) => p.parentName === 'QA Test Parent')
+      console.log('🔍 DEBUG payments (before filter):', {
+        totalPayments: payments.length,
+        qaTestParentPayment: qaPayment ? {
+          _id: qaPayment._id,
+          parentId: qaPayment.parentId,
+          parentName: qaPayment.parentName,
+          hasPaymentPlan: !!qaPayment.paymentPlan,
+          status: qaPayment.status
+        } : 'NOT FOUND',
+        allPaymentParentNames: payments.map((p: any) => p.parentName)
+      })
+    }
+  }, [payments])
+
   const filteredPayments = payments.filter(payment => {
     // Search filter
     const matchesSearch = (payment.parentName || payment.parent?.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1083,7 +1132,7 @@ export default function PaymentsPage() {
       return searchMatch
     }
 
-    const parent = allParents.find(p => p._id === payment.parentId)
+    const parent = allParents.find(p => String(p._id) === String(payment.parentId))
     if (selectedTeam === 'unassigned') {
       // Exclude archived parents from Unassigned
       const status = String((parent as any)?.status || 'active').toLowerCase()
@@ -1141,7 +1190,7 @@ export default function PaymentsPage() {
 
   // Deduplicate payments to show only the most recent payment per parent
   const deduplicatedPayments = enhancedPayments.reduce((unique: any[], payment) => {
-    const existingIndex = unique.findIndex(p => p.parentId === payment.parentId)
+    const existingIndex = unique.findIndex(p => String(p.parentId) === String(payment.parentId))
     if (existingIndex === -1) {
       unique.push(payment)
     } else {
@@ -1161,13 +1210,25 @@ export default function PaymentsPage() {
       // Build groups keyed by teamId (or "unassigned"), then map to display names at the end.
       const groupsById: Record<string, any[]> = {}
 
+      // DEBUG: Log deduplicatedPayments to see what's available
+      console.log('🔍 DEBUG groupedPayments:', {
+        deduplicatedPaymentsCount: deduplicatedPayments.length,
+        deduplicatedPayments: deduplicatedPayments.map((p: any) => ({
+          _id: p._id,
+          parentId: p.parentId,
+          parentName: p.parentName,
+          hasPaymentPlan: !!p.paymentPlan,
+          isMockEntry: p.isMockEntry
+        }))
+      })
+
       // Seed groups for all known teams and unassigned
       for (const t of teams) groupsById[String(t._id)] = []
       groupsById['unassigned'] = []
 
       // Place one-most-recent payment per parent into their team group by parent.teamId (never push to Unassigned if a teamId exists)
       for (const payment of deduplicatedPayments) {
-        const parent = allParents.find(p => p._id === payment.parentId)
+        const parent = allParents.find(p => String(p._id) === String(payment.parentId))
         const status = String((parent as any)?.status || 'active').toLowerCase()
         if (status === 'archived') continue
         const key = parent?.teamId ? String(parent.teamId) : 'unassigned'
@@ -1178,9 +1239,9 @@ export default function PaymentsPage() {
       // Add mock entries for parents with no payments in each team (exclude archived)
       for (const t of teams) {
         const key = String(t._id)
-        const parentsInTeam = allParents.filter(p => p.teamId === key && String((p as any).status || 'active').toLowerCase() !== 'archived')
+        const parentsInTeam = allParents.filter(p => String(p.teamId) === key && String((p as any).status || 'active').toLowerCase() !== 'archived')
         for (const parent of parentsInTeam) {
-          const hasAny = (groupsById[key] || []).some(p => p.parentId === parent._id)
+          const hasAny = (groupsById[key] || []).some(p => String(p.parentId) === String(parent._id))
           if (!hasAny) {
             (groupsById[key] = groupsById[key] || []).push({
               _id: `mock-${parent._id}`,
@@ -1201,7 +1262,7 @@ export default function PaymentsPage() {
       // Unassigned parents with no payments → mock entries (exclude archived)
       const unassignedParents = allParents.filter(p => !p.teamId && String((p as any).status || 'active').toLowerCase() !== 'archived')
       for (const parent of unassignedParents) {
-        const hasAny = (groupsById['unassigned'] || []).some(p => p.parentId === parent._id)
+        const hasAny = (groupsById['unassigned'] || []).some(p => String(p.parentId) === String(parent._id))
         if (!hasAny) {
           groupsById['unassigned'].push({
             _id: `mock-${parent._id}`,
