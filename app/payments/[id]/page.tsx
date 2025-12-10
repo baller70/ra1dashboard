@@ -46,6 +46,7 @@ import { PaymentProgress } from '../../../components/ui/payment-progress'
 import { ModifyScheduleDialog } from '../../components/ui/modify-schedule-dialog'
 import { AiPaymentReminderDialog } from '../../../components/ui/ai-payment-reminder-dialog'
 import { ReminderReviewDialog } from '../../../components/ui/reminder-review-dialog'
+import { toast as sonnerToast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Label } from '../../../components/ui/label'
 
@@ -119,7 +120,15 @@ interface Payment {
         stripeSubscriptionId: string;
       }>;
     } | null;
+    teamId?: string
+    team?: {
+      _id?: string
+      name?: string
+      color?: string
+      description?: string
+    } | null
   } | null
+  parentId?: string
   paymentPlan: {
     id: string
     type: string
@@ -329,6 +338,10 @@ export default function PaymentDetailPage() {
   const [aiReminderOpen, setAiReminderOpen] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
   const [paymentProgress, setPaymentProgress] = useState<PaymentProgressData | null>(null)
+  const [teams, setTeams] = useState<any[]>([])
+  const [teamsLoading, setTeamsLoading] = useState(false)
+  const [assigningTeam, setAssigningTeam] = useState(false)
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('unassigned')
 
   // Dialog states
   const [modifyScheduleOpen, setModifyScheduleOpen] = useState(false)
@@ -382,6 +395,30 @@ export default function PaymentDetailPage() {
   // After a successful manual POST, we lock in the expected progress and only clear it
   // when a matching GET /progress returns. This prevents stale responses from reverting UI.
   const expectedProgressRef = useRef<{ paidAmount?: number; remainingAmount?: number; progressPercentage?: number; paidInstallments?: number } | null>(null)
+
+  const paidAmountValue = useMemo(
+    () => summaryOverride?.paidAmount ?? paymentProgress?.paidAmount ?? 0,
+    [summaryOverride, paymentProgress]
+  )
+  const totalAmountValue = useMemo(
+    () => paymentProgress?.totalAmount ?? (payment?.amount ?? 0),
+    [paymentProgress, payment?.amount]
+  )
+  const isPaidInFull = totalAmountValue > 0 && paidAmountValue >= totalAmountValue - 0.01
+
+  const currentTeamId = useMemo(() => {
+    const parentTeamId = (payment?.parent as any)?.teamId || (payment?.parent as any)?.team?._id
+    return parentTeamId ? String(parentTeamId) : 'unassigned'
+  }, [payment?.parent])
+
+  const currentTeamName = useMemo(() => {
+    if (currentTeamId && currentTeamId !== 'unassigned') {
+      const team = teams.find((t: any) => String(t?._id) === String(currentTeamId))
+      if (team?.name) return team.name
+      if ((payment?.parent as any)?.team?.name) return (payment?.parent as any)?.team?.name
+    }
+    return 'Unassigned'
+  }, [currentTeamId, teams, payment?.parent])
 
 
   // AI Reminder Prompt state
@@ -472,6 +509,16 @@ export default function PaymentDetailPage() {
   const [sendingConsolidatedReminder, setSendingConsolidatedReminder] = useState(false)
   const [consolidatedReminderDialogOpen, setConsolidatedReminderDialogOpen] = useState(false)
   const [consolidatedReminderMessage, setConsolidatedReminderMessage] = useState('')
+  const [consolidatedCustomMessage, setConsolidatedCustomMessage] = useState('')
+  const [consolidatedStripeLink, setConsolidatedStripeLink] = useState<string | null>(null)
+  const [consolidatedStripeLinkStatus, setConsolidatedStripeLinkStatus] = useState<'idle' | 'loading' | 'ready' | 'unavailable' | 'error'>('idle')
+  const [combinedAiGenerating, setCombinedAiGenerating] = useState(false)
+  const [recurringEnabled, setRecurringEnabled] = useState(false)
+  const [recurringFrequencyValue, setRecurringFrequencyValue] = useState<number>(3)
+  const [recurringFrequencyUnit, setRecurringFrequencyUnit] = useState<'days' | 'weeks'>('days')
+  const [stopOnPayment, setStopOnPayment] = useState(true)
+  const [stopOnReply, setStopOnReply] = useState(true)
+  const [maxReminders, setMaxReminders] = useState<number>(10)
 
   // Collapsible state
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false)
@@ -593,17 +640,18 @@ export default function PaymentDetailPage() {
       const usp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
       const status = usp.get('status')
       const sessionId = usp.get('session_id')
-      if (status === 'success' && sessionId && ((payment as any)?._id || (payment as any)?.id)) {
+      const paymentId = (payment as any)?._id || (payment as any)?.id
+      if (status === 'success' && sessionId && paymentId) {
         ;(async () => {
           try {
-            const completeRes = await fetch(`/api/payments/${(payment as any)._id || payment.id}/complete`, {
+            const completeRes = await fetch(`/api/payments/${paymentId}/complete`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ paymentMethod: 'stripe_card', paymentPlan: 'full', sessionId })
             })
             if (!completeRes.ok) {
               // Fallback: directly PATCH the payment as paid if complete endpoint fails
-              await fetch(`/api/payments/${(payment as any)._id || payment.id}`, {
+              await fetch(`/api/payments/${paymentId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'paid', paidAt: new Date().toISOString(), notes: 'Auto-complete fallback' })
@@ -618,7 +666,7 @@ export default function PaymentDetailPage() {
                   action: 'Payment Received',
                   description: `One-time payment processed successfully via credit card`,
                   performedAt: new Date().toISOString(),
-                  performedBy: payment.parent?.name || 'Parent',
+                  performedBy: payment?.parent?.name || 'Parent',
                   amount: payment?.amount || 0,
                   status: 'paid',
                   metadata: { method: 'credit_card', optimistic: true },
@@ -698,6 +746,13 @@ export default function PaymentDetailPage() {
       fetchLeagueFees()
     }
   }, [payment?.parent?.id, payment?.parent?._id, payment?.parentId])
+
+  useEffect(() => {
+    if (!payment?.parent) return
+    fetchTeams()
+    const parentTeamId = (payment.parent as any)?.teamId || (payment.parent as any)?.team?._id
+    setSelectedTeamId(parentTeamId ? String(parentTeamId) : 'unassigned')
+  }, [payment?.parent])
 
   const fetchPaymentDetails = async () => {
     try {
@@ -839,6 +894,29 @@ export default function PaymentDetailPage() {
     }
   }
 
+  const fetchTeams = async () => {
+    try {
+      console.log('[Team Assignment] Fetching teams list...')
+      setTeamsLoading(true)
+      const response = await fetch('/api/teams?limit=500')
+      const json = await response.json().catch(() => ({} as any))
+      console.log('[Team Assignment] /api/teams response:', response.status, json)
+      if (!response.ok || json?.success === false) {
+        throw new Error(json?.error || 'Unable to load teams')
+      }
+      setTeams(json?.data || [])
+    } catch (error: any) {
+      console.error('[Team Assignment] Failed to load teams', error)
+      toast({
+        title: 'Team load failed',
+        description: error?.message || 'Unable to load teams. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setTeamsLoading(false)
+    }
+  }
+
   const createTournamentFee = async () => {
     try {
       const parentId = payment?.parent?._id || payment?.parent?.id || (payment as any)?.parentId;
@@ -846,33 +924,105 @@ export default function PaymentDetailPage() {
         toast({ title: 'Parent required', description: 'No parent found for this payment.', variant: 'destructive' });
         return;
       }
-      // Find a Fall Tournament season
-      const seasonsRes = await fetch('/api/seasons');
-      const seasonsJson = await seasonsRes.json().catch(() => ({} as any));
-      const seasons = (seasonsJson?.data as any[]) || [];
-      const tournament = seasons.find((s: any) => s?.type === 'fall_tournament') || seasons.find((s: any) => /tournament/i.test(String(s?.name)));
-      if (!tournament) {
-        toast({ title: 'No Tournament Season', description: 'Create a Fall Tournament season in Admin → Seasons first.', variant: 'destructive' });
-        return;
-      }
-      const resp = await fetch('/api/league-fees', {
+      const seasonName = window.prompt('Enter tournament season name (e.g., "Fall 2025 Tournament")') || `Tournament ${new Date().getFullYear()}`
+      const seasonType = window.prompt('Enter season type (e.g., "tournament_fall", "tournament_summer")') || 'tournament_fall'
+      const seasonYearStr = window.prompt('Enter season year (e.g., 2025)') || String(new Date().getFullYear())
+      const seasonYear = Number(seasonYearStr) || new Date().getFullYear()
+
+      const resp = await fetch('/api/tournament-fees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          seasonId: tournament._id || tournament.id,
           parentId,
-          paymentMethod: 'online'
+          paymentMethod: 'online',
+          seasonName,
+          seasonType,
+          seasonYear,
         })
       });
       const json = await resp.json().catch(() => ({} as any));
+      console.log('[Tournament Fee] response', resp.status, json);
       if (!resp.ok || json?.success === false) {
-        throw new Error(json?.error || 'Failed to create tournament fee');
+        const errMsg = json?.error || `Failed to create tournament fee (status ${resp.status})`;
+        throw new Error(errMsg);
       }
-      toast({ title: 'Tournament Fee Created', description: `${tournament.name}`, });
+      toast({ title: 'Tournament Fee Created', description: `${seasonName}`, });
       await fetchLeagueFees();
       setLeagueFeesDialogOpen(true);
     } catch (e: any) {
+      console.error('[Tournament Fee] error', e);
       toast({ title: 'Error', description: e?.message || 'Failed to create tournament fee', variant: 'destructive' });
+    }
+  }
+
+  const handleTeamAssignmentSave = async () => {
+    const parentId = (payment?.parent as any)?._id || (payment?.parent as any)?.id || (payment as any)?.parentId
+    if (!parentId) {
+      toast({
+        title: 'Parent not found',
+        description: 'Cannot assign a team without a parent.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    toast({
+      title: 'Saving team assignment…',
+      description: 'Submitting team change now.',
+      duration: 2500,
+    })
+    sonnerToast.success('Saving team assignment…')
+
+    const payload = {
+      teamId: selectedTeamId && selectedTeamId !== 'unassigned' ? selectedTeamId : null,
+      parentIds: [parentId],
+    }
+
+    console.log('[Team Assignment] Starting save with payload:', payload)
+
+    try {
+      setAssigningTeam(true)
+      const response = await fetch('/api/teams/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const json = await response.json().catch(() => ({} as any))
+      console.log('[Team Assignment] Response:', response.status, json)
+
+      if (!response.ok || json?.success === false) {
+        throw new Error(json?.error || json?.message || 'Failed to save team assignment')
+      }
+
+      const updatedParent = json?.updatedParents?.[0]
+      if (updatedParent) {
+        console.log('[Team Assignment] Updated parent returned:', updatedParent)
+        setPayment((prev) =>
+          prev
+            ? {
+                ...prev,
+                parent: { ...(prev.parent || {}), ...updatedParent },
+              }
+            : prev
+        )
+        setSelectedTeamId(String(updatedParent.teamId || updatedParent.team?._id || 'unassigned'))
+      }
+
+      toast({
+        title: '✅ Player assigned to team successfully',
+        description: json?.message || 'Team assignment saved.',
+      })
+      sonnerToast.success('✅ Player assigned to team successfully')
+    } catch (error: any) {
+      console.error('[Team Assignment] Save failed', error)
+      toast({
+        title: 'Team assignment failed',
+        description: error?.message || 'Unable to assign team. Please try again.',
+        variant: 'destructive',
+      })
+      sonnerToast.error(error?.message || 'Team assignment failed')
+    } finally {
+      setAssigningTeam(false)
     }
   }
 
@@ -1140,6 +1290,120 @@ export default function PaymentDetailPage() {
       .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0)
   }
 
+  const buildConsolidatedMessage = (params: {
+    recipientName: string
+    paymentsList: string
+    totalAmount: number
+    stripeLink?: string | null
+  }) => {
+    const { recipientName, paymentsList, totalAmount, stripeLink } = params
+    const custom = consolidatedCustomMessage?.trim()
+    const recurringSummary = recurringEnabled
+      ? `\n\nRecurring reminders: every ${recurringFrequencyValue} ${recurringFrequencyUnit}${
+          recurringFrequencyValue > 1 ? '' : ''
+        } until conditions are met${stopOnPayment ? '; stop when paid' : ''}${stopOnReply ? '; stop on reply' : ''}${
+          maxReminders ? `; max ${maxReminders} reminders` : ''
+        }.`
+      : ''
+
+    const linkLine = stripeLink
+      ? `\nPay now (combined): ${stripeLink}`
+      : '\nPayment link unavailable (Stripe not connected).'
+
+    return `${recipientName},
+
+${custom ? `${custom}\n\n` : ''}This is a reminder about ${selectedInstallments.length} outstanding payment${
+      selectedInstallments.length > 1 ? 's' : ''
+    } for the Rise as One Basketball Program:
+
+${paymentsList}
+
+Total Amount Due: $${totalAmount.toFixed(2)}${linkLine}${recurringSummary}
+
+Please process these payments at your earliest convenience. Thank you for your attention to this matter.`
+  }
+
+  const fetchCombinedStripeLink = async (totalAmount: number) => {
+    const hasStripe = !!payment?.parent?.stripeCustomer?.stripeCustomerId
+    if (!hasStripe) {
+      setConsolidatedStripeLinkStatus('unavailable')
+      setConsolidatedStripeLink(null)
+      return null
+    }
+    try {
+      setConsolidatedStripeLinkStatus('loading')
+      const resp = await fetch('/api/stripe/combined-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentId: (payment?.parent as any)?._id || payment?.parent?.id,
+          paymentId: (payment as any)?._id || payment?.id,
+          installmentIds: selectedInstallments,
+          totalCents: Math.round(totalAmount * 100),
+          description: `Combined payment reminder for ${selectedInstallments.length} installments`,
+        }),
+      })
+      const json = await resp.json().catch(() => ({} as any))
+      if (!resp.ok || !json?.url) {
+        setConsolidatedStripeLinkStatus('error')
+        setConsolidatedStripeLink(null)
+        return null
+      }
+      setConsolidatedStripeLinkStatus('ready')
+      setConsolidatedStripeLink(json.url)
+      return json.url as string
+    } catch (e) {
+      console.error('Failed to create combined Stripe link', e)
+      setConsolidatedStripeLinkStatus('error')
+      setConsolidatedStripeLink(null)
+      return null
+    }
+  }
+
+  const generateCombinedAiMessage = async (params: {
+    recipientName: string
+    paymentsList: string
+    totalAmount: number
+    stripeLink?: string | null
+  }) => {
+    const { recipientName, paymentsList, totalAmount, stripeLink } = params
+    if (!consolidatedCustomMessage.trim()) return null
+    try {
+      setCombinedAiGenerating(true)
+      const response = await fetch('/api/ai/generate-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            parentId: (payment?.parent as any)?._id || payment?.parent?.id,
+            parentName: recipientName,
+            paymentId: (payment as any)?._id || payment?.id,
+            totalAmount,
+            installments: selectedInstallments,
+            stripeLink,
+            messageType: 'combined_payment_reminder',
+          },
+          customInstructions: consolidatedCustomMessage.trim(),
+          includePersonalization: true,
+        }),
+      })
+      if (!response.ok) throw new Error(`AI generation failed (${response.status})`)
+      const data = await response.json().catch(() => ({} as any))
+      if (!data?.success || !data?.message) throw new Error(data?.error || 'AI did not return a message')
+      return data.message as string
+    } catch (e) {
+      console.error('AI generation for combined reminder failed', e)
+      toast({
+        title: 'AI generation failed',
+        description: 'Using fallback reminder content.',
+        variant: 'destructive',
+      })
+      return null
+    } finally {
+      setCombinedAiGenerating(false)
+    }
+  }
+
   const getSelectedInstallmentsDetails = () => {
     if (!paymentProgress?.installments) return []
     return paymentProgress.installments
@@ -1162,18 +1426,36 @@ export default function PaymentDetailPage() {
         `• Payment #${inst.installmentNumber} - $${Number(inst.amount).toFixed(2)} (Due: ${new Date(inst.dueDate).toLocaleDateString()})`
       ).join('\n')
 
-      const consolidatedMessage = `${recipientName},
+      let stripeLink = consolidatedStripeLink
+      if (!stripeLink && payment?.parent?.stripeCustomer?.stripeCustomerId) {
+        stripeLink = await fetchCombinedStripeLink(totalAmount)
+      } else if (!payment?.parent?.stripeCustomer?.stripeCustomerId) {
+        setConsolidatedStripeLinkStatus('unavailable')
+      }
 
-This is a reminder about ${selectedInstallments.length} outstanding payment${selectedInstallments.length > 1 ? 's' : ''} for the Rise as One Basketball Program:
+      // If user provided AI prompt, try AI generation first
+      let messageFromAi: string | null = null
+      if (consolidatedCustomMessage.trim()) {
+        messageFromAi = await generateCombinedAiMessage({
+          recipientName,
+          paymentsList,
+          totalAmount,
+          stripeLink,
+        })
+      }
 
-${paymentsList}
-
-Total Amount Due: $${totalAmount.toFixed(2)}
-
-Please process these payments at your earliest convenience. Thank you for your attention to this matter.`
+      const consolidatedMessage = messageFromAi || buildConsolidatedMessage({
+        recipientName,
+        paymentsList,
+        totalAmount,
+        stripeLink,
+      })
 
       setConsolidatedReminderMessage(consolidatedMessage)
       setConsolidatedReminderDialogOpen(true)
+
+      // If recurring enabled, stage the schedule creation after send
+      setRecurringEnabled(recurringEnabled) // keep state as-is
 
     } catch (error) {
       console.error('Error preparing consolidated reminder:', error)
@@ -1193,6 +1475,11 @@ Please process these payments at your earliest convenience. Thank you for your a
     try {
       setSendingConsolidatedReminder(true)
 
+      // If Stripe connected and we don't yet have a link, attempt one more fetch
+      if (!consolidatedStripeLink && payment?.parent?.stripeCustomer?.stripeCustomerId) {
+        await fetchCombinedStripeLink(getSelectedInstallmentsTotal())
+      }
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1202,11 +1489,52 @@ Please process these payments at your earliest convenience. Thank you for your a
           body: consolidatedReminderMessage,
           channel: 'email',
           type: 'payment_reminder',
+          metadata: {
+            combinedInstallmentIds: selectedInstallments,
+            combinedTotal: getSelectedInstallmentsTotal(),
+            stripeLink: consolidatedStripeLink,
+            recurring: recurringEnabled
+              ? {
+                  frequencyValue: recurringFrequencyValue,
+                  frequencyUnit: recurringFrequencyUnit,
+                  stopOnPayment,
+                  stopOnReply,
+                  maxReminders,
+                }
+              : null,
+          },
         }),
       })
 
       if (!response.ok) {
         throw new Error('Failed to send reminder')
+      }
+
+      // Create recurring schedule if enabled
+      if (recurringEnabled) {
+        try {
+          const scheduleResp = await fetch('/api/recurring-reminders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId: payment.parent._id || payment.parent.id,
+              installmentIds: selectedInstallments,
+              combinedTotal: getSelectedInstallmentsTotal(),
+              frequencyValue: recurringFrequencyValue,
+              frequencyUnit: recurringFrequencyUnit,
+              stopOnPayment,
+              stopOnReply,
+              maxReminders,
+              stripeLink: consolidatedStripeLink,
+              paymentId: (payment as any)?._id || payment?.id,
+            }),
+          })
+          if (!scheduleResp.ok) {
+            console.warn('Recurring schedule creation failed:', await scheduleResp.text())
+          }
+        } catch (e) {
+          console.warn('Recurring schedule creation error:', e)
+        }
       }
 
       toast({
@@ -1272,10 +1600,10 @@ Please process these payments at your earliest convenience. Thank you for your a
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            parentId: (payment.parent as any)?._id || payment.parent?.id,
-            paymentId: (payment as any)._id || payment.id,
+            parentId: (payment?.parent as any)?._id || payment?.parent?.id,
+            paymentId: (payment as any)?._id || payment?.id,
             amount: Math.round(paymentAmount * 100), // cents
-            description: `One-time payment for ${payment.parent?.name || 'tuition'}`,
+            description: `One-time payment for ${payment?.parent?.name || 'tuition'}`,
           }),
         })
 
@@ -1296,7 +1624,7 @@ Please process these payments at your earliest convenience. Thank you for your a
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            paymentId: (payment as any)._id || payment.id,
+            paymentId: (payment as any)?._id || payment?.id,
             amount: Math.round(paymentAmount * 100),
             totalAmount: Math.round(totalAmount * 100),
             paymentMethod: 'stripe_card',
@@ -1305,7 +1633,7 @@ Please process these payments at your earliest convenience. Thank you for your a
             customInstallments: selectedPaymentSchedule === 'custom' ? customInstallments : undefined,
             customMonths: selectedPaymentSchedule === 'custom' ? customMonths : undefined,
             creditCardDetails: creditCardForm,
-            parentId: (payment.parent as any)?._id || payment.parent?.id
+            parentId: (payment?.parent as any)?._id || payment?.parent?.id
           })
         })
 
@@ -1368,7 +1696,7 @@ Please process these payments at your earliest convenience. Thank you for your a
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              paymentId: payment.id,
+              paymentId: (payment as any)?._id || payment?.id,
               amount: Math.round(paymentAmount * 100),
               paymentMethod: 'bank_transfer',
               schedule: selectedPaymentSchedule,
@@ -1638,7 +1966,18 @@ Please process these payments at your earliest convenience. Thank you for your a
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                toast({
+                  title: '✅ Communication opened',
+                  description: 'Navigation to communication page triggered.',
+                  duration: 3500
+                })
+              }}
+            >
               <Link href="/communication">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Communication
@@ -1990,7 +2329,14 @@ Please process these payments at your earliest convenience. Thank you for your a
                             </Button>
                             <Button
                               size="sm"
-                              onClick={handleSendConsolidatedReminder}
+                              onClick={() => {
+                                toast({
+                                  title: '✅ Combined reminder started',
+                                  description: 'Sending consolidated reminder...',
+                                  duration: 3500
+                                })
+                                handleSendConsolidatedReminder()
+                              }}
                               disabled={sendingConsolidatedReminder}
                               className="text-xs bg-orange-600 hover:bg-orange-700"
                             >
@@ -2369,7 +2715,15 @@ Please process these payments at your earliest convenience. Thank you for your a
                           {payment.parent.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <h3 className="font-bold text-lg text-gray-900">{payment.parent.name}</h3>
+                      <div className="flex items-center justify-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-lg text-gray-900">{payment.parent.name}</h3>
+                        {isPaidInFull && (
+                          <Badge className="bg-green-600 text-white flex items-center gap-1">
+                            <CheckCircle className="h-4 w-4" />
+                            PAID IN FULL
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
                     {/* Contact Information */}
@@ -2384,6 +2738,60 @@ Please process these payments at your earliest convenience. Thank you for your a
                           <span className="text-sm text-gray-700">{payment.parent.phone}</span>
                         </div>
                       )}
+                    </div>
+
+                    {/* Team Assignment */}
+                    <div className="pt-4 border-t space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-gray-600" />
+                          <span className="text-sm font-semibold">Team Assignment</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {currentTeamName}
+                        </Badge>
+                      </div>
+                      <Select
+                        value={selectedTeamId || 'unassigned'}
+                        onValueChange={(value) => setSelectedTeamId(value)}
+                        disabled={teamsLoading || assigningTeam}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unassigned">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-gray-400" />
+                              <span>Unassigned</span>
+                            </div>
+                          </SelectItem>
+                          {teams.map((team) => (
+                            <SelectItem key={team._id} value={team._id}>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: team.color || '#f97316' }}
+                                />
+                                <span>{team.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleTeamAssignmentSave}
+                        disabled={assigningTeam || teamsLoading}
+                      >
+                        {assigningTeam ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Save Team Assignment
+                      </Button>
                     </div>
 
                     {/* View Parent Profile Button */}
@@ -2450,7 +2858,7 @@ Please process these payments at your earliest convenience. Thank you for your a
                       <CreditCard className="h-4 w-4" />
                       STRIPE INTEGRATION
                     </h4>
-                    {payment?.parent?.stripeCustomerId ? (
+                    {payment?.parent?.stripeCustomer?.stripeCustomerId ? (
                       <Badge variant="default">Connected</Badge>
                     ) : (
                       <Badge variant="outline">Not Connected</Badge>
@@ -2562,7 +2970,10 @@ Please process these payments at your earliest convenience. Thank you for your a
                 {/* League Fees */}
                 <div
                   className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setLeagueFeesDialogOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation?.()
+                    setLeagueFeesDialogOpen(true)
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -2592,16 +3003,29 @@ Please process these payments at your earliest convenience. Thank you for your a
                     <Badge variant="outline" className="text-orange-600 border-orange-300">Admin</Badge>
                   </div>
                   <p className="text-xs text-gray-600 mb-2">
-                    Manage league fees and season settings
+                    Create league fees and season settings
                   </p>
                   <Button asChild variant="outline" size="sm" className="w-full border-orange-300 text-orange-700 hover:bg-orange-100">
                     <Link href="/admin/seasons">
                       <Shield className="mr-2 h-3 w-3" />
-                      Manage League Fees
+                      Create League Fees
                     </Link>
                   </Button>
 
-		          <Button onClick={(e) => { e.stopPropagation?.(); createTournamentFee(); }} size="sm" className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white">
+		          <Button
+		            onClick={async (e) => {
+                  e.stopPropagation?.()
+                  try {
+                    toast({ title: 'Creating tournament fee…', description: 'Please wait a moment.' })
+                    await createTournamentFee()
+                  } catch (err: any) {
+                    console.error('Create tournament fee error:', err)
+                    toast({ title: 'Error creating tournament fee', description: err?.message || 'Please try again.', variant: 'destructive' })
+                  }
+                }}
+		            size="sm"
+		            className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white"
+		          >
 		            Create Tournament Fee
 		          </Button>
 
@@ -3041,7 +3465,7 @@ Please process these payments at your earliest convenience. Thank you for your a
                 <div className="space-y-4">
                   {/* Stripe Payment Element (secure) */}
                   {(selectedPaymentOption?.startsWith('stripe_')) && stripeClientSecret && stripePk && (
-                    <Elements options={{ clientSecret: stripeClientSecret }} stripe={stripePromise as any}>
+                    <Elements options={{ clientSecret: stripeClientSecret || undefined }} stripe={stripePromise as any}>
                       <div className="space-y-4 bg-white p-4 rounded border">
                         <PaymentElement />
                         <div className="pt-4">
@@ -3234,7 +3658,7 @@ Please process these payments at your earliest convenience. Thank you for your a
                         <span className="text-sm text-gray-600">Amount:</span>
                         <span className="text-sm font-medium">
                           {selectedPaymentSchedule === 'custom'
-                            ? `$${(payment.amount / customInstallments).toFixed(2)} per installment`
+                            ? `$${(Number(payment?.amount ?? 0) / (customInstallments || 1)).toFixed(2)} per installment`
                             : paymentSchedules.find(s => s.value === selectedPaymentSchedule)?.amount || `$${Number((payment as any)?.amount ?? 0).toFixed(2)}`
                           }
                         </span>
@@ -3795,6 +4219,173 @@ Please process these payments at your earliest convenience. Thank you for your a
                   <span className="text-orange-600">${getSelectedInstallmentsTotal().toFixed(2)}</span>
                 </div>
               </div>
+            </div>
+
+            {/* AI regenerate */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={combinedAiGenerating}
+                onClick={async () => {
+                  const details = getSelectedInstallmentsDetails()
+                  const total = getSelectedInstallmentsTotal()
+                  const list = details.map(inst =>
+                    `• Payment #${inst.installmentNumber} - $${Number(inst.amount).toFixed(2)} (Due: ${new Date(inst.dueDate).toLocaleDateString()})`
+                  ).join('\n')
+                  const recipientName = payment?.parent ? getEmergencyContactFirstName(payment.parent) : 'Parent'
+                  const msgFromAi = await generateCombinedAiMessage({
+                    recipientName,
+                    paymentsList: list,
+                    totalAmount: total,
+                    stripeLink: consolidatedStripeLink,
+                  })
+                  if (msgFromAi) {
+                    setConsolidatedReminderMessage(msgFromAi)
+                  }
+                }}
+              >
+                {combinedAiGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Regenerating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Regenerate with AI
+                  </>
+                )}
+              </Button>
+              {consolidatedCustomMessage.trim() === '' && (
+                <p className="text-xs text-muted-foreground">Add a prompt to guide AI, then regenerate.</p>
+              )}
+            </div>
+
+            {/* Stripe link status */}
+            <div className="p-3 rounded-lg border bg-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">Stripe Payment Link</p>
+                  <p className="text-xs text-muted-foreground">Parents can pay the combined total in one transaction.</p>
+                </div>
+                {consolidatedStripeLinkStatus === 'loading' && (
+                  <Badge variant="outline" className="text-xs">Generating...</Badge>
+                )}
+                {consolidatedStripeLinkStatus === 'ready' && consolidatedStripeLink && (
+                  <Badge variant="default" className="text-xs">Ready</Badge>
+                )}
+                {consolidatedStripeLinkStatus === 'unavailable' && (
+                  <Badge variant="outline" className="text-xs">Not connected</Badge>
+                )}
+                {consolidatedStripeLinkStatus === 'error' && (
+                  <Badge variant="destructive" className="text-xs">Link unavailable</Badge>
+                )}
+              </div>
+              <div className="mt-2">
+                {consolidatedStripeLink ? (
+                  <a href={consolidatedStripeLink} target="_blank" rel="noreferrer" className="text-orange-600 underline break-all text-sm">
+                    {consolidatedStripeLink}
+                  </a>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {payment?.parent?.stripeCustomer?.stripeCustomerId
+                      ? 'Link will appear once generated.'
+                      : 'Stripe is not connected for this parent.'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Custom personal message */}
+            <div className="space-y-2">
+              <Label htmlFor="consolidated-custom-message" className="text-sm font-medium">
+                AI Prompt (Optional)
+              </Label>
+              <Textarea
+                id="consolidated-custom-message"
+                placeholder="Describe the tone/details you want the AI to include (e.g., friendly, urgent, include payment options)..."
+                value={consolidatedCustomMessage}
+                onChange={(e) => {
+                  const next = e.target.value
+                  setConsolidatedCustomMessage(next)
+                  // Live-refresh preview
+                  const selectedDetails = getSelectedInstallmentsDetails()
+                  const totalAmount = getSelectedInstallmentsTotal()
+                  const paymentsList = selectedDetails.map(inst =>
+                    `• Payment #${inst.installmentNumber} - $${Number(inst.amount).toFixed(2)} (Due: ${new Date(inst.dueDate).toLocaleDateString()})`
+                  ).join('\n')
+                  const recipientName = payment?.parent ? getEmergencyContactFirstName(payment.parent) : 'Parent'
+                  const msg = buildConsolidatedMessage({
+                    recipientName,
+                    paymentsList,
+                    totalAmount,
+                    stripeLink: consolidatedStripeLink,
+                  })
+                  setConsolidatedReminderMessage(msg)
+                }}
+              />
+            </div>
+
+            {/* Recurring reminder options */}
+            <div className="space-y-3 p-3 rounded-lg border bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="recurring-reminders"
+                  checked={recurringEnabled}
+                  onCheckedChange={(v) => setRecurringEnabled(!!v)}
+                />
+                <Label htmlFor="recurring-reminders" className="text-sm font-medium">
+                  Set up automatic recurring reminders
+                </Label>
+              </div>
+              {recurringEnabled && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Send reminder every</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={recurringFrequencyValue}
+                      onChange={(e) => setRecurringFrequencyValue(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-20"
+                    />
+                    <Select value={recurringFrequencyUnit} onValueChange={(v) => setRecurringFrequencyUnit(v as any)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="days">days</SelectItem>
+                        <SelectItem value="weeks">weeks</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="stop-on-payment" checked={stopOnPayment} onCheckedChange={(v) => setStopOnPayment(!!v)} />
+                      <Label htmlFor="stop-on-payment" className="text-sm">Stop when payment is received</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="stop-on-reply" checked={stopOnReply} onCheckedChange={(v) => setStopOnReply(!!v)} />
+                      <Label htmlFor="stop-on-reply" className="text-sm">Stop when parent replies to the email</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">Stop after</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={maxReminders}
+                        onChange={(e) => setMaxReminders(Math.max(1, Number(e.target.value) || 1))}
+                        className="w-24"
+                      />
+                      <span className="text-sm">reminders</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Future work: recurring schedules will be stored and sent automatically based on these settings.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Message preview/edit */}

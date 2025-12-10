@@ -120,18 +120,42 @@ export async function GET(request: NextRequest) {
   }
 }
 
+async function findOrCreateSeason(convex: any, name: string, type: string, year: number) {
+  const existing = await convex.query(api.seasons.getSeasonsByTypeAndYear as any, { type, year }).catch(() => []);
+  if (existing && existing.length > 0) return existing[0];
+  const now = Date.now();
+  const startDate = now;
+  const endDate = now + 90 * 24 * 60 * 60 * 1000;
+  const seasonId = await convex.mutation(api.seasons.createSeason as any, {
+    name,
+    type,
+    year,
+    startDate,
+    endDate,
+    registrationDeadline: endDate,
+  });
+  const created = await convex.query(api.seasons.getSeason as any, { id: seasonId });
+  return created;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { seasonId, parentId, paymentMethod, dueDate, notes, amount } = await request.json()
+    const { seasonId, seasonName, seasonType, seasonYear, parentId, paymentMethod, dueDate, notes, amount } = await request.json()
 
-    if (!seasonId || !parentId || !paymentMethod) {
+    if ((!seasonId && !(seasonName && seasonType && seasonYear)) || !parentId || !paymentMethod) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: seasonId, parentId, paymentMethod'
+          error: 'Missing required fields: parentId, paymentMethod, and seasonId or seasonName/seasonType/seasonYear'
         },
         { status: 400 }
       )
+    }
+
+    let finalSeasonId = seasonId
+    if (!finalSeasonId) {
+      const season = await findOrCreateSeason(convexHttp, seasonName, seasonType, Number(seasonYear))
+      finalSeasonId = season._id
     }
 
     // Resolve parent from Convex first; fallback to mock for local dev
@@ -153,14 +177,14 @@ export async function POST(request: NextRequest) {
 
     // Check if fee already exists for this parent and season
     const existingFee = mockLeagueFees.find(fee =>
-      fee.parentId === parentId && fee.seasonId === seasonId
+      fee.parentId === parentId && fee.seasonId === finalSeasonId
     )
 
     if (existingFee) {
       return NextResponse.json(
         {
           success: false,
-          error: 'League fee already exists for this parent and season'
+          error: `League fee already exists for this parent for the ${seasonName || 'selected'} season`
         },
         { status: 409 }
       )
@@ -176,7 +200,7 @@ export async function POST(request: NextRequest) {
     const newFee = {
       _id: leagueFeeId,
       parentId: parentId,
-      seasonId: seasonId,
+      seasonId: finalSeasonId,
       amount: feeAmount,
       processingFee: processingFee,
       totalAmount: totalAmount,
@@ -189,10 +213,10 @@ export async function POST(request: NextRequest) {
       updatedAt: timestamp,
       notes: notes || '',
       season: {
-        _id: seasonId,
-        name: seasonId === "temp_season_1" ? "Summer League 2024" : "New Season",
-        type: "summer_league",
-        year: 2024
+        _id: finalSeasonId,
+        name: seasonName || "New Season",
+        type: seasonType || "summer_league",
+        year: seasonYear || new Date().getFullYear()
       },
       parent: parent
     }
@@ -200,7 +224,7 @@ export async function POST(request: NextRequest) {
     // Prefer Convex persistence; fallback to in-memory on failure
     try {
       const createdId = await convexHttp.mutation(api.leagueFees.createLeagueFee as any, {
-        seasonId: seasonId as any,
+        seasonId: finalSeasonId as any,
         parentId: parent._id as any,
         paymentMethod,
         dueDate: dueDateTimestamp,

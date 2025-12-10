@@ -121,7 +121,8 @@ export const createLeagueFee = mutation({
       .first();
     
     if (existingFee) {
-      throw new Error("League fee already exists for this parent and season");
+      const seasonName = existingFee?.seasonId ? (await ctx.db.get(existingFee.seasonId))?.name : "this season";
+      throw new Error(`League fee already exists for this parent for the ${seasonName || 'current'} season`);
     }
     
     // Get season details

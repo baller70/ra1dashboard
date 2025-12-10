@@ -184,6 +184,46 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_sent_date", ["sentAt"]),
 
+  // Recurring combined reminders schedules
+  recurringReminders: defineTable({
+    parentId: v.id("parents"),
+    installmentIds: v.array(v.string()),
+    combinedTotal: v.number(),
+    frequencyValue: v.number(), // e.g., 3
+    frequencyUnit: v.string(), // 'days' | 'weeks'
+    stopOnPayment: v.boolean(),
+    stopOnReply: v.boolean(),
+    maxReminders: v.number(),
+    sentCount: v.number(),
+    lastSentAt: v.optional(v.number()),
+    nextSendAt: v.number(),
+    isActive: v.boolean(),
+    stripeSessionId: v.optional(v.string()),
+    stripeLink: v.optional(v.string()),
+    paymentId: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_parent", ["parentId"])
+    .index("by_active_nextSendAt", ["isActive", "nextSendAt"]),
+
+  // Recurring reminder send logs
+  recurringReminderLogs: defineTable({
+    scheduleId: v.id("recurringReminders"),
+    parentId: v.id("parents"),
+    installmentIds: v.array(v.string()),
+    amount: v.number(),
+    sentAt: v.number(),
+    status: v.string(), // 'sent' | 'skipped' | 'failed'
+    error: v.optional(v.string()),
+    messageId: v.optional(v.string()),
+    stripeLink: v.optional(v.string()),
+  })
+    .index("by_schedule", ["scheduleId"])
+    .index("by_parent", ["parentId"])
+    .index("by_status", ["status"])
+    .index("by_sentAt", ["sentAt"]),
+
   auditLogs: defineTable({
     userId: v.optional(v.any()),
     action: v.optional(v.string()),
@@ -647,6 +687,33 @@ export default defineSchema({
     .index("by_due_date", ["dueDate"])
     .index("by_season_parent", ["seasonId", "parentId"])
     .index("by_season_status", ["seasonId", "status"])
+    .index("by_overdue", ["status", "dueDate"])
+    .index("by_payment_method", ["paymentMethod"]),
+
+  // Tournament fees separate table
+  tournamentFees: defineTable({
+    seasonId: v.id("seasons"),
+    parentId: v.id("parents"),
+    amount: v.number(),
+    processingFee: v.optional(v.number()),
+    totalAmount: v.number(),
+    paymentMethod: v.string(), // "online", "in_person"
+    status: v.string(), // "pending", "paid", "overdue", "cancelled"
+    dueDate: v.number(),
+    paidAt: v.optional(v.number()),
+    stripePaymentLinkId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    remindersSent: v.number(),
+    lastReminderSent: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_season", ["seasonId"])
+    .index("by_parent", ["parentId"])
+    .index("by_status", ["status"])
+    .index("by_due_date", ["dueDate"])
+    .index("by_season_parent", ["seasonId", "parentId"])
     .index("by_overdue", ["status", "dueDate"])
     .index("by_payment_method", ["paymentMethod"]),
 

@@ -63,6 +63,7 @@ import {
 import Link from 'next/link'
 import { PaymentWithRelations, PaymentStats, PaymentAnalytics } from '../../lib/types'
 import { useToast } from '../../components/ui/use-toast'
+import { toast as sonnerToast } from 'sonner'
 import { Toaster } from '../../components/ui/toaster'
 import { ParentCreationModal } from '../../components/ui/parent-creation-modal'
 
@@ -643,9 +644,21 @@ export default function PaymentsPage() {
 
   const handleAssignParents = async () => {
     if (!assignToTeamId || selectedParents.length === 0) {
-      alert('Please select a team and at least one parent')
+      toast({
+        title: 'Team and parents required',
+        description: 'Select a team and at least one parent to assign.',
+        variant: 'destructive',
+        duration: 4000
+      })
       return
     }
+
+    toast({
+      title: 'Saving assignment…',
+      description: 'Submitting parent assignment.',
+      duration: 2500
+    })
+    sonnerToast.success('Saving assignment…')
 
     // Snapshot previous assignments for Undo
     const prevAssignments = selectedParents.map((pid) => {
@@ -672,7 +685,7 @@ export default function PaymentsPage() {
         setSelectedParents([])
         setAssignToTeamId('')
         const t = toast({
-          title: '✅ Assignments Updated',
+          title: '✅ Parent assigned successfully',
           description: result.message || 'Parents have been assigned successfully',
           action: (
             <ToastAction
@@ -711,6 +724,7 @@ export default function PaymentsPage() {
             </ToastAction>
           )
         })
+        sonnerToast.success('✅ Parent assigned successfully')
         // Optimistically update assignments locally to avoid full-page refresh
         setAllParentsData((prev: any) => {
           if (!prev?.parents) return prev
@@ -722,13 +736,23 @@ export default function PaymentsPage() {
           return { ...prev, parents: newParents }
         })
       } else {
-        alert('Failed to assign parents to team: ' + (result.error || 'Unknown error'))
+        toast({
+          title: 'Assignment failed',
+          description: result.error || 'Failed to assign parents to team.',
+          variant: 'destructive',
+          duration: 5000
+        })
+        sonnerToast.error(result.error || 'Failed to assign parents to team.')
       }
     } catch (error) {
       console.error('Error assigning parents:', error)
-
-
-      alert('Error assigning parents to team')
+      toast({
+        title: 'Assignment error',
+        description: 'Error assigning parents to team.',
+        variant: 'destructive',
+        duration: 5000
+      })
+      sonnerToast.error('Error assigning parents to team.')
     }
   }
 
@@ -771,15 +795,29 @@ export default function PaymentsPage() {
       if (response.ok) {
         setShowTeamDialog(false)
         setTeamForm({ name: '', description: '', color: '#f97316' })
-        alert("Team created successfully")
+        toast({
+          title: '✅ Team added successfully',
+          description: `Team "${teamForm.name}" has been created.`,
+          duration: 4000
+        })
         // Refresh the page to show the new team
         window.location.reload()
       } else {
-        alert('Failed to create team: ' + (result.error || 'Unknown error'))
+        toast({
+          title: 'Team creation failed',
+          description: result.error || 'Failed to create team.',
+          variant: 'destructive',
+          duration: 5000
+        })
       }
     } catch (error) {
       console.error('Error creating team:', error)
-      alert('Error creating team')
+      toast({
+        title: 'Team creation error',
+        description: 'Error creating team.',
+        variant: 'destructive',
+        duration: 5000
+      })
     }
   }
 
@@ -815,15 +853,29 @@ export default function PaymentsPage() {
         setShowTeamDialog(false)
         setEditingTeam(null)
         setTeamForm({ name: '', description: '', color: '#f97316' })
-        alert("Team updated successfully")
+        toast({
+          title: '✅ Team updated successfully',
+          description: `Team "${teamForm.name}" has been updated.`,
+          duration: 4000
+        })
         // Refresh the page to show the updated team
         window.location.reload()
       } else {
-        alert('Failed to update team: ' + (result.error || 'Unknown error'))
+        toast({
+          title: 'Team update failed',
+          description: result.error || 'Failed to update team.',
+          variant: 'destructive',
+          duration: 5000
+        })
       }
     } catch (error) {
       console.error('Error updating team:', error)
-      alert('Error updating team')
+      toast({
+        title: 'Team update error',
+        description: 'Error updating team.',
+        variant: 'destructive',
+        duration: 5000
+      })
     }
   }
 
