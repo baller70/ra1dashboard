@@ -51,12 +51,13 @@ export async function POST(request: Request) {
 
     stage = 'parse-json'
     const body = await request.json();
-    const { parentId, totalAmount, type, installments, startDate, description, installmentAmount, paymentMethod } = body;
+    const { parentId, totalAmount, type, installments, startDate, description, installmentAmount, paymentMethod, season, year } = body;
 
     // Coerce numeric fields defensively
     const totalAmountNum = Number(totalAmount)
     const installmentAmountNum = Number(installmentAmount)
     const installmentsNum = Number(installments)
+    const yearNum = year ? Number(year) : new Date(startDate).getFullYear()
 
     stage = 'validate-input'
     if (!parentId || !type || !startDate || !isFinite(totalAmountNum) || !isFinite(installmentAmountNum) || !isFinite(installmentsNum) || installmentsNum <= 0) {
@@ -102,6 +103,8 @@ export async function POST(request: Request) {
         description,
         installmentAmount: installmentAmountNum,
         paymentMethod,
+        season: season || `${yearNum} Season`,
+        year: yearNum,
       })
       console.log(`✅ Created payment plan (new): ${paymentPlanId}`)
     } catch (eNew: any) {

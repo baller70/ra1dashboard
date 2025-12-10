@@ -169,7 +169,10 @@ export default function NewPaymentPlanPage() {
     installments: '9',
     startDate: new Date().toISOString().split('T')[0],
     description: '',
-    paymentMethod: 'stripe_card'
+    paymentMethod: 'stripe_card',
+    // Multi-year support
+    season: `${new Date().getFullYear()} Season`,
+    year: new Date().getFullYear()
   })
 
   // Force no cache and dynamic content
@@ -743,6 +746,42 @@ export default function NewPaymentPlanPage() {
                 </select>
               </div>
 
+              {/* Season/Year Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="season">Season / Year *</Label>
+                <p className="text-sm text-gray-500">
+                  Select the enrollment period for this payment plan. Parents can have separate payment plans for different seasons.
+                </p>
+                <div className="flex gap-4">
+                  <select
+                    id="year"
+                    value={formData.year}
+                    onChange={(e) => {
+                      const year = parseInt(e.target.value)
+                      handleInputChange('year', year)
+                      handleInputChange('season', `${year} Season`)
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {[...Array(5)].map((_, i) => {
+                      const year = new Date().getFullYear() + i - 1
+                      return (
+                        <option key={year} value={year}>
+                          {year} Season
+                        </option>
+                      )
+                    })}
+                  </select>
+                  <Input
+                    id="season"
+                    value={formData.season}
+                    onChange={(e) => handleInputChange('season', e.target.value)}
+                    placeholder="e.g., 2025 Spring Season"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
               {/* Payment Options Button - Main Action */}
               <div className="space-y-4">
                 <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
@@ -878,7 +917,9 @@ export default function NewPaymentPlanPage() {
                           startDate: new Date().toISOString().split('T')[0],
                           description: 'Monthly payment plan',
                           paymentMethod: 'stripe_card',
-                          type: 'monthly'
+                          type: 'monthly',
+                          season: formData.season,
+                          year: formData.year
                         })
                       })
 

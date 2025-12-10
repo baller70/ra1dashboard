@@ -25,12 +25,7 @@ interface ModifyScheduleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   installments: PaymentInstallment[]
-  onSave: (modifiedSchedule: Array<{
-    installmentId?: string
-    amount: number
-    dueDate: number
-    installmentNumber: number
-  }>) => Promise<void>
+  onSave: () => Promise<void>
   paymentId: string
 }
 
@@ -99,13 +94,29 @@ export function ModifyScheduleDialog({
         return
       }
 
-      await onSave(modifiableInstallments)
-      
+      // Make the API call directly in the dialog component to avoid Fast Refresh interruption
+      console.log('Making API call to save schedule for payment:', paymentId)
+      const response = await fetch(`/api/payments/${paymentId}/schedule`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedule: modifiableInstallments }),
+      })
+      console.log('API response status:', response.status)
+      const result = await response.json()
+      console.log('API result:', result)
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save schedule changes')
+      }
+
+      // Call the onSave callback to refresh the parent's data
+      await onSave()
+
       toast({
         title: 'Schedule Updated',
         description: 'Payment schedule has been successfully modified.',
       })
-      
+
       onOpenChange(false)
     } catch (error) {
       console.error('Error saving schedule:', error)

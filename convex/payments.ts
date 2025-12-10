@@ -341,9 +341,16 @@ export const createPayment = mutation({
     installmentNumber: v.optional(v.number()),
     totalInstallments: v.optional(v.number()),
     paymentMethod: v.optional(v.string()),
+    // Multi-year support
+    season: v.optional(v.string()),
+    year: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+
+    // Auto-detect year from dueDate if not provided
+    const year = args.year || new Date(args.dueDate).getFullYear();
+    const season = args.season || `${year} Season`;
 
     const paymentId = await ctx.db.insert("payments", {
       parentId: args.parentId,
@@ -359,6 +366,8 @@ export const createPayment = mutation({
       remindersSent: 0,
       lastReminderSent: undefined,
       notes: undefined,
+      season,
+      year,
       createdAt: now,
       updatedAt: now,
     });
@@ -630,9 +639,16 @@ export const createPaymentPlan = mutation({
     status: v.string(),
     description: v.optional(v.string()),
     paymentMethod: v.optional(v.string()),
+    // Multi-year support
+    season: v.optional(v.string()),
+    year: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+
+    // Auto-detect year from startDate if not provided
+    const year = args.year || new Date(args.startDate).getFullYear();
+    const season = args.season || `${year} Season`;
 
     const paymentPlanId = await ctx.db.insert("paymentPlans", {
       parentId: args.parentId,
@@ -647,6 +663,8 @@ export const createPaymentPlan = mutation({
       stripePriceId: undefined,
       description: args.description,
       paymentMethod: args.paymentMethod,
+      season,
+      year,
       createdAt: now,
       updatedAt: now,
     });
@@ -705,13 +723,48 @@ export const getPaymentPlans = query({
   },
 });
 
+// Get payment plans grouped by year/season for a parent
+export const getPaymentPlansByYear = query({
+  args: {
+    parentId: v.id("parents"),
+  },
+  handler: async (ctx, args) => {
+    const plans = await ctx.db
+      .query("paymentPlans")
+      .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
+      .collect();
+
+    // Group plans by year
+    const plansByYear: Record<number, typeof plans> = {};
+
+    for (const plan of plans) {
+      const year = plan.year || (plan.startDate ? new Date(plan.startDate).getFullYear() : new Date().getFullYear());
+      if (!plansByYear[year]) {
+        plansByYear[year] = [];
+      }
+      plansByYear[year].push(plan);
+    }
+
+    // Sort years in descending order (most recent first)
+    const sortedYears = Object.keys(plansByYear)
+      .map(Number)
+      .sort((a, b) => b - a);
+
+    return {
+      plansByYear,
+      years: sortedYears,
+      totalPlans: plans.length,
+    };
+  },
+});
+
 // Debug function to check payment data structure
 export const debugPaymentData = query({
   args: {},
   handler: async (ctx) => {
     const payments = await ctx.db.query("payments").take(3);
     const parents = await ctx.db.query("parents").take(3);
-    
+
     return {
       samplePayments: payments.map(p => ({
         id: p._id,

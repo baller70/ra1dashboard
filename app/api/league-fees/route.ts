@@ -334,5 +334,4 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// Export the mock data so it can be shared with other endpoints
-export { mockLeagueFees }
+// mockLeagueFees is already exported at declaration (line 21)

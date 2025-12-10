@@ -63,10 +63,14 @@ export default defineSchema({
     stripePriceId: v.optional(v.any()),
     stripeSubscriptionId: v.optional(v.any()),
     paymentMethod: v.optional(v.string()),
+    // Multi-year support fields
+    season: v.optional(v.string()), // e.g., "2025 Season", "2026 Season"
+    year: v.optional(v.number()), // e.g., 2025, 2026
   })
     .index("by_parent", ["parentId"])
     .index("by_status", ["status"])
-    .index("by_type", ["type"]),
+    .index("by_type", ["type"])
+    .index("by_parent_year", ["parentId", "year"]),
 
   payments: defineTable({
     parentId: v.optional(v.any()),
@@ -86,12 +90,16 @@ export default defineSchema({
     paymentMethod: v.optional(v.string()), // Add paymentMethod field
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
+    // Multi-year support fields
+    season: v.optional(v.string()), // e.g., "2025 Season", "2026 Season"
+    year: v.optional(v.number()), // e.g., 2025, 2026
   })
     .index("by_parent", ["parentId"])
     .index("by_status", ["status"])
     .index("by_due_date", ["dueDate"])
     .index("by_payment_plan", ["paymentPlanId"])
-    .index("by_parent_status", ["parentId", "status"]),
+    .index("by_parent_status", ["parentId", "status"])
+    .index("by_parent_year", ["parentId", "year"]),
 
   paymentInstallments: defineTable({
     parentPaymentId: v.id("payments"),

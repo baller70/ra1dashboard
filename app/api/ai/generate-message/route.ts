@@ -76,7 +76,11 @@ Guidelines:
 - Focus on the child's development and program benefits
 - Include clear next steps or call-to-action when appropriate
 
-IMPORTANT: Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.
+MESSAGE FORMAT RULES (MUST FOLLOW):
+- Start the message with JUST the person's first name followed by a comma (e.g., "Kevin," NOT "Dear Kevin,")
+- Do NOT include any greeting phrases like "I hope things are going well", "I hope this message finds you well", "I hope you're doing well", or similar pleasantries
+- Get straight to the point after the name greeting
+- Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.
 
 Context: Payment reminder for ${parentName}`
 
@@ -98,7 +102,11 @@ Custom Instructions: "${customInstructions.trim()}"
 
 Generate a professional payment reminder message that follows these custom instructions exactly. If the custom instructions mention specific amounts, dates, or other details, use those instead of any fallback information. The custom instructions should be treated as the authoritative source.
 
-IMPORTANT: Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.`
+MESSAGE FORMAT RULES (MUST FOLLOW):
+- Start the message with JUST the person's first name followed by a comma (e.g., "Kevin," NOT "Dear Kevin,")
+- Do NOT include any greeting phrases like "I hope things are going well", "I hope this message finds you well", "I hope you're doing well", or similar pleasantries
+- Get straight to the point after the name greeting
+- Do NOT include any signature, closing signature block, or contact information placeholders (like [Your Name], [Your Contact Information], [Your Position/Role], "Best regards," etc.) at the end of the message. The signature will be automatically added by the system.`
 
       userPrompt = `Generate a payment reminder message based on these custom instructions: "${customInstructions.trim()}"
 
@@ -111,7 +119,9 @@ Additional context (use only if not specified in custom instructions):
 IMPORTANT:
 1. Prioritize the information in the custom instructions over the fallback context. If the custom instructions specify amounts, dates, or other details, use those instead.
 2. Create a complete, professional message that follows the custom instructions while maintaining appropriate business communication standards.
-3. Do NOT add any signature, closing signature block, or contact information at the end. The message should end with the main content only.`
+3. Start with JUST the name and a comma (e.g., "Kevin,") - NOT "Dear Kevin,"
+4. Do NOT include any pleasantries like "I hope this finds you well"
+5. Do NOT add any signature, closing signature block, or contact information at the end. The message should end with the main content only.`
     }
 
     // Build messages array for OpenAI
@@ -149,7 +159,7 @@ IMPORTANT:
         } else if (instructions.includes('firm') || instructions.includes('direct') || instructions.includes('owe')) {
           fallbackMessage = `${parentName}, This is an important reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Please process this payment promptly to avoid any delays. Thank you for your attention to this matter.`
         } else if (instructions.includes('friendly') || instructions.includes('polite') || instructions.includes('gentle')) {
-          fallbackMessage = `Dear ${parentName}, I hope this message finds you well! This is a friendly reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. We appreciate your continued support. Thank you!`
+          fallbackMessage = `${parentName}, This is a friendly reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. We appreciate your continued support. Thank you!`
         } else if (instructions.includes('game') || instructions.includes('next game') || instructions.includes('upcoming')) {
           fallbackMessage = `${parentName}, With our upcoming game approaching, this is a reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Your prompt attention would be appreciated. Thank you!`
         } else {
@@ -158,7 +168,7 @@ IMPORTANT:
         }
       } else {
         // Standard professional message
-        fallbackMessage = `Dear ${parentName}, This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Thank you for your prompt attention to this matter.`
+        fallbackMessage = `${parentName}, This is a friendly reminder that your payment of $${amount} for the Rise as One Basketball Program is due on ${dueDate}. Thank you for your prompt attention to this matter.`
       }
 
       console.log('🔥 FALLBACK MESSAGE:', fallbackMessage)
@@ -218,7 +228,7 @@ IMPORTANT:
 
       const fallbackMessage = customInstructions && customInstructions.trim()
         ? `${fallbackParentName}, This is an important reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Please process this payment promptly. Thank you for your attention to this matter.`
-        : `Dear ${fallbackParentName}, This is a friendly reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Thank you for your prompt attention to this matter.`
+        : `${fallbackParentName}, This is a friendly reminder that your payment of $${fallbackAmount} for the Rise as One Basketball Program is due on ${fallbackDueDate}. Thank you for your prompt attention to this matter.`
 
       return NextResponse.json({
         success: true,

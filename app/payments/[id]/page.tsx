@@ -41,8 +41,9 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Input } from '../../../components/ui/input'
+import { Checkbox } from '../../../components/ui/checkbox'
 import { PaymentProgress } from '../../../components/ui/payment-progress'
-import { ModifyScheduleDialog } from '../../../components/ui/modify-schedule-dialog'
+import { ModifyScheduleDialog } from '../../components/ui/modify-schedule-dialog'
 import { AiPaymentReminderDialog } from '../../../components/ui/ai-payment-reminder-dialog'
 import { ReminderReviewDialog } from '../../../components/ui/reminder-review-dialog'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
@@ -78,6 +79,7 @@ if (typeof window !== 'undefined') {
 
 interface Payment {
   id: string
+  _id?: string
   amount: number
   dueDate: string
   paidAt: string | null
@@ -465,6 +467,12 @@ export default function PaymentDetailPage() {
   const [cashFrequencyMonths, setCashFrequencyMonths] = useState<number>(1)
 
 
+  // Multi-payment selection state for consolidated reminders
+  const [selectedInstallments, setSelectedInstallments] = useState<string[]>([])
+  const [sendingConsolidatedReminder, setSendingConsolidatedReminder] = useState(false)
+  const [consolidatedReminderDialogOpen, setConsolidatedReminderDialogOpen] = useState(false)
+  const [consolidatedReminderMessage, setConsolidatedReminderMessage] = useState('')
+
   // Collapsible state
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false)
   const [isCommunicationHistoryOpen, setIsCommunicationHistoryOpen] = useState(true)
@@ -710,7 +718,8 @@ export default function PaymentDetailPage() {
       }
 
       const data = await response.json()
-      setPayment(data)
+      // Map _id to id for consistency with the Payment interface
+      setPayment({ ...data, id: data._id || data.id })
 
       // Fetch league fees after payment data is loaded
       if (data?.parent?._id || data?.parent?.id || data?.parentId) {
@@ -880,7 +889,8 @@ export default function PaymentDetailPage() {
 
       if (response.ok) {
         const updatedPayment = await response.json()
-        setPayment(updatedPayment)
+        // Map _id to id for consistency with the Payment interface
+        setPayment({ ...updatedPayment, id: updatedPayment._id || updatedPayment.id })
         fetchPaymentHistory()
         toast({
           title: '✅ Payment Marked as Paid!',
@@ -964,7 +974,7 @@ export default function PaymentDetailPage() {
 
     // Generate a professional reminder message (simplified)
     const recipientName = getEmergencyContactFirstName(payment.parent)
-    const defaultMessage = `Dear ${recipientName},\n\nThis is a friendly reminder about your payment. Please reach out if you need any assistance.\n\nBest regards,\nThe Basketball Factory Inc.`
+    const defaultMessage = `${recipientName},\n\nThis is a friendly reminder about your payment. Please reach out if you need any assistance.\n\nBest regards,\nThe Basketball Factory Inc.`
 
     setAiGeneratedReminder({
       subject: 'Payment Reminder',
@@ -1099,6 +1109,123 @@ export default function PaymentDetailPage() {
       })
     } finally {
       setGeneratingAiReminder(false)
+    }
+  }
+
+  // Multi-payment selection helpers
+  const toggleInstallmentSelection = (installmentId: string) => {
+    setSelectedInstallments(prev =>
+      prev.includes(installmentId)
+        ? prev.filter(id => id !== installmentId)
+        : [...prev, installmentId]
+    )
+  }
+
+  const selectAllUnpaidInstallments = () => {
+    if (!paymentProgress?.installments) return
+    const unpaidIds = paymentProgress.installments
+      .filter(inst => inst.status !== 'paid')
+      .map(inst => inst._id)
+    setSelectedInstallments(unpaidIds)
+  }
+
+  const clearInstallmentSelection = () => {
+    setSelectedInstallments([])
+  }
+
+  const getSelectedInstallmentsTotal = () => {
+    if (!paymentProgress?.installments) return 0
+    return paymentProgress.installments
+      .filter(inst => selectedInstallments.includes(inst._id))
+      .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0)
+  }
+
+  const getSelectedInstallmentsDetails = () => {
+    if (!paymentProgress?.installments) return []
+    return paymentProgress.installments
+      .filter(inst => selectedInstallments.includes(inst._id))
+      .sort((a, b) => a.installmentNumber - b.installmentNumber)
+  }
+
+  const handleSendConsolidatedReminder = async () => {
+    if (!payment || !payment.parent || selectedInstallments.length === 0) return
+
+    try {
+      setSendingConsolidatedReminder(true)
+
+      const selectedDetails = getSelectedInstallmentsDetails()
+      const totalAmount = getSelectedInstallmentsTotal()
+      const recipientName = getEmergencyContactFirstName(payment.parent)
+
+      // Generate consolidated message
+      const paymentsList = selectedDetails.map(inst =>
+        `• Payment #${inst.installmentNumber} - $${Number(inst.amount).toFixed(2)} (Due: ${new Date(inst.dueDate).toLocaleDateString()})`
+      ).join('\n')
+
+      const consolidatedMessage = `${recipientName},
+
+This is a reminder about ${selectedInstallments.length} outstanding payment${selectedInstallments.length > 1 ? 's' : ''} for the Rise as One Basketball Program:
+
+${paymentsList}
+
+Total Amount Due: $${totalAmount.toFixed(2)}
+
+Please process these payments at your earliest convenience. Thank you for your attention to this matter.`
+
+      setConsolidatedReminderMessage(consolidatedMessage)
+      setConsolidatedReminderDialogOpen(true)
+
+    } catch (error) {
+      console.error('Error preparing consolidated reminder:', error)
+      toast({
+        title: '⚠️ Error',
+        description: 'Failed to prepare consolidated reminder. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingConsolidatedReminder(false)
+    }
+  }
+
+  const sendConsolidatedReminderEmail = async () => {
+    if (!payment || !payment.parent) return
+
+    try {
+      setSendingConsolidatedReminder(true)
+
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentId: payment.parent._id || payment.parent.id,
+          subject: `Payment Reminder - ${selectedInstallments.length} Outstanding Payments`,
+          body: consolidatedReminderMessage,
+          channel: 'email',
+          type: 'payment_reminder',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send reminder')
+      }
+
+      toast({
+        title: '✅ Reminder Sent',
+        description: `Consolidated reminder for ${selectedInstallments.length} payments sent successfully.`,
+      })
+
+      setConsolidatedReminderDialogOpen(false)
+      setSelectedInstallments([])
+
+    } catch (error) {
+      console.error('Error sending consolidated reminder:', error)
+      toast({
+        title: '⚠️ Error',
+        description: 'Failed to send consolidated reminder. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setSendingConsolidatedReminder(false)
     }
   }
 
@@ -1511,9 +1638,11 @@ export default function PaymentDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Communication
+            <Button asChild variant="outline" size="sm">
+              <Link href="/communication">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Communication
+              </Link>
             </Button>
           </div>
         </div>
@@ -1824,18 +1953,81 @@ export default function PaymentDetailPage() {
                   <CardDescription>
                     Complete payment history and upcoming installments
                   </CardDescription>
+                  {/* Multi-selection toolbar */}
+                  {paymentProgress.installments.some(inst => inst.status !== 'paid') && (
+                    <div className="flex items-center justify-between mt-4 p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium text-gray-700">
+                          {selectedInstallments.length > 0
+                            ? `${selectedInstallments.length} payment${selectedInstallments.length > 1 ? 's' : ''} selected`
+                            : 'Select payments to send a combined reminder'
+                          }
+                        </span>
+                        {selectedInstallments.length > 0 && (
+                          <span className="text-sm font-bold text-orange-600">
+                            Total: ${getSelectedInstallmentsTotal().toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={selectAllUnpaidInstallments}
+                          className="text-xs"
+                        >
+                          Select All Unpaid
+                        </Button>
+                        {selectedInstallments.length > 0 && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={clearInstallmentSelection}
+                              className="text-xs"
+                            >
+                              Clear
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleSendConsolidatedReminder}
+                              disabled={sendingConsolidatedReminder}
+                              className="text-xs bg-orange-600 hover:bg-orange-700"
+                            >
+                              {sendingConsolidatedReminder ? (
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : (
+                                <Bell className="h-3 w-3 mr-1" />
+                              )}
+                              Send Combined Reminder
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {paymentProgress.installments.map((installment, index) => (
                       <div key={installment._id} className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                        installment.status === 'paid'
+                        selectedInstallments.includes(installment._id)
+                          ? 'bg-orange-50 border-orange-300 ring-2 ring-orange-200'
+                          : installment.status === 'paid'
                           ? 'bg-green-50 border-green-200'
                           : installment.status === 'overdue'
                           ? 'bg-red-50 border-red-200'
                           : 'bg-white border-gray-200'
                       }`}>
                         <div className="flex items-center gap-4">
+                          {/* Checkbox for unpaid installments */}
+                          {installment.status !== 'paid' && (
+                            <Checkbox
+                              checked={selectedInstallments.includes(installment._id)}
+                              onCheckedChange={() => toggleInstallmentSelection(installment._id)}
+                              className="border-gray-400 data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
+                            />
+                          )}
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                             installment.status === 'paid' ? 'bg-green-600 text-white' :
                             installment.status === 'overdue' ? 'bg-red-600 text-white' :
@@ -2481,30 +2673,11 @@ export default function PaymentDetailPage() {
         open={modifyScheduleOpen}
         onOpenChange={setModifyScheduleOpen}
         installments={paymentProgress?.installments || []}
-        paymentId={payment.id}
-        onSave={async (modifiedSchedule) => {
-          console.log('Modified schedule:', modifiedSchedule)
-          console.log('Payment ID:', payment.id)
-          console.log('About to call fetch...')
-          try {
-            // Call API to persist the schedule changes
-            const response = await fetch(`/api/payments/${payment.id}/schedule`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ schedule: modifiedSchedule }),
-            })
-            console.log('Fetch response status:', response.status)
-            const result = await response.json()
-            console.log('Fetch result:', result)
-            if (!response.ok || !result.success) {
-              throw new Error(result.error || 'Failed to save schedule changes')
-            }
-            // Refresh the payment progress data
-            await fetchPaymentProgress()
-          } catch (error) {
-            console.error('Error in onSave:', error)
-            throw error
-          }
+        paymentId={params.id as string}
+        onSave={async () => {
+          // Refresh the payment progress data after the dialog saves
+          console.log('Refreshing payment progress data...')
+          await fetchPaymentProgress()
         }}
       />
 
@@ -3589,6 +3762,80 @@ export default function PaymentDetailPage() {
 
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Consolidated Reminder Dialog */}
+      <Dialog open={consolidatedReminderDialogOpen} onOpenChange={setConsolidatedReminderDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-orange-600" />
+              Send Combined Payment Reminder
+            </DialogTitle>
+            <DialogDescription>
+              Review and send a consolidated reminder for {selectedInstallments.length} selected payment{selectedInstallments.length > 1 ? 's' : ''}.
+              Total amount: ${getSelectedInstallmentsTotal().toFixed(2)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Selected payments summary */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-sm mb-2">Selected Payments:</h4>
+              <div className="space-y-1">
+                {getSelectedInstallmentsDetails().map(inst => (
+                  <div key={inst._id} className="flex justify-between text-sm">
+                    <span>Payment #{inst.installmentNumber} - Due: {new Date(inst.dueDate).toLocaleDateString()}</span>
+                    <span className="font-medium">${Number(inst.amount).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between text-sm font-bold pt-2 border-t mt-2">
+                  <span>Total</span>
+                  <span className="text-orange-600">${getSelectedInstallmentsTotal().toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Message preview/edit */}
+            <div>
+              <Label htmlFor="consolidated-message" className="text-sm font-medium">
+                Message Preview
+              </Label>
+              <Textarea
+                id="consolidated-message"
+                value={consolidatedReminderMessage}
+                onChange={(e) => setConsolidatedReminderMessage(e.target.value)}
+                className="mt-2 min-h-[200px] font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConsolidatedReminderDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={sendConsolidatedReminderEmail}
+              disabled={sendingConsolidatedReminder}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {sendingConsolidatedReminder ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Reminder
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
