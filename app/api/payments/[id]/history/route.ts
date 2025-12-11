@@ -1,23 +1,37 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { requireAuth } from '../../../../../lib/api-utils'
-import { convexHttp } from '../../../../../lib/convex-server'
-import { api } from '../../../../../convex/_generated/api'
+import prisma from '../../../../../lib/prisma'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireAuth()
-    
     const paymentId = params.id
 
-    // Get payment from Convex
-    const payment = await convexHttp.query(api.payments.getPayment, {
-      id: paymentId as any
-    });
+    // Get payment from Prisma
+    let payment = await prisma.payments.findUnique({
+      where: { id: paymentId },
+      include: {
+        payment_plans: true
+      }
+    })
+
+    // If not found by Prisma ID, try a broader search
+    if (!payment) {
+      payment = await prisma.payments.findFirst({
+        where: {
+          OR: [
+            { id: paymentId },
+            { id: { contains: paymentId } }
+          ]
+        },
+        include: {
+          payment_plans: true
+        }
+      })
+    }
 
     if (!payment) {
       return NextResponse.json(
@@ -27,27 +41,42 @@ export async function GET(
     }
 
     // Generate payment history based on payment data
-    // TODO: Implement proper payment history table in Convex for detailed audit trail
-    const history = [
-      {
-        id: '1',
+    const history: any[] = []
+
+    // Add creation entry
+    if (payment.createdAt) {
+      history.push({
+        id: 'created',
         action: 'Payment Created',
-        description: `Payment of $${payment.amount} was created and assigned to parent`,
+        description: `Payment of $${(payment.amount || 0).toLocaleString()} was created`,
         performedBy: 'System',
-        performedAt: payment.createdAt || Date.now(),
+        performedAt: payment.createdAt.toISOString(),
         amount: payment.amount,
         status: 'pending'
-      }
-    ]
+      })
+    }
+
+    // Add payment plan info if exists
+    if (payment.payment_plans) {
+      history.push({
+        id: 'plan-assigned',
+        action: 'Payment Plan Assigned',
+        description: `Assigned to payment plan: ${payment.payment_plans.type} - $${(payment.payment_plans.totalAmount || 0).toLocaleString()} total`,
+        performedBy: 'System',
+        performedAt: payment.payment_plans.createdAt?.toISOString() || payment.createdAt?.toISOString(),
+        amount: payment.payment_plans.totalAmount,
+        status: 'info'
+      })
+    }
 
     // Add payment completion entry if paid
     if (payment.paidAt) {
       history.push({
-        id: '2',
+        id: 'paid',
         action: 'Payment Completed',
-        description: `Payment was marked as paid`,
+        description: `Payment of $${(payment.amount || 0).toLocaleString()} was received via ${payment.paymentMethod || 'unknown method'}`,
         performedBy: 'System',
-        performedAt: payment.paidAt,
+        performedAt: payment.paidAt.toISOString(),
         amount: payment.amount,
         status: 'paid'
       })
@@ -55,49 +84,46 @@ export async function GET(
 
     // Add overdue status change if applicable
     if (payment.status === 'overdue' && payment.dueDate) {
-      const dueDate = new Date(payment.dueDate)
-      const dayAfterDue = new Date(dueDate.getTime() + 24 * 60 * 60 * 1000)
-      
+      const dayAfterDue = new Date(payment.dueDate.getTime() + 24 * 60 * 60 * 1000)
       history.push({
         id: 'overdue-status',
         action: 'Status Changed',
         description: `Payment became overdue after the due date passed`,
         performedBy: 'System',
-        performedAt: dayAfterDue.getTime(),
+        performedAt: dayAfterDue.toISOString(),
         amount: 0,
         status: 'overdue'
       })
     }
 
     // Add update history if payment was modified
-    if (payment.updatedAt && payment.updatedAt !== payment.createdAt) {
+    if (payment.updatedAt && payment.createdAt && 
+        payment.updatedAt.getTime() !== payment.createdAt.getTime() && 
+        !payment.paidAt) {
       history.push({
         id: 'updated',
         action: 'Payment Updated',
         description: `Payment details were modified`,
         performedBy: 'System',
-        performedAt: payment.updatedAt,
+        performedAt: payment.updatedAt.toISOString(),
         amount: payment.amount,
         status: payment.status || 'unknown'
       })
     }
 
     // Sort history by date (newest first)
-    history.sort((a, b) => b.performedAt - a.performedAt)
+    history.sort((a, b) => new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime())
 
     return NextResponse.json({
       success: true,
-      history: history.map(h => ({
-        ...h,
-        performedAt: new Date(h.performedAt).toISOString()
-      }))
+      history
     })
 
   } catch (error) {
     console.error('Payment history error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch payment history' },
+      { error: 'Failed to fetch payment history', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
-} 
+}

@@ -2,16 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../convex/_generated/api';
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import prisma from '../../../lib/prisma';
 
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Team name is required'),
   description: z.string().optional(),
   color: z.string().optional(),
-  program: z.string().optional(),
 });
 
 const updateTeamSchema = z.object({
@@ -19,27 +15,55 @@ const updateTeamSchema = z.object({
   description: z.string().optional(),
   color: z.string().optional(),
   isActive: z.boolean().optional(),
-  program: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeParents = searchParams.get('includeParents') === 'true';
-    const program = searchParams.get('program') || undefined;
 
-    // Get teams from Convex — raise limit so all teams are available in UI selections
-    const limitParam = Number(new URL(request.url).searchParams.get('limit') || '10000');
-    // Yearly Program: no filtering (include all teams). Others: strict explicit match only.
-    const queryProgram = program && program !== 'yearly-program' ? program : undefined;
-    const teams = await convex.query(api.teams.getTeams, {
-      includeParents,
-      limit: limitParam,
+    // Get teams from PostgreSQL
+    const teams = await prisma.teams.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+      include: includeParents ? {
+        parents: {
+          where: { status: 'active' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            status: true
+          }
+        }
+      } : undefined
     });
+
+    // Transform to match expected format
+    const transformedTeams = teams.map(t => ({
+      _id: t.id,
+      id: t.id,
+      name: t.name,
+      color: t.color,
+      description: t.description,
+      isActive: t.isActive,
+      order: t.order,
+      createdAt: t.createdAt?.toISOString(),
+      updatedAt: t.updatedAt?.toISOString(),
+      parents: includeParents ? (t.parents || []).map((p: any) => ({
+        _id: p.id,
+        id: p.id,
+        name: p.name,
+        email: p.email,
+        phone: p.phone,
+        status: p.status
+      })) : undefined
+    }));
 
     return NextResponse.json({
       success: true,
-      data: teams
+      data: transformedTeams
     });
   } catch (error) {
     console.error('Error fetching teams:', error);
@@ -54,20 +78,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, color, program } = createTeamSchema.parse(body);
+    const { name, description, color } = createTeamSchema.parse(body);
 
-    // Allow duplicate team names; remove prior uniqueness guard
-    // If you want to re-enable uniqueness, enforce it at the UI or via a dedicated index/constraint
-
-    // Create team in Convex
-    const teamId = await convex.mutation(api.teams.createTeam, {
-      name,
-      description,
-      color,
+    // Create team in PostgreSQL
+    const team = await prisma.teams.create({
+      data: {
+        name,
+        description: description || null,
+        color: color || '#f97316',
+        isActive: true
+      }
     });
 
-    // Return success without re-query to avoid any race/consistency flake
-    return NextResponse.json({ success: true, teamId }, { status: 201 });
+    return NextResponse.json({ 
+      success: true, 
+      teamId: team.id,
+      data: {
+        _id: team.id,
+        id: team.id,
+        name: team.name,
+        color: team.color,
+        description: team.description
+      }
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating team:', error);
     
@@ -99,32 +132,25 @@ export async function PUT(request: NextRequest) {
 
     const validatedData = updateTeamSchema.parse(updateData);
 
-    // If updating name, check for uniqueness within the same program
-    if (validatedData.name) {
-      const existingTeams = await convex.query(api.teams.getTeams, {});
-      const existingTeam = existingTeams.find(team => team.name === validatedData.name && team._id !== id);
-
-      if (existingTeam) {
-        return NextResponse.json(
-          { error: 'Team name already exists' },
-          { status: 400 }
-        );
+    // Update team in PostgreSQL
+    const updatedTeam = await prisma.teams.update({
+      where: { id },
+      data: {
+        name: validatedData.name,
+        description: validatedData.description,
+        color: validatedData.color,
+        isActive: validatedData.isActive
       }
-    }
-
-    // Update team in Convex
-    await convex.mutation(api.teams.updateTeam, {
-      teamId: id as any,
-      name: validatedData.name,
-      description: validatedData.description,
-      color: validatedData.color,
     });
 
-    // Get updated team
-    const teams = await convex.query(api.teams.getTeams, {});
-    const updatedTeam = teams.find(team => team._id === id);
-
-    return NextResponse.json(updatedTeam);
+    return NextResponse.json({
+      _id: updatedTeam.id,
+      id: updatedTeam.id,
+      name: updatedTeam.name,
+      color: updatedTeam.color,
+      description: updatedTeam.description,
+      isActive: updatedTeam.isActive
+    });
   } catch (error) {
     console.error('Error updating team:', error);
     
@@ -146,7 +172,6 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const program = (searchParams.get('program') || '').trim();
 
     if (!id) {
       return NextResponse.json(
@@ -155,40 +180,18 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Confirm team exists
-    const teams = await convex.query(api.teams.getTeams, { includeParents: true });
-    const team = teams.find(t => String(t._id) === String(id));
-    if (!team) {
-      return NextResponse.json(
-        { error: 'Team not found' },
-        { status: 404 }
-      );
-    }
+    // Unassign all parents from this team first
+    await prisma.parents.updateMany({
+      where: { teamId: id },
+      data: { teamId: null }
+    });
 
-    // If a program is specified, unassign only parents in that program and keep the team
-    if (program) {
-      // Fetch all parents and filter by this team
-      const parentsResp = await convex.query(api.parents.getParents, { page: 1, limit: 5000 });
-      const teamParents = (parentsResp?.parents || []).filter((p: any) => String(p.teamId || '') === String(id));
-      const inProgram = teamParents.filter((p: any) => String(p.program || '').trim() === program);
-      const otherProgramParents = teamParents.filter((p: any) => String(p.program || '').trim() !== program);
+    // Delete the team
+    await prisma.teams.delete({
+      where: { id }
+    });
 
-      if (inProgram.length > 0) {
-        await convex.mutation(api.teams.unassignParentsFromTeams, { parentIds: inProgram.map((p: any) => p._id) });
-      }
-
-      // If no parents remain on this team after unassigning, delete the team record; otherwise keep it for other programs
-      if (otherProgramParents.length === 0) {
-        await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
-        return NextResponse.json({ success: true, unassignedCount: inProgram.length, deletedTeam: true });
-      }
-
-      return NextResponse.json({ success: true, unassignedCount: inProgram.length, deletedTeam: false });
-    }
-
-    // No program specified: delete and unassign all parents using backend mutation
-    await convex.mutation(api.teams.deleteTeam, { teamId: id as any });
-    return NextResponse.json({ success: true, unassignedCount: (team.parents || []).length, deletedTeam: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting team:', error);
     return NextResponse.json(

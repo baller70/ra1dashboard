@@ -1,0 +1,851 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model accounts {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  users             users   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model ai_recommendation_actions {
+  id                 String             @id
+  recommendationId   String
+  actionType         String
+  parameters         Json?
+  status             String             @default("pending")
+  result             Json?
+  errorMessage       String?
+  executedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  ai_recommendations ai_recommendations @relation(fields: [recommendationId], references: [id])
+
+  @@index([actionType])
+  @@index([recommendationId])
+  @@index([status])
+}
+
+model ai_recommendations {
+  id                        String                      @id
+  parentId                  String?
+  paymentId                 String?
+  contractId                String?
+  type                      String
+  priority                  String                      @default("medium")
+  title                     String
+  description               String
+  recommendation            String
+  aiConfidence              Float
+  dataPoints                Json?
+  status                    String                      @default("pending")
+  actions                   Json[]
+  acceptedAt                DateTime?
+  executedAt                DateTime?
+  dismissedAt               DateTime?
+  feedback                  String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime
+  ai_recommendation_actions ai_recommendation_actions[]
+  contracts                 contracts?                  @relation(fields: [contractId], references: [id])
+  parents                   parents?                    @relation(fields: [parentId], references: [id])
+  payments                  payments?                   @relation(fields: [paymentId], references: [id])
+
+  @@index([createdAt])
+  @@index([parentId])
+  @@index([parentId, status])
+  @@index([priority])
+  @@index([status])
+  @@index([type])
+}
+
+model assessments {
+  id                  String   @id
+  parentId            String
+  playerId            String
+  programName         String?
+  skills              Json
+  aiParentSuggestions String?
+  aiGameplayAnalysis  String?
+  aiProgressSummary   String?
+  category            String?
+  pdfUrl              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime
+  parents             parents  @relation(fields: [parentId], references: [id])
+  players             players  @relation(fields: [playerId], references: [id])
+
+  @@index([createdAt])
+  @@index([parentId])
+  @@index([playerId])
+}
+
+model audit_logs {
+  id         String   @id
+  userId     String?
+  action     String?
+  resource   String?
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  users      users?   @relation(fields: [userId], references: [id])
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([resource])
+  @@index([userId])
+}
+
+model background_jobs {
+  id                    String            @id
+  type                  String
+  status                String            @default("pending")
+  priority              String            @default("normal")
+  progress              Float             @default(0)
+  currentStep           String?
+  totalSteps            Int?
+  data                  Json?
+  result                Json?
+  errorMessage          String?
+  parentJobId           String?
+  createdBy             String
+  startedAt             DateTime?
+  completedAt           DateTime?
+  estimatedDuration     Int?
+  actualDuration        Int?
+  retryCount            Int               @default(0)
+  maxRetries            Int               @default(3)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime
+  users                 users             @relation(fields: [createdBy], references: [id])
+  background_jobs       background_jobs?  @relation("background_jobsTobackground_jobs", fields: [parentJobId], references: [id])
+  other_background_jobs background_jobs[] @relation("background_jobsTobackground_jobs")
+  job_logs              job_logs[]
+
+  @@index([createdAt])
+  @@index([createdBy])
+  @@index([parentJobId])
+  @@index([priority])
+  @@index([status])
+  @@index([status, priority])
+  @@index([type])
+}
+
+model contract_templates {
+  id               String   @id
+  name             String
+  description      String?
+  templateType     String
+  fileUrl          String
+  isActive         Boolean  @default(true)
+  variables        String[]
+  autoExpireDays   Int?
+  reminderSchedule Int[]
+  usageCount       Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+
+  @@index([isActive])
+  @@index([templateType])
+}
+
+model contracts {
+  id                 String               @id
+  parentId           String
+  fileName           String
+  originalName       String
+  fileUrl            String
+  fileSize           Int
+  mimeType           String
+  status             String               @default("pending")
+  templateType       String?
+  notes              String?
+  signedAt           DateTime?
+  expiresAt          DateTime?
+  uploadedAt         DateTime             @default(now())
+  signatureData      Json?
+  remindersSent      Int                  @default(0)
+  lastReminderSent   DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  ai_recommendations ai_recommendations[]
+  parents            parents              @relation(fields: [parentId], references: [id])
+  notifications      notifications[]
+
+  @@index([expiresAt])
+  @@index([parentId])
+  @@index([parentId, status])
+  @@index([status, expiresAt])
+  @@index([status])
+  @@index([templateType])
+}
+
+model job_logs {
+  id              String          @id
+  jobId           String
+  level           String
+  message         String
+  data            Json?
+  timestamp       DateTime        @default(now())
+  background_jobs background_jobs @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@index([level])
+  @@index([timestamp])
+}
+
+model league_fee_reminders {
+  id            String      @id
+  leagueFeeId   String
+  parentId      String
+  seasonId      String
+  reminderType  String
+  scheduledFor  DateTime
+  sentAt        DateTime?
+  status        String      @default("scheduled")
+  messageLogId  String?
+  failureReason String?
+  retryCount    Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  league_fees   league_fees @relation(fields: [leagueFeeId], references: [id])
+  parents       parents     @relation(fields: [parentId], references: [id])
+  seasons       seasons     @relation(fields: [seasonId], references: [id])
+
+  @@index([leagueFeeId])
+  @@index([parentId])
+  @@index([reminderType])
+  @@index([scheduledFor])
+  @@index([seasonId])
+  @@index([status])
+  @@index([status, scheduledFor])
+}
+
+model league_fees {
+  id                    String                 @id
+  seasonId              String
+  parentId              String
+  amount                Float
+  processingFee         Float?
+  totalAmount           Float
+  paymentMethod         String
+  status                String                 @default("pending")
+  dueDate               DateTime
+  paidAt                DateTime?
+  stripePaymentLinkId   String?
+  stripePaymentIntentId String?
+  remindersSent         Int                    @default(0)
+  lastReminderSent      DateTime?
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime
+  league_fee_reminders  league_fee_reminders[]
+  parents               parents                @relation(fields: [parentId], references: [id])
+  seasons               seasons                @relation(fields: [seasonId], references: [id])
+
+  @@index([dueDate])
+  @@index([parentId])
+  @@index([paymentMethod])
+  @@index([seasonId])
+  @@index([seasonId, parentId])
+  @@index([seasonId, status])
+  @@index([status, dueDate])
+  @@index([status])
+}
+
+model message_analytics {
+  id             String       @id
+  messageLogId   String
+  parentId       String
+  channel        String
+  messageType    String
+  opened         Boolean      @default(false)
+  openedAt       DateTime?
+  clicked        Boolean      @default(false)
+  clickedAt      DateTime?
+  replied        Boolean      @default(false)
+  repliedAt      DateTime?
+  bounced        Boolean      @default(false)
+  bouncedAt      DateTime?
+  unsubscribed   Boolean      @default(false)
+  unsubscribedAt DateTime?
+  deviceType     String?
+  location       String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  message_logs   message_logs @relation(fields: [messageLogId], references: [id])
+  parents        parents      @relation(fields: [parentId], references: [id])
+
+  @@index([channel])
+  @@index([clicked])
+  @@index([messageLogId])
+  @@index([opened])
+  @@index([parentId])
+}
+
+model message_attachments {
+  id           String       @id
+  messageLogId String
+  fileName     String
+  originalName String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  uploadedAt   DateTime     @default(now())
+  message_logs message_logs @relation(fields: [messageLogId], references: [id])
+
+  @@index([messageLogId])
+}
+
+model message_logs {
+  id                  String                @id
+  parentId            String
+  templateId          String?
+  subject             String
+  body                String?
+  content             String?
+  channel             String?
+  type                String?
+  status              String
+  sentAt              DateTime?
+  deliveredAt         DateTime?
+  readAt              DateTime?
+  failureReason       String?
+  errorMessage        String?
+  metadata            Json?
+  createdAt           DateTime              @default(now())
+  message_analytics   message_analytics[]
+  message_attachments message_attachments[]
+  parents             parents               @relation(fields: [parentId], references: [id])
+  templates           templates?            @relation(fields: [templateId], references: [id])
+
+  @@index([parentId])
+  @@index([sentAt])
+  @@index([status])
+  @@index([type])
+}
+
+model message_threads {
+  id            String    @id
+  parentId      String
+  subject       String
+  type          String
+  status        String    @default("active")
+  priority      String    @default("normal")
+  messageCount  Int       @default(0)
+  lastMessageAt DateTime
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  parents       parents   @relation(fields: [parentId], references: [id])
+
+  @@index([lastMessageAt])
+  @@index([parentId])
+  @@index([status])
+  @@index([type])
+}
+
+model notifications {
+  id         String     @id
+  title      String
+  message    String
+  type       String
+  priority   String     @default("medium")
+  isRead     Boolean    @default(false)
+  userId     String?
+  parentId   String?
+  paymentId  String?
+  contractId String?
+  actionUrl  String?
+  actionText String?
+  metadata   Json?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime
+  expiresAt  DateTime?
+  contracts  contracts? @relation(fields: [contractId], references: [id])
+  parents    parents?   @relation(fields: [parentId], references: [id])
+  payments   payments?  @relation(fields: [paymentId], references: [id])
+  users      users?     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([parentId])
+  @@index([priority])
+  @@index([type])
+  @@index([userId])
+}
+
+model parents {
+  id                    String                 @id
+  name                  String
+  email                 String
+  childName             String?
+  parentEmail           String?
+  phone                 String?
+  address               String?
+  emergencyContact      String?
+  emergencyPhone        String?
+  emergencyEmail        String?
+  status                String                 @default("active")
+  contractStatus        String?
+  contractUrl           String?
+  contractUploadedAt    DateTime?
+  contractExpiresAt     DateTime?
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  stripePaymentMethodId String?
+  teamId                String?
+  program               String?
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime
+  ai_recommendations    ai_recommendations[]
+  assessments           assessments[]
+  contracts             contracts[]
+  league_fee_reminders  league_fee_reminders[]
+  league_fees           league_fees[]
+  message_analytics     message_analytics[]
+  message_logs          message_logs[]
+  message_threads       message_threads[]
+  notifications         notifications[]
+  teams                 teams?                 @relation(fields: [teamId], references: [id])
+  payment_installments  payment_installments[]
+  payment_plans         payment_plans[]
+  payments              payments[]
+  players               players[]
+  recurring_messages    recurring_messages[]
+  recurring_recipients  recurring_recipients[]
+  scheduled_messages    scheduled_messages[]
+  stripe_invoices       stripe_invoices[]
+  stripe_subscriptions  stripe_subscriptions[]
+
+  @@index([email])
+  @@index([status])
+  @@index([teamId])
+}
+
+model payment_installments {
+  id                    String         @id
+  parentPaymentId       String
+  parentId              String
+  paymentPlanId         String?
+  installmentNumber     Int
+  totalInstallments     Int
+  amount                Float
+  dueDate               DateTime
+  status                String         @default("pending")
+  paidAt                DateTime?
+  stripePaymentIntentId String?
+  stripeInvoiceId       String?
+  failureReason         String?
+  remindersSent         Int            @default(0)
+  lastReminderSent      DateTime?
+  gracePeriodEnd        DateTime?
+  isInGracePeriod       Boolean        @default(false)
+  notes                 String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime
+  parents               parents        @relation(fields: [parentId], references: [id])
+  payments              payments       @relation(fields: [parentPaymentId], references: [id])
+  payment_plans         payment_plans? @relation(fields: [paymentPlanId], references: [id])
+
+  @@index([dueDate])
+  @@index([isInGracePeriod, gracePeriodEnd])
+  @@index([parentId])
+  @@index([parentId, status])
+  @@index([parentPaymentId])
+  @@index([paymentPlanId])
+  @@index([status, dueDate])
+  @@index([status])
+}
+
+model payment_plans {
+  id                   String                 @id
+  parentId             String?
+  type                 String?
+  status               String                 @default("active")
+  totalAmount          Float?
+  installmentAmount    Float?
+  installments         Int?
+  startDate            DateTime?
+  endDate              DateTime?
+  description          String?
+  name                 String?
+  frequency            String?
+  nextDueDate          DateTime?
+  stripePriceId        String?
+  stripeSubscriptionId String?
+  paymentMethod        String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  season               String?
+  year                 Int?
+  payment_installments payment_installments[]
+  parents              parents?               @relation(fields: [parentId], references: [id])
+  payments             payments[]
+
+  @@index([parentId])
+  @@index([parentId, year])
+  @@index([status])
+  @@index([type])
+}
+
+model payments {
+  id                   String                 @id
+  parentId             String?
+  paymentPlanId        String?
+  dueDate              DateTime?
+  amount               Float?
+  status               String                 @default("pending")
+  stripeInvoiceId      String?
+  stripePaymentId      String?
+  stripeScheduleId     String?
+  paidAt               DateTime?
+  failureReason        String?
+  remindersSent        Int                    @default(0)
+  lastReminderSent     DateTime?
+  notes                String?
+  description          String?
+  paymentMethod        String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  season               String?
+  year                 Int?
+  ai_recommendations   ai_recommendations[]
+  notifications        notifications[]
+  payment_installments payment_installments[]
+  parents              parents?               @relation(fields: [parentId], references: [id])
+  payment_plans        payment_plans?         @relation(fields: [paymentPlanId], references: [id])
+
+  @@index([dueDate])
+  @@index([parentId])
+  @@index([parentId, status])
+  @@index([parentId, year])
+  @@index([paymentPlanId])
+  @@index([status])
+}
+
+model players {
+  id          String        @id
+  parentId    String
+  name        String
+  age         String?
+  team        String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  assessments assessments[]
+  parents     parents       @relation(fields: [parentId], references: [id])
+
+  @@index([name])
+  @@index([parentId])
+}
+
+model recurring_instances {
+  id                 String             @id
+  recurringMessageId String
+  scheduledFor       DateTime
+  status             String             @default("scheduled")
+  sentAt             DateTime?
+  recipientCount     Int
+  successCount       Int
+  failureCount       Int
+  failureReason      String?
+  metadata           Json?
+  createdAt          DateTime           @default(now())
+  recurring_messages recurring_messages @relation(fields: [recurringMessageId], references: [id])
+
+  @@index([recurringMessageId])
+  @@index([scheduledFor])
+  @@index([status])
+}
+
+model recurring_messages {
+  id                   String                 @id
+  parentId             String?
+  templateId           String?
+  name                 String
+  subject              String
+  body                 String
+  channel              String
+  messageType          String
+  interval             String
+  intervalValue        Int
+  startDate            DateTime
+  endDate              DateTime?
+  isActive             Boolean                @default(true)
+  targetAudience       String
+  audienceFilter       Json?
+  nextRun              DateTime?
+  lastRun              DateTime?
+  totalSent            Int                    @default(0)
+  pausedAt             DateTime?
+  pausedReason         String?
+  createdBy            String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  recurring_instances  recurring_instances[]
+  users                users                  @relation(fields: [createdBy], references: [id])
+  parents              parents?               @relation(fields: [parentId], references: [id])
+  templates            templates?             @relation(fields: [templateId], references: [id])
+  recurring_recipients recurring_recipients[]
+
+  @@index([channel])
+  @@index([isActive])
+  @@index([isActive, nextRun])
+  @@index([messageType])
+  @@index([nextRun])
+  @@index([parentId])
+}
+
+model recurring_recipients {
+  id                 String             @id
+  recurringMessageId String
+  parentId           String
+  isActive           Boolean            @default(true)
+  addedAt            DateTime           @default(now())
+  removedAt          DateTime?
+  parents            parents            @relation(fields: [parentId], references: [id])
+  recurring_messages recurring_messages @relation(fields: [recurringMessageId], references: [id])
+
+  @@index([isActive])
+  @@index([parentId])
+  @@index([recurringMessageId])
+  @@index([recurringMessageId, parentId])
+}
+
+model scheduled_messages {
+  id            String     @id
+  parentId      String
+  templateId    String?
+  subject       String
+  body          String
+  channel       String
+  scheduledFor  DateTime
+  status        String     @default("scheduled")
+  messageType   String
+  priority      String     @default("normal")
+  retryCount    Int        @default(0)
+  maxRetries    Int        @default(3)
+  sentAt        DateTime?
+  failureReason String?
+  metadata      Json?
+  createdBy     String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime
+  users         users      @relation(fields: [createdBy], references: [id])
+  parents       parents    @relation(fields: [parentId], references: [id])
+  templates     templates? @relation(fields: [templateId], references: [id])
+
+  @@index([channel])
+  @@index([messageType])
+  @@index([parentId])
+  @@index([parentId, status])
+  @@index([scheduledFor])
+  @@index([status])
+  @@index([status, scheduledFor])
+}
+
+model seasons {
+  id                   String                 @id
+  name                 String
+  type                 String
+  year                 Int
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime?
+  isActive             Boolean                @default(true)
+  description          String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  league_fee_reminders league_fee_reminders[]
+  league_fees          league_fees[]
+
+  @@index([isActive])
+  @@index([type])
+  @@index([type, year])
+  @@index([year])
+}
+
+model sessions {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model stripe_invoices {
+  id                 String    @id
+  parentId           String
+  stripeInvoiceId    String    @unique
+  stripeCustomerId   String
+  subscriptionId     String?
+  status             String
+  amountDue          Float
+  amountPaid         Float
+  amountRemaining    Float
+  currency           String    @default("usd")
+  dueDate            DateTime?
+  paidAt             DateTime?
+  paymentIntentId    String?
+  hostedInvoiceUrl   String?
+  invoicePdf         String?
+  attemptCount       Int       @default(0)
+  nextPaymentAttempt DateTime?
+  metadata           Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  parents            parents   @relation(fields: [parentId], references: [id])
+
+  @@index([dueDate])
+  @@index([parentId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([stripeInvoiceId])
+}
+
+model stripe_subscriptions {
+  id                   String    @id
+  parentId             String
+  stripeSubscriptionId String    @unique
+  stripeCustomerId     String
+  status               String
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  priceId              String?
+  quantity             Int       @default(1)
+  metadata             Json?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  parents              parents   @relation(fields: [parentId], references: [id])
+
+  @@index([parentId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+model stripe_webhook_events {
+  id            String    @id
+  stripeEventId String    @unique
+  eventType     String
+  processed     Boolean   @default(false)
+  data          Json
+  error         String?
+  retryCount    Int       @default(0)
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([eventType])
+  @@index([processed])
+  @@index([stripeEventId])
+}
+
+model system_settings {
+  id          String   @id
+  key         String   @unique
+  value       Json?
+  description String?
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@index([category])
+  @@index([isActive])
+  @@index([key])
+}
+
+model teams {
+  id          String    @id
+  name        String
+  color       String?
+  description String?
+  isActive    Boolean   @default(true)
+  order       Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  parents     parents[]
+
+  @@index([name])
+  @@index([order])
+}
+
+model templates {
+  id                 String               @id
+  name               String?
+  subject            String?
+  content            String?
+  body               String?
+  channel            String?
+  type               String?
+  category           String?
+  isActive           Boolean              @default(true)
+  isAiGenerated      Boolean              @default(false)
+  usageCount         Int                  @default(0)
+  variables          Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  message_logs       message_logs[]
+  recurring_messages recurring_messages[]
+  scheduled_messages scheduled_messages[]
+
+  @@index([category])
+  @@index([isActive])
+  @@index([type])
+}
+
+model users {
+  id                 String               @id
+  name               String?
+  email              String               @unique
+  emailVerified      DateTime?
+  image              String?
+  password           String?
+  role               String               @default("user")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  lastActive         DateTime?
+  sessionData        Json?
+  accounts           accounts[]
+  audit_logs         audit_logs[]
+  background_jobs    background_jobs[]
+  notifications      notifications[]
+  recurring_messages recurring_messages[]
+  scheduled_messages scheduled_messages[]
+  sessions           sessions[]
+
+  @@index([email])
+}
+
+model verification_tokens {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

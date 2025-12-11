@@ -95,7 +95,7 @@ export default function ParentDetailPage() {
   console.log('parentId length:', parentId?.length);
 
   // Validate that we have a proper parent ID before making queries
-  const isValidId = parentId && parentId !== 'undefined' && parentId.length > 20
+  const isValidId = !!(parentId && parentId !== 'undefined')
 
   console.log('isValidId:', isValidId);
 
@@ -312,7 +312,7 @@ export default function ParentDetailPage() {
 
         // Also refresh data to ensure consistency
         setTimeout(() => {
-          fetchData()
+          refreshParentData()
         }, 500)
       } else {
         throw new Error(result.error || 'Failed to update payment method')
@@ -722,6 +722,17 @@ export default function ParentDetailPage() {
     }
   }
 
+  // Derived payment summaries
+  const normalizedPayments = (payments || []).map((p: any) => ({
+    ...p,
+    _id: p._id || p.id,
+  }))
+  const totalPaid = normalizedPayments.filter((p: any) => p.status === 'paid').reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0)
+  const totalOutstanding = normalizedPayments.filter((p: any) => p.status === 'pending' || p.status === 'overdue').reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0)
+  const nextDue = normalizedPayments
+    .filter((p: any) => p.status !== 'paid' && p.dueDate)
+    .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0]
+
   // Show loading only when data is being fetched
   if (loading) {
     return (
@@ -773,24 +784,33 @@ export default function ParentDetailPage() {
     e.preventDefault()
     e.stopPropagation()
 
+    console.log('Attempting to delete payment plan with ID:', planId)
+
     if (!confirm('Are you sure you want to delete this payment plan?')) return
 
     try {
+      console.log('Making DELETE request to:', `/api/payment-plans/${planId}`)
       const response = await fetch(`/api/payment-plans/${planId}`, {
         method: 'DELETE',
-        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
+        headers: { 
+          'x-api-key': 'ra1-dashboard-api-key-2024',
+          'Content-Type': 'application/json'
+        }
       })
 
+      console.log('Delete response status:', response.status)
+      
       if (response.ok) {
         setPaymentPlans(prev => prev.filter(plan => (plan._id || plan.id) !== planId))
         toast({ title: 'Success', description: 'Payment plan deleted successfully.' })
       } else {
-        const data = await response.json()
-        toast({ title: 'Error', description: data.error || 'Failed to delete payment plan', variant: 'destructive' })
+        const data = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Delete failed with response:', data)
+        toast({ title: 'Error', description: data.error || data.details || 'Failed to delete payment plan', variant: 'destructive' })
       }
     } catch (error) {
       console.error('Error deleting payment plan:', error)
-      toast({ title: 'Error', description: 'Error deleting payment plan', variant: 'destructive' })
+      toast({ title: 'Error', description: 'Network error deleting payment plan', variant: 'destructive' })
     }
   }
 
@@ -862,6 +882,45 @@ export default function ParentDetailPage() {
               </Link>
             </Button>
           </div>
+        </div>
+
+        {/* Profile Summary Row */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase text-muted-foreground">Contact</p>
+              <p className="font-semibold mt-1">{parent.email}</p>
+              {parent.phone && <p className="text-sm text-muted-foreground">{parent.phone}</p>}
+              {parent.address && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{parent.address}</p>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase text-muted-foreground">Payments</p>
+              <p className="font-semibold mt-1">${totalPaid.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Paid to date</p>
+              <p className="mt-1 text-sm text-orange-600">${totalOutstanding.toLocaleString()} outstanding</p>
+              {nextDue && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Next due: {new Date(nextDue.dueDate).toLocaleDateString()}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase text-muted-foreground">Payment Plans</p>
+              <p className="font-semibold mt-1">{Array.isArray(paymentPlans) ? paymentPlans.length : 0}</p>
+              <p className="text-xs text-muted-foreground">Active & historical</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase text-muted-foreground">Communication</p>
+              <p className="font-semibold mt-1">Messages & AI</p>
+              <p className="text-xs text-muted-foreground">Use Send Message / AI Msg buttons to contact</p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -1286,8 +1345,8 @@ export default function ParentDetailPage() {
           <CardContent>
             {payments && payments.length > 0 ? (
               <div className="space-y-3">
-                {payments.slice(0, 5).map((payment) => (
-                  <div key={payment.id} className="p-3 border rounded bg-white">
+                {normalizedPayments.slice(0, 5).map((payment) => (
+                  <div key={payment._id || payment.id} className="p-3 border rounded bg-white">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center justify-between">

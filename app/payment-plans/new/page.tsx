@@ -81,7 +81,6 @@ const paymentSchedules = [
   {
     value: "full",
     label: "Full Payment",
-    amount: "$1,699.59",
     description: "Pay the full amount now",
     installments: 1,
     installmentAmount: 1699.59
@@ -89,23 +88,20 @@ const paymentSchedules = [
   {
     value: "quarterly",
     label: "Quarterly",
-    amount: "$566.74",
-    description: "3 payments over 9 months (Total: $1,700.22)",
+    description: "3 payments over 9 months",
     installments: 3,
     installmentAmount: 566.74
   },
   {
     value: "monthly",
     label: "Monthly",
-    amount: "$189.11",
-    description: "9 payments over 9 months (Total: $1,701.99)",
+    description: "9 payments over 9 months",
     installments: 9,
     installmentAmount: 189.11
   },
   {
     value: "custom",
     label: "Custom Schedule",
-    amount: "Variable",
     description: "Set your own installments",
     installments: 1,
     installmentAmount: 0
@@ -123,12 +119,13 @@ export default function NewPaymentPlanPage() {
   const [selectedPaymentOption, setSelectedPaymentOption] = useState('stripe_card')
   const [selectedPaymentSchedule, setSelectedPaymentSchedule] = useState('monthly')
   const [customInstallments, setCustomInstallments] = useState(3)
+  const [customMonths, setCustomMonths] = useState(3)
+  const [isFree, setIsFree] = useState(false)
   // Stripe Payment Element state
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
   const [stripePk, setStripePk] = useState<string | null>(null)
   const stripePromise = useMemo(() => (stripePk ? loadStripe(stripePk) : null), [stripePk])
 
-  const [customMonths, setCustomMonths] = useState(9)
   const [paymentReference, setPaymentReference] = useState('')
 
   // State for check payments
@@ -250,8 +247,8 @@ export default function NewPaymentPlanPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
 
     console.log('Form submitted with data:', formData)
 
@@ -304,8 +301,10 @@ export default function NewPaymentPlanPage() {
             description: 'Redirecting to process the one-time card payment...',
           })
 
-          // Redirect to payment detail; user can click "Choose payment option" to complete
-          router.push(`/payments/${paymentId}`)
+          // Redirect to payment detail page
+          console.log('Redirecting to payment detail page:', `/payments/${paymentId}`)
+          setLoading(false)
+          window.location.href = `/payments/${paymentId}`
           return
         } catch (cardErr: any) {
           console.error('❌ One-time card payment setup failed:', cardErr)
@@ -346,25 +345,12 @@ export default function NewPaymentPlanPage() {
         // Get the payment ID for redirect
         const paymentId = result.paymentIds?.[0] || result.mainPaymentId
 
-        if (paymentId) {
-          console.log(`Redirecting to payment detail page: /payments/${paymentId}`)
-
-          // Redirect to the parent's profile page with a refresh indicator
-          setTimeout(() => {
-            router.push(`/parents/${formData.parentId}?planCreated=true`);
-          }, 1500);
-        } else {
-          console.log('⚠️ No payment ID found in result, redirecting to parent profile page');
-          toast({
-            title: "⚠️ Payment Plan Created",
-            description: "Payment plan created successfully. Redirecting to parent profile.",
-            variant: "default",
-          });
-
-          setTimeout(() => {
-            router.push(`/parents/${formData.parentId}?planCreated=true`);
-          }, 2000);
-        }
+        // Redirect to payment detail page
+        const redirectUrl = paymentId ? `/payments/${paymentId}` : '/payments'
+        console.log(`Redirecting to payment detail page: ${redirectUrl}`)
+        setLoading(false)
+        window.location.href = redirectUrl
+        return
 
       } else {
         const error = await response.json()
@@ -432,11 +418,14 @@ export default function NewPaymentPlanPage() {
   const handleScheduleChange = (scheduleValue: string) => {
     setSelectedPaymentSchedule(scheduleValue)
     const schedule = paymentSchedules.find(s => s.value === scheduleValue)
+    const manualBase = 6650
+    const defaultBase = 1650
+    const baseAmount = selectedPaymentOption === 'manual_card' ? manualBase : defaultBase
 
     if (schedule) {
       if (scheduleValue === 'custom') {
         // For custom, calculate based on user inputs
-        const totalAmount = 1650
+        const totalAmount = isFree ? 0 : baseAmount
         const installmentAmount = totalAmount / customInstallments
         setFormData(prev => ({
           ...prev,
@@ -449,9 +438,17 @@ export default function NewPaymentPlanPage() {
         setFormData(prev => ({
           ...prev,
           type: scheduleValue === 'full' ? 'pay-in-full' : scheduleValue,
-          totalAmount: (schedule.installmentAmount * schedule.installments).toString(),
+          totalAmount: (isFree
+            ? 0
+            : selectedPaymentOption === 'manual_card' && scheduleValue === 'full'
+              ? manualBase
+              : schedule.installmentAmount * schedule.installments).toString(),
           installments: schedule.installments.toString(),
-          installmentAmount: schedule.installmentAmount.toString()
+          installmentAmount: (isFree
+            ? 0
+            : selectedPaymentOption === 'manual_card' && scheduleValue === 'full'
+              ? manualBase
+              : schedule.installmentAmount).toString()
         }))
       }
     }
@@ -461,12 +458,14 @@ export default function NewPaymentPlanPage() {
   const handleCustomInstallmentChange = (installments: number) => {
     setCustomInstallments(installments)
     if (selectedPaymentSchedule === 'custom') {
-      const totalAmount = 1650
+      const baseAmount = isFree ? 0 : (selectedPaymentOption === 'manual_card' ? 6650 : 1650)
+      const totalAmount = baseAmount
       const installmentAmount = totalAmount / installments
       setFormData(prev => ({
         ...prev,
         installments: installments.toString(),
-        installmentAmount: installmentAmount.toFixed(2)
+        installmentAmount: installmentAmount.toFixed(2),
+        totalAmount: totalAmount.toFixed(2)
       }))
     }
   }
@@ -549,9 +548,20 @@ export default function NewPaymentPlanPage() {
       startDate: new Date().toISOString().split('T')[0],
       paymentMethod: selectedPaymentOption,
       type: selectedPaymentSchedule,
+      season: formData.season,
+      year: formData.year || new Date().getFullYear(),
     };
 
-    if (selectedPaymentOption === 'check') {
+    if (isFree) {
+      paymentData = {
+        ...paymentData,
+        totalAmount: 0,
+        installmentAmount: 0,
+        installments: 1,
+        description: 'Free - no charge',
+        type: 'free',
+      };
+    } else if (selectedPaymentOption === 'check') {
       const totalAmount = parseFloat(checkDetails.customAmount || '0') * checkInstallments;
       paymentData = {
         ...paymentData,
@@ -581,16 +591,16 @@ export default function NewPaymentPlanPage() {
 
         paymentData = {
           ...paymentData,
-          totalAmount,
-          installmentAmount,
-          installments,
+          totalAmount: isFree ? 0 : totalAmount,
+          installmentAmount: isFree ? 0 : installmentAmount,
+          installments: installments,
           description: `Payment plan - Custom (${installments} installments)`,
         }
       } else {
         const selectedScheduleDetails = paymentSchedules.find(s => s.value === selectedPaymentSchedule)
         const installmentAmount = Number(selectedScheduleDetails?.installmentAmount || 0)
         const installments = Number(selectedScheduleDetails?.installments || 1)
-        const totalAmount = installmentAmount * installments
+        const totalAmount = (isFree ? 0 : installmentAmount * installments)
 
         paymentData = {
           ...paymentData,
@@ -651,7 +661,11 @@ export default function NewPaymentPlanPage() {
         })()
 
         toast({ title: '✅ Payment Completed', description: `Charged $${totalAmountNum.toFixed(2)} successfully.` })
-        router.push(`/parents/${formData.parentId}?planCreated=true`)
+        // Redirect to the payment detail page
+        const redirectUrl = paymentId ? `/payments/${paymentId}` : '/payments'
+        console.log('Redirecting to payment detail page:', redirectUrl)
+        setLoading(false)
+        window.location.href = redirectUrl
         return
       }
 
@@ -669,8 +683,15 @@ export default function NewPaymentPlanPage() {
       if (response.ok) {
         const result = await response.json()
         const paymentId = result.mainPaymentId || result.paymentIds?.[0]
-        toast({ title: '✅ Payment Plan Created!', description: 'Payment plan has been set up successfully.', duration: 3000 })
-        if (paymentId) router.push(`/parents/${formData.parentId}?planCreated=true`)
+        console.log('✅ Payment plan created, paymentId:', paymentId)
+        toast({ title: '✅ Payment Plan Created!', description: 'Redirecting to payment details...', duration: 2000 })
+        
+        // Redirect to payment detail page
+        const redirectUrl = paymentId ? `/payments/${paymentId}` : '/payments'
+        console.log('Redirecting to:', redirectUrl)
+        setLoading(false)
+        window.location.href = redirectUrl
+        return
       } else {
         let error: any = {}
         try { error = await response.json() } catch (_) { try { const text = await response.text(); error = { error: text } } catch {} }
@@ -689,157 +710,206 @@ export default function NewPaymentPlanPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" asChild>
-            <Link href="/payment-plans">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Create Payment Plan</h1>
-            <p className="text-gray-600">Set up a new payment plan for a parent</p>
+      <div className="max-w-4xl mx-auto pb-12">
+        {/* Hero Header */}
+        <div className="mb-8">
+          <Link 
+            href="/payment-plans" 
+            className="inline-flex items-center text-sm text-slate-500 hover:text-slate-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Back to Payment Plans
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">New Payment Plan</h1>
+              <p className="text-slate-500 mt-1">Set up a payment plan for a parent in 3 easy steps</p>
+            </div>
           </div>
         </div>
 
-        {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              Payment Plan Setup
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Parent Selection */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="parentId">Select Parent *</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <Link href="/parents/new">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create a Parent
-                    </Link>
-                  </Button>
-                </div>
-                <select
-                  id="parentId"
-                  value={formData.parentId}
-                  onChange={(e) => handleInputChange('parentId', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select a parent</option>
-                  {parents.map((parent) => (
-                    <option key={parent._id} value={parent._id}>
-                      {parent.name} ({parent.email})
-                    </option>
-                  ))}
-                </select>
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center mb-10">
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              formData.parentId ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+            }`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                formData.parentId ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'
+              }`}>
+                {formData.parentId ? '✓' : '1'}
               </div>
+              Select Parent
+            </div>
+            <div className="w-8 h-0.5 bg-slate-200"></div>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              formData.season ? 'bg-green-100 text-green-700' : formData.parentId ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-400'
+            }`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                formData.season ? 'bg-green-500 text-white' : formData.parentId ? 'bg-orange-500 text-white' : 'bg-slate-300 text-white'
+              }`}>
+                {formData.season ? '✓' : '2'}
+              </div>
+              Choose Season
+            </div>
+            <div className="w-8 h-0.5 bg-slate-200"></div>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              formData.paymentMethod ? 'bg-green-100 text-green-700' : formData.season ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-400'
+            }`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                formData.paymentMethod ? 'bg-green-500 text-white' : formData.season ? 'bg-orange-500 text-white' : 'bg-slate-300 text-white'
+              }`}>
+                {formData.paymentMethod ? '✓' : '3'}
+              </div>
+              Payment Options
+            </div>
+          </div>
+        </div>
 
-              {/* Season/Year Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="season">Season / Year *</Label>
-                <p className="text-sm text-gray-500">
-                  Select the enrollment period for this payment plan. Parents can have separate payment plans for different seasons.
-                </p>
-                <div className="flex gap-4">
-                  <select
-                    id="year"
-                    value={formData.year}
-                    onChange={(e) => {
-                      const year = parseInt(e.target.value)
-                      handleInputChange('year', year)
-                      handleInputChange('season', `${year} Season`)
-                    }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {[...Array(5)].map((_, i) => {
-                      const year = new Date().getFullYear() + i - 1
-                      return (
-                        <option key={year} value={year}>
-                          {year} Season
-                        </option>
-                      )
-                    })}
-                  </select>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Step 1: Parent Selection */}
+            <div className="bg-white rounded-2xl border shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Step 1: Select Parent</h2>
+                  <p className="text-sm text-slate-500">Choose the parent for this payment plan</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <Select value={formData.parentId} onValueChange={(value) => handleInputChange('parentId', value)}>
+                  <SelectTrigger className="h-12 rounded-xl text-base">
+                    <SelectValue placeholder="Select a parent..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    {parents.map((parent) => (
+                      <SelectItem key={parent._id} value={parent._id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-sm font-medium">
+                            {parent.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-medium">{parent.name}</p>
+                            <p className="text-xs text-slate-500">{parent.email}</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" asChild className="rounded-full">
+                  <Link href="/parents/new">
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Add New Parent
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Step 2: Season Selection */}
+            <div className={`bg-white rounded-2xl border shadow-sm p-6 transition-opacity ${!formData.parentId ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Step 2: Choose Season</h2>
+                  <p className="text-sm text-slate-500">Select or create a season for this plan</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {['Yearly Program', 'Spring AAU', 'Summer AAU', 'Fall AAU', 'Winter AAU', "Kevin Houston's Lessons", 'TBF Training', 'THOS Facility Rentals'].map((season) => (
+                    <button
+                      key={season}
+                      type="button"
+                      onClick={() => handleInputChange('season', season)}
+                      className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                        formData.season === season
+                          ? 'border-purple-500 bg-purple-50 text-purple-700'
+                          : 'border-slate-200 hover:border-purple-300 text-slate-700'
+                      }`}
+                    >
+                      {season}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative">
                   <Input
-                    id="season"
                     value={formData.season}
                     onChange={(e) => handleInputChange('season', e.target.value)}
-                    placeholder="e.g., 2025 Spring Season"
-                    className="flex-1"
+                    placeholder="Or type a custom season (e.g., 2026 Elite Summer)"
+                    className="h-12 rounded-xl pl-4 pr-4"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Payment Options Button - Main Action */}
-              <div className="space-y-4">
-                <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                  <CreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Choose Payment Options</h3>
-                  <p className="text-gray-600 mb-6">Select payment method and schedule to create your payment plan</p>
+            {/* Step 3: Payment Options */}
+            <div className={`bg-white rounded-2xl border shadow-sm p-6 transition-opacity ${!formData.season ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Step 3: Payment Options</h2>
+                  <p className="text-sm text-slate-500">Configure payment method and schedule</p>
+                </div>
+              </div>
+              
+              {!formData.paymentMethod ? (
+                <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                  <CreditCard className="mx-auto h-10 w-10 text-slate-300 mb-3" />
+                  <p className="text-slate-500 mb-4">Configure how this parent will pay</p>
                   <Button
                     type="button"
                     onClick={() => {
                       if (!formData.parentId) {
-                        toast({
-                          title: "⚠️ Parent Required",
-                          description: "Please select a parent first before choosing payment options.",
-                          variant: "destructive",
-                        })
+                        toast({ title: "⚠️ Parent Required", description: "Please select a parent first.", variant: "destructive" })
+                        return
+                      }
+                      if (!formData.season) {
+                        toast({ title: "⚠️ Season Required", description: "Please select a season first.", variant: "destructive" })
                         return
                       }
                       setShowPaymentOptions(true)
                     }}
-                    className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white text-lg"
-                    size="lg"
+                    className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-full"
                     disabled={loading}
                   >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="mr-2 h-5 w-5" />
-                        Choose Payment Options
-                      </>
-                    )}
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Choose Payment Options
                   </Button>
                 </div>
-              </div>
-
-              {/* Show selected options summary if options have been chosen */}
-              {formData.paymentMethod && formData.type && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-2">Selected Payment Options</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-green-800">
-                    <div>
-                      <span className="font-medium">Payment Method:</span> {paymentOptions.find(p => p.id === formData.paymentMethod)?.name}
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Method</p>
+                      <p className="font-semibold text-slate-900">{paymentOptions.find(p => p.id === formData.paymentMethod)?.name}</p>
                     </div>
-                    <div>
-                      <span className="font-medium">Schedule:</span> {
-                        formData.type === 'pay-in-full' ? 'Pay in Full' :
-                        formData.type === 'quarterly' ? 'Quarterly' :
-                        formData.type === 'monthly' ? 'Monthly' : 'Custom'
-                      }
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Schedule</p>
+                      <p className="font-semibold text-slate-900">
+                        {formData.type === 'pay-in-full' ? 'Full Payment' :
+                         formData.type === 'quarterly' ? 'Quarterly' :
+                         formData.type === 'monthly' ? 'Monthly' : 
+                         formData.type === 'free' ? 'Free' : 'Custom'}
+                      </p>
                     </div>
-                    <div>
-                      <span className="font-medium">Total Amount:</span> ${formData.totalAmount}
+                    <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                      <p className="text-xs text-green-600 uppercase tracking-wide mb-1">Total</p>
+                      <p className="font-bold text-xl text-green-700">${parseFloat(formData.totalAmount || '0').toLocaleString()}</p>
                     </div>
-                    <div>
-                      <span className="font-medium">Per Payment:</span> ${formData.installmentAmount}
+                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                      <p className="text-xs text-blue-600 uppercase tracking-wide mb-1">Per Payment</p>
+                      <p className="font-bold text-xl text-blue-700">${parseFloat(formData.installmentAmount || '0').toLocaleString()}</p>
                     </div>
                   </div>
                   <Button
@@ -847,118 +917,106 @@ export default function NewPaymentPlanPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowPaymentOptions(true)}
-                    className="mt-3"
+                    className="rounded-full"
                   >
-                    Modify Options
+                    Modify Payment Options
                   </Button>
                 </div>
               )}
+            </div>
 
-              {/* Start Date - Only show if payment options are selected */}
-              {formData.paymentMethod && formData.type && (
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date *</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    required
-                  />
+            {/* Additional Options - Only show if payment options are selected */}
+            {formData.paymentMethod && formData.type && (
+              <div className="bg-white rounded-2xl border shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Additional Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">Start Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => handleInputChange('startDate', e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">Notes (Optional)</Label>
+                    <Input
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Any additional notes..."
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
+          </div>
 
-              {/* Description - Only show if payment options are selected */}
-              {formData.paymentMethod && formData.type && (
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
-                  <textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
-                    placeholder="Additional notes about this payment plan..."
-                  />
+          {/* Sidebar - Summary */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-xl">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                  Plan Summary
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <span className="text-slate-400 text-sm">Parent</span>
+                    <span className="font-medium text-sm">
+                      {formData.parentId ? parents.find(p => p._id === formData.parentId)?.name || '—' : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <span className="text-slate-400 text-sm">Season</span>
+                    <span className="font-medium text-sm">{formData.season || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <span className="text-slate-400 text-sm">Payment Method</span>
+                    <span className="font-medium text-sm">
+                      {formData.paymentMethod ? paymentOptions.find(p => p.id === formData.paymentMethod)?.name : '—'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <span className="text-slate-400 text-sm">Installments</span>
+                    <span className="font-medium text-sm">{formData.installments || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <span className="text-slate-400 text-sm">Start Date</span>
+                    <span className="font-medium text-sm">
+                      {formData.startDate ? new Date(formData.startDate).toLocaleDateString() : '—'}
+                    </span>
+                  </div>
+                  
+                  <div className="pt-4 mt-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-slate-400">Total Amount</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">
+                      ${parseFloat(formData.totalAmount || '0').toLocaleString()}
+                    </p>
+                    {formData.installments && parseInt(formData.installments) > 1 && (
+                      <p className="text-sm text-slate-400 mt-1">
+                        {formData.installments} payments of ${parseFloat(formData.installmentAmount || '0').toLocaleString()}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-
-              {/* Submit Button - ALWAYS VISIBLE FOR TESTING */}
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" asChild>
-                  <Link href="/payment-plans">Cancel</Link>
-                </Button>
+              </div>
+              
+              {/* Action Button */}
+              <div className="mt-4 space-y-3">
                 <Button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    if (!formData.parentId) {
-                      toast({
-                        title: "⚠️ Parent Required",
-                        description: "Please select a parent first.",
-                        variant: "destructive",
-                      })
-                      return
-                    }
-
-                    setLoading(true)
-                    try {
-                      // Create payment plan with default monthly settings
-                      const response = await fetch('/api/payment-plans', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'x-api-key': 'ra1-dashboard-api-key-2024'
-                        },
-                        body: JSON.stringify({
-                          parentId: formData.parentId,
-                          totalAmount: 1701.99,
-                          installmentAmount: 189.11,
-                          installments: 9,
-                          startDate: new Date().toISOString().split('T')[0],
-                          description: 'Monthly payment plan',
-                          paymentMethod: 'stripe_card',
-                          type: 'monthly',
-                          season: formData.season,
-                          year: formData.year
-                        })
-                      })
-
-                      if (response.ok) {
-                        const result = await response.json()
-
-                        toast({
-                          title: "✅ Payment Plan Created!",
-                          description: "Redirecting to payment tracking...",
-                          duration: 2000,
-                        })
-
-                        // REDIRECT TO PAYMENT DETAIL PAGE
-                        const paymentId = result.mainPaymentId || result.paymentIds?.[0]
-                        window.location.href = `/payments/${paymentId}`
-
-                      } else {
-                        const error = await response.json()
-                        toast({
-                          title: "❌ Creation Failed",
-                          description: error.error || 'Failed to create payment plan',
-                          variant: "destructive",
-                        })
-                      }
-                    } catch (error) {
-                      toast({
-                        title: "❌ Error",
-                        description: 'Error creating payment plan. Please try again.',
-                        variant: "destructive",
-                      })
-                    } finally {
-                      setLoading(false)
-                    }
-                  }}
+                  onClick={handleSubmit}
+                  disabled={!formData.parentId || !formData.season || !formData.paymentMethod || loading}
+                  className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-base"
                 >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating...
+                      Creating Plan...
                     </>
                   ) : (
                     <>
@@ -967,94 +1025,13 @@ export default function NewPaymentPlanPage() {
                     </>
                   )}
                 </Button>
+                <Button variant="outline" asChild className="w-full h-11 rounded-xl">
+                  <Link href="/payment-plans">Cancel</Link>
+                </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Debug section for testing API */}
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  console.log('🧪 Testing API connection...')
-                  fetch('/api/health')
-                    .then(r => r.json())
-                    .then(data => console.log('🏥 Health check:', data))
-                    .catch(err => console.error('❌ Health check failed:', err))
-                }}
-              >
-                🧪 Test API Connection
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  console.log('🔑 Testing authentication...')
-                  fetch('/api/parents?limit=5', {
-                    headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
-                  })
-                    .then(r => r.json())
-                    .then(data => console.log('👨‍👩‍👧‍👦 Parents test:', data))
-                    .catch(err => console.error('❌ Parents test failed:', err))
-                }}
-              >
-                🔑 Test Authentication
-              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Preview */}
-        {formData.totalAmount && formData.installmentAmount && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Payment Plan Preview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Total Amount:</span> ${parseFloat(formData.totalAmount || '0').toLocaleString()}
-                </div>
-                <div>
-                  <span className="font-medium">Per Payment:</span> ${parseFloat(formData.installmentAmount || '0').toLocaleString()}
-                </div>
-                <div>
-                  <span className="font-medium">Number of Payments:</span> {formData.installments}
-                </div>
-                <div>
-                  <span className="font-medium">Plan Type:</span> {formData.type}
-                </div>
-                <div>
-                  <span className="font-medium">Payment Method:</span> {paymentOptions.find(p => p.id === formData.paymentMethod)?.name || 'Credit/Debit Card'}
-                </div>
-                <div>
-                  <span className="font-medium">Processing Fee:</span> {paymentOptions.find(p => p.id === formData.paymentMethod)?.processingFee || '2.9% + $0.30'}
-                </div>
-              </div>
-
-              {/* Payment Schedule Preview */}
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Payment Schedule</h4>
-                <div className="text-sm text-blue-800">
-                  {parseInt(formData.installments) === 1 ? (
-                    <p>Single payment of ${parseFloat(formData.totalAmount).toLocaleString()} due on {new Date(formData.startDate).toLocaleDateString()}</p>
-                  ) : (
-                    <p>{formData.installments} payments of ${parseFloat(formData.installmentAmount).toLocaleString()} each, starting {new Date(formData.startDate).toLocaleDateString()}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          </div>
+        </div>
       </div>
 
       {/* Enhanced Payment Options Dialog */}
@@ -1150,9 +1127,9 @@ export default function NewPaymentPlanPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[2, 3, 4, 5, 6, 9, 12].map((num) => (
+                        {Array.from({ length: 9 }, (_, i) => i + 1).map((num) => (
                           <SelectItem key={num} value={num.toString()}>
-                            {num} installments
+                            {num} installment{num > 1 ? 's' : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1165,9 +1142,9 @@ export default function NewPaymentPlanPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[3, 6, 9, 12, 18, 24].map((months) => (
+                        {Array.from({ length: 9 }, (_, i) => i + 1).map((months) => (
                           <SelectItem key={months} value={months.toString()}>
-                            {months} months
+                            {months} month{months > 1 ? 's' : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1177,10 +1154,10 @@ export default function NewPaymentPlanPage() {
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="text-sm">
                     <p className="font-medium text-blue-900">
-                      Payment Amount: ${(1650 / customInstallments).toFixed(2)} per installment
+                      Payment Amount: ${(parseFloat(formData.totalAmount || (isFree ? '0' : (selectedPaymentOption === 'manual_card' ? '6650' : '1650'))) / customInstallments).toFixed(2)} per installment
                     </p>
                     <p className="text-blue-700">
-                      {customInstallments} payments of ${(1650 / customInstallments).toFixed(2)} over {customMonths} months
+                      {customInstallments} payments over {customMonths} month{customMonths > 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>

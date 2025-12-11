@@ -4,8 +4,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../lib/api-utils'
-import { api } from '../../../convex/_generated/api'
-import { convexHttp } from '../../lib/convex-server'
+import prisma from '../../../lib/prisma'
 
 export async function GET(request: Request) {
   try {
@@ -19,21 +18,57 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || undefined
     const program = (searchParams.get('program') || '').trim()
 
-    // Get payment plans from Convex with optional filters
-    try {
-      const paymentPlans = await convexHttp.query(api.payments.getPaymentPlans as any, {
-        parentId: parentId as any,
-        status: status as any,
-      } as any);
-      // If program specified, filter by parent.program
-      const filtered = program
-        ? (Array.isArray(paymentPlans) ? paymentPlans.filter((p: any) => String((p?.parent as any)?.program || '').trim() === program) : [])
-        : paymentPlans
-      return NextResponse.json(filtered || [])
-    } catch (e) {
-      console.warn('payment-plans query failed, returning empty list:', (e as any)?.message || e)
-      return NextResponse.json([])
+    // Build where clause for Prisma
+    const where: any = {}
+    if (parentId) where.parentId = parentId
+    if (status) where.status = status
+    if (program) {
+      // filter by parent program
+      where.parents = { program }
     }
+
+    const plans = await prisma.payment_plans.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        parents: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            program: true,
+            teamId: true,
+          }
+        }
+      }
+    })
+
+    const transformed = plans.map((p) => ({
+      _id: p.id,
+      id: p.id,
+      parentId: p.parentId,
+      totalAmount: p.totalAmount,
+      installmentAmount: p.installmentAmount,
+      installments: p.installments,
+      status: p.status,
+      type: p.type,
+      startDate: p.startDate?.toISOString(),
+      endDate: p.endDate?.toISOString(),
+      description: p.description,
+      season: p.season,
+      year: p.year,
+      paymentMethod: p.paymentMethod,
+      parent: p.parents ? {
+        _id: p.parents.id,
+        id: p.parents.id,
+        name: p.parents.name,
+        email: p.parents.email,
+        program: p.parents.program,
+        teamId: p.parents.teamId,
+      } : null,
+    }))
+
+    return NextResponse.json(transformed)
   } catch (error) {
     console.error('Payment plans fetch error:', error)
     return NextResponse.json(
@@ -61,228 +96,125 @@ export async function POST(request: Request) {
 
     stage = 'validate-input'
     if (!parentId || !type || !startDate || !isFinite(totalAmountNum) || !isFinite(installmentAmountNum) || !isFinite(installmentsNum) || installmentsNum <= 0) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields', stage }, { status: 400 });
     }
 
-    stage = 'convex-init'
-    const convex = convexHttp
-    console.log(`🔗 Using Convex server client for payment-plans` )
     console.log(`🔄 Creating payment plan for parent ${parentId}`)
     console.log(`📋 Plan details: Type=${type}, Total=${totalAmount}, Installments=${installments}, Amount=${installmentAmount}, Method=${paymentMethod}`)
 
-    const errors: string[] = []; // Initialize errors array
-
-    // Normalize start date once
-    stage = 'normalize-date'
-    const startTimestamp = new Date(startDate).getTime();
-
-    // Verify parent exists in Convex (guards against cross-project ID mismatch)
+    // Verify parent exists in Prisma
     stage = 'verify-parent'
-    try {
-      const parent = await convex.query(api.parents.getParentFresh as any, { id: parentId as any, timestamp: Date.now() })
-      if (!parent) {
-        return NextResponse.json({ error: `Parent not found: ${parentId}`, stage }, { status: 400 })
-      }
-    } catch (e: any) {
-      console.error('❌ Parent lookup failed:', e?.message || e)
-      return NextResponse.json({ error: `Parent lookup failed: ${e?.message || 'unknown error'}`, stage }, { status: 500 })
+    const parent = await prisma.parents.findUnique({
+      where: { id: parentId }
+    })
+    
+    if (!parent) {
+      return NextResponse.json({ error: `Parent not found: ${parentId}`, stage }, { status: 400 })
     }
 
-    // Create the payment plan first (new API), then fall back to legacy API if it fails
+    // Normalize start date
+    stage = 'normalize-date'
+    const startDateObj = new Date(startDate)
+
+    // Create the payment plan in PostgreSQL
     stage = 'create-payment-plan'
-    let paymentPlanId: string | undefined
-    let mainPaymentIdFromLegacy: string | undefined
-    try {
-      paymentPlanId = await convex.mutation(api.payments.createPaymentPlan, {
-        parentId,
+    const paymentPlan = await prisma.payment_plans.create({
+      data: {
+        id: `plan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        parentId: parentId,
         totalAmount: totalAmountNum,
-        type,
-        installments: installmentsNum,
-        startDate: startTimestamp, // timestamp
-        status: 'active',
-        description,
         installmentAmount: installmentAmountNum,
-        paymentMethod,
+        installments: installmentsNum,
+        type: type,
+        status: 'active',
+        startDate: startDateObj,
+        description: description || `Payment plan - ${type}`,
+        paymentMethod: paymentMethod || 'stripe_card',
         season: season || `${yearNum} Season`,
         year: yearNum,
-      })
-      console.log(`✅ Created payment plan (new): ${paymentPlanId}`)
-    } catch (eNew: any) {
-      console.error('❌ createPaymentPlan (new) failed:', eNew?.message || eNew)
-      // LEGACY FALLBACK
-      try {
-        stage = 'create-payment-plan-legacy'
-        const legacy = await convex.mutation(api.payment_plans.createPaymentPlan as any, {
-          parentId,
-          startDate: new Date(startTimestamp).toISOString(),
-          paymentMethod: paymentMethod || 'stripe_card',
-          type,
-          totalAmount: totalAmountNum,
-          installmentAmount: installmentAmountNum,
-          installments: installmentsNum,
-          description: description || `Payment plan (${type})`,
-          frequency: type === 'monthly' ? 1 : type === 'quarterly' ? 3 : 1,
-        })
-        paymentPlanId = legacy?.newPaymentPlanId
-        mainPaymentIdFromLegacy = legacy?.mainPaymentId
-        if (!paymentPlanId) {
-          throw new Error('Legacy createPaymentPlan did not return plan id')
-        }
-        console.log(`✅ Created payment plan (legacy): ${paymentPlanId}`)
-      } catch (eLegacy: any) {
-        console.error('❌ createPaymentPlan (legacy) failed:', eLegacy?.message || eLegacy)
-        return NextResponse.json({
-          error: eLegacy?.message || 'createPaymentPlan failed',
-          stage,
-          details: String(eLegacy?.stack || eLegacy)
-        }, { status: 500 })
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
-    }
+    })
+    console.log(`✅ Created payment plan: ${paymentPlan.id}`)
 
-    // Create the main payment record if legacy path didn't already create it
+    // Create the main payment record
     stage = 'create-main-payment'
-    const mainPaymentId = mainPaymentIdFromLegacy || await convex.mutation(api.payments.createPayment, {
-      parentId,
-      paymentPlanId,
-      amount: totalAmountNum,
-      dueDate: startTimestamp,
-      status: 'pending',
-      paymentMethod: paymentMethod || 'stripe_card',
-    });
-
-    console.log(`✅ Created main payment: ${mainPaymentId}`)
-
-    // Create installments only if we used the new API; legacy path already created them
-    stage = 'create-installments'
-    const frequency = type === 'monthly' ? 1 : type === 'quarterly' ? 3 : 12; // months between payments
-    let installmentIds: string[] = []
-    if (!mainPaymentIdFromLegacy) {
-      try {
-        installmentIds = await convex.mutation(api.paymentInstallments.createInstallments as any, {
-          parentPaymentId: mainPaymentId,
-          parentId,
-          paymentPlanId,
-          totalAmount: totalAmountNum,
-          installmentAmount: installmentAmountNum,
-          totalInstallments: installmentsNum,
-          frequency,
-          startDate: startTimestamp,
-        });
-      } catch (instErr: any) {
-        console.error('❌ Error creating installments:', instErr?.message || instErr)
-        errors.push(`Failed to create installments: ${instErr?.message || 'Unknown error'}`)
-        installmentIds = []
+    const mainPayment = await prisma.payments.create({
+      data: {
+        id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        parentId: parentId,
+        paymentPlanId: paymentPlan.id,
+        amount: totalAmountNum,
+        dueDate: startDateObj,
+        status: 'pending',
+        paymentMethod: paymentMethod || 'stripe_card',
+        season: season || `${yearNum} Season`,
+        year: yearNum,
+        notes: `Payment plan created - ${installmentsNum} installments of $${installmentAmountNum.toFixed(2)}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
-    }
+    })
+    console.log(`✅ Created main payment: ${mainPayment.id}`)
 
+    // Create installments
+    stage = 'create-installments'
+    const frequency = type === 'monthly' ? 1 : type === 'quarterly' ? 3 : 1 // months between payments
+    const installmentIds: string[] = []
+
+    for (let i = 0; i < installmentsNum; i++) {
+      const installmentDueDate = new Date(startDateObj)
+      installmentDueDate.setMonth(installmentDueDate.getMonth() + (i * frequency))
+
+      const installment = await prisma.payment_installments.create({
+        data: {
+          id: `inst_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+          parentPaymentId: mainPayment.id,
+          parentId: parentId,
+          paymentPlanId: paymentPlan.id,
+          installmentNumber: i + 1,
+          totalInstallments: installmentsNum,
+          amount: installmentAmountNum,
+          dueDate: installmentDueDate,
+          status: i === 0 ? 'paid' : 'pending', // First installment marked as paid
+          paidAt: i === 0 ? new Date() : null,
+          notes: `Installment ${i + 1} of ${installmentsNum}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+      })
+      installmentIds.push(installment.id)
+    }
     console.log(`✅ Created ${installmentIds.length} installments`)
 
-    // Mark the first installment as paid directly in the database (not using mock endpoint)
-    if (!mainPaymentIdFromLegacy && installmentIds.length > 0) {
-      console.log(`🔄 Marking first installment as PAID in Convex database...`)
-      
-      try {
-        stage = 'mark-first-installment-paid'
-        // Use the markInstallmentPaid mutation to mark the first installment as paid
-        await convex.mutation(api.paymentInstallments.markInstallmentPaid, {
-          installmentId: installmentIds[0], // First installment
-        });
-        
-        console.log(`✅ Successfully marked first installment as PAID: ${installmentIds[0]}`)
-        
-        // Update the main payment to add a note about first payment being processed
-        stage = 'update-main-payment-note'
-        await convex.mutation(api.payments.updatePayment, {
-          id: mainPaymentId,
-          notes: `Payment plan created - First installment of $${installmentAmountNum} automatically processed and PAID`,
-        });
-        
-        console.log(`✅ Updated main payment with processing note`)
-        
-      } catch (error: any) {
-        console.error('❌ Error processing first payment:', error);
-        errors.push(`Failed to process first payment: ${error.message || 'Unknown error'}`);
-      }
-    }
-
-    // Set up AI reminders for remaining installments
-    if (installmentIds.length > 1) {
-      console.log(`🤖 Setting up AI reminders for ${installmentIds.length - 1} remaining installments...`)
-      
-      try {
-        // Skip the first installment (already paid) and set up reminders for the rest
-        for (let i = 1; i < installmentIds.length; i++) {
-          const installmentId = installmentIds[i]
-          
-          // Calculate reminder dates (7 days before, 3 days before, and on due date)
-          const installmentDueDate = new Date(startTimestamp + (i * 30 * 24 * 60 * 60 * 1000)) // Monthly intervals
-          const reminder7Days = new Date(installmentDueDate.getTime() - (7 * 24 * 60 * 60 * 1000))
-          const reminder3Days = new Date(installmentDueDate.getTime() - (3 * 24 * 60 * 60 * 1000))
-          
-          // Create scheduled AI reminders
-          const reminderData = {
-            paymentId: mainPaymentId,
-            installmentId: installmentId,
-            parentId: parentId,
-            installmentNumber: i + 1,
-            amount: installmentAmount,
-            dueDate: installmentDueDate.getTime(),
-            reminderDates: [
-              reminder7Days.getTime(),
-              reminder3Days.getTime(),
-              installmentDueDate.getTime()
-            ]
-          }
-          
-          // Store reminder schedule in database (you can create a scheduledReminders table)
-          console.log(`📅 AI reminder scheduled for installment ${i + 1}: ${installmentDueDate.toDateString()}`)
+    // Update main payment with first installment paid note
+    if (installmentIds.length > 0) {
+      await prisma.payments.update({
+        where: { id: mainPayment.id },
+        data: {
+          notes: `Payment plan created - First installment of $${installmentAmountNum.toFixed(2)} automatically processed and PAID`,
+          status: installmentsNum === 1 ? 'paid' : 'pending',
+          paidAt: installmentsNum === 1 ? new Date() : null,
         }
-        
-        console.log(`✅ AI reminders set up for all remaining payments`)
-        
-      } catch (error: any) {
-        console.error('❌ Error setting up AI reminders:', error);
-        // Don't fail the entire operation if reminders fail
-      }
+      })
     }
 
-    console.log(`🎉 Payment plan creation complete:`)
-    console.log(`   - Plan ID: ${paymentPlanId}`)
-    console.log(`   - Main Payment ID: ${mainPaymentId}`)
-    console.log(`   - Installments created: ${installmentIds.length}`)
-    console.log(`   - First installment marked as PAID`)
-    console.log(`   - Remaining ${installmentIds.length - 1} installments marked as PENDING`)
-    console.log(`   - AI reminders scheduled for remaining payments`)
-
-    stage = 'success-response'
-    return NextResponse.json({ 
-      paymentPlanId, 
-      mainPaymentId,
-      paymentIds: [mainPaymentId], // Add this for frontend compatibility
-      installmentsCreated: installmentIds.length, 
-      installmentIds,
-      progressData: {
-        totalInstallments: installmentsNum,
-        paidInstallments: 1, // First installment paid
-        overdueInstallments: 0,
-        totalAmount: totalAmountNum,
-        paidAmount: installmentAmountNum, // First installment amount
-        remainingAmount: totalAmountNum - installmentAmountNum,
-        progressPercentage: (1 / installmentsNum) * 100,
-      },
-      aiRemindersEnabled: installmentIds.length > 1,
-      message: errors.length
-        ? `Payment plan created with warnings: ${errors.join('; ')}`
-        : 'Payment plan created successfully. First installment automatically processed as paid. AI reminders scheduled for remaining payments.',
-    }, { status: 200 });
-  } catch (error: any) {
-    console.error('Error creating payment plan (stage=' + stage + '):', error);
-    // Ensure JSON body
-    const message = (error && error.message) ? error.message : 'Failed to create payment plan'
-    const payload: any = { error: message, stage }
-    return new Response(JSON.stringify(payload), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+    return NextResponse.json({
+      success: true,
+      paymentPlanId: paymentPlan.id,
+      mainPaymentId: mainPayment.id,
+      paymentIds: [mainPayment.id],
+      installmentIds: installmentIds,
+      message: `Payment plan created with ${installmentIds.length} installments`
     })
+
+  } catch (error: any) {
+    console.error(`❌ Payment plan creation failed at stage "${stage}":`, error)
+    return NextResponse.json({
+      error: error?.message || 'Failed to create payment plan',
+      stage,
+      details: String(error?.stack || error)
+    }, { status: 500 })
   }
 }

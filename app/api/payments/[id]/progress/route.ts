@@ -1,23 +1,49 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { convexHttp } from '../../../../../lib/convex-server'
-import { api } from '../../../../../convex/_generated/api'
-import { requireAuth } from '../../../../../lib/api-utils'
+import prisma from '../../../../../lib/prisma'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Temporarily disabled for testing: await requireAuth()
+    console.log('🔧 Fetching payment progress for ID:', params.id)
 
-    console.log('🔧 Bypassing authentication: Clerk not configured or using test keys')
+    // Get the payment with its plan and installments
+    let payment = await prisma.payments.findUnique({
+      where: { id: params.id },
+      include: {
+        payment_plans: {
+          include: {
+            payment_installments: {
+              orderBy: { installmentNumber: 'asc' }
+            }
+          }
+        }
+      }
+    })
 
-    // Get the main payment to find its payment plan
-    const payment = await convexHttp.query(api.payments.getPayment, {
-      id: params.id as any
-    });
+    // If not found by Prisma ID, try a broader search
+    if (!payment) {
+      payment = await prisma.payments.findFirst({
+        where: {
+          OR: [
+            { id: params.id },
+            { id: { contains: params.id } }
+          ]
+        },
+        include: {
+          payment_plans: {
+            include: {
+              payment_installments: {
+                orderBy: { installmentNumber: 'asc' }
+              }
+            }
+          }
+        }
+      })
+    }
 
     if (!payment) {
       return NextResponse.json({
@@ -33,58 +59,39 @@ export async function GET(
       })
     }
 
-    // If this payment has a payment plan, get installments from the installments table
+    // Get installments from the payment plan or create a single installment from the payment
     let installments: any[] = []
-    console.log(`[Progress API] Payment Method: ${payment.paymentMethod}`);
 
-    if (payment.paymentPlanId || payment.paymentMethod === 'check') {
-      try {
-        console.log(`🔍 Looking for installments for payment ID: ${params.id}`)
-
-        // Get installments from the paymentInstallments table
-        const paymentInstallments = await convexHttp.query(api.paymentInstallments.getPaymentInstallments, {
-          parentPaymentId: params.id as any
-        });
-
-        console.log(`[Progress API] paymentInstallments query result:`, paymentInstallments);
-        console.log(`📊 Found ${paymentInstallments?.length || 0} installments for payment ${params.id}`)
-
-        if (paymentInstallments && paymentInstallments.length > 0) {
-          installments = paymentInstallments.map((installment: any) => ({
-            _id: installment._id,
-            installmentNumber: installment.installmentNumber,
-            amount: installment.amount,
-            dueDate: installment.dueDate,
-            status: installment.status,
-            paidAt: installment.paidAt,
-            notes: installment.notes,
-            isOverdue: installment.status === 'pending' && installment.dueDate < new Date().getTime()
-          }))
-
-          console.log(`✅ Processed ${installments.length} installments successfully`)
-
-        } else {
-          console.log(`⚠️ No installments found for payment ${params.id}`)
-        }
-
-      } catch (error) {
-        console.error(`❌ Error fetching installments for payment ${params.id}:`, error)
-      }
+    if (payment.payment_plans?.payment_installments && payment.payment_plans.payment_installments.length > 0) {
+      installments = payment.payment_plans.payment_installments.map((inst: any) => ({
+        _id: inst.id,
+        id: inst.id,
+        installmentNumber: inst.installmentNumber,
+        amount: inst.amount,
+        dueDate: inst.dueDate?.getTime() || Date.now(),
+        status: inst.status,
+        paidAt: inst.paidAt?.getTime() || null,
+        notes: inst.notes,
+        isOverdue: inst.status === 'pending' && inst.dueDate && new Date(inst.dueDate) < new Date()
+      }))
+      console.log(`✅ Found ${installments.length} installments from payment plan`)
     } else {
       // Single payment - treat as one installment
       installments = [{
-        _id: payment._id,
+        _id: payment.id,
+        id: payment.id,
         installmentNumber: 1,
         amount: payment.amount,
-        dueDate: payment.dueDate,
+        dueDate: payment.dueDate?.getTime() || Date.now(),
         status: payment.status,
-        paidAt: payment.paidAt,
+        paidAt: payment.paidAt?.getTime() || null,
         notes: payment.notes,
         isOverdue: payment.status === 'pending' && payment.dueDate && new Date(payment.dueDate) < new Date()
       }]
+      console.log(`📦 Created single installment from payment`)
     }
 
-    if (!installments || installments.length === 0) {
+    if (installments.length === 0) {
       return NextResponse.json({
         totalInstallments: 0,
         paidInstallments: 0,
@@ -103,10 +110,10 @@ export async function GET(
     const paidInstallments = installments.filter((i: any) => i.status === 'paid').length
     const overdueInstallments = installments.filter((i: any) => i.isOverdue).length
 
-    const totalAmount = installments.reduce((sum: number, i: any) => sum + i.amount, 0)
+    const totalAmount = installments.reduce((sum: number, i: any) => sum + (i.amount || 0), 0)
     const paidAmount = installments
       .filter((i: any) => i.status === 'paid')
-      .reduce((sum: number, i: any) => sum + i.amount, 0)
+      .reduce((sum: number, i: any) => sum + (i.amount || 0), 0)
     const remainingAmount = totalAmount - paidAmount
 
     const progressPercentage = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
@@ -116,6 +123,8 @@ export async function GET(
     const nextDue = pendingInstallments.length > 0
       ? pendingInstallments.sort((a: any, b: any) => a.dueDate - b.dueDate)[0]
       : null
+
+    console.log(`📊 Progress: ${paidInstallments}/${totalInstallments} paid, ${progressPercentage.toFixed(1)}%`)
 
     return NextResponse.json({
       totalInstallments,
@@ -132,7 +141,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching payment progress:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch payment progress' },
+      { error: 'Failed to fetch payment progress', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

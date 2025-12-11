@@ -1,0 +1,113 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - heading "RA1 Dashboard" [level=1] [ref=e7]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Parents" [ref=e11] [cursor=pointer]:
+            - /url: /parents
+          - link "Payments" [ref=e12] [cursor=pointer]:
+            - /url: /payments
+          - link "Communication" [ref=e13] [cursor=pointer]:
+            - /url: /communication
+          - link "Contracts" [ref=e14] [cursor=pointer]:
+            - /url: /contracts
+          - link "Assessment" [ref=e15] [cursor=pointer]:
+            - /url: /assessments
+          - link "Settings" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+    - main [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - heading "Dashboard" [level=1] [ref=e21]
+            - paragraph [ref=e22]: Welcome to your basketball program management dashboard
+          - generic [ref=e23]:
+            - generic [ref=e24]: Live Data
+            - button "Refresh" [ref=e26] [cursor=pointer]:
+              - img [ref=e27] [cursor=pointer]
+              - text: Refresh
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - heading "Total Parents" [level=3] [ref=e33]
+              - img [ref=e34]
+            - generic [ref=e39]:
+              - generic [ref=e40]: —
+              - paragraph [ref=e41]: Loading...
+          - generic [ref=e42]:
+            - generic [ref=e43]:
+              - heading "Total Revenue" [level=3] [ref=e44]
+              - img [ref=e45]
+            - generic [ref=e47]:
+              - generic [ref=e48]: —
+              - paragraph [ref=e49]: Loading...
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - heading "Pending Payments" [level=3] [ref=e52]
+              - img [ref=e53]
+            - generic [ref=e55]:
+              - generic [ref=e56]: —
+              - paragraph [ref=e57]: Loading...
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - heading "Overdue Payments" [level=3] [ref=e60]
+              - img [ref=e61]
+            - generic [ref=e63]:
+              - generic [ref=e64]: —
+              - paragraph [ref=e65]: Loading...
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - heading "Revenue Trends" [level=3] [ref=e69]
+            - generic [ref=e72]:
+              - img [ref=e73]
+              - paragraph [ref=e75]: Loading revenue data...
+          - generic [ref=e76]:
+            - heading "Quick Actions" [level=3] [ref=e78]
+            - generic [ref=e79]:
+              - button "Add Parent Add new parent to system" [ref=e80] [cursor=pointer]:
+                - img [ref=e81] [cursor=pointer]
+                - generic [ref=e82] [cursor=pointer]:
+                  - generic [ref=e83] [cursor=pointer]: Add Parent
+                  - generic [ref=e84] [cursor=pointer]: Add new parent to system
+              - button "Record Payment Add new payment record" [ref=e85] [cursor=pointer]:
+                - img [ref=e86] [cursor=pointer]
+                - generic [ref=e88] [cursor=pointer]:
+                  - generic [ref=e89] [cursor=pointer]: Record Payment
+                  - generic [ref=e90] [cursor=pointer]: Add new payment record
+              - button "Send Communication Send emails or SMS to parents" [ref=e91] [cursor=pointer]:
+                - img [ref=e92] [cursor=pointer]
+                - generic [ref=e95] [cursor=pointer]:
+                  - generic [ref=e96] [cursor=pointer]: Send Communication
+                  - generic [ref=e97] [cursor=pointer]: Send emails or SMS to parents
+              - button "Manage Contracts Upload and manage contracts" [ref=e98] [cursor=pointer]:
+                - img [ref=e99] [cursor=pointer]
+                - generic [ref=e102] [cursor=pointer]:
+                  - generic [ref=e103] [cursor=pointer]: Manage Contracts
+                  - generic [ref=e104] [cursor=pointer]: Upload and manage contracts
+              - button "Assessment Create player assessment report" [ref=e105] [cursor=pointer]:
+                - img [ref=e106] [cursor=pointer]
+                - generic [ref=e108] [cursor=pointer]:
+                  - generic [ref=e109] [cursor=pointer]: Assessment
+                  - generic [ref=e110] [cursor=pointer]: Create player assessment report
+        - generic [ref=e111]:
+          - heading "System Status" [level=3] [ref=e113]
+          - generic [ref=e114]:
+            - generic [ref=e115]:
+              - generic [ref=e118]: "Dashboard: Connected"
+              - generic [ref=e121]: "Parents Page: Connected"
+              - generic [ref=e124]: "Payments Page: Connected"
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - img [ref=e127]
+                - generic [ref=e131]: Dashboard is now dynamically connected to your Parents and Payments data
+              - paragraph [ref=e132]: When you add parents or payments, they will automatically appear here in real-time
+  - region "Notifications (F8)":
+    - list
+```

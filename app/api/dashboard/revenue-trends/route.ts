@@ -4,27 +4,32 @@ export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server'
 import { requireAuthWithApiKeyBypass } from '../../../../lib/api-utils'
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../convex/_generated/api'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import prisma from '../../../../lib/prisma'
 
 export async function GET(request: Request) {
   try {
     await requireAuthWithApiKeyBypass(request)
     
-    console.log('🔄 Revenue trends API called - computing from PAYMENT PLANS (parent-created) ...')
+    console.log('🔄 Revenue trends API (Postgres) - computing from payment_plans...')
 
-    // Fetch all payment plans (do not filter by status)
-    const plans: any[] = await convex.query(api.payments.getPaymentPlans as any, {});
-    console.log(`📄 Plans fetched for trends: ${Array.isArray(plans) ? plans.length : 0}`)
+    // Fetch all payment plans
+    const plans = await prisma.payment_plans.findMany({
+      select: {
+        totalAmount: true,
+        installmentAmount: true,
+        installments: true,
+        createdAt: true,
+        startDate: true,
+        parentId: true,
+      }
+    })
+    console.log(`📄 Plans fetched for trends: ${plans.length}`)
 
     // Bucket by year-month based on createdAt/startDate
     const bucket: Record<string, { revenue: number; payments: number }> = {};
-    for (const plan of plans || []) {
-      const p: any = plan as any;
+    for (const p of plans || []) {
       if (!p || !p.parentId) continue; // must be tied to a parent
-      const ts = Number(p.createdAt ?? p.startDate);
+      const ts = (p.createdAt ?? p.startDate)?.getTime();
       if (!ts || Number.isNaN(ts)) continue;
       const d = new Date(ts);
       const key = `${d.getFullYear()}-${d.getMonth()}`;

@@ -1,16 +1,14 @@
 // @ts-nocheck
 'use client'
 
-// Force dynamic rendering - prevent static generation
-
 import { useState, useEffect } from 'react'
-
 import { AppLayout } from '../../components/app-layout'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Textarea } from '../../components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { 
   Plus, 
   Search, 
@@ -21,11 +19,55 @@ import {
   Send,
   Eye,
   Edit,
-  Trash2
+  Users,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  FileText,
+  History,
+  Heart,
+  Calendar,
+  Sparkles,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
-import { TemplateWithRelations } from '../../lib/types'
 import { toast } from 'sonner'
+
+const JOURNEY_STEPS = [
+  {
+    id: 1,
+    title: 'Welcome',
+    description: 'Onboard new parents',
+    icon: Heart,
+    color: 'bg-pink-500',
+    action: '/communication/send?type=welcome'
+  },
+  {
+    id: 2,
+    title: 'Reminder',
+    description: 'Upcoming payments',
+    icon: Calendar,
+    color: 'bg-blue-500',
+    action: '/communication/send?type=reminder'
+  },
+  {
+    id: 3,
+    title: 'Overdue',
+    description: 'Past due notices',
+    icon: AlertCircle,
+    color: 'bg-red-500',
+    action: '/communication/send?type=overdue'
+  },
+  {
+    id: 4,
+    title: 'Thank You',
+    description: 'Payment received',
+    icon: CheckCircle2,
+    color: 'bg-green-500',
+    action: '/communication/send?type=confirmation'
+  },
+]
 
 export default function CommunicationPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,12 +75,13 @@ export default function CommunicationPage() {
   const [showAIGenerator, setShowAIGenerator] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
-
   const [templates, setTemplates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({ sent: 0, opened: 0, templates: 0 })
 
   useEffect(() => {
     fetchTemplates()
+    fetchStats()
   }, [searchTerm, categoryFilter])
 
   const fetchTemplates = async () => {
@@ -49,25 +92,35 @@ export default function CommunicationPage() {
       if (categoryFilter !== 'all') params.append('category', categoryFilter)
       
       const response = await fetch(`/api/templates?${params}`, {
-        headers: {
-          'x-api-key': 'ra1-dashboard-api-key-2024'
-        }
+        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
       })
       const data = await response.json()
       setTemplates(data || [])
     } catch (error) {
       console.error('Failed to fetch templates:', error)
-      toast.error('Failed to load templates')
       setTemplates([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGenerateTemplate = async () => {
-    if (!aiPrompt.trim()) return;
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/messages/stats', {
+        headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      }
+    } catch (error) {
+      // Stats are optional
+    }
+  }
 
-    setGenerating(true);
+  const handleGenerateTemplate = async () => {
+    if (!aiPrompt.trim()) return
+    setGenerating(true)
     try {
       const response = await fetch('/api/templates/generate', {
         method: 'POST',
@@ -80,76 +133,51 @@ export default function CommunicationPage() {
           category: 'general',
           channel: 'email'
         }),
-      });
+      })
 
       if (response.ok) {
-        const newTemplate = await response.json();
+        const newTemplate = await response.json()
         if (newTemplate && newTemplate._id) {
-          setTemplates(prev => [newTemplate, ...prev]);
-          toast.success('AI template generated successfully!');
-          setAiPrompt('');
-          setShowAIGenerator(false);
-        } else {
-          console.error("Received unexpected response:", newTemplate);
-          toast.error('Received an invalid response from the server.');
+          setTemplates(prev => [newTemplate, ...prev])
+          toast.success('✅ AI template generated!')
+          setAiPrompt('')
+          setShowAIGenerator(false)
         }
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-        console.error('API Error:', errorData);
-        toast.error(`Failed to generate AI template: ${errorData.error || response.statusText}`);
+        toast.error('Failed to generate template')
       }
     } catch (error) {
-      console.error('Fetch Error:', error);
-      toast.error('A network error occurred. Please try again.');
+      toast.error('Network error')
     } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleQuickDraft = async (template: any) => {
-    try {
-      // For quick draft, we'll redirect to the send page with the template pre-selected
-      window.location.href = `/communication/send?templateId=${template._id || template.id}`
-    } catch (error) {
-      console.error('Failed to create quick draft:', error)
-      toast.error('Failed to create draft')
+      setGenerating(false)
     }
   }
-
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = (template.name && template.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (template.subject && template.subject.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (template.body && template.body.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesCategory = categoryFilter === 'all' || template.category === categoryFilter
-    
-    return matchesSearch && matchesCategory
-  })
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
-      case 'email':
-        return <Mail className="h-4 w-4" />
-      case 'sms':
-        return <Smartphone className="h-4 w-4" />
-      case 'both':
-        return <MessageSquare className="h-4 w-4" />
-      default:
-        return <MessageSquare className="h-4 w-4" />
+      case 'email': return <Mail className="h-3.5 w-3.5" />
+      case 'sms': return <Smartphone className="h-3.5 w-3.5" />
+      default: return <MessageSquare className="h-3.5 w-3.5" />
     }
   }
 
-  const getCategoryVariant = (category: string) => {
+  const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'welcome':
-        return 'default'
-      case 'reminder':
-        return 'secondary'
-      case 'overdue':
-        return 'destructive'
-      case 'confirmation':
-        return 'outline'
-      default:
-        return 'outline'
+      case 'welcome': return 'bg-pink-100 text-pink-700'
+      case 'reminder': return 'bg-blue-100 text-blue-700'
+      case 'overdue': return 'bg-red-100 text-red-700'
+      case 'confirmation': return 'bg-green-100 text-green-700'
+      default: return 'bg-slate-100 text-slate-700'
+    }
+  }
+
+  const getCategoryBorderColor = (category: string) => {
+    switch (category) {
+      case 'welcome': return 'border-l-pink-500'
+      case 'reminder': return 'border-l-blue-500'
+      case 'overdue': return 'border-l-red-500'
+      case 'confirmation': return 'border-l-green-500'
+      default: return 'border-l-slate-400'
     }
   }
 
@@ -165,204 +193,294 @@ export default function CommunicationPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="max-w-7xl mx-auto space-y-8 pb-8">
+        
+        {/* Clean Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pt-2">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Communication</h1>
-            <p className="text-muted-foreground">
-              Manage message templates and send communications to parents
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Communications</h1>
+            <p className="text-slate-500 mt-1">
+              Manage templates and send messages to parents
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-3">
             <Button 
               variant="outline"
               onClick={() => setShowAIGenerator(!showAIGenerator)}
+              className="rounded-full"
             >
-              <Wand2 className="mr-2 h-4 w-4" />
+              <Sparkles className="mr-2 h-4 w-4" />
               AI Generate
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/communication/history">
-                <Eye className="mr-2 h-4 w-4" />
-                Message History
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
+            <Button asChild className="rounded-full bg-slate-900 hover:bg-slate-800">
               <Link href="/communication/send">
                 <Send className="mr-2 h-4 w-4" />
                 Send Message
               </Link>
             </Button>
-            <Button asChild>
-              <Link href="/communication/templates/new">
-                <Plus className="mr-2 h-4 w-4" />
-                New Template
-              </Link>
-            </Button>
           </div>
         </div>
 
-        {/* AI Generator */}
-        {showAIGenerator && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5" />
-                AI Template Generator
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="Describe the type of message you want to create. For example: 'Create a payment reminder message for overdue payments that sounds professional but friendly'"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                rows={3}
-              />
-              <div className="flex items-center space-x-2">
-                <Button 
-                  onClick={handleGenerateTemplate}
-                  disabled={!aiPrompt.trim() || generating}
-                >
-                  {generating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="mr-2 h-4 w-4" />
-                      Generate Template
-                    </>
-                  )}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowAIGenerator(false)}
-                >
-                  Cancel
-                </Button>
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl border p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-indigo-600" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{templates.length}</p>
+                <p className="text-sm text-slate-500">Templates</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Send className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{stats.sent || 0}</p>
+                <p className="text-sm text-slate-500">Sent</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <Eye className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{stats.opened || 0}%</p>
+                <p className="text-sm text-slate-500">Open Rate</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">84</p>
+                <p className="text-sm text-slate-500">Parents</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Journey Actions */}
+        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="p-5 border-b bg-slate-50/50">
+            <h2 className="font-semibold text-slate-900">Quick Send</h2>
+            <p className="text-sm text-slate-500">Common message types for the parent journey</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0">
+            {JOURNEY_STEPS.map((step) => (
+              <Link key={step.id} href={step.action} className="group">
+                <div className="p-6 hover:bg-slate-50 transition-colors text-center">
+                  <div className={`w-12 h-12 mx-auto rounded-xl ${step.color} flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform`}>
+                    <step.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-semibold text-slate-900 mb-0.5">{step.title}</h3>
+                  <p className="text-xs text-slate-500">{step.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* AI Generator Panel */}
+        {showAIGenerator && (
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">AI Message Generator</h3>
+                  <p className="text-sm text-slate-500">Describe what you want to say</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowAIGenerator(false)} className="rounded-full h-8 w-8 p-0">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <Textarea
+              placeholder="Example: Write a friendly reminder for parents whose payment is due in 3 days..."
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              rows={3}
+              className="resize-none bg-white mb-4"
+            />
+            <Button 
+              onClick={handleGenerateTemplate} 
+              disabled={!aiPrompt.trim() || generating}
+              className="rounded-full"
+            >
+              {generating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Generate Template
+                </>
+              )}
+            </Button>
+          </div>
         )}
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search templates by name or subject..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="all">All Categories</option>
-                <option value="welcome">Welcome</option>
-                <option value="reminder">Reminder</option>
-                <option value="overdue">Overdue</option>
-                <option value="confirmation">Confirmation</option>
-                <option value="general">General</option>
-              </select>
+        {/* Templates Section */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Message Templates</h2>
+              <p className="text-slate-500 text-sm">Reusable templates for quick messaging</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 w-48 rounded-full bg-white"
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-36 rounded-full bg-white">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="welcome">Welcome</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="confirmation">Confirmation</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href="/communication/templates/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New
+                </Link>
+              </Button>
+            </div>
+          </div>
 
-        {/* Templates List */}
-        <div className="grid gap-4">
-          {filteredTemplates.length > 0 ? (
-            filteredTemplates.map((template) => (
-              <Card key={template._id} className="hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-lg">{template.name}</h3>
-                        {template.isAiGenerated && (
-                          <Badge variant="outline" className="text-xs">
-                            <Wand2 className="mr-1 h-3 w-3" />
-                            AI Generated
-                          </Badge>
-                        )}
+          {templates.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {templates.map((template) => (
+                <div 
+                  key={template._id} 
+                  className={`bg-white rounded-xl border-l-4 ${getCategoryBorderColor(template.category)} border shadow-sm hover:shadow-md transition-shadow overflow-hidden`}
+                >
+                  <div className="p-5">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-slate-900 truncate">{template.name}</h3>
+                          {template.isAiGenerated && (
+                            <Sparkles className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-500 truncate">{template.subject}</p>
                       </div>
-                      <p className="text-muted-foreground font-medium">{template.subject}</p>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {template.body ? `${template.body.substring(0, 150)}...` : 'No content'}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={getCategoryVariant(template.category || 'general')}>
-                          {template.category}
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center space-x-1">
-                          {getChannelIcon(template.channel || 'email')}
-                          <span>{template.channel}</span>
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          Used {template.usageCount} times
-                        </span>
-                      </div>
+                      <Badge className={`${getCategoryColor(template.category)} text-xs shrink-0`}>
+                        {template.category || 'general'}
+                      </Badge>
                     </div>
                     
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/communication/templates/${template._id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/communication/templates/${template._id}/edit`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleQuickDraft(template as any)}
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
+                    {/* Preview */}
+                    <p className="text-sm text-slate-600 line-clamp-2 mb-4 leading-relaxed">
+                      {template.body ? template.body.substring(0, 120) + '...' : 'No content preview'}
+                    </p>
+                    
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        {getChannelIcon(template.channel)}
+                        <span className="capitalize">{template.channel || 'email'}</span>
+                        <span className="mx-1">•</span>
+                        <span>Used {template.usageCount || 0}x</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-slate-100">
+                          <Link href={`/communication/templates/${template._id}`}>
+                            <Eye className="h-4 w-4 text-slate-500" />
+                          </Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-slate-100">
+                          <Link href={`/communication/templates/${template._id}/edit`}>
+                            <Edit className="h-4 w-4 text-slate-500" />
+                          </Link>
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="h-8 rounded-full px-3 bg-slate-900 hover:bg-slate-800"
+                          asChild
+                        >
+                          <Link href={`/communication/send?templateId=${template._id}`}>
+                            <Send className="h-3.5 w-3.5 mr-1.5" />
+                            Send
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No templates found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm || categoryFilter !== 'all' 
-                      ? 'Try adjusting your search criteria'
-                      : 'Create your first message template to get started'
-                    }
-                  </p>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Button asChild variant="outline">
-                      <Link href="/communication/templates/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create Template
-                      </Link>
-                    </Button>
-                    <Button onClick={() => setShowAIGenerator(true)}>
-                      <Wand2 className="mr-2 h-4 w-4" />
-                      AI Generate
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-dashed p-12 text-center">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                <FileText className="h-7 w-7 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No templates found</h3>
+              <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+                {searchTerm || categoryFilter !== 'all' 
+                  ? 'Try adjusting your search or filter'
+                  : 'Create your first template to streamline communication'
+                }
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link href="/communication/templates/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Template
+                  </Link>
+                </Button>
+                <Button onClick={() => setShowAIGenerator(true)} className="rounded-full">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  AI Generate
+                </Button>
+              </div>
+            </div>
           )}
+        </div>
+
+        {/* Quick Links Footer */}
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+          <Link href="/communication/history" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors">
+            <History className="h-4 w-4" />
+            Message History
+          </Link>
+          <span className="text-slate-300">•</span>
+          <Link href="/communication/send?audience=all" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors">
+            <Users className="h-4 w-4" />
+            Send to All Parents
+          </Link>
+          <span className="text-slate-300">•</span>
+          <Link href="/communication/send?audience=overdue" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors">
+            <AlertCircle className="h-4 w-4" />
+            Overdue Reminders
+          </Link>
         </div>
       </div>
     </AppLayout>

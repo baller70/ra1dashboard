@@ -1,0 +1,1687 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - heading "RA1 Dashboard" [level=1] [ref=e7]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Parents" [ref=e11] [cursor=pointer]:
+            - /url: /parents
+          - link "Payments" [ref=e12] [cursor=pointer]:
+            - /url: /payments
+          - link "Communication" [ref=e13] [cursor=pointer]:
+            - /url: /communication
+          - link "Contracts" [ref=e14] [cursor=pointer]:
+            - /url: /contracts
+          - link "Assessment" [ref=e15] [cursor=pointer]:
+            - /url: /assessments
+          - link "Settings" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+    - main [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - heading "Payments Dashboard" [level=1] [ref=e21]
+            - paragraph [ref=e22]: Manage payments, track progress, and handle overdue accounts
+            - paragraph [ref=e23]: "Last updated: 3:30:50 AM"
+          - generic [ref=e24]:
+            - generic [ref=e25]: Live
+            - button "Refresh" [ref=e27] [cursor=pointer]:
+              - img [ref=e28] [cursor=pointer]
+              - text: Refresh
+            - link "Overdue (0)" [ref=e33] [cursor=pointer]:
+              - /url: /payments/overdue
+              - img [ref=e34] [cursor=pointer]
+              - text: Overdue (0)
+            - link "Payment Plans" [ref=e36] [cursor=pointer]:
+              - /url: /payment-plans
+              - img [ref=e37] [cursor=pointer]
+              - text: Payment Plans
+            - button "Create Parent" [ref=e39] [cursor=pointer]:
+              - img [ref=e40] [cursor=pointer]
+              - text: Create Parent
+            - link "Create Plan" [ref=e41] [cursor=pointer]:
+              - /url: /payment-plans/new
+              - img [ref=e42] [cursor=pointer]
+              - text: Create Plan
+        - generic [ref=e43]:
+          - tablist [ref=e44]:
+            - tab "Yearly Program" [selected] [ref=e45] [cursor=pointer]
+            - tab "Fall AAU" [ref=e46] [cursor=pointer]
+            - tab "Winter AAU" [ref=e47] [cursor=pointer]
+            - tab "Spring AAU" [ref=e48] [cursor=pointer]
+            - tab "Summer AAU" [ref=e49] [cursor=pointer]
+            - tab "TBF Programs" [ref=e50] [cursor=pointer]
+            - tab "Lane from Kevin's Back Menu" [ref=e51] [cursor=pointer]
+            - tab "Kevin Houston's Lessons" [ref=e52] [cursor=pointer]
+            - tab "THOS Facility Rentals" [ref=e53] [cursor=pointer]
+          - tabpanel "Yearly Program" [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: Yearly Program - Payment Dashboard
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - generic [ref=e59]:
+                    - heading "Total Parents" [level=3] [ref=e60]
+                    - img [ref=e61]
+                  - generic [ref=e66]:
+                    - generic [ref=e67]: "59"
+                    - paragraph [ref=e68]: Connected to parents page
+                - generic [ref=e69]:
+                  - generic [ref=e70]:
+                    - heading "Total Revenue" [level=3] [ref=e71]
+                    - img [ref=e72]
+                  - generic [ref=e74]:
+                    - generic [ref=e75]: $0
+                    - paragraph [ref=e76]:
+                      - img [ref=e77]
+                      - text: All time
+                - generic [ref=e80]:
+                  - generic [ref=e81]:
+                    - heading "Collected" [level=3] [ref=e82]
+                    - img [ref=e83]
+                  - generic [ref=e86]:
+                    - generic [ref=e87]: $6,792.59
+                    - paragraph [ref=e88]: 0 active plans
+                - generic [ref=e89]:
+                  - generic [ref=e90]:
+                    - heading "Pending" [level=3] [ref=e91]
+                    - img [ref=e92]
+                  - generic [ref=e95]:
+                    - generic [ref=e96]: $0
+                    - paragraph [ref=e97]: Awaiting payment
+                - generic [ref=e98]:
+                  - generic [ref=e99]:
+                    - heading "Overdue" [level=3] [ref=e100]
+                    - img [ref=e101]
+                  - generic [ref=e103]:
+                    - generic [ref=e104]: $0
+                    - paragraph [ref=e105]: Requires immediate attention
+                - generic [ref=e106]:
+                  - generic [ref=e107]:
+                    - heading "Active Plans" [level=3] [ref=e108]
+                    - img [ref=e109]
+                  - generic [ref=e114]:
+                    - generic [ref=e115]: "0"
+                    - paragraph [ref=e116]: payment plans
+              - generic [ref=e118]:
+                - generic [ref=e119]:
+                  - generic [ref=e120]:
+                    - button "Select All" [ref=e121] [cursor=pointer]
+                    - button "Clear" [ref=e122] [cursor=pointer]
+                  - generic [ref=e124]:
+                    - img [ref=e125]
+                    - generic [ref=e129]:
+                      - generic [ref=e130]:
+                        - textbox "Search by parent name or email..." [ref=e131]
+                        - generic [ref=e133]:
+                          - img [ref=e134]
+                          - text: AI
+                      - button [ref=e144] [cursor=pointer]:
+                        - img [ref=e145] [cursor=pointer]
+                  - combobox [ref=e148]:
+                    - option "All Teams" [selected]
+                    - option "Unassigned (55)"
+                    - option "E2E Bulk B 1765355434990 (0)"
+                    - option "E2E Bulk A 1765355434990 (1)"
+                    - option "E2E Team A 1765355282764 (0)"
+                    - option "RISE AS ONE 4TH BOYS (2)"
+                    - option "RISE AS ONE 9TH (1)"
+                  - combobox [ref=e149]:
+                    - option "All Status" [selected]
+                    - option "Paid"
+                    - option "Pending"
+                    - option "Overdue"
+                    - option "Failed"
+                - generic [ref=e150]:
+                  - generic [ref=e151]:
+                    - checkbox "Group by Team" [checked] [ref=e152] [cursor=pointer]:
+                      - generic:
+                        - img
+                    - generic [ref=e153]: Group by Team
+                  - generic [ref=e154]: 5 teams available
+                  - generic [ref=e155]:
+                    - button "Manage Teams" [ref=e156] [cursor=pointer]
+                    - button "Delete Selected Teams (2)" [ref=e157] [cursor=pointer]:
+                      - img [ref=e158] [cursor=pointer]
+                      - text: Delete Selected Teams (2)
+                    - button "Assign Parents" [ref=e161] [cursor=pointer]:
+                      - img [ref=e162] [cursor=pointer]
+                      - text: Assign Parents
+                    - button "New Team" [ref=e165] [cursor=pointer]:
+                      - img [ref=e166] [cursor=pointer]
+                      - text: New Team
+                    - generic [ref=e167]:
+                      - generic [ref=e168]:
+                        - generic [ref=e170]: E2E Bulk B 1765355434990
+                        - generic [ref=e171]: (0)
+                        - button [ref=e172] [cursor=pointer]:
+                          - img [ref=e173] [cursor=pointer]
+                      - generic [ref=e176]:
+                        - generic [ref=e178]: E2E Bulk A 1765355434990
+                        - generic [ref=e179]: (1)
+                        - button [ref=e180] [cursor=pointer]:
+                          - img [ref=e181] [cursor=pointer]
+                      - generic [ref=e184]:
+                        - generic [ref=e186]: E2E Team A 1765355282764
+                        - generic [ref=e187]: (0)
+                        - button [ref=e188] [cursor=pointer]:
+                          - img [ref=e189] [cursor=pointer]
+                      - generic [ref=e192]: +2 more
+              - generic [ref=e193]:
+                - generic [ref=e194]:
+                  - heading "Latest Payments by Parent" [level=3] [ref=e195]
+                  - paragraph [ref=e196]: Showing the most recent payment for each parent. Click "View Details & History" to see all payments for a parent.
+                - generic [ref=e198]:
+                  - generic [ref=e200]:
+                    - generic [ref=e201] [cursor=pointer]:
+                      - generic [ref=e202] [cursor=pointer]:
+                        - checkbox [checked] [ref=e203] [cursor=pointer]:
+                          - generic:
+                            - img
+                        - heading "E2E Bulk B 1765355434990 (0 parents)" [level=3] [ref=e205] [cursor=pointer]:
+                          - text: E2E Bulk B 1765355434990 (
+                          - generic [ref=e206] [cursor=pointer]: "0"
+                          - text: parents)
+                        - img [ref=e207] [cursor=pointer]
+                      - generic [ref=e209] [cursor=pointer]:
+                        - button [ref=e210] [cursor=pointer]:
+                          - img [ref=e211] [cursor=pointer]
+                        - button [ref=e214] [cursor=pointer]:
+                          - img [ref=e215] [cursor=pointer]
+                    - generic [ref=e219]:
+                      - img [ref=e220]
+                      - heading "No payments found in this group" [level=3] [ref=e222]
+                      - paragraph [ref=e223]: Try adjusting your search criteria or status filter.
+                      - link "Create Payment Plan" [ref=e224] [cursor=pointer]:
+                        - /url: /payment-plans/new
+                        - img [ref=e225] [cursor=pointer]
+                        - text: Create Payment Plan
+                  - generic [ref=e227]:
+                    - generic [ref=e228] [cursor=pointer]:
+                      - generic [ref=e229] [cursor=pointer]:
+                        - checkbox [checked] [ref=e230] [cursor=pointer]:
+                          - generic:
+                            - img
+                        - heading "E2E Bulk A 1765355434990 (1 parent)" [level=3] [ref=e232] [cursor=pointer]:
+                          - text: E2E Bulk A 1765355434990 (
+                          - generic [ref=e233] [cursor=pointer]: "1"
+                          - text: parent)
+                        - img [ref=e234] [cursor=pointer]
+                      - generic [ref=e236] [cursor=pointer]:
+                        - button [ref=e237] [cursor=pointer]:
+                          - img [ref=e238] [cursor=pointer]
+                        - button [ref=e241] [cursor=pointer]:
+                          - img [ref=e242] [cursor=pointer]
+                    - generic [ref=e247]:
+                      - generic [ref=e248]:
+                        - checkbox [ref=e249] [cursor=pointer]
+                        - generic [ref=e250]:
+                          - generic [ref=e251]:
+                            - img [ref=e252]
+                            - generic [ref=e255]: paid
+                          - generic [ref=e256]: custom
+                        - generic [ref=e257]:
+                          - generic [ref=e258]:
+                            - paragraph [ref=e259]: Test Parent
+                            - generic [ref=e260]:
+                              - generic [ref=e261] [cursor=pointer]: Check
+                              - img [ref=e262]
+                          - paragraph [ref=e265]: testparent@example.com
+                          - generic [ref=e267]: Latest Payment
+                      - generic [ref=e268]:
+                        - paragraph [ref=e269]: $1,650
+                        - paragraph [ref=e270]: "Due: 12/8/2025"
+                        - paragraph [ref=e271]: "Paid: 12/9/2025"
+                      - generic [ref=e272]:
+                        - link "View Details & History" [ref=e273] [cursor=pointer]:
+                          - /url: /payments/jx706q3jttw5ysf5qkeemj9s8x7wynh1
+                          - img [ref=e274] [cursor=pointer]
+                          - text: View Details & History
+                        - button "Remove from Team" [ref=e277] [cursor=pointer]:
+                          - img [ref=e278] [cursor=pointer]
+                          - text: Remove from Team
+                        - button "Delete entire parent (including all payments)" [ref=e282] [cursor=pointer]:
+                          - img [ref=e283] [cursor=pointer]
+                  - generic [ref=e287]:
+                    - generic [ref=e288] [cursor=pointer]:
+                      - generic [ref=e289] [cursor=pointer]:
+                        - checkbox [ref=e290] [cursor=pointer]
+                        - heading "E2E Team A 1765355282764 (0 parents)" [level=3] [ref=e292] [cursor=pointer]:
+                          - text: E2E Team A 1765355282764 (
+                          - generic [ref=e293] [cursor=pointer]: "0"
+                          - text: parents)
+                        - img [ref=e294] [cursor=pointer]
+                      - generic [ref=e296] [cursor=pointer]:
+                        - button [ref=e297] [cursor=pointer]:
+                          - img [ref=e298] [cursor=pointer]
+                        - button [ref=e301] [cursor=pointer]:
+                          - img [ref=e302] [cursor=pointer]
+                    - generic [ref=e306]:
+                      - img [ref=e307]
+                      - heading "No payments found in this group" [level=3] [ref=e309]
+                      - paragraph [ref=e310]: Try adjusting your search criteria or status filter.
+                      - link "Create Payment Plan" [ref=e311] [cursor=pointer]:
+                        - /url: /payment-plans/new
+                        - img [ref=e312] [cursor=pointer]
+                        - text: Create Payment Plan
+                  - generic [ref=e314]:
+                    - generic [ref=e315] [cursor=pointer]:
+                      - generic [ref=e316] [cursor=pointer]:
+                        - checkbox [ref=e317] [cursor=pointer]
+                        - heading "RISE AS ONE 4TH BOYS (2 parents)" [level=3] [ref=e319] [cursor=pointer]:
+                          - text: RISE AS ONE 4TH BOYS (
+                          - generic [ref=e320] [cursor=pointer]: "2"
+                          - text: parents)
+                        - img [ref=e321] [cursor=pointer]
+                      - generic [ref=e323] [cursor=pointer]:
+                        - button [ref=e324] [cursor=pointer]:
+                          - img [ref=e325] [cursor=pointer]
+                        - button [ref=e328] [cursor=pointer]:
+                          - img [ref=e329] [cursor=pointer]
+                    - generic [ref=e333]:
+                      - generic [ref=e334]:
+                        - generic [ref=e335]:
+                          - checkbox [ref=e336] [cursor=pointer]
+                          - generic [ref=e337]:
+                            - generic [ref=e338]:
+                              - img [ref=e339]
+                              - generic [ref=e342]: paid
+                            - generic [ref=e343]: custom
+                          - generic [ref=e344]:
+                            - generic [ref=e345]:
+                              - paragraph [ref=e346]: Test Parent
+                              - generic [ref=e347]:
+                                - generic [ref=e348] [cursor=pointer]: Check
+                                - img [ref=e349]
+                            - paragraph [ref=e352]: testparent@example.com
+                            - generic [ref=e354]: Latest Payment
+                        - generic [ref=e355]:
+                          - paragraph [ref=e356]: $1,693
+                          - paragraph [ref=e357]: "Due: 12/8/2025"
+                          - paragraph [ref=e358]: "Paid: 12/9/2025"
+                        - generic [ref=e359]:
+                          - link "View Details & History" [ref=e360] [cursor=pointer]:
+                            - /url: /payments/jx72qh3ykdbkaz1acrv9n04jkd7wy85m
+                            - img [ref=e361] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e364] [cursor=pointer]:
+                            - img [ref=e365] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e369] [cursor=pointer]:
+                            - img [ref=e370] [cursor=pointer]
+                      - generic [ref=e373]:
+                        - generic [ref=e374]:
+                          - generic [ref=e376]:
+                            - img [ref=e377]
+                            - generic [ref=e382]: No Payment Plan
+                          - generic [ref=e383]:
+                            - generic [ref=e384]:
+                              - paragraph [ref=e385]: Casey Houston
+                              - generic [ref=e386]:
+                                - generic [ref=e387] [cursor=pointer]: Credit Card
+                                - img [ref=e388]
+                            - paragraph [ref=e391]: casey.houston@email.com
+                            - generic [ref=e393]: Ready for Payment Plan
+                        - generic [ref=e395]:
+                          - paragraph [ref=e396]: No Payment Plan
+                          - paragraph [ref=e397]: Create a payment plan to get started
+                        - generic [ref=e398]:
+                          - link "Create Payment Plan" [ref=e399] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e400] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e401] [cursor=pointer]:
+                            - img [ref=e402] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e406] [cursor=pointer]:
+                            - img [ref=e407] [cursor=pointer]
+                  - generic [ref=e411]:
+                    - generic [ref=e412] [cursor=pointer]:
+                      - generic [ref=e413] [cursor=pointer]:
+                        - checkbox [ref=e414] [cursor=pointer]
+                        - heading "RISE AS ONE 9TH (1 parent)" [level=3] [ref=e416] [cursor=pointer]:
+                          - text: RISE AS ONE 9TH (
+                          - generic [ref=e417] [cursor=pointer]: "1"
+                          - text: parent)
+                        - img [ref=e418] [cursor=pointer]
+                      - generic [ref=e420] [cursor=pointer]:
+                        - button [ref=e421] [cursor=pointer]:
+                          - img [ref=e422] [cursor=pointer]
+                        - button [ref=e425] [cursor=pointer]:
+                          - img [ref=e426] [cursor=pointer]
+                    - generic [ref=e431]:
+                      - generic [ref=e432]:
+                        - checkbox [ref=e433] [cursor=pointer]
+                        - generic [ref=e434]:
+                          - generic [ref=e435]:
+                            - img [ref=e436]
+                            - generic [ref=e439]: Active
+                          - generic [ref=e440]: monthly
+                        - generic [ref=e441]:
+                          - generic [ref=e442]:
+                            - paragraph [ref=e443]: Kevin Houston
+                            - generic [ref=e444]:
+                              - generic [ref=e445] [cursor=pointer]: Credit Card
+                              - img [ref=e446]
+                          - paragraph [ref=e449]: kevin.houston@email.com
+                          - generic [ref=e451]: Latest Payment
+                      - generic [ref=e452]:
+                        - paragraph [ref=e453]: $1,701.99
+                        - paragraph [ref=e454]: "Due: 12/8/2025"
+                      - generic [ref=e455]:
+                        - link "View Details & History" [ref=e456] [cursor=pointer]:
+                          - /url: /payments/jx7epysy0h7rnapbeadjwza4sx7wzh7e
+                          - img [ref=e457] [cursor=pointer]
+                          - text: View Details & History
+                        - button "Mark Paid" [ref=e460] [cursor=pointer]:
+                          - img [ref=e461] [cursor=pointer]
+                          - text: Mark Paid
+                        - button "Remove from Team" [ref=e464] [cursor=pointer]:
+                          - img [ref=e465] [cursor=pointer]
+                          - text: Remove from Team
+                        - button "Delete entire parent (including all payments)" [ref=e469] [cursor=pointer]:
+                          - img [ref=e470] [cursor=pointer]
+                  - generic [ref=e474]:
+                    - generic [ref=e476] [cursor=pointer]:
+                      - heading "Unassigned (55 parents)" [level=3] [ref=e478] [cursor=pointer]:
+                        - text: Unassigned (
+                        - generic [ref=e479] [cursor=pointer]: "55"
+                        - text: parents)
+                      - img [ref=e480] [cursor=pointer]
+                    - generic [ref=e483]:
+                      - generic [ref=e484]:
+                        - generic [ref=e485]:
+                          - checkbox [ref=e486] [cursor=pointer]
+                          - generic [ref=e487]:
+                            - generic [ref=e488]:
+                              - img [ref=e489]
+                              - generic [ref=e492]: Active
+                            - generic [ref=e493]: monthly
+                          - generic [ref=e494]:
+                            - generic [ref=e495]:
+                              - paragraph [ref=e496]: Kevin Houston
+                              - generic [ref=e497]:
+                                - generic [ref=e498] [cursor=pointer]: Credit Card
+                                - img [ref=e499]
+                            - paragraph [ref=e502]: khouston721@gmail.com
+                            - generic [ref=e504]: Latest Payment
+                        - generic [ref=e505]:
+                          - paragraph [ref=e506]: $1,701.99
+                          - paragraph [ref=e507]: "Due: 12/8/2025"
+                        - generic [ref=e508]:
+                          - link "View Details & History" [ref=e509] [cursor=pointer]:
+                            - /url: /payments/jx71x8bh6d52z2ppmvv9rcwbbx7wz54e
+                            - img [ref=e510] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e513] [cursor=pointer]:
+                            - img [ref=e514] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Delete entire parent (including all payments)" [ref=e517] [cursor=pointer]:
+                            - img [ref=e518] [cursor=pointer]
+                      - generic [ref=e521]:
+                        - generic [ref=e522]:
+                          - checkbox [ref=e523] [cursor=pointer]
+                          - generic [ref=e524]:
+                            - generic [ref=e525]:
+                              - img [ref=e526]
+                              - generic [ref=e529]: Active
+                            - generic [ref=e530]: monthly
+                          - generic [ref=e531]:
+                            - generic [ref=e532]:
+                              - paragraph [ref=e533]: QA Test Parent
+                              - generic [ref=e534]:
+                                - generic [ref=e535] [cursor=pointer]: Credit Card
+                                - img [ref=e536]
+                            - paragraph [ref=e539]: qa.test.parent@example.com
+                            - generic [ref=e541]: Latest Payment
+                        - generic [ref=e542]:
+                          - paragraph [ref=e543]: $1,701.99
+                          - paragraph [ref=e544]: "Due: 12/8/2025"
+                        - generic [ref=e545]:
+                          - link "View Details & History" [ref=e546] [cursor=pointer]:
+                            - /url: /payments/jx76nqvanq9r1jwfzzvj0125y17wyqt9
+                            - img [ref=e547] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e550] [cursor=pointer]:
+                            - img [ref=e551] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Delete entire parent (including all payments)" [ref=e554] [cursor=pointer]:
+                            - img [ref=e555] [cursor=pointer]
+                      - generic [ref=e558]:
+                        - generic [ref=e559]:
+                          - checkbox [ref=e560] [cursor=pointer]
+                          - generic [ref=e561]:
+                            - generic [ref=e562]:
+                              - img [ref=e563]
+                              - generic [ref=e566]: paid
+                            - generic [ref=e567]: full
+                          - generic [ref=e568]:
+                            - generic [ref=e569]:
+                              - paragraph [ref=e570]: Test Parent
+                              - generic [ref=e571]:
+                                - generic [ref=e572] [cursor=pointer]: Credit Card
+                                - img [ref=e573]
+                            - paragraph [ref=e576]: test@example.com
+                            - generic [ref=e578]: Latest Payment
+                        - generic [ref=e579]:
+                          - paragraph [ref=e580]: $1,699.59
+                          - paragraph [ref=e581]: "Due: 12/8/2025"
+                          - paragraph [ref=e582]: "Paid: 12/9/2025"
+                        - generic [ref=e583]:
+                          - link "View Details & History" [ref=e584] [cursor=pointer]:
+                            - /url: /payments/jx71frpm668ezatvxmnnw944gs7wyag1
+                            - img [ref=e585] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Delete entire parent (including all payments)" [ref=e588] [cursor=pointer]:
+                            - img [ref=e589] [cursor=pointer]
+                      - generic [ref=e592]:
+                        - generic [ref=e593]:
+                          - generic [ref=e595]:
+                            - img [ref=e596]
+                            - generic [ref=e601]: No Payment Plan
+                          - generic [ref=e602]:
+                            - generic [ref=e603]:
+                              - paragraph [ref=e604]: Nate Houston
+                              - generic [ref=e605]:
+                                - generic [ref=e606] [cursor=pointer]: Credit Card
+                                - img [ref=e607]
+                            - paragraph [ref=e610]: nate.houston@email.com
+                            - generic [ref=e612]: Ready for Payment Plan
+                        - generic [ref=e614]:
+                          - paragraph [ref=e615]: No Payment Plan
+                          - paragraph [ref=e616]: Create a payment plan to get started
+                        - generic [ref=e617]:
+                          - link "Create Payment Plan" [ref=e618] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e619] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e620] [cursor=pointer]:
+                            - img [ref=e621] [cursor=pointer]
+                      - generic [ref=e624]:
+                        - generic [ref=e625]:
+                          - generic [ref=e627]:
+                            - img [ref=e628]
+                            - generic [ref=e633]: No Payment Plan
+                          - generic [ref=e634]:
+                            - generic [ref=e635]:
+                              - paragraph [ref=e636]: Matt Houston
+                              - generic [ref=e637]:
+                                - generic [ref=e638] [cursor=pointer]: Credit Card
+                                - img [ref=e639]
+                            - paragraph [ref=e642]: matt.houston@email.com
+                            - generic [ref=e644]: Ready for Payment Plan
+                        - generic [ref=e646]:
+                          - paragraph [ref=e647]: No Payment Plan
+                          - paragraph [ref=e648]: Create a payment plan to get started
+                        - generic [ref=e649]:
+                          - link "Create Payment Plan" [ref=e650] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e651] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e652] [cursor=pointer]:
+                            - img [ref=e653] [cursor=pointer]
+                      - generic [ref=e656]:
+                        - generic [ref=e657]:
+                          - generic [ref=e659]:
+                            - img [ref=e660]
+                            - generic [ref=e665]: No Payment Plan
+                          - generic [ref=e666]:
+                            - generic [ref=e667]:
+                              - paragraph [ref=e668]: Sarah Johnson
+                              - generic [ref=e669]:
+                                - generic [ref=e670] [cursor=pointer]: Credit Card
+                                - img [ref=e671]
+                            - paragraph [ref=e674]: sarah.johnson@email.com
+                            - generic [ref=e676]: Ready for Payment Plan
+                        - generic [ref=e678]:
+                          - paragraph [ref=e679]: No Payment Plan
+                          - paragraph [ref=e680]: Create a payment plan to get started
+                        - generic [ref=e681]:
+                          - link "Create Payment Plan" [ref=e682] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e683] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e684] [cursor=pointer]:
+                            - img [ref=e685] [cursor=pointer]
+                      - generic [ref=e688]:
+                        - generic [ref=e689]:
+                          - generic [ref=e691]:
+                            - img [ref=e692]
+                            - generic [ref=e697]: No Payment Plan
+                          - generic [ref=e698]:
+                            - generic [ref=e699]:
+                              - paragraph [ref=e700]: Angelys Castillo
+                              - generic [ref=e701]:
+                                - generic [ref=e702] [cursor=pointer]: Credit Card
+                                - img [ref=e703]
+                            - paragraph [ref=e706]: cellaumbrella@yahoo.com
+                            - generic [ref=e708]: Ready for Payment Plan
+                        - generic [ref=e710]:
+                          - paragraph [ref=e711]: No Payment Plan
+                          - paragraph [ref=e712]: Create a payment plan to get started
+                        - generic [ref=e713]:
+                          - link "Create Payment Plan" [ref=e714] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e715] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e716] [cursor=pointer]:
+                            - img [ref=e717] [cursor=pointer]
+                      - generic [ref=e720]:
+                        - generic [ref=e721]:
+                          - generic [ref=e723]:
+                            - img [ref=e724]
+                            - generic [ref=e729]: No Payment Plan
+                          - generic [ref=e730]:
+                            - generic [ref=e731]:
+                              - paragraph [ref=e732]: Sterling Monaghan
+                              - generic [ref=e733]:
+                                - generic [ref=e734] [cursor=pointer]: Credit Card
+                                - img [ref=e735]
+                            - paragraph [ref=e738]: monaghanclan82@gmail.com
+                            - generic [ref=e740]: Ready for Payment Plan
+                        - generic [ref=e742]:
+                          - paragraph [ref=e743]: No Payment Plan
+                          - paragraph [ref=e744]: Create a payment plan to get started
+                        - generic [ref=e745]:
+                          - link "Create Payment Plan" [ref=e746] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e747] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e748] [cursor=pointer]:
+                            - img [ref=e749] [cursor=pointer]
+                      - generic [ref=e752]:
+                        - generic [ref=e753]:
+                          - generic [ref=e755]:
+                            - img [ref=e756]
+                            - generic [ref=e761]: No Payment Plan
+                          - generic [ref=e762]:
+                            - generic [ref=e763]:
+                              - paragraph [ref=e764]: Matthew Rowan
+                              - generic [ref=e765]:
+                                - generic [ref=e766] [cursor=pointer]: Credit Card
+                                - img [ref=e767]
+                            - paragraph [ref=e770]: mwrmma@yahoo.com
+                            - generic [ref=e772]: Ready for Payment Plan
+                        - generic [ref=e774]:
+                          - paragraph [ref=e775]: No Payment Plan
+                          - paragraph [ref=e776]: Create a payment plan to get started
+                        - generic [ref=e777]:
+                          - link "Create Payment Plan" [ref=e778] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e779] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e780] [cursor=pointer]:
+                            - img [ref=e781] [cursor=pointer]
+                      - generic [ref=e784]:
+                        - generic [ref=e785]:
+                          - generic [ref=e787]:
+                            - img [ref=e788]
+                            - generic [ref=e793]: No Payment Plan
+                          - generic [ref=e794]:
+                            - generic [ref=e795]:
+                              - paragraph [ref=e796]: Lawrence Haywood
+                              - generic [ref=e797]:
+                                - generic [ref=e798] [cursor=pointer]: Credit Card
+                                - img [ref=e799]
+                            - paragraph [ref=e802]: lawrenda.henrywillis@gmail.com
+                            - generic [ref=e804]: Ready for Payment Plan
+                        - generic [ref=e806]:
+                          - paragraph [ref=e807]: No Payment Plan
+                          - paragraph [ref=e808]: Create a payment plan to get started
+                        - generic [ref=e809]:
+                          - link "Create Payment Plan" [ref=e810] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e811] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e812] [cursor=pointer]:
+                            - img [ref=e813] [cursor=pointer]
+                      - generic [ref=e816]:
+                        - generic [ref=e817]:
+                          - generic [ref=e819]:
+                            - img [ref=e820]
+                            - generic [ref=e825]: No Payment Plan
+                          - generic [ref=e826]:
+                            - generic [ref=e827]:
+                              - paragraph [ref=e828]: Nolan Murray
+                              - generic [ref=e829]:
+                                - generic [ref=e830] [cursor=pointer]: Credit Card
+                                - img [ref=e831]
+                            - paragraph [ref=e834]: jaynamurray@gmail.com
+                            - generic [ref=e836]: Ready for Payment Plan
+                        - generic [ref=e838]:
+                          - paragraph [ref=e839]: No Payment Plan
+                          - paragraph [ref=e840]: Create a payment plan to get started
+                        - generic [ref=e841]:
+                          - link "Create Payment Plan" [ref=e842] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e843] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e844] [cursor=pointer]:
+                            - img [ref=e845] [cursor=pointer]
+                      - generic [ref=e848]:
+                        - generic [ref=e849]:
+                          - generic [ref=e851]:
+                            - img [ref=e852]
+                            - generic [ref=e857]: No Payment Plan
+                          - generic [ref=e858]:
+                            - generic [ref=e859]:
+                              - paragraph [ref=e860]: Sunny N'Gom
+                              - generic [ref=e861]:
+                                - generic [ref=e862] [cursor=pointer]: Credit Card
+                                - img [ref=e863]
+                            - paragraph [ref=e866]: naomizoko@gmail.com
+                            - generic [ref=e868]: Ready for Payment Plan
+                        - generic [ref=e870]:
+                          - paragraph [ref=e871]: No Payment Plan
+                          - paragraph [ref=e872]: Create a payment plan to get started
+                        - generic [ref=e873]:
+                          - link "Create Payment Plan" [ref=e874] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e875] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e876] [cursor=pointer]:
+                            - img [ref=e877] [cursor=pointer]
+                      - generic [ref=e880]:
+                        - generic [ref=e881]:
+                          - generic [ref=e883]:
+                            - img [ref=e884]
+                            - generic [ref=e889]: No Payment Plan
+                          - generic [ref=e890]:
+                            - generic [ref=e891]:
+                              - paragraph [ref=e892]: Natalee Griffin
+                              - generic [ref=e893]:
+                                - generic [ref=e894] [cursor=pointer]: Credit Card
+                                - img [ref=e895]
+                            - paragraph [ref=e898]: nfran82860@aol.com
+                            - generic [ref=e900]: Ready for Payment Plan
+                        - generic [ref=e902]:
+                          - paragraph [ref=e903]: No Payment Plan
+                          - paragraph [ref=e904]: Create a payment plan to get started
+                        - generic [ref=e905]:
+                          - link "Create Payment Plan" [ref=e906] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e907] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e908] [cursor=pointer]:
+                            - img [ref=e909] [cursor=pointer]
+                      - generic [ref=e912]:
+                        - generic [ref=e913]:
+                          - generic [ref=e915]:
+                            - img [ref=e916]
+                            - generic [ref=e921]: No Payment Plan
+                          - generic [ref=e922]:
+                            - generic [ref=e923]:
+                              - paragraph [ref=e924]: Drew Pohl
+                              - generic [ref=e925]:
+                                - generic [ref=e926] [cursor=pointer]: Credit Card
+                                - img [ref=e927]
+                            - paragraph [ref=e930]: mars_pohl@earthlink.net
+                            - generic [ref=e932]: Ready for Payment Plan
+                        - generic [ref=e934]:
+                          - paragraph [ref=e935]: No Payment Plan
+                          - paragraph [ref=e936]: Create a payment plan to get started
+                        - generic [ref=e937]:
+                          - link "Create Payment Plan" [ref=e938] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e939] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e940] [cursor=pointer]:
+                            - img [ref=e941] [cursor=pointer]
+                      - generic [ref=e944]:
+                        - generic [ref=e945]:
+                          - generic [ref=e947]:
+                            - img [ref=e948]
+                            - generic [ref=e953]: No Payment Plan
+                          - generic [ref=e954]:
+                            - generic [ref=e955]:
+                              - paragraph [ref=e956]: Michael Pohl
+                              - generic [ref=e957]:
+                                - generic [ref=e958] [cursor=pointer]: Credit Card
+                                - img [ref=e959]
+                            - paragraph [ref=e962]: robertjamespohl@gmail.com
+                            - generic [ref=e964]: Ready for Payment Plan
+                        - generic [ref=e966]:
+                          - paragraph [ref=e967]: No Payment Plan
+                          - paragraph [ref=e968]: Create a payment plan to get started
+                        - generic [ref=e969]:
+                          - link "Create Payment Plan" [ref=e970] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e971] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e972] [cursor=pointer]:
+                            - img [ref=e973] [cursor=pointer]
+                      - generic [ref=e976]:
+                        - generic [ref=e977]:
+                          - generic [ref=e979]:
+                            - img [ref=e980]
+                            - generic [ref=e985]: No Payment Plan
+                          - generic [ref=e986]:
+                            - generic [ref=e987]:
+                              - paragraph [ref=e988]: Eduardo Sanchez
+                              - generic [ref=e989]:
+                                - generic [ref=e990] [cursor=pointer]: Credit Card
+                                - img [ref=e991]
+                            - paragraph [ref=e994]: ssanchez8519@gmail.com
+                            - generic [ref=e996]: Ready for Payment Plan
+                        - generic [ref=e998]:
+                          - paragraph [ref=e999]: No Payment Plan
+                          - paragraph [ref=e1000]: Create a payment plan to get started
+                        - generic [ref=e1001]:
+                          - link "Create Payment Plan" [ref=e1002] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1003] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1004] [cursor=pointer]:
+                            - img [ref=e1005] [cursor=pointer]
+                      - generic [ref=e1008]:
+                        - generic [ref=e1009]:
+                          - generic [ref=e1011]:
+                            - img [ref=e1012]
+                            - generic [ref=e1017]: No Payment Plan
+                          - generic [ref=e1018]:
+                            - generic [ref=e1019]:
+                              - paragraph [ref=e1020]: Shawnna Sanchez
+                              - generic [ref=e1021]:
+                                - generic [ref=e1022] [cursor=pointer]: Credit Card
+                                - img [ref=e1023]
+                            - paragraph [ref=e1026]: ssanchez8519@gmail.com
+                            - generic [ref=e1028]: Ready for Payment Plan
+                        - generic [ref=e1030]:
+                          - paragraph [ref=e1031]: No Payment Plan
+                          - paragraph [ref=e1032]: Create a payment plan to get started
+                        - generic [ref=e1033]:
+                          - link "Create Payment Plan" [ref=e1034] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1035] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1036] [cursor=pointer]:
+                            - img [ref=e1037] [cursor=pointer]
+                      - generic [ref=e1040]:
+                        - generic [ref=e1041]:
+                          - generic [ref=e1043]:
+                            - img [ref=e1044]
+                            - generic [ref=e1049]: No Payment Plan
+                          - generic [ref=e1050]:
+                            - generic [ref=e1051]:
+                              - paragraph [ref=e1052]: Marcus Parker
+                              - generic [ref=e1053]:
+                                - generic [ref=e1054] [cursor=pointer]: Credit Card
+                                - img [ref=e1055]
+                            - paragraph [ref=e1058]: brie.parker@cbrealty.com
+                            - generic [ref=e1060]: Ready for Payment Plan
+                        - generic [ref=e1062]:
+                          - paragraph [ref=e1063]: No Payment Plan
+                          - paragraph [ref=e1064]: Create a payment plan to get started
+                        - generic [ref=e1065]:
+                          - link "Create Payment Plan" [ref=e1066] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1067] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1068] [cursor=pointer]:
+                            - img [ref=e1069] [cursor=pointer]
+                      - generic [ref=e1072]:
+                        - generic [ref=e1073]:
+                          - generic [ref=e1075]:
+                            - img [ref=e1076]
+                            - generic [ref=e1081]: No Payment Plan
+                          - generic [ref=e1082]:
+                            - generic [ref=e1083]:
+                              - paragraph [ref=e1084]: Sennen Doone
+                              - generic [ref=e1085]:
+                                - generic [ref=e1086] [cursor=pointer]: Credit Card
+                                - img [ref=e1087]
+                            - paragraph [ref=e1090]: dylandoone@gmail.com
+                            - generic [ref=e1092]: Ready for Payment Plan
+                        - generic [ref=e1094]:
+                          - paragraph [ref=e1095]: No Payment Plan
+                          - paragraph [ref=e1096]: Create a payment plan to get started
+                        - generic [ref=e1097]:
+                          - link "Create Payment Plan" [ref=e1098] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1099] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1100] [cursor=pointer]:
+                            - img [ref=e1101] [cursor=pointer]
+                      - generic [ref=e1104]:
+                        - generic [ref=e1105]:
+                          - generic [ref=e1107]:
+                            - img [ref=e1108]
+                            - generic [ref=e1113]: No Payment Plan
+                          - generic [ref=e1114]:
+                            - generic [ref=e1115]:
+                              - paragraph [ref=e1116]: Damion Grant
+                              - generic [ref=e1117]:
+                                - generic [ref=e1118] [cursor=pointer]: Credit Card
+                                - img [ref=e1119]
+                            - paragraph [ref=e1122]: jilliannemel@gmail.com
+                            - generic [ref=e1124]: Ready for Payment Plan
+                        - generic [ref=e1126]:
+                          - paragraph [ref=e1127]: No Payment Plan
+                          - paragraph [ref=e1128]: Create a payment plan to get started
+                        - generic [ref=e1129]:
+                          - link "Create Payment Plan" [ref=e1130] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1131] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1132] [cursor=pointer]:
+                            - img [ref=e1133] [cursor=pointer]
+                      - generic [ref=e1136]:
+                        - generic [ref=e1137]:
+                          - generic [ref=e1139]:
+                            - img [ref=e1140]
+                            - generic [ref=e1145]: No Payment Plan
+                          - generic [ref=e1146]:
+                            - generic [ref=e1147]:
+                              - paragraph [ref=e1148]: Troy Houston
+                              - generic [ref=e1149]:
+                                - generic [ref=e1150] [cursor=pointer]: Credit Card
+                                - img [ref=e1151]
+                            - paragraph [ref=e1154]: elizkc@hotmail.com
+                            - generic [ref=e1156]: Ready for Payment Plan
+                        - generic [ref=e1158]:
+                          - paragraph [ref=e1159]: No Payment Plan
+                          - paragraph [ref=e1160]: Create a payment plan to get started
+                        - generic [ref=e1161]:
+                          - link "Create Payment Plan" [ref=e1162] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1163] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1164] [cursor=pointer]:
+                            - img [ref=e1165] [cursor=pointer]
+                      - generic [ref=e1168]:
+                        - generic [ref=e1169]:
+                          - generic [ref=e1171]:
+                            - img [ref=e1172]
+                            - generic [ref=e1177]: No Payment Plan
+                          - generic [ref=e1178]:
+                            - generic [ref=e1179]:
+                              - paragraph [ref=e1180]: Angelys Castillo
+                              - generic [ref=e1181]:
+                                - generic [ref=e1182] [cursor=pointer]: Credit Card
+                                - img [ref=e1183]
+                            - paragraph [ref=e1186]: cellaumbrella@yahoo.com
+                            - generic [ref=e1188]: Ready for Payment Plan
+                        - generic [ref=e1190]:
+                          - paragraph [ref=e1191]: No Payment Plan
+                          - paragraph [ref=e1192]: Create a payment plan to get started
+                        - generic [ref=e1193]:
+                          - link "Create Payment Plan" [ref=e1194] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1195] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1196] [cursor=pointer]:
+                            - img [ref=e1197] [cursor=pointer]
+                      - generic [ref=e1200]:
+                        - generic [ref=e1201]:
+                          - generic [ref=e1203]:
+                            - img [ref=e1204]
+                            - generic [ref=e1209]: No Payment Plan
+                          - generic [ref=e1210]:
+                            - generic [ref=e1211]:
+                              - paragraph [ref=e1212]: Sterling Monaghan
+                              - generic [ref=e1213]:
+                                - generic [ref=e1214] [cursor=pointer]: Credit Card
+                                - img [ref=e1215]
+                            - paragraph [ref=e1218]: monaghanclan82@gmail.com
+                            - generic [ref=e1220]: Ready for Payment Plan
+                        - generic [ref=e1222]:
+                          - paragraph [ref=e1223]: No Payment Plan
+                          - paragraph [ref=e1224]: Create a payment plan to get started
+                        - generic [ref=e1225]:
+                          - link "Create Payment Plan" [ref=e1226] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1227] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1228] [cursor=pointer]:
+                            - img [ref=e1229] [cursor=pointer]
+                      - generic [ref=e1232]:
+                        - generic [ref=e1233]:
+                          - generic [ref=e1235]:
+                            - img [ref=e1236]
+                            - generic [ref=e1241]: No Payment Plan
+                          - generic [ref=e1242]:
+                            - generic [ref=e1243]:
+                              - paragraph [ref=e1244]: Matthew Rowan
+                              - generic [ref=e1245]:
+                                - generic [ref=e1246] [cursor=pointer]: Credit Card
+                                - img [ref=e1247]
+                            - paragraph [ref=e1250]: mwrmma@yahoo.com
+                            - generic [ref=e1252]: Ready for Payment Plan
+                        - generic [ref=e1254]:
+                          - paragraph [ref=e1255]: No Payment Plan
+                          - paragraph [ref=e1256]: Create a payment plan to get started
+                        - generic [ref=e1257]:
+                          - link "Create Payment Plan" [ref=e1258] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1259] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1260] [cursor=pointer]:
+                            - img [ref=e1261] [cursor=pointer]
+                      - generic [ref=e1264]:
+                        - generic [ref=e1265]:
+                          - generic [ref=e1267]:
+                            - img [ref=e1268]
+                            - generic [ref=e1273]: No Payment Plan
+                          - generic [ref=e1274]:
+                            - generic [ref=e1275]:
+                              - paragraph [ref=e1276]: Lawrence Haywood
+                              - generic [ref=e1277]:
+                                - generic [ref=e1278] [cursor=pointer]: Credit Card
+                                - img [ref=e1279]
+                            - paragraph [ref=e1282]: lawrenda.henrywillis@gmail.com
+                            - generic [ref=e1284]: Ready for Payment Plan
+                        - generic [ref=e1286]:
+                          - paragraph [ref=e1287]: No Payment Plan
+                          - paragraph [ref=e1288]: Create a payment plan to get started
+                        - generic [ref=e1289]:
+                          - link "Create Payment Plan" [ref=e1290] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1291] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1292] [cursor=pointer]:
+                            - img [ref=e1293] [cursor=pointer]
+                      - generic [ref=e1296]:
+                        - generic [ref=e1297]:
+                          - generic [ref=e1299]:
+                            - img [ref=e1300]
+                            - generic [ref=e1305]: No Payment Plan
+                          - generic [ref=e1306]:
+                            - generic [ref=e1307]:
+                              - paragraph [ref=e1308]: Nolan Murray
+                              - generic [ref=e1309]:
+                                - generic [ref=e1310] [cursor=pointer]: Credit Card
+                                - img [ref=e1311]
+                            - paragraph [ref=e1314]: jaynamurray@gmail.com
+                            - generic [ref=e1316]: Ready for Payment Plan
+                        - generic [ref=e1318]:
+                          - paragraph [ref=e1319]: No Payment Plan
+                          - paragraph [ref=e1320]: Create a payment plan to get started
+                        - generic [ref=e1321]:
+                          - link "Create Payment Plan" [ref=e1322] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1323] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1324] [cursor=pointer]:
+                            - img [ref=e1325] [cursor=pointer]
+                      - generic [ref=e1328]:
+                        - generic [ref=e1329]:
+                          - generic [ref=e1331]:
+                            - img [ref=e1332]
+                            - generic [ref=e1337]: No Payment Plan
+                          - generic [ref=e1338]:
+                            - generic [ref=e1339]:
+                              - paragraph [ref=e1340]: Sunny N'Gom
+                              - generic [ref=e1341]:
+                                - generic [ref=e1342] [cursor=pointer]: Credit Card
+                                - img [ref=e1343]
+                            - paragraph [ref=e1346]: naomizoko@gmail.com
+                            - generic [ref=e1348]: Ready for Payment Plan
+                        - generic [ref=e1350]:
+                          - paragraph [ref=e1351]: No Payment Plan
+                          - paragraph [ref=e1352]: Create a payment plan to get started
+                        - generic [ref=e1353]:
+                          - link "Create Payment Plan" [ref=e1354] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1355] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1356] [cursor=pointer]:
+                            - img [ref=e1357] [cursor=pointer]
+                      - generic [ref=e1360]:
+                        - generic [ref=e1361]:
+                          - generic [ref=e1363]:
+                            - img [ref=e1364]
+                            - generic [ref=e1369]: No Payment Plan
+                          - generic [ref=e1370]:
+                            - generic [ref=e1371]:
+                              - paragraph [ref=e1372]: Natalee Griffin
+                              - generic [ref=e1373]:
+                                - generic [ref=e1374] [cursor=pointer]: Credit Card
+                                - img [ref=e1375]
+                            - paragraph [ref=e1378]: nfran82860@aol.com
+                            - generic [ref=e1380]: Ready for Payment Plan
+                        - generic [ref=e1382]:
+                          - paragraph [ref=e1383]: No Payment Plan
+                          - paragraph [ref=e1384]: Create a payment plan to get started
+                        - generic [ref=e1385]:
+                          - link "Create Payment Plan" [ref=e1386] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1387] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1388] [cursor=pointer]:
+                            - img [ref=e1389] [cursor=pointer]
+                      - generic [ref=e1392]:
+                        - generic [ref=e1393]:
+                          - generic [ref=e1395]:
+                            - img [ref=e1396]
+                            - generic [ref=e1401]: No Payment Plan
+                          - generic [ref=e1402]:
+                            - generic [ref=e1403]:
+                              - paragraph [ref=e1404]: Drew Pohl
+                              - generic [ref=e1405]:
+                                - generic [ref=e1406] [cursor=pointer]: Credit Card
+                                - img [ref=e1407]
+                            - paragraph [ref=e1410]: mars_pohl@earthlink.net
+                            - generic [ref=e1412]: Ready for Payment Plan
+                        - generic [ref=e1414]:
+                          - paragraph [ref=e1415]: No Payment Plan
+                          - paragraph [ref=e1416]: Create a payment plan to get started
+                        - generic [ref=e1417]:
+                          - link "Create Payment Plan" [ref=e1418] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1419] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1420] [cursor=pointer]:
+                            - img [ref=e1421] [cursor=pointer]
+                      - generic [ref=e1424]:
+                        - generic [ref=e1425]:
+                          - generic [ref=e1427]:
+                            - img [ref=e1428]
+                            - generic [ref=e1433]: No Payment Plan
+                          - generic [ref=e1434]:
+                            - generic [ref=e1435]:
+                              - paragraph [ref=e1436]: Michael Pohl
+                              - generic [ref=e1437]:
+                                - generic [ref=e1438] [cursor=pointer]: Credit Card
+                                - img [ref=e1439]
+                            - paragraph [ref=e1442]: robertjamespohl@gmail.com
+                            - generic [ref=e1444]: Ready for Payment Plan
+                        - generic [ref=e1446]:
+                          - paragraph [ref=e1447]: No Payment Plan
+                          - paragraph [ref=e1448]: Create a payment plan to get started
+                        - generic [ref=e1449]:
+                          - link "Create Payment Plan" [ref=e1450] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1451] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1452] [cursor=pointer]:
+                            - img [ref=e1453] [cursor=pointer]
+                      - generic [ref=e1456]:
+                        - generic [ref=e1457]:
+                          - generic [ref=e1459]:
+                            - img [ref=e1460]
+                            - generic [ref=e1465]: No Payment Plan
+                          - generic [ref=e1466]:
+                            - generic [ref=e1467]:
+                              - paragraph [ref=e1468]: Eduardo Sanchez
+                              - generic [ref=e1469]:
+                                - generic [ref=e1470] [cursor=pointer]: Credit Card
+                                - img [ref=e1471]
+                            - paragraph [ref=e1474]: ssanchez8519@gmail.com
+                            - generic [ref=e1476]: Ready for Payment Plan
+                        - generic [ref=e1478]:
+                          - paragraph [ref=e1479]: No Payment Plan
+                          - paragraph [ref=e1480]: Create a payment plan to get started
+                        - generic [ref=e1481]:
+                          - link "Create Payment Plan" [ref=e1482] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1483] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1484] [cursor=pointer]:
+                            - img [ref=e1485] [cursor=pointer]
+                      - generic [ref=e1488]:
+                        - generic [ref=e1489]:
+                          - generic [ref=e1491]:
+                            - img [ref=e1492]
+                            - generic [ref=e1497]: No Payment Plan
+                          - generic [ref=e1498]:
+                            - generic [ref=e1499]:
+                              - paragraph [ref=e1500]: Shawnna Sanchez
+                              - generic [ref=e1501]:
+                                - generic [ref=e1502] [cursor=pointer]: Credit Card
+                                - img [ref=e1503]
+                            - paragraph [ref=e1506]: ssanchez8519@gmail.com
+                            - generic [ref=e1508]: Ready for Payment Plan
+                        - generic [ref=e1510]:
+                          - paragraph [ref=e1511]: No Payment Plan
+                          - paragraph [ref=e1512]: Create a payment plan to get started
+                        - generic [ref=e1513]:
+                          - link "Create Payment Plan" [ref=e1514] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1515] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1516] [cursor=pointer]:
+                            - img [ref=e1517] [cursor=pointer]
+                      - generic [ref=e1520]:
+                        - generic [ref=e1521]:
+                          - generic [ref=e1523]:
+                            - img [ref=e1524]
+                            - generic [ref=e1529]: No Payment Plan
+                          - generic [ref=e1530]:
+                            - generic [ref=e1531]:
+                              - paragraph [ref=e1532]: Marcus Parker
+                              - generic [ref=e1533]:
+                                - generic [ref=e1534] [cursor=pointer]: Credit Card
+                                - img [ref=e1535]
+                            - paragraph [ref=e1538]: brie.parker@cbrealty.com
+                            - generic [ref=e1540]: Ready for Payment Plan
+                        - generic [ref=e1542]:
+                          - paragraph [ref=e1543]: No Payment Plan
+                          - paragraph [ref=e1544]: Create a payment plan to get started
+                        - generic [ref=e1545]:
+                          - link "Create Payment Plan" [ref=e1546] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1547] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1548] [cursor=pointer]:
+                            - img [ref=e1549] [cursor=pointer]
+                      - generic [ref=e1552]:
+                        - generic [ref=e1553]:
+                          - generic [ref=e1555]:
+                            - img [ref=e1556]
+                            - generic [ref=e1561]: No Payment Plan
+                          - generic [ref=e1562]:
+                            - generic [ref=e1563]:
+                              - paragraph [ref=e1564]: Sennen Doone
+                              - generic [ref=e1565]:
+                                - generic [ref=e1566] [cursor=pointer]: Credit Card
+                                - img [ref=e1567]
+                            - paragraph [ref=e1570]: dylandoone@gmail.com
+                            - generic [ref=e1572]: Ready for Payment Plan
+                        - generic [ref=e1574]:
+                          - paragraph [ref=e1575]: No Payment Plan
+                          - paragraph [ref=e1576]: Create a payment plan to get started
+                        - generic [ref=e1577]:
+                          - link "Create Payment Plan" [ref=e1578] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1579] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1580] [cursor=pointer]:
+                            - img [ref=e1581] [cursor=pointer]
+                      - generic [ref=e1584]:
+                        - generic [ref=e1585]:
+                          - generic [ref=e1587]:
+                            - img [ref=e1588]
+                            - generic [ref=e1593]: No Payment Plan
+                          - generic [ref=e1594]:
+                            - generic [ref=e1595]:
+                              - paragraph [ref=e1596]: Damion Grant
+                              - generic [ref=e1597]:
+                                - generic [ref=e1598] [cursor=pointer]: Credit Card
+                                - img [ref=e1599]
+                            - paragraph [ref=e1602]: jilliannemel@gmail.com
+                            - generic [ref=e1604]: Ready for Payment Plan
+                        - generic [ref=e1606]:
+                          - paragraph [ref=e1607]: No Payment Plan
+                          - paragraph [ref=e1608]: Create a payment plan to get started
+                        - generic [ref=e1609]:
+                          - link "Create Payment Plan" [ref=e1610] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1611] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1612] [cursor=pointer]:
+                            - img [ref=e1613] [cursor=pointer]
+                      - generic [ref=e1616]:
+                        - generic [ref=e1617]:
+                          - generic [ref=e1619]:
+                            - img [ref=e1620]
+                            - generic [ref=e1625]: No Payment Plan
+                          - generic [ref=e1626]:
+                            - generic [ref=e1627]:
+                              - paragraph [ref=e1628]: Troy Houston
+                              - generic [ref=e1629]:
+                                - generic [ref=e1630] [cursor=pointer]: Credit Card
+                                - img [ref=e1631]
+                            - paragraph [ref=e1634]: elizkc@hotmail.com
+                            - generic [ref=e1636]: Ready for Payment Plan
+                        - generic [ref=e1638]:
+                          - paragraph [ref=e1639]: No Payment Plan
+                          - paragraph [ref=e1640]: Create a payment plan to get started
+                        - generic [ref=e1641]:
+                          - link "Create Payment Plan" [ref=e1642] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1643] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1644] [cursor=pointer]:
+                            - img [ref=e1645] [cursor=pointer]
+                      - generic [ref=e1648]:
+                        - generic [ref=e1649]:
+                          - generic [ref=e1651]:
+                            - img [ref=e1652]
+                            - generic [ref=e1657]: No Payment Plan
+                          - generic [ref=e1658]:
+                            - generic [ref=e1659]:
+                              - paragraph [ref=e1660]: Angelys Castillo
+                              - generic [ref=e1661]:
+                                - generic [ref=e1662] [cursor=pointer]: Credit Card
+                                - img [ref=e1663]
+                            - paragraph [ref=e1666]: cellaumbrella@yahoo.com
+                            - generic [ref=e1668]: Ready for Payment Plan
+                        - generic [ref=e1670]:
+                          - paragraph [ref=e1671]: No Payment Plan
+                          - paragraph [ref=e1672]: Create a payment plan to get started
+                        - generic [ref=e1673]:
+                          - link "Create Payment Plan" [ref=e1674] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1675] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1676] [cursor=pointer]:
+                            - img [ref=e1677] [cursor=pointer]
+                      - generic [ref=e1680]:
+                        - generic [ref=e1681]:
+                          - generic [ref=e1683]:
+                            - img [ref=e1684]
+                            - generic [ref=e1689]: No Payment Plan
+                          - generic [ref=e1690]:
+                            - generic [ref=e1691]:
+                              - paragraph [ref=e1692]: Sterling Monaghan
+                              - generic [ref=e1693]:
+                                - generic [ref=e1694] [cursor=pointer]: Credit Card
+                                - img [ref=e1695]
+                            - paragraph [ref=e1698]: monaghanclan82@gmail.com
+                            - generic [ref=e1700]: Ready for Payment Plan
+                        - generic [ref=e1702]:
+                          - paragraph [ref=e1703]: No Payment Plan
+                          - paragraph [ref=e1704]: Create a payment plan to get started
+                        - generic [ref=e1705]:
+                          - link "Create Payment Plan" [ref=e1706] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1707] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1708] [cursor=pointer]:
+                            - img [ref=e1709] [cursor=pointer]
+                      - generic [ref=e1712]:
+                        - generic [ref=e1713]:
+                          - generic [ref=e1715]:
+                            - img [ref=e1716]
+                            - generic [ref=e1721]: No Payment Plan
+                          - generic [ref=e1722]:
+                            - generic [ref=e1723]:
+                              - paragraph [ref=e1724]: Matthew Rowan
+                              - generic [ref=e1725]:
+                                - generic [ref=e1726] [cursor=pointer]: Credit Card
+                                - img [ref=e1727]
+                            - paragraph [ref=e1730]: mwrmma@yahoo.com
+                            - generic [ref=e1732]: Ready for Payment Plan
+                        - generic [ref=e1734]:
+                          - paragraph [ref=e1735]: No Payment Plan
+                          - paragraph [ref=e1736]: Create a payment plan to get started
+                        - generic [ref=e1737]:
+                          - link "Create Payment Plan" [ref=e1738] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1739] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1740] [cursor=pointer]:
+                            - img [ref=e1741] [cursor=pointer]
+                      - generic [ref=e1744]:
+                        - generic [ref=e1745]:
+                          - generic [ref=e1747]:
+                            - img [ref=e1748]
+                            - generic [ref=e1753]: No Payment Plan
+                          - generic [ref=e1754]:
+                            - generic [ref=e1755]:
+                              - paragraph [ref=e1756]: Lawrence Haywood
+                              - generic [ref=e1757]:
+                                - generic [ref=e1758] [cursor=pointer]: Credit Card
+                                - img [ref=e1759]
+                            - paragraph [ref=e1762]: lawrenda.henrywillis@gmail.com
+                            - generic [ref=e1764]: Ready for Payment Plan
+                        - generic [ref=e1766]:
+                          - paragraph [ref=e1767]: No Payment Plan
+                          - paragraph [ref=e1768]: Create a payment plan to get started
+                        - generic [ref=e1769]:
+                          - link "Create Payment Plan" [ref=e1770] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1771] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1772] [cursor=pointer]:
+                            - img [ref=e1773] [cursor=pointer]
+                      - generic [ref=e1776]:
+                        - generic [ref=e1777]:
+                          - generic [ref=e1779]:
+                            - img [ref=e1780]
+                            - generic [ref=e1785]: No Payment Plan
+                          - generic [ref=e1786]:
+                            - generic [ref=e1787]:
+                              - paragraph [ref=e1788]: Nolan Murray
+                              - generic [ref=e1789]:
+                                - generic [ref=e1790] [cursor=pointer]: Credit Card
+                                - img [ref=e1791]
+                            - paragraph [ref=e1794]: jaynamurray@gmail.com
+                            - generic [ref=e1796]: Ready for Payment Plan
+                        - generic [ref=e1798]:
+                          - paragraph [ref=e1799]: No Payment Plan
+                          - paragraph [ref=e1800]: Create a payment plan to get started
+                        - generic [ref=e1801]:
+                          - link "Create Payment Plan" [ref=e1802] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1803] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1804] [cursor=pointer]:
+                            - img [ref=e1805] [cursor=pointer]
+                      - generic [ref=e1808]:
+                        - generic [ref=e1809]:
+                          - generic [ref=e1811]:
+                            - img [ref=e1812]
+                            - generic [ref=e1817]: No Payment Plan
+                          - generic [ref=e1818]:
+                            - generic [ref=e1819]:
+                              - paragraph [ref=e1820]: Sunny N'Gom
+                              - generic [ref=e1821]:
+                                - generic [ref=e1822] [cursor=pointer]: Credit Card
+                                - img [ref=e1823]
+                            - paragraph [ref=e1826]: naomizoko@gmail.com
+                            - generic [ref=e1828]: Ready for Payment Plan
+                        - generic [ref=e1830]:
+                          - paragraph [ref=e1831]: No Payment Plan
+                          - paragraph [ref=e1832]: Create a payment plan to get started
+                        - generic [ref=e1833]:
+                          - link "Create Payment Plan" [ref=e1834] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1835] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1836] [cursor=pointer]:
+                            - img [ref=e1837] [cursor=pointer]
+                      - generic [ref=e1840]:
+                        - generic [ref=e1841]:
+                          - generic [ref=e1843]:
+                            - img [ref=e1844]
+                            - generic [ref=e1849]: No Payment Plan
+                          - generic [ref=e1850]:
+                            - generic [ref=e1851]:
+                              - paragraph [ref=e1852]: Natalee Griffin
+                              - generic [ref=e1853]:
+                                - generic [ref=e1854] [cursor=pointer]: Credit Card
+                                - img [ref=e1855]
+                            - paragraph [ref=e1858]: nfran82860@aol.com
+                            - generic [ref=e1860]: Ready for Payment Plan
+                        - generic [ref=e1862]:
+                          - paragraph [ref=e1863]: No Payment Plan
+                          - paragraph [ref=e1864]: Create a payment plan to get started
+                        - generic [ref=e1865]:
+                          - link "Create Payment Plan" [ref=e1866] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1867] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1868] [cursor=pointer]:
+                            - img [ref=e1869] [cursor=pointer]
+                      - generic [ref=e1872]:
+                        - generic [ref=e1873]:
+                          - generic [ref=e1875]:
+                            - img [ref=e1876]
+                            - generic [ref=e1881]: No Payment Plan
+                          - generic [ref=e1882]:
+                            - generic [ref=e1883]:
+                              - paragraph [ref=e1884]: Drew Pohl
+                              - generic [ref=e1885]:
+                                - generic [ref=e1886] [cursor=pointer]: Credit Card
+                                - img [ref=e1887]
+                            - paragraph [ref=e1890]: mars_pohl@earthlink.net
+                            - generic [ref=e1892]: Ready for Payment Plan
+                        - generic [ref=e1894]:
+                          - paragraph [ref=e1895]: No Payment Plan
+                          - paragraph [ref=e1896]: Create a payment plan to get started
+                        - generic [ref=e1897]:
+                          - link "Create Payment Plan" [ref=e1898] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1899] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1900] [cursor=pointer]:
+                            - img [ref=e1901] [cursor=pointer]
+                      - generic [ref=e1904]:
+                        - generic [ref=e1905]:
+                          - generic [ref=e1907]:
+                            - img [ref=e1908]
+                            - generic [ref=e1913]: No Payment Plan
+                          - generic [ref=e1914]:
+                            - generic [ref=e1915]:
+                              - paragraph [ref=e1916]: Michael Pohl
+                              - generic [ref=e1917]:
+                                - generic [ref=e1918] [cursor=pointer]: Credit Card
+                                - img [ref=e1919]
+                            - paragraph [ref=e1922]: robertjamespohl@gmail.com
+                            - generic [ref=e1924]: Ready for Payment Plan
+                        - generic [ref=e1926]:
+                          - paragraph [ref=e1927]: No Payment Plan
+                          - paragraph [ref=e1928]: Create a payment plan to get started
+                        - generic [ref=e1929]:
+                          - link "Create Payment Plan" [ref=e1930] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1931] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1932] [cursor=pointer]:
+                            - img [ref=e1933] [cursor=pointer]
+                      - generic [ref=e1936]:
+                        - generic [ref=e1937]:
+                          - generic [ref=e1939]:
+                            - img [ref=e1940]
+                            - generic [ref=e1945]: No Payment Plan
+                          - generic [ref=e1946]:
+                            - generic [ref=e1947]:
+                              - paragraph [ref=e1948]: Eduardo Sanchez
+                              - generic [ref=e1949]:
+                                - generic [ref=e1950] [cursor=pointer]: Credit Card
+                                - img [ref=e1951]
+                            - paragraph [ref=e1954]: ssanchez8519@gmail.com
+                            - generic [ref=e1956]: Ready for Payment Plan
+                        - generic [ref=e1958]:
+                          - paragraph [ref=e1959]: No Payment Plan
+                          - paragraph [ref=e1960]: Create a payment plan to get started
+                        - generic [ref=e1961]:
+                          - link "Create Payment Plan" [ref=e1962] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1963] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1964] [cursor=pointer]:
+                            - img [ref=e1965] [cursor=pointer]
+                      - generic [ref=e1968]:
+                        - generic [ref=e1969]:
+                          - generic [ref=e1971]:
+                            - img [ref=e1972]
+                            - generic [ref=e1977]: No Payment Plan
+                          - generic [ref=e1978]:
+                            - generic [ref=e1979]:
+                              - paragraph [ref=e1980]: Shawnna Sanchez
+                              - generic [ref=e1981]:
+                                - generic [ref=e1982] [cursor=pointer]: Credit Card
+                                - img [ref=e1983]
+                            - paragraph [ref=e1986]: ssanchez8519@gmail.com
+                            - generic [ref=e1988]: Ready for Payment Plan
+                        - generic [ref=e1990]:
+                          - paragraph [ref=e1991]: No Payment Plan
+                          - paragraph [ref=e1992]: Create a payment plan to get started
+                        - generic [ref=e1993]:
+                          - link "Create Payment Plan" [ref=e1994] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1995] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e1996] [cursor=pointer]:
+                            - img [ref=e1997] [cursor=pointer]
+                      - generic [ref=e2000]:
+                        - generic [ref=e2001]:
+                          - generic [ref=e2003]:
+                            - img [ref=e2004]
+                            - generic [ref=e2009]: No Payment Plan
+                          - generic [ref=e2010]:
+                            - generic [ref=e2011]:
+                              - paragraph [ref=e2012]: Marcus Parker
+                              - generic [ref=e2013]:
+                                - generic [ref=e2014] [cursor=pointer]: Credit Card
+                                - img [ref=e2015]
+                            - paragraph [ref=e2018]: brie.parker@cbrealty.com
+                            - generic [ref=e2020]: Ready for Payment Plan
+                        - generic [ref=e2022]:
+                          - paragraph [ref=e2023]: No Payment Plan
+                          - paragraph [ref=e2024]: Create a payment plan to get started
+                        - generic [ref=e2025]:
+                          - link "Create Payment Plan" [ref=e2026] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2027] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2028] [cursor=pointer]:
+                            - img [ref=e2029] [cursor=pointer]
+                      - generic [ref=e2032]:
+                        - generic [ref=e2033]:
+                          - generic [ref=e2035]:
+                            - img [ref=e2036]
+                            - generic [ref=e2041]: No Payment Plan
+                          - generic [ref=e2042]:
+                            - generic [ref=e2043]:
+                              - paragraph [ref=e2044]: Sennen Doone
+                              - generic [ref=e2045]:
+                                - generic [ref=e2046] [cursor=pointer]: Credit Card
+                                - img [ref=e2047]
+                            - paragraph [ref=e2050]: dylandoone@gmail.com
+                            - generic [ref=e2052]: Ready for Payment Plan
+                        - generic [ref=e2054]:
+                          - paragraph [ref=e2055]: No Payment Plan
+                          - paragraph [ref=e2056]: Create a payment plan to get started
+                        - generic [ref=e2057]:
+                          - link "Create Payment Plan" [ref=e2058] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2059] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2060] [cursor=pointer]:
+                            - img [ref=e2061] [cursor=pointer]
+                      - generic [ref=e2064]:
+                        - generic [ref=e2065]:
+                          - generic [ref=e2067]:
+                            - img [ref=e2068]
+                            - generic [ref=e2073]: No Payment Plan
+                          - generic [ref=e2074]:
+                            - generic [ref=e2075]:
+                              - paragraph [ref=e2076]: Damion Grant
+                              - generic [ref=e2077]:
+                                - generic [ref=e2078] [cursor=pointer]: Credit Card
+                                - img [ref=e2079]
+                            - paragraph [ref=e2082]: jilliannemel@gmail.com
+                            - generic [ref=e2084]: Ready for Payment Plan
+                        - generic [ref=e2086]:
+                          - paragraph [ref=e2087]: No Payment Plan
+                          - paragraph [ref=e2088]: Create a payment plan to get started
+                        - generic [ref=e2089]:
+                          - link "Create Payment Plan" [ref=e2090] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2091] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2092] [cursor=pointer]:
+                            - img [ref=e2093] [cursor=pointer]
+                      - generic [ref=e2096]:
+                        - generic [ref=e2097]:
+                          - generic [ref=e2099]:
+                            - img [ref=e2100]
+                            - generic [ref=e2105]: No Payment Plan
+                          - generic [ref=e2106]:
+                            - generic [ref=e2107]:
+                              - paragraph [ref=e2108]: Troy Houston
+                              - generic [ref=e2109]:
+                                - generic [ref=e2110] [cursor=pointer]: Credit Card
+                                - img [ref=e2111]
+                            - paragraph [ref=e2114]: elizkc@hotmail.com
+                            - generic [ref=e2116]: Ready for Payment Plan
+                        - generic [ref=e2118]:
+                          - paragraph [ref=e2119]: No Payment Plan
+                          - paragraph [ref=e2120]: Create a payment plan to get started
+                        - generic [ref=e2121]:
+                          - link "Create Payment Plan" [ref=e2122] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2123] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2124] [cursor=pointer]:
+                            - img [ref=e2125] [cursor=pointer]
+                      - generic [ref=e2128]:
+                        - generic [ref=e2129]:
+                          - generic [ref=e2131]:
+                            - img [ref=e2132]
+                            - generic [ref=e2137]: No Payment Plan
+                          - generic [ref=e2138]:
+                            - generic [ref=e2139]:
+                              - paragraph [ref=e2140]: Test Parent
+                              - generic [ref=e2141]:
+                                - generic [ref=e2142] [cursor=pointer]: Credit Card
+                                - img [ref=e2143]
+                            - paragraph [ref=e2146]: test@example.com
+                            - generic [ref=e2148]: Ready for Payment Plan
+                        - generic [ref=e2150]:
+                          - paragraph [ref=e2151]: No Payment Plan
+                          - paragraph [ref=e2152]: Create a payment plan to get started
+                        - generic [ref=e2153]:
+                          - link "Create Payment Plan" [ref=e2154] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2155] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2156] [cursor=pointer]:
+                            - img [ref=e2157] [cursor=pointer]
+                      - generic [ref=e2160]:
+                        - generic [ref=e2161]:
+                          - generic [ref=e2163]:
+                            - img [ref=e2164]
+                            - generic [ref=e2169]: No Payment Plan
+                          - generic [ref=e2170]:
+                            - generic [ref=e2171]:
+                              - paragraph [ref=e2172]: E2E Parent A 415673
+                              - generic [ref=e2173]:
+                                - generic [ref=e2174] [cursor=pointer]: Credit Card
+                                - img [ref=e2175]
+                            - paragraph [ref=e2178]: e2e.parent.a.55415675@example.com
+                            - generic [ref=e2180]: Ready for Payment Plan
+                        - generic [ref=e2182]:
+                          - paragraph [ref=e2183]: No Payment Plan
+                          - paragraph [ref=e2184]: Create a payment plan to get started
+                        - generic [ref=e2185]:
+                          - link "Create Payment Plan" [ref=e2186] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2187] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2188] [cursor=pointer]:
+                            - img [ref=e2189] [cursor=pointer]
+                      - generic [ref=e2192]:
+                        - generic [ref=e2193]:
+                          - generic [ref=e2195]:
+                            - img [ref=e2196]
+                            - generic [ref=e2201]: No Payment Plan
+                          - generic [ref=e2202]:
+                            - generic [ref=e2203]:
+                              - paragraph [ref=e2204]: E2E Parent 419297
+                              - generic [ref=e2205]:
+                                - generic [ref=e2206] [cursor=pointer]: Credit Card
+                                - img [ref=e2207]
+                            - paragraph [ref=e2210]: e2e.parent.55419297@example.com
+                            - generic [ref=e2212]: Ready for Payment Plan
+                        - generic [ref=e2214]:
+                          - paragraph [ref=e2215]: No Payment Plan
+                          - paragraph [ref=e2216]: Create a payment plan to get started
+                        - generic [ref=e2217]:
+                          - link "Create Payment Plan" [ref=e2218] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2219] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2220] [cursor=pointer]:
+                            - img [ref=e2221] [cursor=pointer]
+                      - generic [ref=e2224]:
+                        - generic [ref=e2225]:
+                          - generic [ref=e2227]:
+                            - img [ref=e2228]
+                            - generic [ref=e2233]: No Payment Plan
+                          - generic [ref=e2234]:
+                            - generic [ref=e2235]:
+                              - paragraph [ref=e2236]: E2E Parent B 415675
+                              - generic [ref=e2237]:
+                                - generic [ref=e2238] [cursor=pointer]: Credit Card
+                                - img [ref=e2239]
+                            - paragraph [ref=e2242]: e2e.parent.b.55415675@example.com
+                            - generic [ref=e2244]: Ready for Payment Plan
+                        - generic [ref=e2246]:
+                          - paragraph [ref=e2247]: No Payment Plan
+                          - paragraph [ref=e2248]: Create a payment plan to get started
+                        - generic [ref=e2249]:
+                          - link "Create Payment Plan" [ref=e2250] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2251] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2252] [cursor=pointer]:
+                            - img [ref=e2253] [cursor=pointer]
+        - region "Notifications (F8)":
+          - list
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T":
+    - list:
+      - status [ref=e2256]:
+        - img [ref=e2258]
+        - generic [ref=e2261]: Saving assignment…
+```

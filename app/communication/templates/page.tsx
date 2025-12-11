@@ -201,7 +201,10 @@ export default function TemplatesPage() {
         {/* Templates Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="group hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
+            <Card
+              key={template.id}
+              className="group hover:shadow-lg transition-all duration-200 border border-muted/80 hover:border-purple-200 rounded-2xl bg-white"
+            >
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -343,24 +346,30 @@ export default function TemplatesPage() {
 
                   {/* Actions */}
                   <div className="flex items-center justify-between">
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="outline" asChild>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" asChild className="rounded-full px-3">
                         <Link href={`/communication/templates/${template.id}`}>
                           <Eye className="mr-1 h-3 w-3" />
                           View
                         </Link>
                       </Button>
-                      <Button size="sm" variant="outline" asChild>
+                      <Button size="sm" variant="outline" asChild className="rounded-full px-3">
                         <Link href={`/communication/templates/${template.id}/edit`}>
                           <Edit className="mr-1 h-3 w-3" />
                           Edit
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" asChild className="rounded-full px-3">
+                        <Link href={`/communication/send?templateId=${template.id}`}>
+                          <Send className="mr-1 h-3 w-3" />
+                          Send
                         </Link>
                       </Button>
                     </div>
                     
                     <div className="flex space-x-1">
                       {template.versions && template.versions.length > 0 && (
-                        <Button size="sm" variant="ghost" asChild>
+                        <Button size="sm" variant="ghost" asChild title="Template versions">
                           <Link href={`/communication/templates/${template.id}/versions`}>
                             <BarChart3 className="h-3 w-3" />
                           </Link>
@@ -370,6 +379,7 @@ export default function TemplatesPage() {
                         size="sm"
                         variant="ghost"
                         className="text-red-600 hover:text-red-700"
+                        title="Delete template"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

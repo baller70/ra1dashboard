@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge'
 import { Checkbox } from '../../components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog'
 import { Label } from '../../components/ui/label'
@@ -58,6 +59,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  EllipsisVertical,
   X
 } from 'lucide-react'
 import Link from 'next/link'
@@ -69,15 +71,14 @@ import { ParentCreationModal } from '../../components/ui/parent-creation-modal'
 
 // Program configuration
 const PROGRAMS = [
-  { id: 'yearly-program', name: 'Yearly Program' },
-  { id: 'fall-aau', name: 'Fall AAU' },
-  { id: 'winter-aau', name: 'Winter AAU' },
-  { id: 'spring-aau', name: 'Spring AAU' },
-  { id: 'summer-aau', name: 'Summer AAU' },
-  { id: 'tbf-programs', name: 'TBF Programs' },
-  { id: 'lane-back-menu', name: 'Lane from Kevin\'s Back Menu' },
-  { id: 'kevin-lessons', name: 'Kevin Houston\'s Lessons' },
-  { id: 'thos-facility', name: 'THOS Facility Rentals' }
+  { id: 'yearly-program', name: 'YEARLY PROGRAM' },
+  { id: 'fall-aau', name: 'FALL AAU' },
+  { id: 'winter-aau', name: 'WINTER AAU' },
+  { id: 'spring-aau', name: 'SPRING AAU' },
+  { id: 'summer-aau', name: 'SUMMER AAU' },
+  { id: 'tbf-programs', name: 'TBF PROGRAMS' },
+  { id: 'kevin-lessons', name: 'KEVIN HOUSTON\'S LESSONS' },
+  { id: 'thos-facility', name: 'THOS FACILITY RENTALS' }
 ]
 // Dynamic import for charts
 // @ts-ignore
@@ -86,6 +87,8 @@ const Recharts = nextDynamic(() => import('recharts'), { ssr: false, loading: ()
 export default function PaymentsPage() {
   const { toast } = useToast()
   const [activeProgram, setActiveProgram] = useState('yearly-program')
+  const [activeSeason, setActiveSeason] = useState<'all' | string>('all')
+  const [availableSeasons, setAvailableSeasons] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -115,12 +118,14 @@ export default function PaymentsPage() {
         sessionStorage.removeItem('payments-cache')
       }
 
+      const seasonParam = activeSeason && activeSeason !== 'all' ? `&season=${encodeURIComponent(activeSeason)}` : ''
+
       const [paymentsRes, analyticsRes, teamsRes, parentsRes, plansRes] = await Promise.all([
-        fetch(`/api/payments?program=${activeProgram}&limit=1000&_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/payments?program=${activeProgram}${seasonParam}&limit=1000&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
         }),
-        fetch(`/api/payments/analytics?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/payments/analytics?program=${activeProgram}${seasonParam}&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-cache',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -141,7 +146,7 @@ export default function PaymentsPage() {
             'x-api-key': 'ra1-dashboard-api-key-2024'
           }
         }),
-        fetch(`/api/payment-plans?program=${activeProgram}&_cache=${cacheKey}&_t=${timestamp}`, {
+        fetch(`/api/payment-plans?program=${activeProgram}${seasonParam}&_cache=${cacheKey}&_t=${timestamp}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -173,6 +178,12 @@ export default function PaymentsPage() {
           qaTestParent: paymentsResult.data?.payments?.find((p: any) => p.parentName === 'QA Test Parent')
         })
         setPaymentsData(paymentsResult.data)
+        // derive available seasons from payments + plans
+        const seasonsFromPayments = (paymentsResult.data?.payments || [])
+          .map((p: any) => p.paymentPlan?.season || p.season)
+          .filter(Boolean)
+        const uniqueSeasons = Array.from(new Set(seasonsFromPayments))
+        setAvailableSeasons(uniqueSeasons)
       }
       if (analyticsResult.success) setAnalytics(analyticsResult.data)
       if (teamsResult.success) {
@@ -248,7 +259,7 @@ export default function PaymentsPage() {
       setRefreshing(false)
       setLastUpdated(new Date())
     }
-  }, [activeProgram])
+  }, [activeProgram, activeSeason])
 
   // Manual refresh function
   const handleManualRefresh = () => {
@@ -1274,9 +1285,17 @@ export default function PaymentsPage() {
         }))
       })
 
-      // Seed groups for all known teams and unassigned
-      for (const t of teams) groupsById[String(t._id)] = []
-      groupsById['unassigned'] = []
+      // Seed groups only for relevant teams based on the current filter to avoid showing empty groups
+      const relevantTeams = selectedTeam === 'all'
+        ? teams
+        : selectedTeam === 'unassigned'
+          ? []
+          : teams.filter(t => String(t._id) === String(selectedTeam))
+
+      for (const t of relevantTeams) groupsById[String(t._id)] = []
+      if (selectedTeam === 'all' || selectedTeam === 'unassigned') {
+        groupsById['unassigned'] = []
+      }
 
       // Place one-most-recent payment per parent into their team group by parent.teamId (never push to Unassigned if a teamId exists)
       for (const payment of deduplicatedPayments) {
@@ -1656,8 +1675,8 @@ export default function PaymentsPage() {
               </p>
             )}
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${refreshing ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
               <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
               {refreshing ? 'Updating...' : 'Live'}
             </div>
@@ -1666,6 +1685,7 @@ export default function PaymentsPage() {
               variant="outline"
               size="sm"
               disabled={refreshing}
+              className="rounded-full bg-white shadow-sm hover:shadow transition-all"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               {refreshing ? 'Updating...' : 'Refresh'}
@@ -1674,19 +1694,19 @@ export default function PaymentsPage() {
               <Button
                 onClick={generateAIReminders}
                 disabled={bulkOperating}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-sm"
               >
                 <Wand2 className="mr-2 h-4 w-4" />
                 AI Reminders ({selectedPayments.length})
               </Button>
             )}
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="rounded-full bg-white shadow-sm hover:shadow transition-all">
               <Link href="/payments/overdue">
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 Overdue ({analytics?.overdueCount || 0})
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="rounded-full bg-white shadow-sm hover:shadow transition-all">
               <Link href="/payment-plans">
                 <Calendar className="mr-2 h-4 w-4" />
                 Payment Plans
@@ -1694,12 +1714,13 @@ export default function PaymentsPage() {
             </Button>
             <Button
               onClick={() => setShowParentCreationModal(true)}
-              variant="outline"
+              variant="default"
+              className="rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-sm"
             >
               <Plus className="mr-2 h-4 w-4" />
               Create Parent
             </Button>
-            <Button asChild>
+            <Button asChild className="rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-sm">
               <Link href="/payment-plans/new">
                 <Plus className="mr-2 h-4 w-4" />
                 Create Plan
@@ -1708,19 +1729,46 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        {/* Program Tabs */}
+        {/* Program & Season Filters */}
         <Tabs value={activeProgram} onValueChange={setActiveProgram} className="w-full">
-          <TabsList className="grid w-full grid-cols-9 h-auto p-1">
-            {PROGRAMS.map((program) => (
-              <TabsTrigger
-                key={program.id}
-                value={program.id}
-                className="text-xs px-2 py-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
-              >
-                {program.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="w-full mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                Select Program
+              </label>
+              <Select value={activeProgram} onValueChange={setActiveProgram}>
+                <SelectTrigger className="h-11 rounded-xl border-2 border-muted hover:border-orange-400 transition-colors">
+                  <SelectValue placeholder="Choose a program" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-72">
+                  {PROGRAMS.map((program) => (
+                    <SelectItem key={program.id} value={program.id} className="rounded-lg">
+                      {program.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                Select Season
+              </label>
+              <Select value={activeSeason} onValueChange={setActiveSeason}>
+                <SelectTrigger className="h-11 rounded-xl border-2 border-muted hover:border-orange-400 transition-colors">
+                  <SelectValue placeholder="All Seasons" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-72">
+                  <SelectItem value="all" className="rounded-lg">All Seasons</SelectItem>
+                  {availableSeasons.map((season) => (
+                    <SelectItem key={season} value={season} className="rounded-lg">
+                      {season}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           {/* Tab Content - Render only the active program's content to ensure scoped analytics */}
           {PROGRAMS.filter(p => p.id === activeProgram).map((program) => (
@@ -1872,26 +1920,20 @@ export default function PaymentsPage() {
           </Card>
         )}
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="flex items-center space-x-2">
-                <Button size="sm" variant="outline" onClick={selectAllPayments}>
-                  Select All
-                </Button>
-                <Button size="sm" variant="outline" onClick={clearSelection}>
-                  Clear
-                </Button>
-              </div>
-              <div className="flex-1">
+        {/* Filters & Team Management */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-background to-muted/20">
+          <CardContent className="p-6">
+            {/* Search & Selection Row */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              {/* Search Bar - Expanded */}
+              <div className="flex-1 min-w-0">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 z-10" />
                   <AIInput
-                    placeholder="Search by parent name or email..."
+                    placeholder="Search parents by name or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-12 h-12 text-base rounded-xl border-2 border-muted focus:border-orange-500 transition-colors"
                     fieldType="search_query"
                     context="Search for payments by parent name, email, or payment details"
                     tone="casual"
@@ -1899,204 +1941,406 @@ export default function PaymentsPage() {
                   />
                 </div>
               </div>
-              <select
-                value={selectedTeam}
-                onChange={(e) => setSelectedTeam(e.target.value)}
-                className="px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="all">All Teams</option>
-                <option value="unassigned">
-                  Unassigned ({unassignedRenderedParentCount})
-                </option>
+
+              {/* Selection Actions */}
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant={selectedPayments.length > 0 ? "default" : "outline"}
+                  onClick={selectAllPayments}
+                  className="h-12 px-4 rounded-xl"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Select All
+                </Button>
+                {selectedPayments.length > 0 && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={clearSelection}
+                    className="h-12 px-4 rounded-xl text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Clear ({selectedPayments.length})
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Filters Row */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              {/* Team Filter */}
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Filter by Team
+                </label>
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger className="h-11 rounded-xl border-2 border-muted hover:border-orange-400 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="All Teams" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="all" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
+                        <span className="font-medium">All Teams</span>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          {allParents.length}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="unassigned" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-gray-400" />
+                        <span>Unassigned</span>
+                        <Badge variant="outline" className="ml-auto text-xs">
+                          {unassignedRenderedParentCount}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    {teams.map((team) => {
+                      const teamParentCount = (() => {
+                        try { return new Set(((groupedPayments[team.name] || []) as any[]).map((e: any) => String(e.parentId))).size } catch { return allParents.filter(p => p.teamId === team._id).length }
+                      })()
+                      return (
+                        <SelectItem key={team._id} value={team._id} className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full ring-1 ring-black/10" 
+                              style={{ backgroundColor: team.color || '#f97316' }} 
+                            />
+                            <span>{team.name}</span>
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              {teamParentCount}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Payment Status
+                </label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-11 rounded-xl border-2 border-muted hover:border-orange-400 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="All Status" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="all" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-400" />
+                        All Status
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="paid" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Paid
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pending" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        Pending
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="overdue" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                        Overdue
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="failed" className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-700" />
+                        Failed
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Group Toggle */}
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                  Display
+                </label>
+                <Button
+                  variant={groupByTeam ? "default" : "outline"}
+                  onClick={() => setGroupByTeam(!groupByTeam)}
+                  className={`h-11 w-full rounded-xl justify-start transition-all ${
+                    groupByTeam 
+                      ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+                      : 'border-2 border-muted hover:border-orange-400'
+                  }`}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Group by Team
+                  {groupByTeam && <CheckCircle className="ml-auto h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {/* Quick Team Pills */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quick Filters
+                </label>
+                <span className="text-xs text-muted-foreground">
+                  {selectedTeam !== 'all' 
+                    ? `Viewing: ${selectedTeam === 'unassigned' ? 'Unassigned' : teams.find(t => t._id === selectedTeam)?.name}`
+                    : `${teams.length} teams total`
+                  }
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedTeam('all')}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                    selectedTeam === 'all'
+                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/25'
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  }`}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-orange-400 to-orange-600" />
+                  All
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    selectedTeam === 'all' ? 'bg-white/20' : 'bg-background'
+                  }`}>
+                    {allParents.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setSelectedTeam('unassigned')}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                    selectedTeam === 'unassigned'
+                      ? 'bg-gray-600 text-white shadow-md shadow-gray-600/25'
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  }`}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                  Unassigned
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    selectedTeam === 'unassigned' ? 'bg-white/20' : 'bg-background'
+                  }`}>
+                    {unassignedRenderedParentCount}
+                  </span>
+                </button>
                 {teams.map((team) => {
                   const teamParentCount = (() => {
                     try { return new Set(((groupedPayments[team.name] || []) as any[]).map((e: any) => String(e.parentId))).size } catch { return allParents.filter(p => p.teamId === team._id).length }
                   })()
+                  const isSelected = selectedTeam === team._id
                   return (
-                    <option key={team._id} value={team._id}>
-                      {team.name} ({teamParentCount})
-                    </option>
+                    <button
+                      key={team._id}
+                      onClick={() => setSelectedTeam(team._id)}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                        isSelected
+                          ? 'text-white shadow-md'
+                          : 'bg-muted hover:bg-muted/80 text-foreground'
+                      }`}
+                      style={isSelected ? { 
+                        backgroundColor: team.color || '#f97316',
+                        boxShadow: `0 4px 14px 0 ${team.color || '#f97316'}40`
+                      } : {}}
+                    >
+                      <div 
+                        className="w-2.5 h-2.5 rounded-full ring-1 ring-black/10" 
+                        style={{ backgroundColor: team.color || '#f97316' }}
+                      />
+                      <span className="max-w-[120px] truncate">{team.name}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        isSelected ? 'bg-white/20' : 'bg-background'
+                      }`}>
+                        {teamParentCount}
+                      </span>
+                    </button>
                   )
                 })}
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="all">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-                <option value="failed">Failed</option>
-              </select>
-              {/* Single source of truth: header refresh handles manual refresh */}
+              </div>
             </div>
 
-            {/* Team Organization Toggle */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="groupByTeam"
-                  checked={groupByTeam}
-                  onCheckedChange={(checked) => setGroupByTeam(checked as boolean)}
-                />
-                <label htmlFor="groupByTeam" className="text-sm font-medium">
-                  Group by Team
-                </label>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {selectedTeam !== 'all'
-                  ? `Showing ${selectedTeam === 'unassigned' ? 'unassigned parents' : teams.find(t => t._id === selectedTeam)?.name || 'selected team'}`
-                  : `${teams.length} teams available`
-                }
-              </div>
-              <div className="ml-auto flex items-center space-x-2">
-                <Button variant="outline" size="sm" onClick={() => setShowManageTeamsDialog(true)} title="Select teams for bulk actions">
-                  Manage Teams
-                </Button>
-                <Button variant="destructive" size="sm" disabled={selectedTeamIds.length === 0} onClick={handleBulkDeleteTeams} title="Delete selected teams (parents moved to Unassigned)">
+            {/* Team Actions Bar */}
+            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-muted">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowManageTeamsDialog(true)} 
+                className="rounded-lg"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Manage Teams
+              </Button>
+              {selectedTeamIds.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={handleBulkDeleteTeams}
+                  className="rounded-lg"
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Selected Teams {selectedTeamIds.length > 0 ? `(${selectedTeamIds.length})` : ''}
+                  Delete ({selectedTeamIds.length})
                 </Button>
-                <Button variant="outline" size="sm" onClick={openParentAssignDialog}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Assign Parents
-                </Button>
-                <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" onClick={() => {
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={openParentAssignDialog}
+                className="rounded-lg"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Assign Parents
+              </Button>
+              <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => {
                       setEditingTeam(null)
                       setTeamForm({ name: '', description: '', color: '#f97316' })
-                    }}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      New Team
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingTeam ? 'Edit Team' : 'Create New Team'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="teamName">Team Name</Label>
+                    }}
+                    className="rounded-lg bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Team
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="rounded-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingTeam ? 'Edit Team' : 'Create New Team'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="teamName">Team Name</Label>
+                      <Input
+                        id="teamName"
+                        value={teamForm.name}
+                        onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+                        placeholder="e.g., Rises as One Red"
+                        className="rounded-lg mt-1.5"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="teamDescription">Description (Optional)</Label>
+                      <Input
+                        id="teamDescription"
+                        value={teamForm.description}
+                        onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
+                        placeholder="Team description..."
+                        className="rounded-lg mt-1.5"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="teamColor">Team Color</Label>
+                      <div className="flex items-center space-x-3 mt-1.5">
+                        <input
+                          type="color"
+                          id="teamColor"
+                          value={teamForm.color}
+                          onChange={(e) => setTeamForm({ ...teamForm, color: e.target.value })}
+                          className="w-14 h-10 rounded-lg border cursor-pointer"
+                        />
                         <Input
-                          id="teamName"
-                          value={teamForm.name}
-                          onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
-                          placeholder="e.g., Rises as One Red"
+                          value={teamForm.color}
+                          onChange={(e) => setTeamForm({ ...teamForm, color: e.target.value })}
+                          placeholder="#f97316"
+                          className="rounded-lg flex-1"
+                        />
+                        <div 
+                          className="w-10 h-10 rounded-lg ring-1 ring-black/10"
+                          style={{ backgroundColor: teamForm.color }}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="teamDescription">Description (Optional)</Label>
-                        <Input
-                          id="teamDescription"
-                          value={teamForm.description}
-                          onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
-                          placeholder="Team description..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="teamColor">Team Color</Label>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="color"
-                            id="teamColor"
-                            value={teamForm.color}
-                            onChange={(e) => setTeamForm({ ...teamForm, color: e.target.value })}
-                            className="w-12 h-8 rounded border"
-                          />
-                          <Input
-                            value={teamForm.color}
-                            onChange={(e) => setTeamForm({ ...teamForm, color: e.target.value })}
-                            placeholder="#f97316"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setShowTeamDialog(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}>
-                          {editingTeam ? 'Update' : 'Create'} Team
-                        </Button>
-                      </div>
                     </div>
-                  </DialogContent>
-                </Dialog>
-
-                        {teams.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            {teams.slice(0, 3).map((team) => {
-                              const teamParentCount = allParents.filter(p => p.teamId === team._id).length
-                              return (
-                                <div
-                                  key={team._id}
-                                  className="flex items-center space-x-1 text-xs bg-muted px-2 py-1 rounded"
-                                >
-                                  <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: team.color || '#f97316' }}
-                                  />
-                                  <span>{team.name}</span>
-                                  <span className="text-muted-foreground">({teamParentCount})</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-4 w-4 p-0 ml-1"
-                                    onClick={() => handleEditTeam(team)}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )
-                            })}
-                            {teams.length > 3 && (
-                              <span className="text-xs text-muted-foreground">+{teams.length - 3} more</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                    <div className="flex justify-end space-x-2 pt-2">
+                      <Button variant="outline" onClick={() => setShowTeamDialog(false)} className="rounded-lg">
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}
+                        className="rounded-lg bg-orange-500 hover:bg-orange-600"
+                      >
+                        {editingTeam ? 'Update' : 'Create'} Team
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
 
                 {/* Payments Table */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Latest Payments by Parent</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Showing the most recent payment for each parent. Click &quot;View Details &amp; History&quot; to see all payments for a parent.
-                    </p>
+                <Card className="border-0 shadow-lg">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-bold">Parents & Payments</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Most recent payment for each parent • Click "View Details" for full history
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-sm px-3 py-1">
+                        {allParents.length} total parents
+                      </Badge>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {Object.entries(groupedPayments).map(([groupName, groupPayments]) => {
+                    <div className="space-y-6">
+                      {Object.entries(groupedPayments)
+                        .filter(([groupName, groupPayments]) => {
+                          if (selectedTeam === 'all') return groupPayments.length > 0
+                          if (selectedTeam === 'unassigned') return groupName === 'Unassigned' && groupPayments.length > 0
+                          const selectedTeamName = teams.find(t => String(t._id) === String(selectedTeam))?.name
+                          return groupName === selectedTeamName && groupPayments.length > 0
+                        })
+                        .map(([groupName, groupPayments]) => {
                 const team = teams.find(t => t.name === groupName)
                 const isUnassigned = groupName === 'Unassigned'
                 const isCollapsed = collapsedTeams.has(groupName)
 
                 return (
                   <Collapsible key={groupName} open={!isCollapsed} onOpenChange={() => toggleTeamCollapse(groupName)}>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <CollapsibleTrigger asChild>
-                        <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors">
-                          <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-between cursor-pointer hover:bg-muted/30 p-3 rounded-xl transition-all group/header border border-transparent hover:border-muted">
+                          <div className="flex items-center gap-3">
                             {!isUnassigned && (
                               <Checkbox
                                 checked={team ? selectedTeamIds.includes(team._id) : false}
                                 onCheckedChange={(checked) => { if (team) handleTeamCheckbox(team._id, !!checked); }}
                                 onClick={(e) => e.stopPropagation()}
+                                className="border-2"
                               />
                             )}
                             <div
-                              className="w-4 h-4 rounded-full"
+                              className="w-5 h-5 rounded-lg ring-2 ring-black/5 shadow-sm"
                               style={{
                                 backgroundColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                               }}
                             />
-                            <h3 className="text-lg font-semibold text-orange-600" data-testid={isUnassigned ? 'unassigned-header' : undefined}>
-                              {groupName} (
+                            <div className="flex items-center gap-2">
+                              <h3 
+                                className="text-base font-bold uppercase tracking-wide" 
+                                style={{ color: isUnassigned ? '#6b7280' : (team?.color || '#f97316') }}
+                                data-testid={isUnassigned ? 'unassigned-header' : undefined}
+                              >
+                                {groupName}
+                              </h3>
+                              <Badge variant="secondary" className="font-semibold text-xs px-2 py-0.5 rounded-full">
                                 <span data-testid={isUnassigned ? 'unassigned-count' : undefined}>
                                   {(() => {
                                     if (isUnassigned) return unassignedRenderedParentCount
@@ -2115,28 +2359,31 @@ export default function PaymentsPage() {
                                   })()
                                   return count === 1 ? ' parent' : ' parents'
                                 })()}
-                              )
-                            </h3>
-                            {isCollapsed ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                            )}
+                              </Badge>
+                            </div>
+                            <div className={`p-1 rounded-md transition-colors ${isCollapsed ? 'bg-muted' : 'bg-orange-100 dark:bg-orange-900/30'}`}>
+                              {isCollapsed ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronUp className="h-4 w-4 text-orange-600" />
+                              )}
+                            </div>
                           </div>
                           {team && (
-                            <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditTeam(team)}
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30"
                               >
-                                <Settings className="h-4 w-4" />
+                                <Settings className="h-4 w-4 text-muted-foreground hover:text-orange-600" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteTeam(team._id)}
-                                className="text-red-600 hover:text-red-700"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -2147,230 +2394,247 @@ export default function PaymentsPage() {
 
                       <CollapsibleContent className="space-y-3">
                         {groupPayments.length > 0 ? (
-                          <div className="space-y-3 border-l-4 pl-4 ml-2" style={{
+                          <div className="grid gap-3 pl-4 ml-2 border-l-4" style={{
                             borderColor: isUnassigned ? '#6b7280' : (team?.color || '#f97316')
                           }}>
                             {groupPayments.filter((p: any) => p && p._id).map((payment) => (
-                          <div key={payment._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center space-x-4">
-                              {!payment.isMockEntry && (
-                                <Checkbox
-                                  checked={selectedPayments.includes(payment._id)}
-                                  onCheckedChange={(checked) => handlePaymentSelection(payment._id, checked as boolean)}
-                                />
-                              )}
-                              <div className="flex items-center space-x-2">
+                          <div 
+                            key={payment._id} 
+                            className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg hover:border-orange-300 transition-all duration-200"
+                          >
+                            {/* Card Header - Status Bar */}
+                            <div className={`px-4 py-2 flex items-center justify-between ${
+                              payment.isMockEntry 
+                                ? 'bg-muted/50' 
+                                : payment.status === 'paid' 
+                                  ? 'bg-green-50 dark:bg-green-950/20' 
+                                  : payment.status === 'overdue'
+                                    ? 'bg-red-50 dark:bg-red-950/20'
+                                    : payment.paymentPlan && payment.status === 'pending'
+                                      ? 'bg-orange-50 dark:bg-orange-950/20'
+                                      : 'bg-muted/40'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                {!payment.isMockEntry && (
+                                  <Checkbox
+                                    checked={selectedPayments.includes(payment._id)}
+                                    onCheckedChange={(checked) => handlePaymentSelection(payment._id, checked as boolean)}
+                                    className="border-2"
+                                  />
+                                )}
                                 {payment.isMockEntry ? (
-                                  <Badge variant="outline" className="flex items-center space-x-1">
-                                    <Users className="h-3 w-3" />
-                                    <span>No Payment Plan</span>
+                                  <Badge variant="outline" className="bg-background">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    No Payment Plan
                                   </Badge>
                                 ) : (
-                                  payment.paymentPlan && payment.status === 'pending' ? (
-                                    <Badge className="flex items-center space-x-1 capitalize bg-green-600 text-white">
-                                      <CheckCircle className="h-4 w-4" />
-                                      <span>Active</span>
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant={getStatusVariant(payment.status)} className="flex items-center space-x-1 capitalize">
-                                      {getStatusIcon(payment.status)}
-                                      <span>{payment.status}</span>
-                                    </Badge>
-                                  )
+                                  <>
+                                {payment.paymentPlan && payment.status === 'pending' ? (
+                                      <Badge className="bg-orange-500/90 text-white">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        Pending Plan
+                                      </Badge>
+                                    ) : payment.status === 'paid' ? (
+                                      <Badge className="bg-green-600 text-white">
+                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        Paid
+                                      </Badge>
+                                    ) : payment.status === 'overdue' ? (
+                                      <Badge className="bg-red-600 text-white">
+                                        <AlertTriangle className="h-3 w-3 mr-1" />
+                                        Overdue
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant={getStatusVariant(payment.status)} className="capitalize">
+                                        {getStatusIcon(payment.status)}
+                                        <span className="ml-1">{payment.status}</span>
+                                      </Badge>
+                                    )}
+                                    {payment.paymentPlan && (
+                                      <Badge variant="secondary" className="capitalize bg-background">
+                                        {payment.paymentPlan.type}
+                                      </Badge>
+                                    )}
+                                  </>
                                 )}
-                                {payment.paymentPlan && (
-                                  <Badge variant="outline" className="capitalize">
-                                    {payment.paymentPlan.type}
+                                {!payment.isMockEntry && payment.status === 'overdue' && (
+                                  <Badge variant="destructive" className="animate-pulse">
+                                    {Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))} DAYS OVERDUE
                                   </Badge>
                                 )}
                               </div>
-                              <div>
-                                  <div className="flex items-center space-x-2">
-                                  <p className="font-medium">{payment.parentName || payment.parent?.name || 'Unknown Parent'}</p>
+                              {/* Payment Method - Top Right */}
+                              {editingPaymentMethod === payment._id ? (
+                                <div className="flex items-center gap-1">
+                                  <Select value={tempPaymentMethod} onValueChange={setTempPaymentMethod}>
+                                    <SelectTrigger className="h-7 text-xs w-32 bg-background">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="stripe_card">Credit Card</SelectItem>
+                                      <SelectItem value="manual_card">Manual Card</SelectItem>
+                                      <SelectItem value="check">Check</SelectItem>
+                                      <SelectItem value="cash">Cash</SelectItem>
+                                      <SelectItem value="ach">ACH/Bank</SelectItem>
+                                      <SelectItem value="venmo">Venmo</SelectItem>
+                                      <SelectItem value="zelle">Zelle</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); updatePaymentMethod(payment._id, tempPaymentMethod) }}>
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingPaymentMethod(null)}>
+                                    <X className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => { setEditingPaymentMethod(payment._id); setTempPaymentMethod(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card') }}
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${getPaymentMethodColor((payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card'))} hover:opacity-80`}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  {(() => {
+                                    const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card');
+                                    return { 'stripe_card': 'Card', 'credit_card': 'Card', 'card': 'Card', 'check': 'Check', 'cheque': 'Check', 'cash': 'Cash', 'ach': 'ACH', 'venmo': 'Venmo', 'zelle': 'Zelle' }[method] || 'Card'
+                                  })()}
+                                  <Edit className="h-2.5 w-2.5 opacity-60" />
+                                </button>
+                              )}
+                            </div>
 
-                                      {/* Editable Payment Method */}
-                                      {editingPaymentMethod === payment._id ? (
-                                        <div className="flex items-center gap-1">
-                                          <Select
-                                            value={tempPaymentMethod}
-                                            onValueChange={setTempPaymentMethod}
-                                          >
-                                            <SelectTrigger className="h-6 text-xs w-28">
-                                              <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="stripe_card">Credit Card</SelectItem>
-                                              <SelectItem value="manual_card">Manual credit card / debit</SelectItem>
-                                              <SelectItem value="check">Check</SelectItem>
-                                              <SelectItem value="cash">Cash</SelectItem>
-                                              <SelectItem value="ach">ACH/Bank</SelectItem>
-                                              <SelectItem value="venmo">Venmo</SelectItem>
-                                              <SelectItem value="zelle">Zelle</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-6 w-6 p-0"
-                                            onClick={(e) => {
-                                              e.preventDefault()
-                                              e.stopPropagation()
-                                              updatePaymentMethod(payment._id, tempPaymentMethod)
-                                            }}
-                                          >
-                                            <CheckCircle className="h-3 w-3 text-green-600" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-6 w-6 p-0"
-                                            onClick={() => setEditingPaymentMethod(null)}
-                                          >
-                                            <X className="h-3 w-3 text-gray-400" />
-                                          </Button>
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center gap-1">
-                                          <Badge
-                                            className={`${getPaymentMethodColor((payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card'))} cursor-pointer hover:opacity-80`}
-                                            onClick={() => {
-                                              setEditingPaymentMethod(payment._id)
-                                              setTempPaymentMethod(payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card')
-                                            }}
-                                          >
-                                            {(() => {
-                                              const method = (payment.paymentMethod || payment.paymentPlan?.paymentMethod || 'stripe_card');
-                                              return {
-                                                'stripe_card': 'Credit Card',
-                                                'credit_card': 'Credit Card',
-                                                'card': 'Credit Card',
-                                                'check': 'Check',
-                                                'cheque': 'Check',
-                                                'cash': 'Cash',
-                                                'ach': 'ACH/Bank',
-                                                'venmo': 'Venmo',
-                                                'zelle': 'Zelle'
-                                              }[method] || 'Credit Card'
-                                            })()}
-                                          </Badge>
-                                          <Edit className="h-3 w-3 text-gray-400" />
-                                        </div>
-                                      )}
-                                  {!payment.isMockEntry && payment.status === 'overdue' && (
-                                    <Badge variant="destructive" className="text-xs font-bold">
-                                      OVERDUE
-                                    </Badge>
+                            {/* Card Body */}
+                            <div className="p-4">
+                              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                                {/* Parent Info Section */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                      {(payment.parentName || payment.parent?.name || 'U')[0].toUpperCase()}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <h4 className="font-semibold text-foreground truncate">
+                                        {payment.parentName || payment.parent?.name || 'Unknown Parent'}
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground truncate">
+                                        {payment.parentEmail || payment.parent?.email || 'No email'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {!payment.isMockEntry && payment.remindersSent > 0 && (
+                                    <div className="flex items-center gap-1 text-xs text-orange-600 mt-1">
+                                      <Bell className="h-3 w-3" />
+                                      {payment.remindersSent} reminder{payment.remindersSent !== 1 ? 's' : ''} sent
+                                    </div>
                                   )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">{payment.parentEmail || payment.parent?.email || 'No email'}</p>
-                                <div className="flex items-center space-x-2 mt-1">
+
+                                {/* Payment Details Section */}
+                                <div className="flex items-center gap-6 lg:gap-8">
                                   {payment.isMockEntry ? (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Ready for Payment Plan
-                                    </Badge>
+                                    <div className="text-center px-4">
+                                      <p className="text-sm font-medium text-muted-foreground">Ready for Payment Plan</p>
+                                    </div>
                                   ) : (
                                     <>
-                                      <Badge variant="secondary" className="text-xs">
-                                        Latest Payment
-                                      </Badge>
-                                      {payment.remindersSent > 0 && (
-                                        <p className="text-xs text-orange-600">
-                                          {payment.remindersSent} reminder{payment.remindersSent !== 1 ? 's' : ''} sent
+                                      {/* Amount */}
+                                      <div className="text-center">
+                                        <p className="text-2xl font-bold text-foreground">${Number(payment.amount).toLocaleString()}</p>
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Amount</p>
+                                      </div>
+                                      {/* Due Date */}
+                                      <div className="text-center">
+                                        <p className={`text-sm font-semibold ${payment.status === 'overdue' ? 'text-red-600' : 'text-foreground'}`}>
+                                          {new Date(payment.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </p>
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Due Date</p>
+                                      </div>
+                                      {/* Paid Date */}
+                                      {payment.paidAt && (
+                                        <div className="text-center">
+                                          <p className="text-sm font-semibold text-green-600">
+                                            {new Date(payment.paidAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Paid</p>
+                                        </div>
                                       )}
                                     </>
                                   )}
                                 </div>
-                              </div>
-                            </div>
 
-                            <div className="text-right">
-                              {payment.isMockEntry ? (
-                                <div className="text-center">
-                                  <p className="text-lg font-semibold text-muted-foreground">No Payment Plan</p>
-                                  <p className="text-sm text-muted-foreground">Create a payment plan to get started</p>
+                                {/* Actions Section */}
+                                <div className="flex items-center gap-2 lg:ml-auto shrink-0">
+                                  {payment.isMockEntry ? (
+                                    <Button asChild size="sm" className="bg-orange-500 hover:bg-orange-600 rounded-lg">
+                                      <Link href="/payment-plans/new">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create Plan
+                                      </Link>
+                                    </Button>
+                                  ) : (
+                                    <>
+                                      <Button asChild variant="default" size="sm" className="bg-orange-500 hover:bg-orange-600 rounded-lg">
+                                        <Link href={`/payments/${payment._id}`}>
+                                          <Eye className="mr-2 h-4 w-4" />
+                                          View Details
+                                        </Link>
+                                      </Button>
+                                      {payment.status === 'pending' && (
+                                        <Button size="sm" variant="outline" className="rounded-lg border-green-300 text-green-700 hover:bg-green-50">
+                                          <CheckCircle className="mr-2 h-4 w-4" />
+                                          Mark Paid
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
+                                  {/* More Actions Dropdown */}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-9 w-9 p-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        aria-label="More actions"
+                                      >
+                                        <EllipsisVertical className="h-5 w-5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-44">
+                                      {!isUnassigned && (
+                                        <DropdownMenuItem
+                                          onClick={() => handleUnassignParent(payment.parentId)}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <XCircle className="h-4 w-4 text-orange-500" />
+                                          Remove from Team
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem
+                                        onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
+                                        className="flex items-center gap-2 text-red-600"
+                                      >
+                                        {deleteLoading === payment.parentId ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <Trash2 className="h-4 w-4" />
+                                        )}
+                                        Delete Parent
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
-                              ) : (
-                                <>
-                                  <p className="text-xl font-semibold">${Number(payment.amount).toLocaleString()}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Due: {new Date(payment.dueDate).toLocaleDateString()}
-                                  </p>
-                                  {payment.paidAt && (
-                                    <p className="text-sm text-green-600">
-                                      Paid: {new Date(payment.paidAt).toLocaleDateString()}
-                                    </p>
-                                  )}
-                                  {payment.status === 'overdue' && (
-                                    <p className="text-sm text-red-600">
-                                      {Math.floor((new Date().getTime() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
-
-                                    </p>
-                                  )}
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              {payment.isMockEntry ? (
-                                <Button asChild variant="default" size="sm">
-                                  <Link href="/payment-plans/new">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Payment Plan
-                                  </Link>
-                                </Button>
-                              ) : (
-                                <>
-                                  <Button asChild variant="outline" size="sm">
-                                    <Link href={`/payments/${payment._id}`}>
-                                      <Eye className="mr-2 h-4 w-4" />
-                                      View Details & History
-                                    </Link>
-                                  </Button>
-                                  {payment.status === 'pending' && (
-                                    <Button size="sm">
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Mark Paid
-                                    </Button>
-                                  )}
-
-                                </>
-                              )}
-                                  {!isUnassigned && (
-                                    <Button variant="outline" size="sm" onClick={() => handleUnassignParent(payment.parentId)} title="Remove from team (keeps parent in Unassigned)">
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Remove from Team
-                                    </Button>
-                                  )}
-
-                              {/* Delete parent button for all entries (both mock and real) */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-
-                                onClick={() => handleDeleteParent(payment.parentId, payment.parentName || 'Unknown Parent')}
-                                disabled={deleteLoading === payment.parentId}
-                                title="Delete entire parent (including all payments)"
-                                className="text-red-800 hover:text-red-900"
-                              >
-                                {deleteLoading === payment.parentId ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No payments found in this group</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Try adjusting your search criteria or status filter.
+                      <div className="text-center py-12 bg-muted/30 rounded-xl border-2 border-dashed">
+                        <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No payments in this group</h3>
+                        <p className="text-muted-foreground mb-4 text-sm">
+                          Adjust your search or filters, or create a new payment plan.
                         </p>
-                        <Button asChild>
+                        <Button asChild className="bg-orange-500 hover:bg-orange-600 rounded-lg">
                           <Link href="/payment-plans/new">
                             <Plus className="mr-2 h-4 w-4" />
                             Create Payment Plan

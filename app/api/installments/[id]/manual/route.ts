@@ -3,9 +3,10 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server'
 import { api } from '../../../../convex/_generated/api'
 import { convexHttp } from '../../../../lib/convex-server'
+import prisma from '../../../../lib/prisma'
 
 // POST: mark or unmark an installment as paid, without Stripe charge
-// Body: { markPaid: boolean, method?: string, note?: string, actor?: string }
+// Body: { markPaid: boolean, method?: string, note?: string, actor?: string, parentPaymentId?: string }
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   // Helper: loose Convex Id check to avoid throwing before we can respond
   const isConvexId = (s: any) => typeof s === 'string' && s.length >= 25 && /^[a-z0-9]+$/i.test(s)
@@ -19,8 +20,77 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const actor = typeof body.actor === 'string' ? body.actor : undefined
     const parentPaymentId = typeof body.parentPaymentId === 'string' ? body.parentPaymentId : undefined
 
-    console.log('[Manual Installment] incoming', { id, markPaid, method, hasNote: !!note, actor })
+    console.log('[Manual Installment] incoming', { id, markPaid, method, hasNote: !!note, actor, parentPaymentId })
 
+    // --- Prisma path (primary) -------------------------------------------------
+    try {
+      const installment = await prisma.payment_installments.findUnique({ where: { id } })
+
+      if (installment) {
+        const now = new Date()
+        const nextNotes = (() => {
+          const existing = installment.notes || ''
+          const parsed = (() => { try { return JSON.parse(existing) } catch { return {} } })()
+          if (markPaid) {
+            return JSON.stringify({
+              ...parsed,
+              manualPayment: { at: now.toISOString(), method: method || 'manual', note: note || '', actor: actor || 'admin' },
+            })
+          }
+          // remove manualPayment entry on revert
+          const filtered = Object.fromEntries(Object.entries(parsed).filter(([k]) => k !== 'manualPayment'))
+          return JSON.stringify(filtered)
+        })()
+
+        const updated = await prisma.payment_installments.update({
+          where: { id },
+          data: {
+            status: markPaid ? 'paid' : 'pending',
+            paidAt: markPaid ? now : null,
+            notes: nextNotes,
+            updatedAt: now,
+          },
+        })
+
+        // Compute fresh progress using the parentPaymentId from body or the installment
+        const effectivePaymentId = parentPaymentId || installment.parentPaymentId
+        let progress: any = undefined
+        try {
+          const rows = await prisma.payment_installments.findMany({
+            where: { parentPaymentId: effectivePaymentId },
+            orderBy: { installmentNumber: 'asc' },
+          })
+          const installments = rows.map((inst) => ({
+            _id: inst.id,
+            installmentNumber: inst.installmentNumber,
+            amount: inst.amount,
+            dueDate: inst.dueDate.getTime(),
+            status: inst.status,
+            paidAt: inst.paidAt?.getTime(),
+            notes: inst.notes,
+            isOverdue: inst.status === 'pending' && inst.dueDate.getTime() < Date.now(),
+          }))
+          const totalInstallments = installments.length
+          const paidInstallments = installments.filter((i: any) => i.status === 'paid').length
+          const overdueInstallments = installments.filter((i: any) => i.isOverdue).length
+          const totalAmount = installments.reduce((s: number, i: any) => s + (i.amount || 0), 0)
+          const paidAmount = installments.filter((i: any) => i.status === 'paid').reduce((s: number, i: any) => s + (i.amount || 0), 0)
+          const remainingAmount = totalAmount - paidAmount
+          const progressPercentage = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
+          const pending = installments.filter((i: any) => i.status === 'pending')
+          const nextDue = pending.length > 0 ? pending.sort((a: any, b: any) => a.dueDate - b.dueDate)[0] : null
+          progress = { totalInstallments, paidInstallments, overdueInstallments, totalAmount, paidAmount, remainingAmount, progressPercentage, nextDue, installments }
+        } catch (e) {
+          // ignore progress calc failures; UI can refetch
+        }
+
+        return NextResponse.json({ success: true, paid: markPaid, updatedId: updated.id, debug: { path: 'prisma', id, markPaid }, progress })
+      }
+    } catch (prismaErr) {
+      console.warn('[Manual Installment] prisma path failed, falling back to Convex', prismaErr)
+    }
+
+    // --- Convex fallback (legacy data) ----------------------------------------
     if (!id || !isConvexId(id)) {
       return NextResponse.json({ error: 'Invalid or missing id', debug: { id } }, { status: 400 })
     }
@@ -88,7 +158,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       console.warn('[Manual Installment] payment lookup failed (will try installment path)', { id, err: (err as any)?.message })
     }
 
-    // Default path: treat id as an installment id
+    // Default path: treat id as an installment id (Convex)
     try {
       const result = await (convexHttp as any).mutation(api.paymentInstallments.setManualInstallmentStatus, {
         installmentId: id as any,

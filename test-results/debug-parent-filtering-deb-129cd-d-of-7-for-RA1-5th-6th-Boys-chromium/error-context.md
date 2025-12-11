@@ -1,0 +1,1948 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - heading "RA1 Dashboard" [level=1] [ref=e7]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Parents" [ref=e11] [cursor=pointer]:
+            - /url: /parents
+          - link "Payments" [ref=e12] [cursor=pointer]:
+            - /url: /payments
+          - link "Communication" [ref=e13] [cursor=pointer]:
+            - /url: /communication
+          - link "Contracts" [ref=e14] [cursor=pointer]:
+            - /url: /contracts
+          - link "Assessment" [ref=e15] [cursor=pointer]:
+            - /url: /assessments
+          - link "Settings" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+    - main [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - heading "Payments Dashboard" [level=1] [ref=e21]
+            - paragraph [ref=e22]: Manage payments, track progress, and handle overdue accounts
+            - paragraph [ref=e23]: "Last updated: 3:28:49 AM"
+          - generic [ref=e24]:
+            - generic [ref=e25]: Live
+            - button "Refresh" [ref=e27] [cursor=pointer]:
+              - img [ref=e28] [cursor=pointer]
+              - text: Refresh
+            - link "Overdue (35)" [ref=e33] [cursor=pointer]:
+              - /url: /payments/overdue
+              - img [ref=e34] [cursor=pointer]
+              - text: Overdue (35)
+            - link "Payment Plans" [ref=e36] [cursor=pointer]:
+              - /url: /payment-plans
+              - img [ref=e37] [cursor=pointer]
+              - text: Payment Plans
+            - button "Create Parent" [ref=e39] [cursor=pointer]:
+              - img [ref=e40] [cursor=pointer]
+              - text: Create Parent
+            - link "Create Plan" [ref=e41] [cursor=pointer]:
+              - /url: /payment-plans/new
+              - img [ref=e42] [cursor=pointer]
+              - text: Create Plan
+        - generic [ref=e43]:
+          - tablist [ref=e44]:
+            - tab "Yearly Program" [selected] [ref=e45] [cursor=pointer]
+            - tab "Fall AAU" [ref=e46] [cursor=pointer]
+            - tab "Winter AAU" [ref=e47] [cursor=pointer]
+            - tab "Spring AAU" [ref=e48] [cursor=pointer]
+            - tab "Summer AAU" [ref=e49] [cursor=pointer]
+            - tab "TBF Programs" [ref=e50] [cursor=pointer]
+            - tab "Lane from Kevin's Back Menu" [ref=e51] [cursor=pointer]
+            - tab "Kevin Houston's Lessons" [ref=e52] [cursor=pointer]
+            - tab "THOS Facility Rentals" [ref=e53] [cursor=pointer]
+          - tabpanel "Yearly Program" [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: Yearly Program - Payment Dashboard
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - generic [ref=e59]:
+                    - heading "Total Parents" [level=3] [ref=e60]
+                    - img [ref=e61]
+                  - generic [ref=e66]:
+                    - generic [ref=e67]: "54"
+                    - paragraph [ref=e68]: Connected to parents page
+                - generic [ref=e69]:
+                  - generic [ref=e70]:
+                    - heading "Total Revenue" [level=3] [ref=e71]
+                    - img [ref=e72]
+                  - generic [ref=e74]:
+                    - generic [ref=e75]: $138,600
+                    - paragraph [ref=e76]:
+                      - img [ref=e77]
+                      - text: All time
+                - generic [ref=e80]:
+                  - generic [ref=e81]:
+                    - heading "Collected" [level=3] [ref=e82]
+                    - img [ref=e83]
+                  - generic [ref=e86]:
+                    - generic [ref=e87]: $16,545.59
+                    - paragraph [ref=e88]: 43 active plans
+                - generic [ref=e89]:
+                  - generic [ref=e90]:
+                    - heading "Pending" [level=3] [ref=e91]
+                    - img [ref=e92]
+                  - generic [ref=e95]:
+                    - generic [ref=e96]: $58,352.07
+                    - paragraph [ref=e97]: Awaiting payment
+                - generic [ref=e98]:
+                  - generic [ref=e99]:
+                    - heading "Overdue" [level=3] [ref=e100]
+                    - img [ref=e101]
+                  - generic [ref=e103]:
+                    - generic [ref=e104]: $0
+                    - paragraph [ref=e105]: Requires immediate attention
+                - generic [ref=e106]:
+                  - generic [ref=e107]:
+                    - heading "Active Plans" [level=3] [ref=e108]
+                    - img [ref=e109]
+                  - generic [ref=e114]:
+                    - generic [ref=e115]: "43"
+                    - paragraph [ref=e116]: payment plans
+              - generic [ref=e118]:
+                - generic [ref=e119]:
+                  - generic [ref=e120]:
+                    - button "Select All" [ref=e121] [cursor=pointer]
+                    - button "Clear" [ref=e122] [cursor=pointer]
+                  - generic [ref=e124]:
+                    - img [ref=e125]
+                    - generic [ref=e129]:
+                      - generic [ref=e130]:
+                        - textbox "Search by parent name or email..." [ref=e131]
+                        - generic [ref=e133]:
+                          - img [ref=e134]
+                          - text: AI
+                      - button [ref=e144] [cursor=pointer]:
+                        - img [ref=e145] [cursor=pointer]
+                  - combobox [ref=e148]:
+                    - option "All Teams" [selected]
+                    - option "Unassigned (2)"
+                    - option "5th/6th grade boys (8)"
+                    - option "RA1 6th Girls (9)"
+                    - option "RA1 7th/8th Girls (7)"
+                    - option "RA1 7th/8th Boys (6)"
+                    - option "HS Girls Red (7)"
+                    - 'option "HS Boys #1 (7)"'
+                    - option "E2E Bulk A 1758745843892 (1)"
+                    - 'option "HS Boys #2 (7)"'
+                  - combobox [ref=e149]:
+                    - option "All Status" [selected]
+                    - option "Paid"
+                    - option "Pending"
+                    - option "Overdue"
+                    - option "Failed"
+                - generic [ref=e150]:
+                  - generic [ref=e151]:
+                    - checkbox "Group by Team" [checked] [ref=e152] [cursor=pointer]:
+                      - generic:
+                        - img
+                    - generic [ref=e153]: Group by Team
+                  - generic [ref=e154]: 8 teams available
+                  - generic [ref=e155]:
+                    - button "Manage Teams" [ref=e156] [cursor=pointer]
+                    - button "Delete Selected Teams" [disabled]:
+                      - img
+                      - text: Delete Selected Teams
+                    - button "Assign Parents" [ref=e157] [cursor=pointer]:
+                      - img [ref=e158] [cursor=pointer]
+                      - text: Assign Parents
+                    - button "New Team" [ref=e161] [cursor=pointer]:
+                      - img [ref=e162] [cursor=pointer]
+                      - text: New Team
+                    - generic [ref=e163]:
+                      - generic [ref=e164]:
+                        - generic [ref=e166]: 5th/6th grade boys
+                        - generic [ref=e167]: (8)
+                        - button [ref=e168] [cursor=pointer]:
+                          - img [ref=e169] [cursor=pointer]
+                      - generic [ref=e172]:
+                        - generic [ref=e174]: RA1 6th Girls
+                        - generic [ref=e175]: (9)
+                        - button [ref=e176] [cursor=pointer]:
+                          - img [ref=e177] [cursor=pointer]
+                      - generic [ref=e180]:
+                        - generic [ref=e182]: RA1 7th/8th Girls
+                        - generic [ref=e183]: (7)
+                        - button [ref=e184] [cursor=pointer]:
+                          - img [ref=e185] [cursor=pointer]
+                      - generic [ref=e188]: +5 more
+              - generic [ref=e189]:
+                - generic [ref=e190]:
+                  - heading "Latest Payments by Parent" [level=3] [ref=e191]
+                  - paragraph [ref=e192]: Showing the most recent payment for each parent. Click "View Details & History" to see all payments for a parent.
+                - generic [ref=e194]:
+                  - generic [ref=e196]:
+                    - generic [ref=e197] [cursor=pointer]:
+                      - generic [ref=e198] [cursor=pointer]:
+                        - checkbox [ref=e199] [cursor=pointer]
+                        - heading "5th/6th grade boys (8 parents)" [level=3] [ref=e201] [cursor=pointer]:
+                          - text: 5th/6th grade boys (
+                          - generic [ref=e202] [cursor=pointer]: "8"
+                          - text: parents)
+                        - img [ref=e203] [cursor=pointer]
+                      - generic [ref=e205] [cursor=pointer]:
+                        - button [ref=e206] [cursor=pointer]:
+                          - img [ref=e207] [cursor=pointer]
+                        - button [ref=e210] [cursor=pointer]:
+                          - img [ref=e211] [cursor=pointer]
+                    - generic [ref=e215]:
+                      - generic [ref=e216]:
+                        - generic [ref=e217]:
+                          - checkbox [ref=e218] [cursor=pointer]
+                          - generic [ref=e219]:
+                            - generic [ref=e220]:
+                              - img [ref=e221]
+                              - generic [ref=e224]: paid
+                            - generic [ref=e225]: monthly
+                          - generic [ref=e226]:
+                            - generic [ref=e227]:
+                              - paragraph [ref=e228]: Zion Williams
+                              - generic [ref=e229]:
+                                - generic [ref=e230] [cursor=pointer]: Credit Card
+                                - img [ref=e231]
+                            - paragraph [ref=e234]: nw70071986@gnail.com
+                            - generic [ref=e236]: Latest Payment
+                        - generic [ref=e237]:
+                          - paragraph [ref=e238]: $1,650
+                          - paragraph [ref=e239]: "Due: 9/25/2025"
+                          - paragraph [ref=e240]: "Paid: 9/26/2025"
+                        - generic [ref=e241]:
+                          - link "View Details & History" [ref=e242] [cursor=pointer]:
+                            - /url: /payments/jh72yrh1pk25pz504q32j9qj2h7rb5sm
+                            - img [ref=e243] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e246] [cursor=pointer]:
+                            - img [ref=e247] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e251] [cursor=pointer]:
+                            - img [ref=e252] [cursor=pointer]
+                      - generic [ref=e255]:
+                        - generic [ref=e256]:
+                          - checkbox [ref=e257] [cursor=pointer]
+                          - generic [ref=e258]:
+                            - generic [ref=e259]:
+                              - img [ref=e260]
+                              - generic [ref=e263]: paid
+                            - generic [ref=e264]: full
+                          - generic [ref=e265]:
+                            - generic [ref=e266]:
+                              - paragraph [ref=e267]: Damion Grant
+                              - generic [ref=e268]:
+                                - generic [ref=e269] [cursor=pointer]: Credit Card
+                                - img [ref=e270]
+                            - paragraph [ref=e273]: jilliannemel@gmail.com
+                            - generic [ref=e275]: Latest Payment
+                        - generic [ref=e276]:
+                          - paragraph [ref=e277]: $1,650
+                          - paragraph [ref=e278]: "Due: 9/25/2025"
+                          - paragraph [ref=e279]: "Paid: 9/26/2025"
+                        - generic [ref=e280]:
+                          - link "View Details & History" [ref=e281] [cursor=pointer]:
+                            - /url: /payments/jh7785j480zs4rnzn6sr880pvd7rb9ye
+                            - img [ref=e282] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e285] [cursor=pointer]:
+                            - img [ref=e286] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e290] [cursor=pointer]:
+                            - img [ref=e291] [cursor=pointer]
+                      - generic [ref=e294]:
+                        - generic [ref=e295]:
+                          - checkbox [ref=e296] [cursor=pointer]
+                          - generic [ref=e297]:
+                            - generic [ref=e298]:
+                              - img [ref=e299]
+                              - generic [ref=e302]: Active
+                            - generic [ref=e303]: quarterly
+                          - generic [ref=e304]:
+                            - generic [ref=e305]:
+                              - paragraph [ref=e306]: Adam Masri
+                              - generic [ref=e307]:
+                                - generic [ref=e308] [cursor=pointer]: Credit Card
+                                - img [ref=e309]
+                            - paragraph [ref=e312]: amasri.capital@gmail.com
+                            - generic [ref=e314]: Latest Payment
+                        - generic [ref=e315]:
+                          - paragraph [ref=e316]: $1,700.22
+                          - paragraph [ref=e317]: "Due: 10/1/2025"
+                        - generic [ref=e318]:
+                          - link "View Details & History" [ref=e319] [cursor=pointer]:
+                            - /url: /payments/jh7a2h5mhgy9qrd650h0x70x6n7rq1bs
+                            - img [ref=e320] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e323] [cursor=pointer]:
+                            - img [ref=e324] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e327] [cursor=pointer]:
+                            - img [ref=e328] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e332] [cursor=pointer]:
+                            - img [ref=e333] [cursor=pointer]
+                      - generic [ref=e336]:
+                        - generic [ref=e337]:
+                          - checkbox [ref=e338] [cursor=pointer]
+                          - generic [ref=e339]:
+                            - generic [ref=e340]:
+                              - img [ref=e341]
+                              - generic [ref=e344]: Active
+                            - generic [ref=e345]: monthly
+                          - generic [ref=e346]:
+                            - generic [ref=e347]:
+                              - paragraph [ref=e348]: Chase Johnson
+                              - generic [ref=e349]:
+                                - generic [ref=e350] [cursor=pointer]: Credit Card
+                                - img [ref=e351]
+                            - paragraph [ref=e354]: mjohnson@westorangeschools.org
+                            - generic [ref=e356]: Latest Payment
+                        - generic [ref=e357]:
+                          - paragraph [ref=e358]: $1,650
+                          - paragraph [ref=e359]: "Due: 10/2/2025"
+                        - generic [ref=e360]:
+                          - link "View Details & History" [ref=e361] [cursor=pointer]:
+                            - /url: /payments/jh70mkvnywah6nd4jfn5y7w3a17rrwd4
+                            - img [ref=e362] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e365] [cursor=pointer]:
+                            - img [ref=e366] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e369] [cursor=pointer]:
+                            - img [ref=e370] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e374] [cursor=pointer]:
+                            - img [ref=e375] [cursor=pointer]
+                      - generic [ref=e378]:
+                        - generic [ref=e379]:
+                          - checkbox [ref=e380] [cursor=pointer]
+                          - generic [ref=e381]:
+                            - generic [ref=e382]:
+                              - img [ref=e383]
+                              - generic [ref=e386]: Active
+                            - generic [ref=e387]: monthly
+                          - generic [ref=e388]:
+                            - generic [ref=e389]:
+                              - paragraph [ref=e390]: Paddy Rixon
+                              - generic [ref=e391]:
+                                - generic [ref=e392] [cursor=pointer]: Credit Card
+                                - img [ref=e393]
+                            - paragraph [ref=e396]: laurarixon86@gmail.com
+                            - generic [ref=e398]: Latest Payment
+                        - generic [ref=e399]:
+                          - paragraph [ref=e400]: $1,650
+                          - paragraph [ref=e401]: "Due: 10/2/2025"
+                        - generic [ref=e402]:
+                          - link "View Details & History" [ref=e403] [cursor=pointer]:
+                            - /url: /payments/jh73c7rkq1d19swgsbtw749v9h7rrq5q
+                            - img [ref=e404] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e407] [cursor=pointer]:
+                            - img [ref=e408] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e411] [cursor=pointer]:
+                            - img [ref=e412] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e416] [cursor=pointer]:
+                            - img [ref=e417] [cursor=pointer]
+                      - generic [ref=e420]:
+                        - generic [ref=e421]:
+                          - checkbox [ref=e422] [cursor=pointer]
+                          - generic [ref=e423]:
+                            - generic [ref=e424]:
+                              - img [ref=e425]
+                              - generic [ref=e428]: Active
+                            - generic [ref=e429]: quarterly
+                          - generic [ref=e430]:
+                            - generic [ref=e431]:
+                              - paragraph [ref=e432]: Isaac Cunha
+                              - generic [ref=e433]:
+                                - generic [ref=e434] [cursor=pointer]: Check
+                                - img [ref=e435]
+                            - paragraph [ref=e438]: moeper18@yahoo.com
+                            - generic [ref=e440]: Latest Payment
+                        - generic [ref=e441]:
+                          - paragraph [ref=e442]: $1,700.22
+                          - paragraph [ref=e443]: "Due: 10/2/2025"
+                        - generic [ref=e444]:
+                          - link "View Details & History" [ref=e445] [cursor=pointer]:
+                            - /url: /payments/jh75nc6qgar4xspxjh01wbccxx7rryts
+                            - img [ref=e446] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e449] [cursor=pointer]:
+                            - img [ref=e450] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e453] [cursor=pointer]:
+                            - img [ref=e454] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e458] [cursor=pointer]:
+                            - img [ref=e459] [cursor=pointer]
+                      - generic [ref=e462]:
+                        - generic [ref=e463]:
+                          - checkbox [ref=e464] [cursor=pointer]
+                          - generic [ref=e465]:
+                            - generic [ref=e466]:
+                              - img [ref=e467]
+                              - generic [ref=e470]: Active
+                            - generic [ref=e471]: monthly
+                          - generic [ref=e472]:
+                            - generic [ref=e473]:
+                              - paragraph [ref=e474]: Marcello Ferdinand
+                              - generic [ref=e475]:
+                                - generic [ref=e476] [cursor=pointer]: Credit Card
+                                - img [ref=e477]
+                            - paragraph [ref=e480]: cferd23@gmail.com
+                            - generic [ref=e482]: Latest Payment
+                        - generic [ref=e483]:
+                          - paragraph [ref=e484]: $1,701.99
+                          - paragraph [ref=e485]: "Due: 10/5/2025"
+                        - generic [ref=e486]:
+                          - link "View Details & History" [ref=e487] [cursor=pointer]:
+                            - /url: /payments/jh7f2rp92a5ptgnhg0tvw118vs7rynne
+                            - img [ref=e488] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e491] [cursor=pointer]:
+                            - img [ref=e492] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e495] [cursor=pointer]:
+                            - img [ref=e496] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e500] [cursor=pointer]:
+                            - img [ref=e501] [cursor=pointer]
+                      - generic [ref=e504]:
+                        - generic [ref=e505]:
+                          - generic [ref=e507]:
+                            - img [ref=e508]
+                            - generic [ref=e513]: No Payment Plan
+                          - generic [ref=e514]:
+                            - generic [ref=e515]:
+                              - paragraph [ref=e516]: Troy Houston
+                              - generic [ref=e517]:
+                                - generic [ref=e518] [cursor=pointer]: Credit Card
+                                - img [ref=e519]
+                            - paragraph [ref=e522]: elizkc@hotmail.com
+                            - generic [ref=e524]: Ready for Payment Plan
+                        - generic [ref=e526]:
+                          - paragraph [ref=e527]: No Payment Plan
+                          - paragraph [ref=e528]: Create a payment plan to get started
+                        - generic [ref=e529]:
+                          - link "Create Payment Plan" [ref=e530] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e531] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e532] [cursor=pointer]:
+                            - img [ref=e533] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e537] [cursor=pointer]:
+                            - img [ref=e538] [cursor=pointer]
+                  - generic [ref=e542]:
+                    - generic [ref=e543] [cursor=pointer]:
+                      - generic [ref=e544] [cursor=pointer]:
+                        - checkbox [ref=e545] [cursor=pointer]
+                        - heading "RA1 6th Girls (9 parents)" [level=3] [ref=e547] [cursor=pointer]:
+                          - text: RA1 6th Girls (
+                          - generic [ref=e548] [cursor=pointer]: "9"
+                          - text: parents)
+                        - img [ref=e549] [cursor=pointer]
+                      - generic [ref=e551] [cursor=pointer]:
+                        - button [ref=e552] [cursor=pointer]:
+                          - img [ref=e553] [cursor=pointer]
+                        - button [ref=e556] [cursor=pointer]:
+                          - img [ref=e557] [cursor=pointer]
+                    - generic [ref=e561]:
+                      - generic [ref=e562]:
+                        - generic [ref=e563]:
+                          - checkbox [ref=e564] [cursor=pointer]
+                          - generic [ref=e565]:
+                            - generic [ref=e566]:
+                              - img [ref=e567]
+                              - generic [ref=e570]: paid
+                            - generic [ref=e571]: custom
+                          - generic [ref=e572]:
+                            - generic [ref=e573]:
+                              - paragraph [ref=e574]: Mia Ragno
+                              - generic [ref=e575]:
+                                - generic [ref=e576] [cursor=pointer]: Cash
+                                - img [ref=e577]
+                            - paragraph [ref=e580]: jena976@aol.com
+                            - generic [ref=e582]: Latest Payment
+                        - generic [ref=e583]:
+                          - paragraph [ref=e584]: $1,646
+                          - paragraph [ref=e585]: "Due: 9/25/2025"
+                          - paragraph [ref=e586]: "Paid: 9/26/2025"
+                        - generic [ref=e587]:
+                          - link "View Details & History" [ref=e588] [cursor=pointer]:
+                            - /url: /payments/jh730fvp0etv7mng5x4r2kk7as7rb31q
+                            - img [ref=e589] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e592] [cursor=pointer]:
+                            - img [ref=e593] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e597] [cursor=pointer]:
+                            - img [ref=e598] [cursor=pointer]
+                      - generic [ref=e601]:
+                        - generic [ref=e602]:
+                          - checkbox [ref=e603] [cursor=pointer]
+                          - generic [ref=e604]:
+                            - generic [ref=e605]:
+                              - img [ref=e606]
+                              - generic [ref=e609]: Active
+                            - generic [ref=e610]: monthly
+                          - generic [ref=e611]:
+                            - generic [ref=e612]:
+                              - paragraph [ref=e613]: Genesis Sanchez
+                              - generic [ref=e614]:
+                                - generic [ref=e615] [cursor=pointer]: Cash
+                                - img [ref=e616]
+                            - paragraph [ref=e619]: ssanchez8519@gmail.com
+                            - generic [ref=e621]: Latest Payment
+                        - generic [ref=e622]:
+                          - paragraph [ref=e623]: $1,649.97
+                          - paragraph [ref=e624]: "Due: 10/6/2025"
+                        - generic [ref=e625]:
+                          - link "View Details & History" [ref=e626] [cursor=pointer]:
+                            - /url: /payments/jh7cnhvepvghpsrfyty2k9h9557s1exr
+                            - img [ref=e627] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e630] [cursor=pointer]:
+                            - img [ref=e631] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e634] [cursor=pointer]:
+                            - img [ref=e635] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e639] [cursor=pointer]:
+                            - img [ref=e640] [cursor=pointer]
+                      - generic [ref=e643]:
+                        - generic [ref=e644]:
+                          - checkbox [ref=e645] [cursor=pointer]
+                          - generic [ref=e646]:
+                            - generic [ref=e647]:
+                              - img [ref=e648]
+                              - generic [ref=e651]: Active
+                            - generic [ref=e652]: monthly
+                          - generic [ref=e653]:
+                            - generic [ref=e654]:
+                              - paragraph [ref=e655]: Emily Elshout
+                              - generic [ref=e656]:
+                                - generic [ref=e657] [cursor=pointer]: Credit Card
+                                - img [ref=e658]
+                            - paragraph [ref=e661]: dave.elshout@gmail.com
+                            - generic [ref=e663]: Latest Payment
+                        - generic [ref=e664]:
+                          - paragraph [ref=e665]: $1,701.99
+                          - paragraph [ref=e666]: "Due: 10/6/2025"
+                        - generic [ref=e667]:
+                          - link "View Details & History" [ref=e668] [cursor=pointer]:
+                            - /url: /payments/jh7dqheeb2crcaa51t8a60t5rn7s0rjm
+                            - img [ref=e669] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e672] [cursor=pointer]:
+                            - img [ref=e673] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e676] [cursor=pointer]:
+                            - img [ref=e677] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e681] [cursor=pointer]:
+                            - img [ref=e682] [cursor=pointer]
+                      - generic [ref=e685]:
+                        - generic [ref=e686]:
+                          - checkbox [ref=e687] [cursor=pointer]
+                          - generic [ref=e688]:
+                            - generic [ref=e689]:
+                              - img [ref=e690]
+                              - generic [ref=e693]: Active
+                            - generic [ref=e694]: monthly
+                          - generic [ref=e695]:
+                            - generic [ref=e696]:
+                              - paragraph [ref=e697]: Rita Ferdinand
+                              - generic [ref=e698]:
+                                - generic [ref=e699] [cursor=pointer]: Credit Card
+                                - img [ref=e700]
+                            - paragraph [ref=e703]: cferd23@gmail.com
+                            - generic [ref=e705]: Latest Payment
+                        - generic [ref=e706]:
+                          - paragraph [ref=e707]: $1,701.99
+                          - paragraph [ref=e708]: "Due: 10/6/2025"
+                        - generic [ref=e709]:
+                          - link "View Details & History" [ref=e710] [cursor=pointer]:
+                            - /url: /payments/jh7at4fxhwag3ct4a5v98drv8s7s02x0
+                            - img [ref=e711] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e714] [cursor=pointer]:
+                            - img [ref=e715] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e718] [cursor=pointer]:
+                            - img [ref=e719] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e723] [cursor=pointer]:
+                            - img [ref=e724] [cursor=pointer]
+                      - generic [ref=e727]:
+                        - generic [ref=e728]:
+                          - checkbox [ref=e729] [cursor=pointer]
+                          - generic [ref=e730]:
+                            - generic [ref=e731]:
+                              - img [ref=e732]
+                              - generic [ref=e735]: Active
+                            - generic [ref=e736]: monthly
+                          - generic [ref=e737]:
+                            - generic [ref=e738]:
+                              - paragraph [ref=e739]: Riley McCarney-Pletcher
+                              - generic [ref=e740]:
+                                - generic [ref=e741] [cursor=pointer]: Credit Card
+                                - img [ref=e742]
+                            - paragraph [ref=e745]: mpletcher617@gmail.com
+                            - generic [ref=e747]: Latest Payment
+                        - generic [ref=e748]:
+                          - paragraph [ref=e749]: $1,650
+                          - paragraph [ref=e750]: "Due: 10/6/2025"
+                        - generic [ref=e751]:
+                          - link "View Details & History" [ref=e752] [cursor=pointer]:
+                            - /url: /payments/jh7cab91sanfzgjnaytx2c87ts7s0jb9
+                            - img [ref=e753] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e756] [cursor=pointer]:
+                            - img [ref=e757] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e760] [cursor=pointer]:
+                            - img [ref=e761] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e765] [cursor=pointer]:
+                            - img [ref=e766] [cursor=pointer]
+                      - generic [ref=e769]:
+                        - generic [ref=e770]:
+                          - checkbox [ref=e771] [cursor=pointer]
+                          - generic [ref=e772]:
+                            - generic [ref=e773]:
+                              - img [ref=e774]
+                              - generic [ref=e777]: Active
+                            - generic [ref=e778]: monthly
+                          - generic [ref=e779]:
+                            - generic [ref=e780]:
+                              - paragraph [ref=e781]: Renee Chiarolanza
+                              - generic [ref=e782]:
+                                - generic [ref=e783] [cursor=pointer]: Credit Card
+                                - img [ref=e784]
+                            - paragraph [ref=e787]: jpc973@yahoo.com
+                            - generic [ref=e789]: Latest Payment
+                        - generic [ref=e790]:
+                          - paragraph [ref=e791]: $1,701.99
+                          - paragraph [ref=e792]: "Due: 10/6/2025"
+                        - generic [ref=e793]:
+                          - link "View Details & History" [ref=e794] [cursor=pointer]:
+                            - /url: /payments/jh74g3wmm4bma8jb7hy6361gth7s1jsa
+                            - img [ref=e795] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e798] [cursor=pointer]:
+                            - img [ref=e799] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e802] [cursor=pointer]:
+                            - img [ref=e803] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e807] [cursor=pointer]:
+                            - img [ref=e808] [cursor=pointer]
+                      - generic [ref=e811]:
+                        - generic [ref=e812]:
+                          - checkbox [ref=e813] [cursor=pointer]
+                          - generic [ref=e814]:
+                            - generic [ref=e815]:
+                              - img [ref=e816]
+                              - generic [ref=e819]: Active
+                            - generic [ref=e820]: monthly
+                          - generic [ref=e821]:
+                            - generic [ref=e822]:
+                              - paragraph [ref=e823]: Cecilia Chiarolanza
+                              - generic [ref=e824]:
+                                - generic [ref=e825] [cursor=pointer]: Credit Card
+                                - img [ref=e826]
+                            - paragraph [ref=e829]: jpc973@yahoo.com
+                            - generic [ref=e831]: Latest Payment
+                        - generic [ref=e832]:
+                          - paragraph [ref=e833]: $1,650
+                          - paragraph [ref=e834]: "Due: 10/6/2025"
+                        - generic [ref=e835]:
+                          - link "View Details & History" [ref=e836] [cursor=pointer]:
+                            - /url: /payments/jh7b1z0q96ty2wy61af3caden97s1yw3
+                            - img [ref=e837] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e840] [cursor=pointer]:
+                            - img [ref=e841] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e844] [cursor=pointer]:
+                            - img [ref=e845] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e849] [cursor=pointer]:
+                            - img [ref=e850] [cursor=pointer]
+                      - generic [ref=e853]:
+                        - generic [ref=e854]:
+                          - checkbox [ref=e855] [cursor=pointer]
+                          - generic [ref=e856]:
+                            - generic [ref=e857]:
+                              - img [ref=e858]
+                              - generic [ref=e861]: Active
+                            - generic [ref=e862]: monthly
+                          - generic [ref=e863]:
+                            - generic [ref=e864]:
+                              - paragraph [ref=e865]: Reagan Haines
+                              - generic [ref=e866]:
+                                - generic [ref=e867] [cursor=pointer]: Credit Card
+                                - img [ref=e868]
+                            - paragraph [ref=e871]: rthaines@hotmail.com
+                            - generic [ref=e873]: Latest Payment
+                        - generic [ref=e874]:
+                          - paragraph [ref=e875]: $1,650
+                          - paragraph [ref=e876]: "Due: 10/6/2025"
+                        - generic [ref=e877]:
+                          - link "View Details & History" [ref=e878] [cursor=pointer]:
+                            - /url: /payments/jh767m63rd5vpkdeadb1thbmfd7s0xcw
+                            - img [ref=e879] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e882] [cursor=pointer]:
+                            - img [ref=e883] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e886] [cursor=pointer]:
+                            - img [ref=e887] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e891] [cursor=pointer]:
+                            - img [ref=e892] [cursor=pointer]
+                      - generic [ref=e895]:
+                        - generic [ref=e896]:
+                          - generic [ref=e898]:
+                            - img [ref=e899]
+                            - generic [ref=e904]: No Payment Plan
+                          - generic [ref=e905]:
+                            - generic [ref=e906]:
+                              - paragraph [ref=e907]: Kenndy Dombrowski
+                              - generic [ref=e908]:
+                                - generic [ref=e909] [cursor=pointer]: Credit Card
+                                - img [ref=e910]
+                            - paragraph [ref=e913]: adombrowski18@gmail.com
+                            - generic [ref=e915]: Ready for Payment Plan
+                        - generic [ref=e917]:
+                          - paragraph [ref=e918]: No Payment Plan
+                          - paragraph [ref=e919]: Create a payment plan to get started
+                        - generic [ref=e920]:
+                          - link "Create Payment Plan" [ref=e921] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e922] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e923] [cursor=pointer]:
+                            - img [ref=e924] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e928] [cursor=pointer]:
+                            - img [ref=e929] [cursor=pointer]
+                  - generic [ref=e933]:
+                    - generic [ref=e934] [cursor=pointer]:
+                      - generic [ref=e935] [cursor=pointer]:
+                        - checkbox [ref=e936] [cursor=pointer]
+                        - heading "RA1 7th/8th Girls (7 parents)" [level=3] [ref=e938] [cursor=pointer]:
+                          - text: RA1 7th/8th Girls (
+                          - generic [ref=e939] [cursor=pointer]: "7"
+                          - text: parents)
+                        - img [ref=e940] [cursor=pointer]
+                      - generic [ref=e942] [cursor=pointer]:
+                        - button [ref=e943] [cursor=pointer]:
+                          - img [ref=e944] [cursor=pointer]
+                        - button [ref=e947] [cursor=pointer]:
+                          - img [ref=e948] [cursor=pointer]
+                    - generic [ref=e952]:
+                      - generic [ref=e953]:
+                        - generic [ref=e954]:
+                          - checkbox [ref=e955] [cursor=pointer]
+                          - generic [ref=e956]:
+                            - generic [ref=e957]:
+                              - img [ref=e958]
+                              - generic [ref=e961]: paid
+                            - generic [ref=e962]: monthly
+                          - generic [ref=e963]:
+                            - generic [ref=e964]:
+                              - paragraph [ref=e965]: Gabriella Panas
+                              - generic [ref=e966]:
+                                - generic [ref=e967] [cursor=pointer]: Check
+                                - img [ref=e968]
+                            - paragraph [ref=e971]: danielle.a.panas@gmail.com
+                            - generic [ref=e973]: Latest Payment
+                        - generic [ref=e974]:
+                          - paragraph [ref=e975]: $1,650
+                          - paragraph [ref=e976]: "Due: 9/25/2025"
+                          - paragraph [ref=e977]: "Paid: 9/26/2025"
+                        - generic [ref=e978]:
+                          - link "View Details & History" [ref=e979] [cursor=pointer]:
+                            - /url: /payments/jh74tq5fcpdsgrevpqdmqvy9j97ra1yn
+                            - img [ref=e980] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e983] [cursor=pointer]:
+                            - img [ref=e984] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e988] [cursor=pointer]:
+                            - img [ref=e989] [cursor=pointer]
+                      - generic [ref=e992]:
+                        - generic [ref=e993]:
+                          - checkbox [ref=e994] [cursor=pointer]
+                          - generic [ref=e995]:
+                            - generic [ref=e996]:
+                              - img [ref=e997]
+                              - generic [ref=e1000]: Active
+                            - generic [ref=e1001]: monthly
+                          - generic [ref=e1002]:
+                            - generic [ref=e1003]:
+                              - paragraph [ref=e1004]: Natalee Griffin
+                              - generic [ref=e1005]:
+                                - generic [ref=e1006] [cursor=pointer]: Credit Card
+                                - img [ref=e1007]
+                            - paragraph [ref=e1010]: nfran82860@aol.com
+                            - generic [ref=e1012]: Latest Payment
+                        - generic [ref=e1013]:
+                          - paragraph [ref=e1014]: $1,650
+                          - paragraph [ref=e1015]: "Due: 10/6/2025"
+                        - generic [ref=e1016]:
+                          - link "View Details & History" [ref=e1017] [cursor=pointer]:
+                            - /url: /payments/jh765sghkr8q0d1w0fxjdnnzpx7s069t
+                            - img [ref=e1018] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1021] [cursor=pointer]:
+                            - img [ref=e1022] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1025] [cursor=pointer]:
+                            - img [ref=e1026] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1030] [cursor=pointer]:
+                            - img [ref=e1031] [cursor=pointer]
+                      - generic [ref=e1034]:
+                        - generic [ref=e1035]:
+                          - checkbox [ref=e1036] [cursor=pointer]
+                          - generic [ref=e1037]:
+                            - generic [ref=e1038]:
+                              - img [ref=e1039]
+                              - generic [ref=e1042]: Active
+                            - generic [ref=e1043]: monthly
+                          - generic [ref=e1044]:
+                            - generic [ref=e1045]:
+                              - paragraph [ref=e1046]: Olivia Boyce
+                              - generic [ref=e1047]:
+                                - generic [ref=e1048] [cursor=pointer]: Credit Card
+                                - img [ref=e1049]
+                            - paragraph [ref=e1052]: pinehillfarm05@hotmail.com
+                            - generic [ref=e1054]: Latest Payment
+                        - generic [ref=e1055]:
+                          - paragraph [ref=e1056]: $1,650
+                          - paragraph [ref=e1057]: "Due: 10/6/2025"
+                        - generic [ref=e1058]:
+                          - link "View Details & History" [ref=e1059] [cursor=pointer]:
+                            - /url: /payments/jh7ajy5p5dznbvwt945jz6a4bn7s1qdd
+                            - img [ref=e1060] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1063] [cursor=pointer]:
+                            - img [ref=e1064] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1067] [cursor=pointer]:
+                            - img [ref=e1068] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1072] [cursor=pointer]:
+                            - img [ref=e1073] [cursor=pointer]
+                      - generic [ref=e1076]:
+                        - generic [ref=e1077]:
+                          - checkbox [ref=e1078] [cursor=pointer]
+                          - generic [ref=e1079]:
+                            - generic [ref=e1080]:
+                              - img [ref=e1081]
+                              - generic [ref=e1084]: Active
+                            - generic [ref=e1085]: custom
+                          - generic [ref=e1086]:
+                            - generic [ref=e1087]:
+                              - paragraph [ref=e1088]: Olivia Stanton
+                              - generic [ref=e1089]:
+                                - generic [ref=e1090] [cursor=pointer]: Check
+                                - img [ref=e1091]
+                            - paragraph [ref=e1094]: allisonstanton2@gmail.com
+                            - generic [ref=e1096]: Latest Payment
+                        - generic [ref=e1097]:
+                          - paragraph [ref=e1098]: $1,590
+                          - paragraph [ref=e1099]: "Due: 10/6/2025"
+                        - generic [ref=e1100]:
+                          - link "View Details & History" [ref=e1101] [cursor=pointer]:
+                            - /url: /payments/jh722x24ga1t41m3bxc88vppad7s176j
+                            - img [ref=e1102] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1105] [cursor=pointer]:
+                            - img [ref=e1106] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1109] [cursor=pointer]:
+                            - img [ref=e1110] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1114] [cursor=pointer]:
+                            - img [ref=e1115] [cursor=pointer]
+                      - generic [ref=e1118]:
+                        - generic [ref=e1119]:
+                          - checkbox [ref=e1120] [cursor=pointer]
+                          - generic [ref=e1121]:
+                            - generic [ref=e1122]:
+                              - img [ref=e1123]
+                              - generic [ref=e1126]: Active
+                            - generic [ref=e1127]: monthly
+                          - generic [ref=e1128]:
+                            - generic [ref=e1129]:
+                              - paragraph [ref=e1130]: Anaya Holmes
+                              - generic [ref=e1131]:
+                                - generic [ref=e1132] [cursor=pointer]: Credit Card
+                                - img [ref=e1133]
+                            - paragraph [ref=e1136]: kvytell@optonline.net
+                            - generic [ref=e1138]: Latest Payment
+                        - generic [ref=e1139]:
+                          - paragraph [ref=e1140]: $1,650
+                          - paragraph [ref=e1141]: "Due: 10/6/2025"
+                        - generic [ref=e1142]:
+                          - link "View Details & History" [ref=e1143] [cursor=pointer]:
+                            - /url: /payments/jh784hbyrfkxkm5r71sws97bqn7s1n1x
+                            - img [ref=e1144] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1147] [cursor=pointer]:
+                            - img [ref=e1148] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1151] [cursor=pointer]:
+                            - img [ref=e1152] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1156] [cursor=pointer]:
+                            - img [ref=e1157] [cursor=pointer]
+                      - generic [ref=e1160]:
+                        - generic [ref=e1161]:
+                          - generic [ref=e1163]:
+                            - img [ref=e1164]
+                            - generic [ref=e1169]: No Payment Plan
+                          - generic [ref=e1170]:
+                            - generic [ref=e1171]:
+                              - paragraph [ref=e1172]: Sophia Lijewski
+                              - generic [ref=e1173]:
+                                - generic [ref=e1174] [cursor=pointer]: Credit Card
+                                - img [ref=e1175]
+                            - paragraph [ref=e1178]: anne.wiland@astrazeneca.com
+                            - generic [ref=e1180]: Ready for Payment Plan
+                        - generic [ref=e1182]:
+                          - paragraph [ref=e1183]: No Payment Plan
+                          - paragraph [ref=e1184]: Create a payment plan to get started
+                        - generic [ref=e1185]:
+                          - link "Create Payment Plan" [ref=e1186] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1187] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1188] [cursor=pointer]:
+                            - img [ref=e1189] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1193] [cursor=pointer]:
+                            - img [ref=e1194] [cursor=pointer]
+                      - generic [ref=e1197]:
+                        - generic [ref=e1198]:
+                          - generic [ref=e1200]:
+                            - img [ref=e1201]
+                            - generic [ref=e1206]: No Payment Plan
+                          - generic [ref=e1207]:
+                            - generic [ref=e1208]:
+                              - paragraph [ref=e1209]: Emma Dombrowski
+                              - generic [ref=e1210]:
+                                - generic [ref=e1211] [cursor=pointer]: Credit Card
+                                - img [ref=e1212]
+                            - paragraph [ref=e1215]: adombrowski18@gmail.com
+                            - generic [ref=e1217]: Ready for Payment Plan
+                        - generic [ref=e1219]:
+                          - paragraph [ref=e1220]: No Payment Plan
+                          - paragraph [ref=e1221]: Create a payment plan to get started
+                        - generic [ref=e1222]:
+                          - link "Create Payment Plan" [ref=e1223] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1224] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1225] [cursor=pointer]:
+                            - img [ref=e1226] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1230] [cursor=pointer]:
+                            - img [ref=e1231] [cursor=pointer]
+                  - generic [ref=e1235]:
+                    - generic [ref=e1236] [cursor=pointer]:
+                      - generic [ref=e1237] [cursor=pointer]:
+                        - checkbox [ref=e1238] [cursor=pointer]
+                        - heading "RA1 7th/8th Boys (6 parents)" [level=3] [ref=e1240] [cursor=pointer]:
+                          - text: RA1 7th/8th Boys (
+                          - generic [ref=e1241] [cursor=pointer]: "6"
+                          - text: parents)
+                        - img [ref=e1242] [cursor=pointer]
+                      - generic [ref=e1244] [cursor=pointer]:
+                        - button [ref=e1245] [cursor=pointer]:
+                          - img [ref=e1246] [cursor=pointer]
+                        - button [ref=e1249] [cursor=pointer]:
+                          - img [ref=e1250] [cursor=pointer]
+                    - generic [ref=e1254]:
+                      - generic [ref=e1255]:
+                        - generic [ref=e1256]:
+                          - checkbox [ref=e1257] [cursor=pointer]
+                          - generic [ref=e1258]:
+                            - generic [ref=e1259]:
+                              - img [ref=e1260]
+                              - generic [ref=e1263]: Active
+                            - generic [ref=e1264]: monthly
+                          - generic [ref=e1265]:
+                            - generic [ref=e1266]:
+                              - paragraph [ref=e1267]: Cayden Bernstein
+                              - generic [ref=e1268]:
+                                - generic [ref=e1269] [cursor=pointer]: Credit Card
+                                - img [ref=e1270]
+                            - paragraph [ref=e1273]: amanda.l.bernstein@aol.com
+                            - generic [ref=e1275]: Latest Payment
+                        - generic [ref=e1276]:
+                          - paragraph [ref=e1277]: $1,701.99
+                          - paragraph [ref=e1278]: "Due: 10/6/2025"
+                        - generic [ref=e1279]:
+                          - link "View Details & History" [ref=e1280] [cursor=pointer]:
+                            - /url: /payments/jh776m1568mpw8mar29e2h8gth7s0yk1
+                            - img [ref=e1281] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1284] [cursor=pointer]:
+                            - img [ref=e1285] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1288] [cursor=pointer]:
+                            - img [ref=e1289] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1293] [cursor=pointer]:
+                            - img [ref=e1294] [cursor=pointer]
+                      - generic [ref=e1297]:
+                        - generic [ref=e1298]:
+                          - checkbox [ref=e1299] [cursor=pointer]
+                          - generic [ref=e1300]:
+                            - generic [ref=e1301]:
+                              - img [ref=e1302]
+                              - generic [ref=e1305]: Active
+                            - generic [ref=e1306]: quarterly
+                          - generic [ref=e1307]:
+                            - generic [ref=e1308]:
+                              - paragraph [ref=e1309]: Elias Cunha
+                              - generic [ref=e1310]:
+                                - generic [ref=e1311] [cursor=pointer]: Check
+                                - img [ref=e1312]
+                            - paragraph [ref=e1315]: moeper18@yahoo.com
+                            - generic [ref=e1317]: Latest Payment
+                        - generic [ref=e1318]:
+                          - paragraph [ref=e1319]: $1,650
+                          - paragraph [ref=e1320]: "Due: 10/6/2025"
+                        - generic [ref=e1321]:
+                          - link "View Details & History" [ref=e1322] [cursor=pointer]:
+                            - /url: /payments/jh78ytjjfnb7cw4e0d4qfcz4257s1fjt
+                            - img [ref=e1323] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1326] [cursor=pointer]:
+                            - img [ref=e1327] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1330] [cursor=pointer]:
+                            - img [ref=e1331] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1335] [cursor=pointer]:
+                            - img [ref=e1336] [cursor=pointer]
+                      - generic [ref=e1339]:
+                        - generic [ref=e1340]:
+                          - checkbox [ref=e1341] [cursor=pointer]
+                          - generic [ref=e1342]:
+                            - generic [ref=e1343]:
+                              - img [ref=e1344]
+                              - generic [ref=e1347]: Active
+                            - generic [ref=e1348]: quarterly
+                          - generic [ref=e1349]:
+                            - generic [ref=e1350]:
+                              - paragraph [ref=e1351]: Alex Kazior
+                              - generic [ref=e1352]:
+                                - generic [ref=e1353] [cursor=pointer]: Check
+                                - img [ref=e1354]
+                            - paragraph [ref=e1357]: renata.graba@hotmail.com
+                            - generic [ref=e1359]: Latest Payment
+                        - generic [ref=e1360]:
+                          - paragraph [ref=e1361]: $1,650
+                          - paragraph [ref=e1362]: "Due: 10/6/2025"
+                        - generic [ref=e1363]:
+                          - link "View Details & History" [ref=e1364] [cursor=pointer]:
+                            - /url: /payments/jh72nme74jegzkg2amb5wpzzhh7s1mjn
+                            - img [ref=e1365] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1368] [cursor=pointer]:
+                            - img [ref=e1369] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1372] [cursor=pointer]:
+                            - img [ref=e1373] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1377] [cursor=pointer]:
+                            - img [ref=e1378] [cursor=pointer]
+                      - generic [ref=e1381]:
+                        - generic [ref=e1382]:
+                          - checkbox [ref=e1383] [cursor=pointer]
+                          - generic [ref=e1384]:
+                            - generic [ref=e1385]:
+                              - img [ref=e1386]
+                              - generic [ref=e1389]: Active
+                            - generic [ref=e1390]: monthly
+                          - generic [ref=e1391]:
+                            - generic [ref=e1392]:
+                              - paragraph [ref=e1393]: Luca Cilento
+                              - generic [ref=e1394]:
+                                - generic [ref=e1395] [cursor=pointer]: Credit Card
+                                - img [ref=e1396]
+                            - paragraph [ref=e1399]: cilento49@gmail.com
+                            - generic [ref=e1401]: Latest Payment
+                        - generic [ref=e1402]:
+                          - paragraph [ref=e1403]: $1,650
+                          - paragraph [ref=e1404]: "Due: 10/6/2025"
+                        - generic [ref=e1405]:
+                          - link "View Details & History" [ref=e1406] [cursor=pointer]:
+                            - /url: /payments/jh7c0mde2sswg9wq85gc7w0kgs7s0z5y
+                            - img [ref=e1407] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1410] [cursor=pointer]:
+                            - img [ref=e1411] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1414] [cursor=pointer]:
+                            - img [ref=e1415] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1419] [cursor=pointer]:
+                            - img [ref=e1420] [cursor=pointer]
+                      - generic [ref=e1423]:
+                        - generic [ref=e1424]:
+                          - checkbox [ref=e1425] [cursor=pointer]
+                          - generic [ref=e1426]:
+                            - generic [ref=e1427]:
+                              - img [ref=e1428]
+                              - generic [ref=e1431]: Active
+                            - generic [ref=e1432]: monthly
+                          - generic [ref=e1433]:
+                            - generic [ref=e1434]:
+                              - paragraph [ref=e1435]: Nathan Ecclesiaste
+                              - generic [ref=e1436]:
+                                - generic [ref=e1437] [cursor=pointer]: Credit Card
+                                - img [ref=e1438]
+                            - paragraph [ref=e1441]: murlac@yahoo.com
+                            - generic [ref=e1443]: Latest Payment
+                        - generic [ref=e1444]:
+                          - paragraph [ref=e1445]: $1,650
+                          - paragraph [ref=e1446]: "Due: 10/6/2025"
+                        - generic [ref=e1447]:
+                          - link "View Details & History" [ref=e1448] [cursor=pointer]:
+                            - /url: /payments/jh79h85ps93hf7c8rrxp08bv8x7s0g48
+                            - img [ref=e1449] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1452] [cursor=pointer]:
+                            - img [ref=e1453] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1456] [cursor=pointer]:
+                            - img [ref=e1457] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1461] [cursor=pointer]:
+                            - img [ref=e1462] [cursor=pointer]
+                      - generic [ref=e1465]:
+                        - generic [ref=e1466]:
+                          - generic [ref=e1468]:
+                            - img [ref=e1469]
+                            - generic [ref=e1474]: No Payment Plan
+                          - generic [ref=e1475]:
+                            - generic [ref=e1476]:
+                              - paragraph [ref=e1477]: Robbie Martinez
+                              - generic [ref=e1478]:
+                                - generic [ref=e1479] [cursor=pointer]: Credit Card
+                                - img [ref=e1480]
+                            - paragraph [ref=e1483]: raimymartinez90@gmail.com
+                            - generic [ref=e1485]: Ready for Payment Plan
+                        - generic [ref=e1487]:
+                          - paragraph [ref=e1488]: No Payment Plan
+                          - paragraph [ref=e1489]: Create a payment plan to get started
+                        - generic [ref=e1490]:
+                          - link "Create Payment Plan" [ref=e1491] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1492] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1493] [cursor=pointer]:
+                            - img [ref=e1494] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1498] [cursor=pointer]:
+                            - img [ref=e1499] [cursor=pointer]
+                  - generic [ref=e1503]:
+                    - generic [ref=e1504] [cursor=pointer]:
+                      - generic [ref=e1505] [cursor=pointer]:
+                        - checkbox [ref=e1506] [cursor=pointer]
+                        - heading "HS Girls Red (7 parents)" [level=3] [ref=e1508] [cursor=pointer]:
+                          - text: HS Girls Red (
+                          - generic [ref=e1509] [cursor=pointer]: "7"
+                          - text: parents)
+                        - img [ref=e1510] [cursor=pointer]
+                      - generic [ref=e1512] [cursor=pointer]:
+                        - button [ref=e1513] [cursor=pointer]:
+                          - img [ref=e1514] [cursor=pointer]
+                        - button [ref=e1517] [cursor=pointer]:
+                          - img [ref=e1518] [cursor=pointer]
+                    - generic [ref=e1522]:
+                      - generic [ref=e1523]:
+                        - generic [ref=e1524]:
+                          - checkbox [ref=e1525] [cursor=pointer]
+                          - generic [ref=e1526]:
+                            - generic [ref=e1527]:
+                              - img [ref=e1528]
+                              - generic [ref=e1531]: paid
+                            - generic [ref=e1532]: monthly
+                          - generic [ref=e1533]:
+                            - generic [ref=e1534]:
+                              - paragraph [ref=e1535]: Leilani Tynes
+                              - generic [ref=e1536]:
+                                - generic [ref=e1537] [cursor=pointer]: Check
+                                - img [ref=e1538]
+                            - paragraph [ref=e1541]: lewisfr2003@yahoo.com
+                            - generic [ref=e1543]: Latest Payment
+                        - generic [ref=e1544]:
+                          - paragraph [ref=e1545]: $1,650
+                          - paragraph [ref=e1546]: "Due: 9/25/2025"
+                          - paragraph [ref=e1547]: "Paid: 9/26/2025"
+                        - generic [ref=e1548]:
+                          - link "View Details & History" [ref=e1549] [cursor=pointer]:
+                            - /url: /payments/jh786s0fet5q4ktf9et128tkps7rbyd3
+                            - img [ref=e1550] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e1553] [cursor=pointer]:
+                            - img [ref=e1554] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1558] [cursor=pointer]:
+                            - img [ref=e1559] [cursor=pointer]
+                      - generic [ref=e1562]:
+                        - generic [ref=e1563]:
+                          - checkbox [ref=e1564] [cursor=pointer]
+                          - generic [ref=e1565]:
+                            - generic [ref=e1566]:
+                              - img [ref=e1567]
+                              - generic [ref=e1570]: Active
+                            - generic [ref=e1571]: monthly
+                          - generic [ref=e1572]:
+                            - generic [ref=e1573]:
+                              - paragraph [ref=e1574]: Angelys Castillo
+                              - generic [ref=e1575]:
+                                - generic [ref=e1576] [cursor=pointer]: Check
+                                - img [ref=e1577]
+                            - paragraph [ref=e1580]: cellaumbrella@yahoo.com
+                            - generic [ref=e1582]: Latest Payment
+                        - generic [ref=e1583]:
+                          - paragraph [ref=e1584]: $1,649.97
+                          - paragraph [ref=e1585]: "Due: 10/6/2025"
+                        - generic [ref=e1586]:
+                          - link "View Details & History" [ref=e1587] [cursor=pointer]:
+                            - /url: /payments/jh799k5rny8zybeyqv339zdqmx7s0dmg
+                            - img [ref=e1588] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1591] [cursor=pointer]:
+                            - img [ref=e1592] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1595] [cursor=pointer]:
+                            - img [ref=e1596] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1600] [cursor=pointer]:
+                            - img [ref=e1601] [cursor=pointer]
+                      - generic [ref=e1604]:
+                        - generic [ref=e1605]:
+                          - generic [ref=e1607]:
+                            - img [ref=e1608]
+                            - generic [ref=e1613]: No Payment Plan
+                          - generic [ref=e1614]:
+                            - generic [ref=e1615]:
+                              - paragraph [ref=e1616]: Kaelyn Sabanosh
+                              - generic [ref=e1617]:
+                                - generic [ref=e1618] [cursor=pointer]: Credit Card
+                                - img [ref=e1619]
+                            - paragraph [ref=e1622]: kbsabanosh@gmail.com
+                            - generic [ref=e1624]: Ready for Payment Plan
+                        - generic [ref=e1626]:
+                          - paragraph [ref=e1627]: No Payment Plan
+                          - paragraph [ref=e1628]: Create a payment plan to get started
+                        - generic [ref=e1629]:
+                          - link "Create Payment Plan" [ref=e1630] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1631] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1632] [cursor=pointer]:
+                            - img [ref=e1633] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1637] [cursor=pointer]:
+                            - img [ref=e1638] [cursor=pointer]
+                      - generic [ref=e1641]:
+                        - generic [ref=e1642]:
+                          - generic [ref=e1644]:
+                            - img [ref=e1645]
+                            - generic [ref=e1650]: No Payment Plan
+                          - generic [ref=e1651]:
+                            - generic [ref=e1652]:
+                              - paragraph [ref=e1653]: Olivia Alvarez
+                              - generic [ref=e1654]:
+                                - generic [ref=e1655] [cursor=pointer]: Credit Card
+                                - img [ref=e1656]
+                            - paragraph [ref=e1659]: jackie.alvarez@outlook.com
+                            - generic [ref=e1661]: Ready for Payment Plan
+                        - generic [ref=e1663]:
+                          - paragraph [ref=e1664]: No Payment Plan
+                          - paragraph [ref=e1665]: Create a payment plan to get started
+                        - generic [ref=e1666]:
+                          - link "Create Payment Plan" [ref=e1667] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1668] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1669] [cursor=pointer]:
+                            - img [ref=e1670] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1674] [cursor=pointer]:
+                            - img [ref=e1675] [cursor=pointer]
+                      - generic [ref=e1678]:
+                        - generic [ref=e1679]:
+                          - generic [ref=e1681]:
+                            - img [ref=e1682]
+                            - generic [ref=e1687]: No Payment Plan
+                          - generic [ref=e1688]:
+                            - generic [ref=e1689]:
+                              - paragraph [ref=e1690]: Elizabeth O’Brien
+                              - generic [ref=e1691]:
+                                - generic [ref=e1692] [cursor=pointer]: Credit Card
+                                - img [ref=e1693]
+                            - paragraph [ref=e1696]: kabrod@msn.com
+                            - generic [ref=e1698]: Ready for Payment Plan
+                        - generic [ref=e1700]:
+                          - paragraph [ref=e1701]: No Payment Plan
+                          - paragraph [ref=e1702]: Create a payment plan to get started
+                        - generic [ref=e1703]:
+                          - link "Create Payment Plan" [ref=e1704] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1705] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1706] [cursor=pointer]:
+                            - img [ref=e1707] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1711] [cursor=pointer]:
+                            - img [ref=e1712] [cursor=pointer]
+                      - generic [ref=e1715]:
+                        - generic [ref=e1716]:
+                          - generic [ref=e1718]:
+                            - img [ref=e1719]
+                            - generic [ref=e1724]: No Payment Plan
+                          - generic [ref=e1725]:
+                            - generic [ref=e1726]:
+                              - paragraph [ref=e1727]: Tatiana Martinez
+                              - generic [ref=e1728]:
+                                - generic [ref=e1729] [cursor=pointer]: Credit Card
+                                - img [ref=e1730]
+                            - paragraph [ref=e1733]: josemarroquin83@gmail.com
+                            - generic [ref=e1735]: Ready for Payment Plan
+                        - generic [ref=e1737]:
+                          - paragraph [ref=e1738]: No Payment Plan
+                          - paragraph [ref=e1739]: Create a payment plan to get started
+                        - generic [ref=e1740]:
+                          - link "Create Payment Plan" [ref=e1741] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1742] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1743] [cursor=pointer]:
+                            - img [ref=e1744] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1748] [cursor=pointer]:
+                            - img [ref=e1749] [cursor=pointer]
+                      - generic [ref=e1752]:
+                        - generic [ref=e1753]:
+                          - generic [ref=e1755]:
+                            - img [ref=e1756]
+                            - generic [ref=e1761]: No Payment Plan
+                          - generic [ref=e1762]:
+                            - generic [ref=e1763]:
+                              - paragraph [ref=e1764]: Alexia Edelman
+                              - generic [ref=e1765]:
+                                - generic [ref=e1766] [cursor=pointer]: Credit Card
+                                - img [ref=e1767]
+                            - paragraph [ref=e1770]: fortnobleman@yahoo.com
+                            - generic [ref=e1772]: Ready for Payment Plan
+                        - generic [ref=e1774]:
+                          - paragraph [ref=e1775]: No Payment Plan
+                          - paragraph [ref=e1776]: Create a payment plan to get started
+                        - generic [ref=e1777]:
+                          - link "Create Payment Plan" [ref=e1778] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e1779] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Remove from Team" [ref=e1780] [cursor=pointer]:
+                            - img [ref=e1781] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1785] [cursor=pointer]:
+                            - img [ref=e1786] [cursor=pointer]
+                  - generic [ref=e1790]:
+                    - generic [ref=e1791] [cursor=pointer]:
+                      - generic [ref=e1792] [cursor=pointer]:
+                        - checkbox [ref=e1793] [cursor=pointer]
+                        - 'heading "HS Boys #1 (7 parents)" [level=3] [ref=e1795] [cursor=pointer]':
+                          - text: "HS Boys #1 ("
+                          - generic [ref=e1796] [cursor=pointer]: "7"
+                          - text: parents)
+                        - img [ref=e1797] [cursor=pointer]
+                      - generic [ref=e1799] [cursor=pointer]:
+                        - button [ref=e1800] [cursor=pointer]:
+                          - img [ref=e1801] [cursor=pointer]
+                        - button [ref=e1804] [cursor=pointer]:
+                          - img [ref=e1805] [cursor=pointer]
+                    - generic [ref=e1809]:
+                      - generic [ref=e1810]:
+                        - generic [ref=e1811]:
+                          - checkbox [ref=e1812] [cursor=pointer]
+                          - generic [ref=e1813]:
+                            - generic [ref=e1814]:
+                              - img [ref=e1815]
+                              - generic [ref=e1818]: Active
+                            - generic [ref=e1819]: monthly
+                          - generic [ref=e1820]:
+                            - generic [ref=e1821]:
+                              - paragraph [ref=e1822]: Matthew Rowan
+                              - generic [ref=e1823]:
+                                - generic [ref=e1824] [cursor=pointer]: Credit Card
+                                - img [ref=e1825]
+                            - paragraph [ref=e1828]: mwrmma@yahoo.com
+                            - generic [ref=e1830]: Latest Payment
+                        - generic [ref=e1831]:
+                          - paragraph [ref=e1832]: $1,650
+                          - paragraph [ref=e1833]: "Due: 9/30/2025"
+                        - generic [ref=e1834]:
+                          - link "View Details & History" [ref=e1835] [cursor=pointer]:
+                            - /url: /payments/jh71z2wayxt001wysd88zhcbdd7rms2p
+                            - img [ref=e1836] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1839] [cursor=pointer]:
+                            - img [ref=e1840] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1843] [cursor=pointer]:
+                            - img [ref=e1844] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1848] [cursor=pointer]:
+                            - img [ref=e1849] [cursor=pointer]
+                      - generic [ref=e1852]:
+                        - generic [ref=e1853]:
+                          - checkbox [ref=e1854] [cursor=pointer]
+                          - generic [ref=e1855]:
+                            - generic [ref=e1856]:
+                              - img [ref=e1857]
+                              - generic [ref=e1860]: Active
+                            - generic [ref=e1861]: monthly
+                          - generic [ref=e1862]:
+                            - generic [ref=e1863]:
+                              - paragraph [ref=e1864]: Nolan Murray
+                              - generic [ref=e1865]:
+                                - generic [ref=e1866] [cursor=pointer]: Check
+                                - img [ref=e1867]
+                            - paragraph [ref=e1870]: jaynamurray@gmail.com
+                            - generic [ref=e1872]: Latest Payment
+                        - generic [ref=e1873]:
+                          - paragraph [ref=e1874]: $1,649.97
+                          - paragraph [ref=e1875]: "Due: 10/6/2025"
+                        - generic [ref=e1876]:
+                          - link "View Details & History" [ref=e1877] [cursor=pointer]:
+                            - /url: /payments/jh7d1r4b25adgn6w0khps1kh2h7s1hrj
+                            - img [ref=e1878] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1881] [cursor=pointer]:
+                            - img [ref=e1882] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1885] [cursor=pointer]:
+                            - img [ref=e1886] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1890] [cursor=pointer]:
+                            - img [ref=e1891] [cursor=pointer]
+                      - generic [ref=e1894]:
+                        - generic [ref=e1895]:
+                          - checkbox [ref=e1896] [cursor=pointer]
+                          - generic [ref=e1897]:
+                            - generic [ref=e1898]:
+                              - img [ref=e1899]
+                              - generic [ref=e1902]: Active
+                            - generic [ref=e1903]: full
+                          - generic [ref=e1904]:
+                            - generic [ref=e1905]:
+                              - paragraph [ref=e1906]: Michael Pohl
+                              - generic [ref=e1907]:
+                                - generic [ref=e1908] [cursor=pointer]: Credit Card
+                                - img [ref=e1909]
+                            - paragraph [ref=e1912]: robertjamespohl@gmail.com
+                            - generic [ref=e1914]: Latest Payment
+                        - generic [ref=e1915]:
+                          - paragraph [ref=e1916]: $1,699.59
+                          - paragraph [ref=e1917]: "Due: 10/6/2025"
+                        - generic [ref=e1918]:
+                          - link "View Details & History" [ref=e1919] [cursor=pointer]:
+                            - /url: /payments/jh78br2fq6j6bha0gx8p7687457s0e11
+                            - img [ref=e1920] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1923] [cursor=pointer]:
+                            - img [ref=e1924] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1927] [cursor=pointer]:
+                            - img [ref=e1928] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1932] [cursor=pointer]:
+                            - img [ref=e1933] [cursor=pointer]
+                      - generic [ref=e1936]:
+                        - generic [ref=e1937]:
+                          - checkbox [ref=e1938] [cursor=pointer]
+                          - generic [ref=e1939]:
+                            - generic [ref=e1940]:
+                              - img [ref=e1941]
+                              - generic [ref=e1944]: Active
+                            - generic [ref=e1945]: full
+                          - generic [ref=e1946]:
+                            - generic [ref=e1947]:
+                              - paragraph [ref=e1948]: Drew Pohl
+                              - generic [ref=e1949]:
+                                - generic [ref=e1950] [cursor=pointer]: Credit Card
+                                - img [ref=e1951]
+                            - paragraph [ref=e1954]: mars_pohl@earthlink.net
+                            - generic [ref=e1956]: Latest Payment
+                        - generic [ref=e1957]:
+                          - paragraph [ref=e1958]: $1,699.59
+                          - paragraph [ref=e1959]: "Due: 10/6/2025"
+                        - generic [ref=e1960]:
+                          - link "View Details & History" [ref=e1961] [cursor=pointer]:
+                            - /url: /payments/jh78djjfzs9yznd20e3n0e0gvx7s067x
+                            - img [ref=e1962] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e1965] [cursor=pointer]:
+                            - img [ref=e1966] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e1969] [cursor=pointer]:
+                            - img [ref=e1970] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e1974] [cursor=pointer]:
+                            - img [ref=e1975] [cursor=pointer]
+                      - generic [ref=e1978]:
+                        - generic [ref=e1979]:
+                          - checkbox [ref=e1980] [cursor=pointer]
+                          - generic [ref=e1981]:
+                            - generic [ref=e1982]:
+                              - img [ref=e1983]
+                              - generic [ref=e1986]: Active
+                            - generic [ref=e1987]: monthly
+                          - generic [ref=e1988]:
+                            - generic [ref=e1989]:
+                              - paragraph [ref=e1990]: Lawrence Haywood
+                              - generic [ref=e1991]:
+                                - generic [ref=e1992] [cursor=pointer]: Credit Card
+                                - img [ref=e1993]
+                            - paragraph [ref=e1996]: lawrenda.henrywillis@gmail.com
+                            - generic [ref=e1998]: Latest Payment
+                        - generic [ref=e1999]:
+                          - paragraph [ref=e2000]: $1,701.99
+                          - paragraph [ref=e2001]: "Due: 10/6/2025"
+                        - generic [ref=e2002]:
+                          - link "View Details & History" [ref=e2003] [cursor=pointer]:
+                            - /url: /payments/jh7f3hpzm53jhj7hy8gv3f74hx7s04x8
+                            - img [ref=e2004] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2007] [cursor=pointer]:
+                            - img [ref=e2008] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2011] [cursor=pointer]:
+                            - img [ref=e2012] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2016] [cursor=pointer]:
+                            - img [ref=e2017] [cursor=pointer]
+                      - generic [ref=e2020]:
+                        - generic [ref=e2021]:
+                          - checkbox [ref=e2022] [cursor=pointer]
+                          - generic [ref=e2023]:
+                            - generic [ref=e2024]:
+                              - img [ref=e2025]
+                              - generic [ref=e2028]: Active
+                            - generic [ref=e2029]: quarterly
+                          - generic [ref=e2030]:
+                            - generic [ref=e2031]:
+                              - paragraph [ref=e2032]: Devin Cunha
+                              - generic [ref=e2033]:
+                                - generic [ref=e2034] [cursor=pointer]: Check
+                                - img [ref=e2035]
+                            - paragraph [ref=e2038]: moeper18@yahoo.com
+                            - generic [ref=e2040]: Latest Payment
+                        - generic [ref=e2041]:
+                          - paragraph [ref=e2042]: $1,650
+                          - paragraph [ref=e2043]: "Due: 10/6/2025"
+                        - generic [ref=e2044]:
+                          - link "View Details & History" [ref=e2045] [cursor=pointer]:
+                            - /url: /payments/jh74g5n9wzg4yymxkf60q03t697s14v1
+                            - img [ref=e2046] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2049] [cursor=pointer]:
+                            - img [ref=e2050] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2053] [cursor=pointer]:
+                            - img [ref=e2054] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2058] [cursor=pointer]:
+                            - img [ref=e2059] [cursor=pointer]
+                      - generic [ref=e2062]:
+                        - generic [ref=e2063]:
+                          - checkbox [ref=e2064] [cursor=pointer]
+                          - generic [ref=e2065]:
+                            - generic [ref=e2066]:
+                              - img [ref=e2067]
+                              - generic [ref=e2070]: Active
+                            - generic [ref=e2071]: monthly
+                          - generic [ref=e2072]:
+                            - generic [ref=e2073]:
+                              - paragraph [ref=e2074]: Luke Honold
+                              - generic [ref=e2075]:
+                                - generic [ref=e2076] [cursor=pointer]: Credit Card
+                                - img [ref=e2077]
+                            - paragraph [ref=e2080]: chrisnmikeh@gmail.com
+                            - generic [ref=e2082]: Latest Payment
+                        - generic [ref=e2083]:
+                          - paragraph [ref=e2084]: $1,650
+                          - paragraph [ref=e2085]: "Due: 10/6/2025"
+                        - generic [ref=e2086]:
+                          - link "View Details & History" [ref=e2087] [cursor=pointer]:
+                            - /url: /payments/jh7bcknzm53f6btky6evfn1j757s0s43
+                            - img [ref=e2088] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2091] [cursor=pointer]:
+                            - img [ref=e2092] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2095] [cursor=pointer]:
+                            - img [ref=e2096] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2100] [cursor=pointer]:
+                            - img [ref=e2101] [cursor=pointer]
+                  - generic [ref=e2105]:
+                    - generic [ref=e2106] [cursor=pointer]:
+                      - generic [ref=e2107] [cursor=pointer]:
+                        - checkbox [ref=e2108] [cursor=pointer]
+                        - heading "E2E Bulk A 1758745843892 (1 parent)" [level=3] [ref=e2110] [cursor=pointer]:
+                          - text: E2E Bulk A 1758745843892 (
+                          - generic [ref=e2111] [cursor=pointer]: "1"
+                          - text: parent)
+                        - img [ref=e2112] [cursor=pointer]
+                      - generic [ref=e2114] [cursor=pointer]:
+                        - button [ref=e2115] [cursor=pointer]:
+                          - img [ref=e2116] [cursor=pointer]
+                        - button [ref=e2119] [cursor=pointer]:
+                          - img [ref=e2120] [cursor=pointer]
+                    - generic [ref=e2125]:
+                      - generic [ref=e2126]:
+                        - checkbox [ref=e2127] [cursor=pointer]
+                        - generic [ref=e2128]:
+                          - generic [ref=e2129]:
+                            - img [ref=e2130]
+                            - generic [ref=e2133]: Active
+                          - generic [ref=e2134]: monthly
+                        - generic [ref=e2135]:
+                          - generic [ref=e2136]:
+                            - paragraph [ref=e2137]: Kevin Van Houston
+                            - generic [ref=e2138]:
+                              - generic [ref=e2139] [cursor=pointer]: Credit Card
+                              - img [ref=e2140]
+                          - paragraph [ref=e2143]: khouston721@gmail.com
+                          - generic [ref=e2145]: Latest Payment
+                      - generic [ref=e2146]:
+                        - paragraph [ref=e2147]: $1,649.97
+                        - paragraph [ref=e2148]: "Due: 10/7/2025"
+                      - generic [ref=e2149]:
+                        - link "View Details & History" [ref=e2150] [cursor=pointer]:
+                          - /url: /payments/jh7dtjec4vpesm1h8pjjr472mx7s2rkz
+                          - img [ref=e2151] [cursor=pointer]
+                          - text: View Details & History
+                        - button "Mark Paid" [ref=e2154] [cursor=pointer]:
+                          - img [ref=e2155] [cursor=pointer]
+                          - text: Mark Paid
+                        - button "Remove from Team" [ref=e2158] [cursor=pointer]:
+                          - img [ref=e2159] [cursor=pointer]
+                          - text: Remove from Team
+                        - button "Delete entire parent (including all payments)" [ref=e2163] [cursor=pointer]:
+                          - img [ref=e2164] [cursor=pointer]
+                  - generic [ref=e2168]:
+                    - generic [ref=e2169] [cursor=pointer]:
+                      - generic [ref=e2170] [cursor=pointer]:
+                        - checkbox [ref=e2171] [cursor=pointer]
+                        - 'heading "HS Boys #2 (7 parents)" [level=3] [ref=e2173] [cursor=pointer]':
+                          - text: "HS Boys #2 ("
+                          - generic [ref=e2174] [cursor=pointer]: "7"
+                          - text: parents)
+                        - img [ref=e2175] [cursor=pointer]
+                      - generic [ref=e2177] [cursor=pointer]:
+                        - button [ref=e2178] [cursor=pointer]:
+                          - img [ref=e2179] [cursor=pointer]
+                        - button [ref=e2182] [cursor=pointer]:
+                          - img [ref=e2183] [cursor=pointer]
+                    - generic [ref=e2187]:
+                      - generic [ref=e2188]:
+                        - generic [ref=e2189]:
+                          - checkbox [ref=e2190] [cursor=pointer]
+                          - generic [ref=e2191]:
+                            - generic [ref=e2192]:
+                              - img [ref=e2193]
+                              - generic [ref=e2196]: paid
+                            - generic [ref=e2197]: full
+                          - generic [ref=e2198]:
+                            - generic [ref=e2199]:
+                              - paragraph [ref=e2200]: Ryan DeGraw
+                              - generic [ref=e2201]:
+                                - generic [ref=e2202] [cursor=pointer]: Check
+                                - img [ref=e2203]
+                            - paragraph [ref=e2206]: french27v@gmail.com
+                            - generic [ref=e2208]: Latest Payment
+                        - generic [ref=e2209]:
+                          - paragraph [ref=e2210]: $1,650
+                          - paragraph [ref=e2211]: "Due: 9/25/2025"
+                          - paragraph [ref=e2212]: "Paid: 9/26/2025"
+                        - generic [ref=e2213]:
+                          - link "View Details & History" [ref=e2214] [cursor=pointer]:
+                            - /url: /payments/jh795zeycjkcgank8ke58q4sq57rbx5a
+                            - img [ref=e2215] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e2218] [cursor=pointer]:
+                            - img [ref=e2219] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2223] [cursor=pointer]:
+                            - img [ref=e2224] [cursor=pointer]
+                      - generic [ref=e2227]:
+                        - generic [ref=e2228]:
+                          - checkbox [ref=e2229] [cursor=pointer]
+                          - generic [ref=e2230]:
+                            - generic [ref=e2231]:
+                              - img [ref=e2232]
+                              - generic [ref=e2235]: paid
+                            - generic [ref=e2236]: full
+                          - generic [ref=e2237]:
+                            - generic [ref=e2238]:
+                              - paragraph [ref=e2239]: Jayden Dunbar
+                              - generic [ref=e2240]:
+                                - generic [ref=e2241] [cursor=pointer]: Credit Card
+                                - img [ref=e2242]
+                            - paragraph [ref=e2245]: markie.aronson@gmail.com
+                            - generic [ref=e2247]: Latest Payment
+                        - generic [ref=e2248]:
+                          - paragraph [ref=e2249]: $1,650
+                          - paragraph [ref=e2250]: "Due: 9/25/2025"
+                          - paragraph [ref=e2251]: "Paid: 9/26/2025"
+                        - generic [ref=e2252]:
+                          - link "View Details & History" [ref=e2253] [cursor=pointer]:
+                            - /url: /payments/jh7b62bw783z4c7471y0ffc2j17rbfvz
+                            - img [ref=e2254] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e2257] [cursor=pointer]:
+                            - img [ref=e2258] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2262] [cursor=pointer]:
+                            - img [ref=e2263] [cursor=pointer]
+                      - generic [ref=e2266]:
+                        - generic [ref=e2267]:
+                          - checkbox [ref=e2268] [cursor=pointer]
+                          - generic [ref=e2269]:
+                            - generic [ref=e2270]:
+                              - img [ref=e2271]
+                              - generic [ref=e2274]: paid
+                            - generic [ref=e2275]: monthly
+                          - generic [ref=e2276]:
+                            - generic [ref=e2277]:
+                              - paragraph [ref=e2278]: Sennen Doone
+                              - generic [ref=e2279]:
+                                - generic [ref=e2280] [cursor=pointer]: Check
+                                - img [ref=e2281]
+                            - paragraph [ref=e2284]: dylandoone@gmail.com
+                            - generic [ref=e2286]: Latest Payment
+                        - generic [ref=e2287]:
+                          - paragraph [ref=e2288]: $1,650
+                          - paragraph [ref=e2289]: "Due: 9/25/2025"
+                          - paragraph [ref=e2290]: "Paid: 9/26/2025"
+                        - generic [ref=e2291]:
+                          - link "View Details & History" [ref=e2292] [cursor=pointer]:
+                            - /url: /payments/jh70534xws9wnj8za3rkv0wn0n7rastb
+                            - img [ref=e2293] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Remove from Team" [ref=e2296] [cursor=pointer]:
+                            - img [ref=e2297] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2301] [cursor=pointer]:
+                            - img [ref=e2302] [cursor=pointer]
+                      - generic [ref=e2305]:
+                        - generic [ref=e2306]:
+                          - checkbox [ref=e2307] [cursor=pointer]
+                          - generic [ref=e2308]:
+                            - generic [ref=e2309]:
+                              - img [ref=e2310]
+                              - generic [ref=e2313]: Active
+                            - generic [ref=e2314]: monthly
+                          - generic [ref=e2315]:
+                            - generic [ref=e2316]:
+                              - paragraph [ref=e2317]: Eduardo Sanchez
+                              - generic [ref=e2318]:
+                                - generic [ref=e2319] [cursor=pointer]: Cash
+                                - img [ref=e2320]
+                            - paragraph [ref=e2323]: ssanchez8519@gmail.com
+                            - generic [ref=e2325]: Latest Payment
+                        - generic [ref=e2326]:
+                          - paragraph [ref=e2327]: $1,649.97
+                          - paragraph [ref=e2328]: "Due: 10/6/2025"
+                        - generic [ref=e2329]:
+                          - link "View Details & History" [ref=e2330] [cursor=pointer]:
+                            - /url: /payments/jh73pfb8w2t131vvq01hthyq017s0fgx
+                            - img [ref=e2331] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2334] [cursor=pointer]:
+                            - img [ref=e2335] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2338] [cursor=pointer]:
+                            - img [ref=e2339] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2343] [cursor=pointer]:
+                            - img [ref=e2344] [cursor=pointer]
+                      - generic [ref=e2347]:
+                        - generic [ref=e2348]:
+                          - checkbox [ref=e2349] [cursor=pointer]
+                          - generic [ref=e2350]:
+                            - generic [ref=e2351]:
+                              - img [ref=e2352]
+                              - generic [ref=e2355]: Active
+                            - generic [ref=e2356]: quarterly
+                          - generic [ref=e2357]:
+                            - generic [ref=e2358]:
+                              - paragraph [ref=e2359]: Logan Scudieri
+                              - generic [ref=e2360]:
+                                - generic [ref=e2361] [cursor=pointer]: Credit Card
+                                - img [ref=e2362]
+                            - paragraph [ref=e2365]: kscudieri1023@yahoo.com
+                            - generic [ref=e2367]: Latest Payment
+                        - generic [ref=e2368]:
+                          - paragraph [ref=e2369]: $1,700.22
+                          - paragraph [ref=e2370]: "Due: 10/6/2025"
+                        - generic [ref=e2371]:
+                          - link "View Details & History" [ref=e2372] [cursor=pointer]:
+                            - /url: /payments/jh7bnm7yn03txwf757p7d8a7917s0efg
+                            - img [ref=e2373] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2376] [cursor=pointer]:
+                            - img [ref=e2377] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2380] [cursor=pointer]:
+                            - img [ref=e2381] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2385] [cursor=pointer]:
+                            - img [ref=e2386] [cursor=pointer]
+                      - generic [ref=e2389]:
+                        - generic [ref=e2390]:
+                          - checkbox [ref=e2391] [cursor=pointer]
+                          - generic [ref=e2392]:
+                            - generic [ref=e2393]:
+                              - img [ref=e2394]
+                              - generic [ref=e2397]: Active
+                            - generic [ref=e2398]: quarterly
+                          - generic [ref=e2399]:
+                            - generic [ref=e2400]:
+                              - paragraph [ref=e2401]: Ryan Hart
+                              - generic [ref=e2402]:
+                                - generic [ref=e2403] [cursor=pointer]: Credit Card
+                                - img [ref=e2404]
+                            - paragraph [ref=e2407]: tomhart1976@yahoo.com
+                            - generic [ref=e2409]: Latest Payment
+                        - generic [ref=e2410]:
+                          - paragraph [ref=e2411]: $1,700.22
+                          - paragraph [ref=e2412]: "Due: 10/6/2025"
+                        - generic [ref=e2413]:
+                          - link "View Details & History" [ref=e2414] [cursor=pointer]:
+                            - /url: /payments/jh73ftxp03awbk2qr899cvb5vn7s0vy5
+                            - img [ref=e2415] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2418] [cursor=pointer]:
+                            - img [ref=e2419] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2422] [cursor=pointer]:
+                            - img [ref=e2423] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2427] [cursor=pointer]:
+                            - img [ref=e2428] [cursor=pointer]
+                      - generic [ref=e2431]:
+                        - generic [ref=e2432]:
+                          - checkbox [ref=e2433] [cursor=pointer]
+                          - generic [ref=e2434]:
+                            - generic [ref=e2435]:
+                              - img [ref=e2436]
+                              - generic [ref=e2439]: Active
+                            - generic [ref=e2440]: quarterly
+                          - generic [ref=e2441]:
+                            - generic [ref=e2442]:
+                              - paragraph [ref=e2443]: Connor Hart
+                              - generic [ref=e2444]:
+                                - generic [ref=e2445] [cursor=pointer]: Credit Card
+                                - img [ref=e2446]
+                            - paragraph [ref=e2449]: tomhart1976@yahoo.com
+                            - generic [ref=e2451]: Latest Payment
+                        - generic [ref=e2452]:
+                          - paragraph [ref=e2453]: $1,700.22
+                          - paragraph [ref=e2454]: "Due: 10/6/2025"
+                        - generic [ref=e2455]:
+                          - link "View Details & History" [ref=e2456] [cursor=pointer]:
+                            - /url: /payments/jh75pyyve7yv2qa8amvjffpvzs7s101g
+                            - img [ref=e2457] [cursor=pointer]
+                            - text: View Details & History
+                          - button "Mark Paid" [ref=e2460] [cursor=pointer]:
+                            - img [ref=e2461] [cursor=pointer]
+                            - text: Mark Paid
+                          - button "Remove from Team" [ref=e2464] [cursor=pointer]:
+                            - img [ref=e2465] [cursor=pointer]
+                            - text: Remove from Team
+                          - button "Delete entire parent (including all payments)" [ref=e2469] [cursor=pointer]:
+                            - img [ref=e2470] [cursor=pointer]
+                  - generic [ref=e2474]:
+                    - generic [ref=e2476] [cursor=pointer]:
+                      - heading "Unassigned (2 parents)" [level=3] [ref=e2478] [cursor=pointer]:
+                        - text: Unassigned (
+                        - generic [ref=e2479] [cursor=pointer]: "2"
+                        - text: parents)
+                      - img [ref=e2480] [cursor=pointer]
+                    - generic [ref=e2483]:
+                      - generic [ref=e2484]:
+                        - generic [ref=e2485]:
+                          - generic [ref=e2487]:
+                            - img [ref=e2488]
+                            - generic [ref=e2493]: No Payment Plan
+                          - generic [ref=e2494]:
+                            - generic [ref=e2495]:
+                              - paragraph [ref=e2496]: Sunny N’Gom
+                              - generic [ref=e2497]:
+                                - generic [ref=e2498] [cursor=pointer]: Credit Card
+                                - img [ref=e2499]
+                            - paragraph [ref=e2502]: naomizoko@gmail.com
+                            - generic [ref=e2504]: Ready for Payment Plan
+                        - generic [ref=e2506]:
+                          - paragraph [ref=e2507]: No Payment Plan
+                          - paragraph [ref=e2508]: Create a payment plan to get started
+                        - generic [ref=e2509]:
+                          - link "Create Payment Plan" [ref=e2510] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2511] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2512] [cursor=pointer]:
+                            - img [ref=e2513] [cursor=pointer]
+                      - generic [ref=e2516]:
+                        - generic [ref=e2517]:
+                          - generic [ref=e2519]:
+                            - img [ref=e2520]
+                            - generic [ref=e2525]: No Payment Plan
+                          - generic [ref=e2526]:
+                            - generic [ref=e2527]:
+                              - paragraph [ref=e2528]: QA Yearly Parent 1759891440
+                              - generic [ref=e2529]:
+                                - generic [ref=e2530] [cursor=pointer]: Credit Card
+                                - img [ref=e2531]
+                            - paragraph [ref=e2534]: qa-yearly-1759891440@example.com
+                            - generic [ref=e2536]: Ready for Payment Plan
+                        - generic [ref=e2538]:
+                          - paragraph [ref=e2539]: No Payment Plan
+                          - paragraph [ref=e2540]: Create a payment plan to get started
+                        - generic [ref=e2541]:
+                          - link "Create Payment Plan" [ref=e2542] [cursor=pointer]:
+                            - /url: /payment-plans/new
+                            - img [ref=e2543] [cursor=pointer]
+                            - text: Create Payment Plan
+                          - button "Delete entire parent (including all payments)" [ref=e2544] [cursor=pointer]:
+                            - img [ref=e2545] [cursor=pointer]
+        - region "Notifications (F8)":
+          - list
+  - region "Notifications (F8)":
+    - list
+```

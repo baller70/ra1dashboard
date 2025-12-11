@@ -1,21 +1,17 @@
 // @ts-nocheck
 'use client'
 
-// Force dynamic rendering - prevent static generation
-
 import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { AppLayout } from '../../components/app-layout'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Textarea } from '../../components/ui/textarea'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Switch } from '../../components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
-import { Separator } from '../../components/ui/separator'
 import { Badge } from '../../components/ui/badge'
+import { Separator } from '../../components/ui/separator'
 import { 
   Save,
   Settings as SettingsIcon,
@@ -24,7 +20,6 @@ import {
   Smartphone,
   Bell,
   Shield,
-  Database,
   User,
   Palette,
   Monitor,
@@ -33,78 +28,62 @@ import {
   Globe,
   Key,
   Download,
-  Upload,
-  RefreshCw,
   Trash2,
-  AlertTriangle,
-  CheckCircle,
-  Info
+  CheckCircle2,
+  ChevronRight,
+  DollarSign,
+  Zap,
+  MessageSquare,
+  Lock,
+  Eye,
+  EyeOff,
+  ExternalLink
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
 import { Toaster } from '../../components/ui/toaster'
 
-interface SystemSettings {
-  programName: string
-  programFee: string
-  emailFromAddress: string
-  smsFromNumber: string
-  reminderDays: string
-  lateFeeAmount: string
-  gracePeriodDays: string
-}
+const PROGRAMS = [
+  { id: 'yearly-program', name: 'Yearly Program' },
+  { id: 'spring-aau', name: 'Spring AAU' },
+  { id: 'fall-aau', name: 'Fall AAU' },
+  { id: 'summer-aau', name: 'Summer AAU' },
+  { id: 'winter-aau', name: 'Winter AAU' },
+  { id: 'kevin-lessons', name: 'Kevin Houston Lessons' },
+  { id: 'tbf-training', name: 'TBF Training' },
+  { id: 'thos-facility', name: 'THOS Facility Rentals' },
+]
 
-interface UserPreferences {
-  theme: 'light' | 'dark' | 'system'
-  language: string
-  timezone: string
-  dateFormat: string
-  currency: string
-  notifications: {
-    email: boolean
-    sms: boolean
-    push: boolean
-    paymentReminders: boolean
-    overdueAlerts: boolean
-    systemUpdates: boolean
-    marketingEmails: boolean
-  }
-  dashboard: {
-    defaultView: string
-    showWelcomeMessage: boolean
-    compactMode: boolean
-    autoRefresh: boolean
-    refreshInterval: number
-  }
-  privacy: {
-    shareUsageData: boolean
-    allowAnalytics: boolean
-    twoFactorAuth: boolean
-  }
-}
-
-interface UserProfile {
-  name: string
-  email: string
-  role: string
-  phone: string
-  organization: string
-  avatar: string
-}
+const MENU_ITEMS = [
+  { id: 'program', label: 'Program & Fees', icon: DollarSign, description: 'Program settings and pricing' },
+  { id: 'profile', label: 'Your Profile', icon: User, description: 'Personal information' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Email, SMS & alerts' },
+  { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme & display' },
+  { id: 'integrations', label: 'Integrations', icon: Zap, description: 'Stripe, AI & SMS' },
+  { id: 'privacy', label: 'Privacy & Security', icon: Shield, description: 'Data & security' },
+]
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('general')
-  const [settings, setSettings] = useState<SystemSettings>({
+  const [activeSection, setActiveSection] = useState('program')
+  const [settings, setSettings] = useState({
     programName: '',
     programFee: '',
     emailFromAddress: '',
     smsFromNumber: '',
     reminderDays: '',
     lateFeeAmount: '',
-    gracePeriodDays: ''
+    gracePeriodDays: '',
+    stripePublishableKey: '',
+    stripeSecretKey: '',
+    stripeWebhookSecret: '',
+    openaiApiKey: '',
+    resendApiKey: '',
+    telnexSid: '',
+    telnexToken: '',
+    telnexFromNumber: ''
   })
   
-  const [userPreferences, setUserPreferences] = useState<UserPreferences>({
-    theme: 'system',
+  const [userPreferences, setUserPreferences] = useState({
+    theme: 'system' as 'light' | 'dark' | 'system',
     language: 'en',
     timezone: 'America/New_York',
     dateFormat: 'MM/dd/yyyy',
@@ -123,7 +102,6 @@ export default function SettingsPage() {
       showWelcomeMessage: true,
       compactMode: false,
       autoRefresh: true,
-      refreshInterval: 30,
     },
     privacy: {
       shareUsageData: false,
@@ -132,7 +110,7 @@ export default function SettingsPage() {
     }
   })
 
-  const [userProfile, setUserProfile] = useState<UserProfile>({
+  const [userProfile, setUserProfile] = useState({
     name: '',
     email: '',
     role: '',
@@ -143,44 +121,42 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [exportingData, setExportingData] = useState(false)
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        // Load settings from Convex database
         const response = await fetch('/api/settings', {
-          headers: {
-            'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
-          },
+          headers: { 'x-api-key': 'ra1-dashboard-api-key-2024' },
         })
         if (response.ok) {
           const data = await response.json()
-          console.log('🌐 Settings fetched from server:', data);
           
-          // Set system settings from array format
           if (data.systemSettings && Array.isArray(data.systemSettings)) {
-            const systemSettingsObj: SystemSettings = {
+            setSettings({
               programName: data.systemSettings.find((s: any) => s.key === 'program_name')?.value || '',
               programFee: data.systemSettings.find((s: any) => s.key === 'program_fee')?.value || '',
               emailFromAddress: data.systemSettings.find((s: any) => s.key === 'email_from_address')?.value || '',
               smsFromNumber: data.systemSettings.find((s: any) => s.key === 'sms_from_number')?.value || '',
               reminderDays: data.systemSettings.find((s: any) => s.key === 'reminder_days')?.value || '',
               lateFeeAmount: data.systemSettings.find((s: any) => s.key === 'late_fee_amount')?.value || '',
-              gracePeriodDays: data.systemSettings.find((s: any) => s.key === 'grace_period_days')?.value || ''
-            }
-            setSettings(systemSettingsObj)
+              gracePeriodDays: data.systemSettings.find((s: any) => s.key === 'grace_period_days')?.value || '',
+              stripePublishableKey: data.systemSettings.find((s: any) => s.key === 'stripe_publishable_key')?.value || '',
+              stripeSecretKey: data.systemSettings.find((s: any) => s.key === 'stripe_secret_key')?.value || '',
+              stripeWebhookSecret: data.systemSettings.find((s: any) => s.key === 'stripe_webhook_secret')?.value || '',
+              openaiApiKey: data.systemSettings.find((s: any) => s.key === 'openai_api_key')?.value || '',
+              resendApiKey: data.systemSettings.find((s: any) => s.key === 'resend_api_key')?.value || '',
+              telnexSid: data.systemSettings.find((s: any) => s.key === 'telnex_sid')?.value || '',
+              telnexToken: data.systemSettings.find((s: any) => s.key === 'telnex_token')?.value || '',
+              telnexFromNumber: data.systemSettings.find((s: any) => s.key === 'telnex_from_number')?.value || ''
+            })
           }
           
-          // Set user preferences with proper mapping
           if (data.userPreferences) {
-            const savedTheme = data.userPreferences.theme || 'system';
-            // Sync the actual theme with the saved preference
-            if (savedTheme !== theme) {
-              setTheme(savedTheme);
-            }
+            const savedTheme = data.userPreferences.theme || 'system'
+            if (savedTheme !== theme) setTheme(savedTheme)
             setUserPreferences(prev => ({
               ...prev,
               theme: savedTheme,
@@ -202,7 +178,6 @@ export default function SettingsPage() {
                 showWelcomeMessage: data.userPreferences.showWelcomeMessage !== false,
                 compactMode: data.userPreferences.compactMode || false,
                 autoRefresh: data.userPreferences.autoRefresh !== false,
-                refreshInterval: data.userPreferences.refreshInterval || 30,
               },
               privacy: {
                 shareUsageData: data.userPreferences.shareUsageData || false,
@@ -212,7 +187,6 @@ export default function SettingsPage() {
             }))
           }
           
-          // Set user profile
           if (data.user) {
             setUserProfile({
               name: data.user.name || '',
@@ -226,23 +200,16 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error('Failed to fetch settings:', error)
-        toast({
-          title: "Error",
-          description: "Failed to load settings. Please refresh the page.",
-          variant: "destructive",
-        })
       } finally {
         setLoading(false)
       }
     }
-
     fetchSettings()
-  }, [toast])
+  }, [])
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Convert system settings to API format
       const systemSettingsArray = [
         { key: 'program_name', value: settings.programName },
         { key: 'program_fee', value: settings.programFee },
@@ -250,10 +217,17 @@ export default function SettingsPage() {
         { key: 'sms_from_number', value: settings.smsFromNumber },
         { key: 'reminder_days', value: settings.reminderDays },
         { key: 'late_fee_amount', value: settings.lateFeeAmount },
-        { key: 'grace_period_days', value: settings.gracePeriodDays }
+        { key: 'grace_period_days', value: settings.gracePeriodDays },
+        { key: 'stripe_publishable_key', value: settings.stripePublishableKey },
+        { key: 'stripe_secret_key', value: settings.stripeSecretKey },
+        { key: 'stripe_webhook_secret', value: settings.stripeWebhookSecret },
+        { key: 'openai_api_key', value: settings.openaiApiKey },
+        { key: 'resend_api_key', value: settings.resendApiKey },
+        { key: 'telnex_sid', value: settings.telnexSid },
+        { key: 'telnex_token', value: settings.telnexToken },
+        { key: 'telnex_from_number', value: settings.telnexFromNumber }
       ]
 
-      // Convert user preferences to API format
       const userPreferencesForAPI = {
         theme: userPreferences.theme,
         language: userPreferences.language,
@@ -271,161 +245,34 @@ export default function SettingsPage() {
         showWelcomeMessage: userPreferences.dashboard.showWelcomeMessage,
         compactMode: userPreferences.dashboard.compactMode,
         autoRefresh: userPreferences.dashboard.autoRefresh,
-        refreshInterval: userPreferences.dashboard.refreshInterval,
         shareUsageData: userPreferences.privacy.shareUsageData,
         allowAnalytics: userPreferences.privacy.allowAnalytics,
         twoFactorAuth: userPreferences.privacy.twoFactorAuth,
       }
 
-      // Save to Convex database
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'ra1-dashboard-api-key-2024', // API key for Vercel auth bypass
+          'x-api-key': 'ra1-dashboard-api-key-2024',
         },
-        body: JSON.stringify({
-          systemSettings: systemSettingsArray,
-          userPreferences: userPreferencesForAPI,
-          userProfile
-        }),
+        body: JSON.stringify({ systemSettings: systemSettingsArray, userPreferences: userPreferencesForAPI, userProfile }),
       })
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Settings saved to Convex successfully:', result);
-        toast({
-          title: "Settings saved",
-          description: "Your settings have been updated successfully.",
-        })
-        
-        // Immediately refresh settings from server to show persistence
-        const refreshResponse = await fetch('/api/settings', {
-          headers: {
-            'x-api-key': 'ra1-dashboard-api-key-2024',
-          },
-        });
-        
-        if (refreshResponse.ok) {
-          const refreshData = await refreshResponse.json();
-          console.log('🔄 Settings refreshed from server:', refreshData);
-          
-          // Update the UI with the saved settings
-          if (refreshData.systemSettings && Array.isArray(refreshData.systemSettings)) {
-            const systemSettingsObj: SystemSettings = {
-              programName: refreshData.systemSettings.find((s: any) => s.key === 'program_name')?.value || '',
-              programFee: refreshData.systemSettings.find((s: any) => s.key === 'program_fee')?.value || '',
-              emailFromAddress: refreshData.systemSettings.find((s: any) => s.key === 'email_from_address')?.value || '',
-              smsFromNumber: refreshData.systemSettings.find((s: any) => s.key === 'sms_from_number')?.value || '',
-              reminderDays: refreshData.systemSettings.find((s: any) => s.key === 'reminder_days')?.value || '',
-              lateFeeAmount: refreshData.systemSettings.find((s: any) => s.key === 'late_fee_amount')?.value || '',
-              gracePeriodDays: refreshData.systemSettings.find((s: any) => s.key === 'grace_period_days')?.value || ''
-            }
-            setSettings(systemSettingsObj);
-            console.log('✅ Settings UI updated with saved values');
-          }
-          
-          // Also update user preferences including theme
-          if (refreshData.userPreferences) {
-            const savedTheme = refreshData.userPreferences.theme || 'system';
-            // Sync the actual theme with the saved preference
-            if (savedTheme !== theme) {
-              setTheme(savedTheme);
-            }
-            setUserPreferences(prev => ({
-              ...prev,
-              theme: savedTheme,
-              language: refreshData.userPreferences.language || 'en',
-              timezone: refreshData.userPreferences.timezone || 'America/New_York',
-              dateFormat: refreshData.userPreferences.dateFormat || 'MM/dd/yyyy',
-              currency: refreshData.userPreferences.currency || 'USD',
-              notifications: {
-                email: refreshData.userPreferences.emailNotifications !== false,
-                sms: refreshData.userPreferences.smsNotifications !== false,
-                push: refreshData.userPreferences.pushNotifications !== false,
-                paymentReminders: refreshData.userPreferences.paymentReminders !== false,
-                overdueAlerts: refreshData.userPreferences.overdueAlerts !== false,
-                systemUpdates: refreshData.userPreferences.systemUpdates !== false,
-                marketingEmails: refreshData.userPreferences.marketingEmails || false,
-              },
-              dashboard: {
-                defaultView: refreshData.userPreferences.defaultView || 'overview',
-                showWelcomeMessage: refreshData.userPreferences.showWelcomeMessage !== false,
-                compactMode: refreshData.userPreferences.compactMode || false,
-                autoRefresh: refreshData.userPreferences.autoRefresh !== false,
-                refreshInterval: refreshData.userPreferences.refreshInterval || 30,
-              },
-              privacy: {
-                shareUsageData: refreshData.userPreferences.shareUsageData || false,
-                allowAnalytics: refreshData.userPreferences.allowAnalytics !== false,
-                twoFactorAuth: refreshData.userPreferences.twoFactorAuth || false,
-              }
-            }));
-            console.log('✅ User preferences UI updated with saved values');
-          }
-        }
+        toast({ title: "✅ Settings saved", description: "Your changes have been saved successfully." })
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ Settings save failed:', errorData);
-        throw new Error(errorData.error || 'Failed to save settings')
+        throw new Error('Failed to save')
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" })
     } finally {
       setSaving(false)
     }
   }
 
-  const handleExportData = async () => {
-    setExportingData(true)
-    try {
-      const response = await fetch('/api/settings/export')
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `rise-as-one-settings-${new Date().toISOString().split('T')[0]}.json`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        toast({
-          title: "Export successful",
-          description: "Your settings have been exported successfully.",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Export failed",
-        description: "Failed to export settings. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setExportingData(false)
-    }
-  }
-
-  const handleResetSettings = async () => {
-    if (confirm('Are you sure you want to reset all settings to defaults? This action cannot be undone.')) {
-      try {
-        const response = await fetch('/api/settings/reset', { method: 'POST' })
-        if (response.ok) {
-          window.location.reload()
-        }
-      } catch (error) {
-        toast({
-          title: "Reset failed",
-          description: "Failed to reset settings. Please try again.",
-          variant: "destructive",
-        })
-      }
-    }
+  const toggleSecret = (key: string) => {
+    setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   if (loading) {
@@ -438,180 +285,181 @@ export default function SettingsPage() {
     )
   }
 
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-            <p className="text-muted-foreground">
-              Configure your basketball program management system and personal preferences
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleExportData} variant="outline" disabled={exportingData}>
-              {exportingData ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </>
-              )}
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+  const renderSection = () => {
+    switch (activeSection) {
+      case 'program':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Program & Fees</h2>
+              <p className="text-muted-foreground">Configure your program settings and pricing structure.</p>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Program Selection</CardTitle>
+                <CardDescription>Choose which program you're configuring</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select
+                  value={settings.programName || PROGRAMS[0].id}
+                  onValueChange={(val) => setSettings(prev => ({ ...prev, programName: val }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROGRAMS.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          </TabsList>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Pricing</CardTitle>
+                <CardDescription>Set fees for this program</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Program Fee</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        value={settings.programFee}
+                        onChange={(e) => setSettings(prev => ({ ...prev, programFee: e.target.value }))}
+                        placeholder="1565"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Late Fee</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        value={settings.lateFeeAmount}
+                        onChange={(e) => setSettings(prev => ({ ...prev, lateFeeAmount: e.target.value }))}
+                        placeholder="25"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* General Settings */}
-          <TabsContent value="general" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Program Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <SettingsIcon className="h-5 w-5" />
-                    Program Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Payment Settings</CardTitle>
+                <CardDescription>Configure grace periods and reminders</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="programName">Program Name</Label>
+                    <Label>Grace Period (days)</Label>
                     <Input
-                      id="programName"
-                      value={settings.programName}
-                      onChange={(e) => setSettings(prev => ({ ...prev, programName: e.target.value }))}
-                      placeholder="Rise as One Yearly Program"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="programFee">Annual Program Fee ($)</Label>
-                    <Input
-                      id="programFee"
-                      type="number"
-                      value={settings.programFee}
-                      onChange={(e) => setSettings(prev => ({ ...prev, programFee: e.target.value }))}
-                      placeholder="1565"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lateFeeAmount">Late Fee Amount ($)</Label>
-                    <Input
-                      id="lateFeeAmount"
-                      type="number"
-                      value={settings.lateFeeAmount}
-                      onChange={(e) => setSettings(prev => ({ ...prev, lateFeeAmount: e.target.value }))}
-                      placeholder="25"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gracePeriodDays">Grace Period (Days)</Label>
-                    <Input
-                      id="gracePeriodDays"
                       type="number"
                       value={settings.gracePeriodDays}
                       onChange={(e) => setSettings(prev => ({ ...prev, gracePeriodDays: e.target.value }))}
                       placeholder="3"
                     />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Communication Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    Communication Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="emailFromAddress">From Email Address</Label>
-                    <Input
-                      id="emailFromAddress"
-                      type="email"
-                      value={settings.emailFromAddress}
-                      onChange={(e) => setSettings(prev => ({ ...prev, emailFromAddress: e.target.value }))}
-                      placeholder="admin@riseasone.com"
-                    />
+                    <p className="text-xs text-muted-foreground">Days after due date before late fee applies</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="smsFromNumber">SMS From Number</Label>
+                    <Label>Reminder Days</Label>
                     <Input
-                      id="smsFromNumber"
-                      value={settings.smsFromNumber}
-                      onChange={(e) => setSettings(prev => ({ ...prev, smsFromNumber: e.target.value }))}
-                      placeholder="+1-555-0123"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reminderDays">Payment Reminder Days</Label>
-                    <Input
-                      id="reminderDays"
                       value={settings.reminderDays}
                       onChange={(e) => setSettings(prev => ({ ...prev, reminderDays: e.target.value }))}
-                      placeholder="7,1"
+                      placeholder="7, 3, 1"
                     />
-                    <p className="text-sm text-muted-foreground">
-                      Comma-separated list of days before due date to send reminders
-                    </p>
+                    <p className="text-xs text-muted-foreground">Days before due date to send reminders</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Profile Settings */}
-          <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  User Profile
-                </CardTitle>
+                <CardTitle className="text-lg">Communication</CardTitle>
+                <CardDescription>Email and SMS sender settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label>From Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        value={settings.emailFromAddress}
+                        onChange={(e) => setSettings(prev => ({ ...prev, emailFromAddress: e.target.value }))}
+                        placeholder="admin@riseasone.com"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SMS From Number</Label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={settings.smsFromNumber}
+                        onChange={(e) => setSettings(prev => ({ ...prev, smsFromNumber: e.target.value }))}
+                        placeholder="+1-555-0123"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
+
+      case 'profile':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Your Profile</h2>
+              <p className="text-muted-foreground">Manage your personal information and preferences.</p>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Personal Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white text-2xl font-bold">
+                    {userProfile.name?.charAt(0) || 'U'}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{userProfile.name || 'Your Name'}</h3>
+                    <p className="text-muted-foreground">{userProfile.email || 'email@example.com'}</p>
+                    <Badge variant="secondary" className="mt-1">{userProfile.role || 'Admin'}</Badge>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="grid gap-4 sm:grid-cols-2 pt-4">
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
                     <Input
-                      id="name"
                       value={userProfile.name}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="John Doe"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label>Email</Label>
                     <Input
-                      id="email"
                       type="email"
                       value={userProfile.email}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, email: e.target.value }))}
@@ -619,16 +467,15 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label>Phone</Label>
                     <Input
-                      id="phone"
                       value={userProfile.phone}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, phone: e.target.value }))}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
+                    <Label>Role</Label>
                     <Select value={userProfile.role} onValueChange={(value) => setUserProfile(prev => ({ ...prev, role: value }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
@@ -641,10 +488,9 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="organization">Organization</Label>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Organization</Label>
                     <Input
-                      id="organization"
                       value={userProfile.organization}
                       onChange={(e) => setUserProfile(prev => ({ ...prev, organization: e.target.value }))}
                       placeholder="Rise as One Basketball"
@@ -654,18 +500,14 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Regional Settings */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Regional Settings
-                </CardTitle>
+                <CardTitle className="text-lg">Regional Settings</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="language">Language</Label>
+                    <Label>Language</Label>
                     <Select value={userPreferences.language} onValueChange={(value) => setUserPreferences(prev => ({ ...prev, language: value }))}>
                       <SelectTrigger>
                         <SelectValue />
@@ -678,7 +520,7 @@ export default function SettingsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="timezone">Timezone</Label>
+                    <Label>Timezone</Label>
                     <Select value={userPreferences.timezone} onValueChange={(value) => setUserPreferences(prev => ({ ...prev, timezone: value }))}>
                       <SelectTrigger>
                         <SelectValue />
@@ -692,7 +534,7 @@ export default function SettingsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dateFormat">Date Format</Label>
+                    <Label>Date Format</Label>
                     <Select value={userPreferences.dateFormat} onValueChange={(value) => setUserPreferences(prev => ({ ...prev, dateFormat: value }))}>
                       <SelectTrigger>
                         <SelectValue />
@@ -705,7 +547,7 @@ export default function SettingsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
+                    <Label>Currency</Label>
                     <Select value={userPreferences.currency} onValueChange={(value) => setUserPreferences(prev => ({ ...prev, currency: value }))}>
                       <SelectTrigger>
                         <SelectValue />
@@ -721,509 +563,517 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        )
 
-          {/* Notification Settings */}
-          <TabsContent value="notifications" className="space-y-6">
+      case 'notifications':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Notifications</h2>
+              <p className="text-muted-foreground">Control how and when you receive notifications.</p>
+            </div>
+
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notification Preferences
-                </CardTitle>
+                <CardTitle className="text-lg">Notification Channels</CardTitle>
+                <CardDescription>Choose how you want to be notified</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive notifications via email
-                      </p>
+              <CardContent className="space-y-4">
+                {[
+                  { key: 'email', label: 'Email Notifications', desc: 'Receive notifications via email', icon: Mail },
+                  { key: 'sms', label: 'SMS Notifications', desc: 'Get urgent alerts via text message', icon: Smartphone },
+                  { key: 'push', label: 'Push Notifications', desc: 'Browser push notifications', icon: Bell },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <item.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.label}</p>
+                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                      </div>
                     </div>
                     <Switch 
-                      checked={userPreferences.notifications.email}
+                      checked={userPreferences.notifications[item.key as keyof typeof userPreferences.notifications]}
                       onCheckedChange={(checked) => setUserPreferences(prev => ({
                         ...prev,
-                        notifications: { ...prev.notifications, email: checked }
+                        notifications: { ...prev.notifications, [item.key]: checked }
                       }))}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>SMS Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive urgent notifications via SMS
-                      </p>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Alert Types</CardTitle>
+                <CardDescription>Customize which alerts you receive</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { key: 'paymentReminders', label: 'Payment Reminders', desc: 'Upcoming payment due dates' },
+                  { key: 'overdueAlerts', label: 'Overdue Alerts', desc: 'High-priority overdue payment notifications' },
+                  { key: 'systemUpdates', label: 'System Updates', desc: 'App updates and maintenance notices' },
+                  { key: 'marketingEmails', label: 'Marketing Emails', desc: 'Promotional content and program updates' },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center justify-between py-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </div>
                     <Switch 
-                      checked={userPreferences.notifications.sms}
+                      checked={userPreferences.notifications[item.key as keyof typeof userPreferences.notifications]}
                       onCheckedChange={(checked) => setUserPreferences(prev => ({
                         ...prev,
-                        notifications: { ...prev.notifications, sms: checked }
+                        notifications: { ...prev.notifications, [item.key]: checked }
                       }))}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive browser push notifications
-                      </p>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )
+
+      case 'appearance':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Appearance</h2>
+              <p className="text-muted-foreground">Customize how the dashboard looks and feels.</p>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Theme</CardTitle>
+                <CardDescription>Select your preferred color scheme</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { id: 'light', label: 'Light', icon: Sun, colors: 'bg-white border-2' },
+                    { id: 'dark', label: 'Dark', icon: Moon, colors: 'bg-zinc-900 border-2' },
+                    { id: 'system', label: 'System', icon: Monitor, colors: 'bg-gradient-to-br from-white to-zinc-900 border-2' },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setTheme(t.id)
+                        setUserPreferences(prev => ({ ...prev, theme: t.id as any }))
+                      }}
+                      className={`p-4 rounded-xl flex flex-col items-center gap-3 transition-all ${
+                        theme === t.id 
+                          ? 'border-primary ring-2 ring-primary ring-offset-2' 
+                          : 'border-muted hover:border-primary/50'
+                      } ${t.colors}`}
+                    >
+                      <div className={`p-3 rounded-lg ${theme === t.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        <t.icon className="h-6 w-6" />
+                      </div>
+                      <span className={`font-medium ${t.id === 'dark' ? 'text-white' : ''}`}>{t.label}</span>
+                      {theme === t.id && <CheckCircle2 className={`h-5 w-5 ${t.id === 'dark' ? 'text-primary' : 'text-primary'}`} />}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Dashboard Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Default View</Label>
+                  <Select 
+                    value={userPreferences.dashboard.defaultView} 
+                    onValueChange={(value) => setUserPreferences(prev => ({
+                      ...prev,
+                      dashboard: { ...prev.dashboard, defaultView: value }
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="overview">Overview</SelectItem>
+                      <SelectItem value="payments">Payments</SelectItem>
+                      <SelectItem value="parents">Parents</SelectItem>
+                      <SelectItem value="analytics">Analytics</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Separator />
+                
+                {[
+                  { key: 'showWelcomeMessage', label: 'Show Welcome Message', desc: 'Display greeting on dashboard' },
+                  { key: 'compactMode', label: 'Compact Mode', desc: 'Use denser layout for more info' },
+                  { key: 'autoRefresh', label: 'Auto Refresh', desc: 'Automatically update data' },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center justify-between py-2">
+                    <div>
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </div>
                     <Switch 
-                      checked={userPreferences.notifications.push}
+                      checked={userPreferences.dashboard[item.key as keyof typeof userPreferences.dashboard] as boolean}
                       onCheckedChange={(checked) => setUserPreferences(prev => ({
                         ...prev,
-                        notifications: { ...prev.notifications, push: checked }
+                        dashboard: { ...prev.dashboard, [item.key]: checked }
                       }))}
                     />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )
+
+      case 'integrations':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Integrations</h2>
+              <p className="text-muted-foreground">Connect third-party services and APIs.</p>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#635BFF]/10">
+                    <CreditCard className="h-6 w-6 text-[#635BFF]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Stripe</CardTitle>
+                    <CardDescription>Payment processing</CardDescription>
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Publishable Key</Label>
+                  <div className="relative">
+                    <Input
+                      type={showSecrets.stripePublishable ? 'text' : 'password'}
+                      value={settings.stripePublishableKey}
+                      onChange={(e) => setSettings(prev => ({ ...prev, stripePublishableKey: e.target.value }))}
+                      placeholder="pk_test_..."
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleSecret('stripePublishable')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showSecrets.stripePublishable ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Secret Key</Label>
+                  <div className="relative">
+                    <Input
+                      type={showSecrets.stripeSecret ? 'text' : 'password'}
+                      value={settings.stripeSecretKey}
+                      onChange={(e) => setSettings(prev => ({ ...prev, stripeSecretKey: e.target.value }))}
+                      placeholder="sk_test_..."
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleSecret('stripeSecret')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showSecrets.stripeSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Webhook Secret</Label>
+                  <Input
+                    type="password"
+                    value={settings.stripeWebhookSecret}
+                    onChange={(e) => setSettings(prev => ({ ...prev, stripeWebhookSecret: e.target.value }))}
+                    placeholder="whsec_..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Specific Notifications</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Payment Reminders</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Notifications for upcoming payment due dates
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.notifications.paymentReminders}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          notifications: { ...prev.notifications, paymentReminders: checked }
-                        }))}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Overdue Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          High-priority alerts for overdue payments
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.notifications.overdueAlerts}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          notifications: { ...prev.notifications, overdueAlerts: checked }
-                        }))}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>System Updates</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Notifications about system maintenance and updates
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.notifications.systemUpdates}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          notifications: { ...prev.notifications, systemUpdates: checked }
-                        }))}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Marketing Emails</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Promotional emails and program updates
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.notifications.marketingEmails}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          notifications: { ...prev.notifications, marketingEmails: checked }
-                        }))}
-                      />
-                    </div>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <Zap className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">OpenAI</CardTitle>
+                    <CardDescription>AI-powered features</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label>API Key</Label>
+                  <div className="relative">
+                    <Input
+                      type={showSecrets.openai ? 'text' : 'password'}
+                      value={settings.openaiApiKey}
+                      onChange={(e) => setSettings(prev => ({ ...prev, openaiApiKey: e.target.value }))}
+                      placeholder="sk-..."
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleSecret('openai')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showSecrets.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Appearance Settings */}
-          <TabsContent value="appearance" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
-                  Appearance
-                </CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <Mail className="h-6 w-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Resend</CardTitle>
+                    <CardDescription>Email delivery</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
+              <CardContent>
+                <div className="space-y-2">
+                  <Label>API Key</Label>
+                  <Input
+                    type="password"
+                    value={settings.resendApiKey}
+                    onChange={(e) => setSettings(prev => ({ ...prev, resendApiKey: e.target.value }))}
+                    placeholder="re_..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <MessageSquare className="h-6 w-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Telnex</CardTitle>
+                    <CardDescription>SMS messaging</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Theme</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={theme === 'light' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTheme('light')
-                          setUserPreferences(prev => ({ ...prev, theme: 'light' }))
-                        }}
-                      >
-                        <Sun className="mr-2 h-4 w-4" />
-                        Light
-                      </Button>
-                      <Button
-                        variant={theme === 'dark' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTheme('dark') 
-                          setUserPreferences(prev => ({ ...prev, theme: 'dark' }))
-                        }}
-                      >
-                        <Moon className="mr-2 h-4 w-4" />
-                        Dark
-                      </Button>
-                      <Button
-                        variant={theme === 'system' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setTheme('system')
-                          setUserPreferences(prev => ({ ...prev, theme: 'system' }))
-                        }}
-                      >
-                        <Monitor className="mr-2 h-4 w-4" />
-                        System
-                      </Button>
-                    </div>
+                    <Label>Account SID</Label>
+                    <Input
+                      value={settings.telnexSid}
+                      onChange={(e) => setSettings(prev => ({ ...prev, telnexSid: e.target.value }))}
+                      placeholder="Your SID"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Auth Token</Label>
+                    <Input
+                      type="password"
+                      value={settings.telnexToken}
+                      onChange={(e) => setSettings(prev => ({ ...prev, telnexToken: e.target.value }))}
+                      placeholder="Your token"
+                    />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label>From Number</Label>
+                  <Input
+                    value={settings.telnexFromNumber}
+                    onChange={(e) => setSettings(prev => ({ ...prev, telnexFromNumber: e.target.value }))}
+                    placeholder="+1..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
 
-                <Separator />
+      case 'privacy':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Privacy & Security</h2>
+              <p className="text-muted-foreground">Manage your data and security settings.</p>
+            </div>
 
-                <div className="space-y-4">
-                  <h4 className="font-medium">Dashboard Settings</h4>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultView">Default Dashboard View</Label>
-                      <Select 
-                        value={userPreferences.dashboard.defaultView} 
-                        onValueChange={(value) => setUserPreferences(prev => ({
-                          ...prev,
-                          dashboard: { ...prev.dashboard, defaultView: value }
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="overview">Overview</SelectItem>
-                          <SelectItem value="payments">Payments</SelectItem>
-                          <SelectItem value="parents">Parents</SelectItem>
-                          <SelectItem value="analytics">Analytics</SelectItem>
-                        </SelectContent>
-                      </Select>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Security</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Lock className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Show Welcome Message</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Display welcome message on dashboard
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.dashboard.showWelcomeMessage}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          dashboard: { ...prev.dashboard, showWelcomeMessage: checked }
-                        }))}
-                      />
+                    <div>
+                      <p className="font-medium">Two-Factor Authentication</p>
+                      <p className="text-sm text-muted-foreground">Add extra security to your account</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Compact Mode</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Use compact layout for more information density
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.dashboard.compactMode}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          dashboard: { ...prev.dashboard, compactMode: checked }
-                        }))}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Auto Refresh</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Automatically refresh dashboard data
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={userPreferences.dashboard.autoRefresh}
-                        onCheckedChange={(checked) => setUserPreferences(prev => ({
-                          ...prev,
-                          dashboard: { ...prev.dashboard, autoRefresh: checked }
-                        }))}
-                      />
-                    </div>
-                    {userPreferences.dashboard.autoRefresh && (
-                      <div className="space-y-2">
-                        <Label htmlFor="refreshInterval">Refresh Interval (seconds)</Label>
-                        <Select 
-                          value={userPreferences.dashboard.refreshInterval.toString()} 
-                          onValueChange={(value) => setUserPreferences(prev => ({
-                            ...prev,
-                            dashboard: { ...prev.dashboard, refreshInterval: parseInt(value) }
-                          }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="15">15 seconds</SelectItem>
-                            <SelectItem value="30">30 seconds</SelectItem>
-                            <SelectItem value="60">1 minute</SelectItem>
-                            <SelectItem value="300">5 minutes</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={userPreferences.privacy.twoFactorAuth ? 'default' : 'secondary'}>
+                      {userPreferences.privacy.twoFactorAuth ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setUserPreferences(prev => ({
+                        ...prev,
+                        privacy: { ...prev.privacy, twoFactorAuth: !prev.privacy.twoFactorAuth }
+                      }))}
+                    >
+                      {userPreferences.privacy.twoFactorAuth ? 'Disable' : 'Enable'}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Privacy Settings */}
-          <TabsContent value="privacy" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Privacy & Security
-                </CardTitle>
+                <CardTitle className="text-lg">Data & Analytics</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Share Usage Data</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Help improve the app by sharing anonymous usage data
-                      </p>
+              <CardContent className="space-y-3">
+                {[
+                  { key: 'shareUsageData', label: 'Share Usage Data', desc: 'Help improve the app with anonymous data' },
+                  { key: 'allowAnalytics', label: 'Allow Analytics', desc: 'Enable usage analytics collection' },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center justify-between py-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </div>
                     <Switch 
-                      checked={userPreferences.privacy.shareUsageData}
+                      checked={userPreferences.privacy[item.key as keyof typeof userPreferences.privacy] as boolean}
                       onCheckedChange={(checked) => setUserPreferences(prev => ({
                         ...prev,
-                        privacy: { ...prev.privacy, shareUsageData: checked }
+                        privacy: { ...prev.privacy, [item.key]: checked }
                       }))}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Allow Analytics</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Enable analytics to help us understand app usage
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={userPreferences.privacy.allowAnalytics}
-                      onCheckedChange={(checked) => setUserPreferences(prev => ({
-                        ...prev,
-                        privacy: { ...prev.privacy, allowAnalytics: checked }
-                      }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Two-Factor Authentication</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Add an extra layer of security to your account
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={userPreferences.privacy.twoFactorAuth ? 'default' : 'secondary'}>
-                        {userPreferences.privacy.twoFactorAuth ? 'Enabled' : 'Disabled'}
-                      </Badge>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setUserPreferences(prev => ({
-                          ...prev,
-                          privacy: { ...prev.privacy, twoFactorAuth: !prev.privacy.twoFactorAuth }
-                        }))}
-                      >
-                        {userPreferences.privacy.twoFactorAuth ? 'Disable' : 'Enable'}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Data Management</h4>
-                  <div className="space-y-3">
-                    <Button variant="outline" onClick={handleExportData} disabled={exportingData}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Export My Data
-                    </Button>
-                    <Button variant="outline" disabled>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Import Settings
-                    </Button>
-                    <Button variant="destructive" onClick={handleResetSettings}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Reset All Settings
-                    </Button>
-                  </div>
-                </div>
+                ))}
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Advanced Settings */}
-          <TabsContent value="advanced" className="space-y-6">
-            <Card>
+            <Card className="border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Advanced Settings
-                </CardTitle>
+                <CardTitle className="text-lg text-red-600 dark:text-red-400">Danger Zone</CardTitle>
+                <CardDescription>Irreversible actions</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Payment Integration */}
-                <div className="space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Payment Integration
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="stripePublishableKey">Stripe Publishable Key</Label>
-                      <Input
-                        id="stripePublishableKey"
-                        type="password"
-                        placeholder="pk_test_..."
-                        disabled
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Contact support to configure Stripe integration
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stripeSecretKey">Stripe Secret Key</Label>
-                      <Input
-                        id="stripeSecretKey"
-                        type="password"
-                        placeholder="sk_test_..."
-                        disabled
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stripeWebhookSecret">Webhook Secret</Label>
-                      <Input
-                        id="stripeWebhookSecret"
-                        type="password"
-                        placeholder="whsec_..."
-                        disabled
-                      />
-                    </div>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Export All Data</p>
+                    <p className="text-sm text-muted-foreground">Download a copy of all your data</p>
                   </div>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
                 </div>
-
                 <Separator />
-
-                {/* API Configuration */}
-                <div className="space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Key className="h-4 w-4" />
-                    API Configuration
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="openaiApiKey">OpenAI API Key</Label>
-                      <Input
-                        id="openaiApiKey"
-                        type="password"
-                        placeholder="sk-..."
-                        disabled
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Required for AI-powered features
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="resendApiKey">Resend API Key</Label>
-                      <Input
-                        id="resendApiKey"
-                        type="password"
-                        placeholder="re_..."
-                        disabled
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Required for email notifications
-                      </p>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-red-600">Reset All Settings</p>
+                    <p className="text-sm text-muted-foreground">This cannot be undone</p>
                   </div>
-                </div>
-
-                <Separator />
-
-                {/* System Information */}
-                <div className="space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    System Information
-                  </h4>
-                  <div className="grid gap-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Application Version:</span>
-                      <Badge variant="outline">v2.1.0</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Database:</span>
-                      <Badge variant="outline">Convex</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Environment:</span>
-                      <Badge variant="outline">Development</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last Updated:</span>
-                      <span>{new Date().toLocaleDateString()}</span>
-                    </div>
-                  </div>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Reset
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving} size="lg">
-            {saving ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Saving Changes...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Save All Changes
-              </>
-            )}
-          </Button>
-        </div>
+      default:
+        return null
+    }
+  }
+
+  return (
+    <AppLayout>
+      <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-200px)]">
+        {/* Sidebar Navigation */}
+        <aside className="lg:w-72 shrink-0">
+          <div className="sticky top-6">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <SettingsIcon className="h-6 w-6" />
+                Settings
+              </h1>
+              <p className="text-muted-foreground text-sm mt-1">Manage your preferences</p>
+            </div>
+            
+            <nav className="space-y-1">
+              {MENU_ITEMS.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+                    activeSection === item.id
+                      ? 'bg-primary text-primary-foreground shadow-lg'
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  <item.icon className={`h-5 w-5 ${activeSection === item.id ? '' : 'text-muted-foreground'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.label}</p>
+                    <p className={`text-xs truncate ${activeSection === item.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                      {item.description}
+                    </p>
+                  </div>
+                  <ChevronRight className={`h-4 w-4 shrink-0 ${activeSection === item.id ? '' : 'text-muted-foreground'}`} />
+                </button>
+              ))}
+            </nav>
+            
+            {/* Save Button - Sidebar */}
+            <div className="mt-6 pt-6 border-t">
+              <Button onClick={handleSave} disabled={saving} className="w-full" size="lg">
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 min-w-0">
+          {renderSection()}
+        </main>
       </div>
       <Toaster />
     </AppLayout>

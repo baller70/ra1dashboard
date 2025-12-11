@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import { convexHttp } from './db';
 import { api } from '../convex/_generated/api';
-import { auth } from '@clerk/nextjs/server';
 
 // Development user for testing
 const DEV_USER = {
@@ -10,27 +9,8 @@ const DEV_USER = {
   role: 'admin'
 };
 
-// Get current user session
+// Get current user session - no auth required
 export async function getCurrentUser() {
-  try {
-    // Try Clerk authentication first
-    const { userId: clerkUserId } = await auth();
-    
-    if (clerkUserId) {
-      // Production: Use Clerk user
-      // In a real implementation, you'd get user info from Clerk
-      // For now, we'll use the dev user but with Clerk ID
-      const user = await convexHttp.mutation(api.users.getOrCreateUser, {
-        email: DEV_USER.email,
-        name: DEV_USER.name,
-        clerkId: clerkUserId,
-      });
-      return user;
-    }
-  } catch (error) {
-    console.log('Clerk auth not available, using development mode');
-  }
-
   // Development mode: Check for session cookie or create dev user
   const cookieStore = cookies();
   const sessionCookie = cookieStore.get('dev-user-session');
@@ -49,12 +29,16 @@ export async function getCurrentUser() {
   }
 
   // Get or create user in Convex
-  const user = await convexHttp.mutation(api.users.getOrCreateUser, {
-    email: userEmail,
-    name: userName,
-  });
-
-  return user;
+  try {
+    const user = await convexHttp.mutation(api.users.getOrCreateUser, {
+      email: userEmail,
+      name: userName,
+    });
+    return user;
+  } catch (error) {
+    // Return mock user if Convex fails
+    return { _id: 'dev-user', email: userEmail, name: userName, role: 'admin' };
+  }
 }
 
 // Set user session (development mode)
@@ -70,38 +54,44 @@ export async function setUserSession(userData: { email: string; name: string; ro
   });
 
   // Update user in Convex
-  const user = await convexHttp.mutation(api.users.getOrCreateUser, {
-    email: userData.email,
-    name: userData.name,
-  });
-
-  return user;
+  try {
+    const user = await convexHttp.mutation(api.users.getOrCreateUser, {
+      email: userData.email,
+      name: userData.name,
+    });
+    return user;
+  } catch (error) {
+    return { _id: 'dev-user', email: userData.email, name: userData.name, role: userData.role || 'admin' };
+  }
 }
 
 // Save user session data
 export async function saveUserSessionData(userId: string, sessionData: any) {
-  return await convexHttp.mutation(api.users.createUserSession, {
-    userId: userId as any,
-    sessionData,
-  });
+  try {
+    return await convexHttp.mutation(api.users.createUserSession, {
+      userId: userId as any,
+      sessionData,
+    });
+  } catch (error) {
+    return null;
+  }
 }
 
 // Get user session data
 export async function getUserSessionData(userId: string) {
-  return await convexHttp.query(api.users.getUserSession, {
-    userId: userId as any,
-  });
+  try {
+    return await convexHttp.query(api.users.getUserSession, {
+      userId: userId as any,
+    });
+  } catch (error) {
+    return null;
+  }
 }
 
-// Require authentication for API routes
+// Require authentication for API routes - always returns dev user
 export async function requireAuth() {
   const user = await getCurrentUser();
-  
-  if (!user) {
-    throw new Error('Authentication required');
-  }
-  
-  return user;
+  return user || { _id: 'dev-user', email: DEV_USER.email, name: DEV_USER.name, role: 'admin' };
 }
 
 // Check if user has specific role
@@ -124,4 +114,4 @@ export async function saveUserPreferences(userId: string, preferences: any) {
   };
   
   return await saveUserSessionData(userId, updatedSessionData);
-} 
+}

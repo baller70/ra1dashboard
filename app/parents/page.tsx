@@ -78,6 +78,7 @@ export default function ParentsPage() {
   const [generalMessagesResults, setGeneralMessagesResults] = useState<any[]>([])
   const [showParentCreationModal, setShowParentCreationModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false)
 
   // Delete parent function with fallback for dynamic route issues
   const handleDeleteParent = async (parentId: string, parentName: string) => {
@@ -155,6 +156,52 @@ export default function ParentsPage() {
     } finally {
       setDeleteLoading(null)
     }
+  }
+
+  // Bulk delete selected parents with confirmation
+  const handleBulkDeleteParents = async () => {
+    if (selectedParents.length === 0) {
+      toast({
+        title: 'No parents selected',
+        description: 'Select one or more parents to delete.',
+        variant: 'destructive'
+      })
+      return
+    }
+    if (!confirm(`Delete ${selectedParents.length} selected parent(s)? This cannot be undone.`)) return
+
+    setBulkDeleteLoading(true)
+    let success = 0
+    let failed = 0
+
+    for (const parentId of selectedParents) {
+      try {
+        const res = await fetch(`/api/parents/${parentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'ra1-dashboard-api-key-2024'
+          }
+        })
+        if (res.ok) {
+          success += 1
+          setParents(prev => prev.filter(p => String(p._id) !== String(parentId)))
+        } else {
+          failed += 1
+        }
+      } catch {
+        failed += 1
+      }
+    }
+
+    setSelectedParents([])
+    setBulkDeleteLoading(false)
+
+    toast({
+      title: 'Bulk delete finished',
+      description: `${success} deleted, ${failed} failed.`,
+      variant: failed > 0 ? 'destructive' : 'default'
+    })
   }
 
   // Listen for parent deletions from other pages
@@ -540,7 +587,7 @@ export default function ParentsPage() {
 
     try {
       setAiLoading(true)
-      const predictions = []
+      const predictions: any[] = []
 
       // Make individual API calls for each parent
       for (const parentId of selectedParents) {
@@ -583,9 +630,20 @@ export default function ParentsPage() {
           description: `💡 Payment prediction analysis completed for ${predictions.length} parents! Review the detailed predictions.`,
         })
       } else {
+        // Fallback: generate simple placeholder insights so UI still responds
+        const fallback = selectedParents.map(pid => ({
+          parentId: pid,
+          parentName: parents.find(p => p._id === pid)?.name || 'Parent',
+          parentEmail: parents.find(p => p._id === pid)?.email || '',
+          riskLevel: 'medium',
+          paymentPrediction: 65,
+          insights: ['No live prediction available; showing placeholder.']
+        }))
+        setPaymentPredictionResults(fallback)
+        setShowPaymentPredictionDialog(true)
         toast({
-          title: 'Payment prediction completed',
-          description: 'Payment prediction completed but no insights were generated.',
+          title: 'Payment prediction (fallback)',
+          description: 'No live predictions returned; showing placeholders.',
         })
       }
     } catch (error) {
@@ -658,9 +716,18 @@ export default function ParentsPage() {
           description: `📊 Engagement analysis completed for ${result.processedCount || selectedParents.length} parents! Review the detailed analysis.`,
         })
       } else {
+        // Fallback placeholder data
+        const fallback = selectedParents.map(pid => ({
+          parentId: pid,
+          parentName: parents.find(p => p._id === pid)?.name || 'Parent',
+          engagementScore: 70,
+          summary: 'No live analysis available; showing placeholder engagement score.'
+        }))
+        setEngagementAnalysisResults(fallback)
+        setShowEngagementAnalysisDialog(true)
         toast({
-          title: 'Engagement analysis completed',
-          description: 'Engagement analysis completed but no results were generated.',
+          title: 'Engagement analysis (fallback)',
+          description: 'No live analysis returned; showing placeholder scores.',
         })
       }
     } catch (error) {
@@ -789,29 +856,30 @@ export default function ParentsPage() {
               Manage parent profiles with intelligent insights and automation
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1">
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-full">
               <Brain className="mr-1 h-3 w-3" />
               AI Powered
             </Badge>
+
             {selectedParents.length > 0 && (
               <>
                 <Button
                   onClick={performBulkAIAnalysis}
                   disabled={aiLoading}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
+                  className="rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-sm"
                 >
                   {aiLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                   ) : (
                     <Brain className="mr-2 h-4 w-4" />
                   )}
-                  AI Risk Analysis ({selectedParents.length})
+                  AI Risk ({selectedParents.length})
                 </Button>
                 <Button
                   onClick={generateBulkMessages}
                   disabled={aiLoading}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                  className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-sm"
                 >
                   {aiLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -823,38 +891,32 @@ export default function ParentsPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowAiActions(!showAiActions)}
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  className="rounded-full border-purple-300 text-purple-700 hover:bg-purple-50"
                 >
                   <Zap className="mr-2 h-4 w-4" />
-                  More AI Actions
+                  More AI
                 </Button>
                 <Button
                   onClick={() => router.push(`/assessments?bulk=1&parentIds=${selectedParents.join(',')}&i=0`)}
                   disabled={aiLoading}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                  className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm"
                 >
                   <ClipboardList className="mr-2 h-4 w-4" />
                   Bulk Assessment ({selectedParents.length})
                 </Button>
-
               </>
             )}
-            <Button asChild variant="outline">
+
+            <Button asChild variant="outline" className="rounded-full">
               <Link href="/parents/import">
                 <Users className="mr-2 h-4 w-4" />
                 Import Parents
               </Link>
             </Button>
-            <Button onClick={() => setShowParentCreationModal(true)}>
-                <Button
-                  onClick={() => router.push(`/assessments?bulk=1&parentIds=${selectedParents.join(',')}&i=0`)}
-                  disabled={aiLoading}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                >
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  Bulk Assessment ({selectedParents.length})
-                </Button>
-
+            <Button
+              onClick={() => setShowParentCreationModal(true)}
+              className="rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-sm"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Parent
             </Button>
@@ -1017,6 +1079,15 @@ export default function ParentsPage() {
                         onClick={clearSelection}
                       >
                         Clear Selection
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBulkDeleteParents}
+                        disabled={bulkDeleteLoading}
+                      >
+                        {bulkDeleteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                        Delete Selected
                       </Button>
                       <Button
                         variant="outline"
@@ -1220,9 +1291,9 @@ export default function ParentsPage() {
         <div className="grid gap-4">
           {filteredParents.length > 0 ? (
             filteredParents.map((parent) => (
-                              <Card key={String(parent._id)} className={`hover:shadow-md transition-shadow ${selectedParents.includes(String(parent._id)) ? 'ring-2 ring-purple-200 bg-purple-50' : ''}`}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
+              <Card key={String(parent._id)} className={`hover:shadow-lg transition-shadow rounded-2xl border border-muted/80 bg-card/70 ${selectedParents.includes(String(parent._id)) ? 'ring-2 ring-purple-200 bg-purple-50' : ''}`}>
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-3">
                         <input
@@ -1290,20 +1361,23 @@ export default function ParentsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Button asChild variant="outline" size="sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button asChild variant="outline" size="sm" className="rounded-full px-3" title="View parent profile">
                           <Link href={`/parents/${parent._id}`}>
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
                           </Link>
                         </Button>
-                        <Button asChild variant="outline" size="sm">
+                        <Button asChild variant="outline" size="sm" className="rounded-full px-3" title="Edit parent details">
                           <Link href={`/parents/${parent._id}/edit`}>
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
                           </Link>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
+                          className="rounded-full px-3"
                           onClick={async () => {
                             // Generate AI message for ONLY this specific parent
                             setAiLoading(true)
@@ -1349,11 +1423,13 @@ export default function ParentsPage() {
                           }}
                           title="Send AI message to this parent"
                         >
-                          <MessageSquare className="h-4 w-4" />
+                          {aiLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <MessageSquare className="h-4 w-4 mr-1" />}
+                          AI Msg
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
+                          className="rounded-full px-3"
                           onClick={async () => {
                             // Get parent's first payment and route to payment detail page
                             try {
@@ -1385,20 +1461,23 @@ export default function ParentsPage() {
                           }}
                           title="View payment details for this parent"
                         >
-                          <CreditCard className="h-4 w-4" />
+                          <CreditCard className="h-4 w-4 mr-1" />
+                          Payment
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
+                          className="rounded-full px-3"
                           onClick={() => handleDeleteParent(parent._id, parent.name)}
                           disabled={deleteLoading === parent._id}
                           title="Delete this parent"
                         >
                           {deleteLoading === parent._id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin mr-1" />
                           ) : (
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-1" />
                           )}
+                          Delete
                         </Button>
                       </div>
                     </div>

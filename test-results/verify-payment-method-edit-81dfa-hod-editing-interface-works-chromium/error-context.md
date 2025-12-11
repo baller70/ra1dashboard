@@ -1,0 +1,2064 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - alert
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - heading [level=1]: RA1 Dashboard
+          - generic:
+            - navigation:
+              - link:
+                - /url: /
+                - text: Dashboard
+              - link:
+                - /url: /parents
+                - text: Parents
+              - link:
+                - /url: /payments
+                - text: Payments
+              - link:
+                - /url: /communication
+                - text: Communication
+              - link:
+                - /url: /contracts
+                - text: Contracts
+              - link:
+                - /url: /assessments
+                - text: Assessment
+              - link:
+                - /url: /settings
+                - text: Settings
+    - main:
+      - generic:
+        - generic:
+          - generic:
+            - heading [level=1]: Payments Dashboard
+            - paragraph: Manage payments, track progress, and handle overdue accounts
+            - paragraph: "Last updated: 3:31:59 AM"
+          - generic:
+            - generic: Live
+            - button:
+              - img
+              - text: Refresh
+            - link:
+              - /url: /payments/overdue
+              - img
+              - text: Overdue (35)
+            - link:
+              - /url: /payment-plans
+              - img
+              - text: Payment Plans
+            - button:
+              - img
+              - text: Create Parent
+            - link:
+              - /url: /payment-plans/new
+              - img
+              - text: Create Plan
+        - generic:
+          - tablist:
+            - tab [selected]: Yearly Program
+            - tab: Fall AAU
+            - tab: Winter AAU
+            - tab: Spring AAU
+            - tab: Summer AAU
+            - tab: TBF Programs
+            - tab: Lane from Kevin's Back Menu
+            - tab: Kevin Houston's Lessons
+            - tab: THOS Facility Rentals
+          - tabpanel:
+            - generic:
+              - generic: Yearly Program - Payment Dashboard
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]: Total Parents
+                    - img
+                  - generic:
+                    - generic: "54"
+                    - paragraph: Connected to parents page
+                - generic:
+                  - generic:
+                    - heading [level=3]: Total Revenue
+                    - img
+                  - generic:
+                    - generic: $138,600
+                    - paragraph:
+                      - img
+                      - text: All time
+                - generic:
+                  - generic:
+                    - heading [level=3]: Collected
+                    - img
+                  - generic:
+                    - generic: $16,545.59
+                    - paragraph: 43 active plans
+                - generic:
+                  - generic:
+                    - heading [level=3]: Pending
+                    - img
+                  - generic:
+                    - generic: $58,352.07
+                    - paragraph: Awaiting payment
+                - generic:
+                  - generic:
+                    - heading [level=3]: Overdue
+                    - img
+                  - generic:
+                    - generic: $0
+                    - paragraph: Requires immediate attention
+                - generic:
+                  - generic:
+                    - heading [level=3]: Active Plans
+                    - img
+                  - generic:
+                    - generic: "43"
+                    - paragraph: payment plans
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - button: Select All
+                      - button: Clear
+                    - generic:
+                      - generic:
+                        - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - textbox
+                              - generic:
+                                - generic:
+                                  - img
+                                  - text: AI
+                            - button:
+                              - img
+                    - combobox
+                    - combobox
+                  - generic:
+                    - generic:
+                      - checkbox [checked]:
+                        - generic:
+                          - img
+                      - generic: Group by Team
+                    - generic: 8 teams available
+                    - generic:
+                      - button: Manage Teams
+                      - button [disabled]:
+                        - img
+                        - text: Delete Selected Teams
+                      - button:
+                        - img
+                        - text: Assign Parents
+                      - button:
+                        - img
+                        - text: New Team
+                      - generic:
+                        - generic:
+                          - generic: 5th/6th grade boys
+                          - generic: (8)
+                          - button:
+                            - img
+                        - generic:
+                          - generic: RA1 6th Girls
+                          - generic: (9)
+                          - button:
+                            - img
+                        - generic:
+                          - generic: RA1 7th/8th Girls
+                          - generic: (7)
+                          - button:
+                            - img
+                        - generic: +5 more
+              - generic:
+                - generic:
+                  - heading [level=3]: Latest Payments by Parent
+                  - paragraph: Showing the most recent payment for each parent. Click "View Details & History" to see all payments for a parent.
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: 5th/6th grade boys (
+                              - generic: "8"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Zion Williams
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: nw70071986@gnail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh72yrh1pk25pz504q32j9qj2h7rb5sm
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: full
+                                - generic:
+                                  - generic:
+                                    - paragraph: Damion Grant
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: jilliannemel@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7785j480zs4rnzn6sr880pvd7rb9ye
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Adam Masri
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: amasri.capital@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,700.22
+                                - paragraph: "Due: 10/1/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7a2h5mhgy9qrd650h0x70x6n7rq1bs
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Chase Johnson
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: mjohnson@westorangeschools.org
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/2/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh70mkvnywah6nd4jfn5y7w3a17rrwd4
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Paddy Rixon
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: laurarixon86@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/2/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh73c7rkq1d19swgsbtw749v9h7rrq5q
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Isaac Cunha
+                                    - generic:
+                                      - combobox [expanded]:
+                                        - generic: Check
+                                        - img
+                                      - button:
+                                        - img
+                                      - button:
+                                        - img
+                                  - paragraph: moeper18@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,700.22
+                                - paragraph: "Due: 10/2/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh75nc6qgar4xspxjh01wbccxx7rryts
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Marcello Ferdinand
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: cferd23@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,701.99
+                                - paragraph: "Due: 10/5/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7f2rp92a5ptgnhg0tvw118vs7rynne
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Troy Houston
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: elizkc@hotmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: RA1 6th Girls (
+                              - generic: "9"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: custom
+                                - generic:
+                                  - generic:
+                                    - paragraph: Mia Ragno
+                                    - generic:
+                                      - generic: Cash
+                                      - img
+                                  - paragraph: jena976@aol.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,646
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh730fvp0etv7mng5x4r2kk7as7rb31q
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Genesis Sanchez
+                                    - generic:
+                                      - generic: Cash
+                                      - img
+                                  - paragraph: ssanchez8519@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,649.97
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7cnhvepvghpsrfyty2k9h9557s1exr
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Emily Elshout
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: dave.elshout@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,701.99
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7dqheeb2crcaa51t8a60t5rn7s0rjm
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Rita Ferdinand
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: cferd23@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,701.99
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7at4fxhwag3ct4a5v98drv8s7s02x0
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Riley McCarney-Pletcher
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: mpletcher617@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7cab91sanfzgjnaytx2c87ts7s0jb9
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Renee Chiarolanza
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: jpc973@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,701.99
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh74g3wmm4bma8jb7hy6361gth7s1jsa
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Cecilia Chiarolanza
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: jpc973@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7b1z0q96ty2wy61af3caden97s1yw3
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Reagan Haines
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: rthaines@hotmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh767m63rd5vpkdeadb1thbmfd7s0xcw
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Kenndy Dombrowski
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: adombrowski18@gmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: RA1 7th/8th Girls (
+                              - generic: "7"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Gabriella Panas
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: danielle.a.panas@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh74tq5fcpdsgrevpqdmqvy9j97ra1yn
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Natalee Griffin
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: nfran82860@aol.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh765sghkr8q0d1w0fxjdnnzpx7s069t
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Olivia Boyce
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: pinehillfarm05@hotmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7ajy5p5dznbvwt945jz6a4bn7s1qdd
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: custom
+                                - generic:
+                                  - generic:
+                                    - paragraph: Olivia Stanton
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: allisonstanton2@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,590
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh722x24ga1t41m3bxc88vppad7s176j
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Anaya Holmes
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: kvytell@optonline.net
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh784hbyrfkxkm5r71sws97bqn7s1n1x
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Sophia Lijewski
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: anne.wiland@astrazeneca.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Emma Dombrowski
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: adombrowski18@gmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: RA1 7th/8th Boys (
+                              - generic: "6"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Cayden Bernstein
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: amanda.l.bernstein@aol.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,701.99
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh776m1568mpw8mar29e2h8gth7s0yk1
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Elias Cunha
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: moeper18@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh78ytjjfnb7cw4e0d4qfcz4257s1fjt
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Alex Kazior
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: renata.graba@hotmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh72nme74jegzkg2amb5wpzzhh7s1mjn
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Luca Cilento
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: cilento49@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7c0mde2sswg9wq85gc7w0kgs7s0z5y
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Nathan Ecclesiaste
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: murlac@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh79h85ps93hf7c8rrxp08bv8x7s0g48
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Robbie Martinez
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: raimymartinez90@gmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: HS Girls Red (
+                              - generic: "7"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Leilani Tynes
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: lewisfr2003@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh786s0fet5q4ktf9et128tkps7rbyd3
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Angelys Castillo
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: cellaumbrella@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,649.97
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh799k5rny8zybeyqv339zdqmx7s0dmg
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Kaelyn Sabanosh
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: kbsabanosh@gmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Olivia Alvarez
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: jackie.alvarez@outlook.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Elizabeth O’Brien
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: kabrod@msn.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Tatiana Martinez
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: josemarroquin83@gmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Alexia Edelman
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: fortnobleman@yahoo.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: "HS Boys #1 ("
+                              - generic: "7"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Matthew Rowan
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: mwrmma@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/30/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh71z2wayxt001wysd88zhcbdd7rms2p
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Nolan Murray
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: jaynamurray@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,649.97
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7d1r4b25adgn6w0khps1kh2h7s1hrj
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: full
+                                - generic:
+                                  - generic:
+                                    - paragraph: Michael Pohl
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: robertjamespohl@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,699.59
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh78br2fq6j6bha0gx8p7687457s0e11
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: full
+                                - generic:
+                                  - generic:
+                                    - paragraph: Drew Pohl
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: mars_pohl@earthlink.net
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,699.59
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh78djjfzs9yznd20e3n0e0gvx7s067x
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Lawrence Haywood
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: lawrenda.henrywillis@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,701.99
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7f3hpzm53jhj7hy8gv3f74hx7s04x8
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Devin Cunha
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: moeper18@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh74g5n9wzg4yymxkf60q03t697s14v1
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Luke Honold
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: chrisnmikeh@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7bcknzm53f6btky6evfn1j757s0s43
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: E2E Bulk A 1758745843892 (
+                              - generic: "1"
+                              - text: parent)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Kevin Van Houston
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: khouston721@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,649.97
+                                - paragraph: "Due: 10/7/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7dtjec4vpesm1h8pjjr472mx7s2rkz
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - heading [level=3]:
+                              - text: "HS Boys #2 ("
+                              - generic: "7"
+                              - text: parents)
+                            - img
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: full
+                                - generic:
+                                  - generic:
+                                    - paragraph: Ryan DeGraw
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: french27v@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh795zeycjkcgank8ke58q4sq57rbx5a
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: full
+                                - generic:
+                                  - generic:
+                                    - paragraph: Jayden Dunbar
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: markie.aronson@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7b62bw783z4c7471y0ffc2j17rbfvz
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: paid
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Sennen Doone
+                                    - generic:
+                                      - generic: Check
+                                      - img
+                                  - paragraph: dylandoone@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,650
+                                - paragraph: "Due: 9/25/2025"
+                                - paragraph: "Paid: 9/26/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh70534xws9wnj8za3rkv0wn0n7rastb
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: monthly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Eduardo Sanchez
+                                    - generic:
+                                      - generic: Cash
+                                      - img
+                                  - paragraph: ssanchez8519@gmail.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,649.97
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh73pfb8w2t131vvq01hthyq017s0fgx
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Logan Scudieri
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: kscudieri1023@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,700.22
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh7bnm7yn03txwf757p7d8a7917s0efg
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Ryan Hart
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: tomhart1976@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,700.22
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh73ftxp03awbk2qr899cvb5vn7s0vy5
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - checkbox
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: Active
+                                  - generic: quarterly
+                                - generic:
+                                  - generic:
+                                    - paragraph: Connor Hart
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: tomhart1976@yahoo.com
+                                  - generic:
+                                    - generic: Latest Payment
+                              - generic:
+                                - paragraph: $1,700.22
+                                - paragraph: "Due: 10/6/2025"
+                              - generic:
+                                - link:
+                                  - /url: /payments/jh75pyyve7yv2qa8amvjffpvzs7s101g
+                                  - img
+                                  - text: View Details & History
+                                - button:
+                                  - img
+                                  - text: Mark Paid
+                                - button:
+                                  - img
+                                  - text: Remove from Team
+                                - button:
+                                  - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - heading [level=3]:
+                              - text: Unassigned (
+                              - generic: "2"
+                              - text: parents)
+                            - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: Sunny N’Gom
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: naomizoko@gmail.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: No Payment Plan
+                                - generic:
+                                  - generic:
+                                    - paragraph: QA Yearly Parent 1759891440
+                                    - generic:
+                                      - generic: Credit Card
+                                      - img
+                                  - paragraph: qa-yearly-1759891440@example.com
+                                  - generic:
+                                    - generic: Ready for Payment Plan
+                              - generic:
+                                - generic:
+                                  - paragraph: No Payment Plan
+                                  - paragraph: Create a payment plan to get started
+                              - generic:
+                                - link:
+                                  - /url: /payment-plans/new
+                                  - img
+                                  - text: Create Payment Plan
+                                - button:
+                                  - img
+        - list
+  - list
+  - listbox [ref=e1]:
+    - option "Credit Card" [ref=e2]:
+      - generic [ref=e4]: Credit Card
+    - option "Manual credit card / debit" [ref=e5]:
+      - generic [ref=e7]: Manual credit card / debit
+    - option "Check" [active] [selected] [ref=e8]:
+      - img [ref=e11]
+      - generic [ref=e13]: Check
+    - option "Cash" [ref=e14]:
+      - generic [ref=e16]: Cash
+    - option "ACH/Bank" [ref=e17]:
+      - generic [ref=e19]: ACH/Bank
+    - option "Venmo" [ref=e20]:
+      - generic [ref=e22]: Venmo
+    - option "Zelle" [ref=e23]:
+      - generic [ref=e25]: Zelle
+```

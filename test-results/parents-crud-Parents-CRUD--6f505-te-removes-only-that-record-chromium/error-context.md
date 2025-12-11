@@ -1,0 +1,326 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - heading "RA1 Dashboard" [level=1] [ref=e7]
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Parents" [ref=e11] [cursor=pointer]:
+            - /url: /parents
+          - link "Payments" [ref=e12] [cursor=pointer]:
+            - /url: /payments
+          - link "Communication" [ref=e13] [cursor=pointer]:
+            - /url: /communication
+          - link "Contracts" [ref=e14] [cursor=pointer]:
+            - /url: /contracts
+          - link "Assessment" [ref=e15] [cursor=pointer]:
+            - /url: /assessments
+          - link "Settings" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+    - main [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Assessment 0 of 0
+        - generic [ref=e20]:
+          - button "Skip" [ref=e21] [cursor=pointer]
+          - button "Next" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img [ref=e27]
+            - img [ref=e30]
+            - img [ref=e35]
+            - img [ref=e38]
+          - generic [ref=e46]:
+            - img [ref=e48]
+            - generic [ref=e51]:
+              - heading "Basketball Assessment Report" [level=1] [ref=e52]
+              - paragraph [ref=e53]: Professional player evaluation & development system
+              - generic [ref=e54]:
+                - generic [ref=e55]:
+                  - img [ref=e56]
+                  - text: AI-Powered
+                - generic [ref=e66]:
+                  - img [ref=e67]
+                  - text: Professional Grade
+        - generic [ref=e69]:
+          - heading "Program Information" [level=3] [ref=e71]:
+            - img [ref=e72]
+            - text: Program Information
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e78]: Program Logo
+              - button "Program Logo" [ref=e79]
+            - generic [ref=e80]:
+              - generic [ref=e81]: Program Name
+              - textbox "Program Name" [ref=e82]: Elite Youth Basketball Development Program
+        - generic [ref=e83]:
+          - heading "Player Information" [level=3] [ref=e85]:
+            - img [ref=e86]
+            - text: Player Information
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - generic [ref=e92]: Player *
+              - combobox "Player *" [ref=e93] [cursor=pointer]:
+                - generic: Select a player
+                - img [ref=e94] [cursor=pointer]
+            - generic [ref=e96]:
+              - generic [ref=e97]: Parent Name
+              - textbox "Parent Name" [ref=e98]
+            - generic [ref=e99]:
+              - generic [ref=e100]: Age
+              - textbox "Age" [ref=e101]
+            - generic [ref=e102]:
+              - generic [ref=e103]: Team
+              - textbox "Team" [ref=e104]
+            - generic [ref=e105]:
+              - generic [ref=e106]: Assessment Date
+              - textbox "Assessment Date" [ref=e107]: 2025-12-10
+        - generic [ref=e108]:
+          - heading "Skills Assessment" [level=3] [ref=e110]:
+            - img [ref=e111]
+            - text: Skills Assessment
+          - generic [ref=e113]:
+            - paragraph [ref=e114]: Rate each skill on a scale from 1 (Needs Improvement) to 5 (Excellent). Click on the rating level for each skill.
+            - generic [ref=e115]:
+              - heading "Rating Scale:" [level=4] [ref=e116]
+              - generic [ref=e117]:
+                - generic [ref=e118]:
+                  - generic [ref=e120]: "1"
+                  - generic [ref=e121]: Needs Improvement
+                - generic [ref=e122]:
+                  - generic [ref=e124]: "2"
+                  - generic [ref=e125]: Developing
+                - generic [ref=e126]:
+                  - generic [ref=e128]: "3"
+                  - generic [ref=e129]: Improving
+                - generic [ref=e130]:
+                  - generic [ref=e132]: "4"
+                  - generic [ref=e133]: Good
+                - generic [ref=e134]:
+                  - generic [ref=e136]: "5"
+                  - generic [ref=e137]: Excellent
+                  - img [ref=e138]
+            - generic [ref=e140]:
+              - generic [ref=e142]:
+                - generic [ref=e143]:
+                  - img [ref=e145]
+                  - heading "Ball Handling" [level=4] [ref=e148]
+                - generic [ref=e149]:
+                  - button "1Needs Improvement" [ref=e150] [cursor=pointer]:
+                    - generic [ref=e151] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e152] [cursor=pointer]:
+                    - generic [ref=e153] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e154] [cursor=pointer]:
+                    - generic [ref=e155] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e156] [cursor=pointer]:
+                    - generic [ref=e157] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e158] [cursor=pointer]:
+                    - generic [ref=e159] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e163]:
+                - generic [ref=e164]:
+                  - img [ref=e166]
+                  - heading "Shooting Form" [level=4] [ref=e171]
+                - generic [ref=e172]:
+                  - button "1Needs Improvement" [ref=e173] [cursor=pointer]:
+                    - generic [ref=e174] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e175] [cursor=pointer]:
+                    - generic [ref=e176] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e177] [cursor=pointer]:
+                    - generic [ref=e178] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e179] [cursor=pointer]:
+                    - generic [ref=e180] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e181] [cursor=pointer]:
+                    - generic [ref=e182] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e186]:
+                - generic [ref=e187]:
+                  - img [ref=e189]
+                  - heading "Defensive Stance" [level=4] [ref=e192]
+                - generic [ref=e193]:
+                  - button "1Needs Improvement" [ref=e194] [cursor=pointer]:
+                    - generic [ref=e195] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e196] [cursor=pointer]:
+                    - generic [ref=e197] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e198] [cursor=pointer]:
+                    - generic [ref=e199] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e200] [cursor=pointer]:
+                    - generic [ref=e201] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e202] [cursor=pointer]:
+                    - generic [ref=e203] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e207]:
+                - generic [ref=e208]:
+                  - img [ref=e210]
+                  - heading "Court Awareness" [level=4] [ref=e214]
+                - generic [ref=e215]:
+                  - button "1Needs Improvement" [ref=e216] [cursor=pointer]:
+                    - generic [ref=e217] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e218] [cursor=pointer]:
+                    - generic [ref=e219] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e220] [cursor=pointer]:
+                    - generic [ref=e221] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e222] [cursor=pointer]:
+                    - generic [ref=e223] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e224] [cursor=pointer]:
+                    - generic [ref=e225] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e229]:
+                - generic [ref=e230]:
+                  - img [ref=e232]
+                  - heading "Passing Accuracy" [level=4] [ref=e235]
+                - generic [ref=e236]:
+                  - button "1Needs Improvement" [ref=e237] [cursor=pointer]:
+                    - generic [ref=e238] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e239] [cursor=pointer]:
+                    - generic [ref=e240] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e241] [cursor=pointer]:
+                    - generic [ref=e242] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e243] [cursor=pointer]:
+                    - generic [ref=e244] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e245] [cursor=pointer]:
+                    - generic [ref=e246] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e250]:
+                - generic [ref=e251]:
+                  - img [ref=e253]
+                  - heading "Rebounding" [level=4] [ref=e257]
+                - generic [ref=e258]:
+                  - button "1Needs Improvement" [ref=e259] [cursor=pointer]:
+                    - generic [ref=e260] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e261] [cursor=pointer]:
+                    - generic [ref=e262] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e263] [cursor=pointer]:
+                    - generic [ref=e264] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e265] [cursor=pointer]:
+                    - generic [ref=e266] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e267] [cursor=pointer]:
+                    - generic [ref=e268] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e272]:
+                - generic [ref=e273]:
+                  - img [ref=e275]
+                  - heading "Footwork" [level=4] [ref=e279]
+                - generic [ref=e280]:
+                  - button "1Needs Improvement" [ref=e281] [cursor=pointer]:
+                    - generic [ref=e282] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e283] [cursor=pointer]:
+                    - generic [ref=e284] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e285] [cursor=pointer]:
+                    - generic [ref=e286] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e287] [cursor=pointer]:
+                    - generic [ref=e288] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e289] [cursor=pointer]:
+                    - generic [ref=e290] [cursor=pointer]: "5"
+                    - text: Excellent
+              - generic [ref=e294]:
+                - generic [ref=e295]:
+                  - img [ref=e297]
+                  - heading "Team Communication" [level=4] [ref=e303]
+                - generic [ref=e304]:
+                  - button "1Needs Improvement" [ref=e305] [cursor=pointer]:
+                    - generic [ref=e306] [cursor=pointer]: "1"
+                    - text: Needs Improvement
+                  - button "2Developing" [ref=e307] [cursor=pointer]:
+                    - generic [ref=e308] [cursor=pointer]: "2"
+                    - text: Developing
+                  - button "3Improving" [ref=e309] [cursor=pointer]:
+                    - generic [ref=e310] [cursor=pointer]: "3"
+                    - text: Improving
+                  - button "4Good" [ref=e311] [cursor=pointer]:
+                    - generic [ref=e312] [cursor=pointer]: "4"
+                    - text: Good
+                  - button "5Excellent" [ref=e313] [cursor=pointer]:
+                    - generic [ref=e314] [cursor=pointer]: "5"
+                    - text: Excellent
+        - button "AI Auto (All Sections)" [ref=e318] [cursor=pointer]:
+          - img [ref=e319] [cursor=pointer]
+          - text: AI Auto (All Sections)
+        - generic [ref=e322]:
+          - generic [ref=e323]:
+            - heading "Parent Suggestions" [level=3] [ref=e325]:
+              - img [ref=e326]
+              - text: Parent Suggestions
+            - generic [ref=e328]:
+              - generic [ref=e329]:
+                - generic [ref=e330]: Custom Prompt (Optional)
+                - textbox "Custom Prompt (Optional)" [ref=e331]
+              - button "Generate Suggestions" [ref=e332] [cursor=pointer]:
+                - img [ref=e333] [cursor=pointer]
+                - text: Generate Suggestions
+          - generic [ref=e336]:
+            - heading "Gameplay Analysis" [level=3] [ref=e338]:
+              - img [ref=e339]
+              - text: Gameplay Analysis
+            - generic [ref=e342]:
+              - generic [ref=e343]:
+                - generic [ref=e344]: Custom Prompt (Optional)
+                - textbox "Custom Prompt (Optional)" [ref=e345]
+              - button "Generate Analysis" [ref=e346] [cursor=pointer]:
+                - img [ref=e347] [cursor=pointer]
+                - text: Generate Analysis
+          - generic [ref=e350]:
+            - heading "Progress Summary" [level=3] [ref=e352]:
+              - img [ref=e353]
+              - text: Progress Summary
+            - generic [ref=e356]:
+              - generic [ref=e357]:
+                - generic [ref=e358]: Custom Prompt (Optional)
+                - textbox "Custom Prompt (Optional)" [ref=e359]
+              - button "Generate Summary" [ref=e360] [cursor=pointer]:
+                - img [ref=e361] [cursor=pointer]
+                - text: Generate Summary
+        - generic [ref=e364]:
+          - heading "Export & Actions" [level=3] [ref=e366]:
+            - img [ref=e367]
+            - text: Export & Actions
+          - generic [ref=e371]:
+            - button "Export PDF" [ref=e373] [cursor=pointer]:
+              - img [ref=e374] [cursor=pointer]
+              - text: Export PDF
+            - button "Clear All Data" [ref=e379] [cursor=pointer]:
+              - img [ref=e380] [cursor=pointer]
+              - text: Clear All Data
+            - generic [ref=e383]:
+              - generic [ref=e384]: Parent Email
+              - generic [ref=e385]:
+                - textbox "Parent Email" [ref=e386]
+                - button "Send to Parents" [ref=e387] [cursor=pointer]:
+                  - img [ref=e388] [cursor=pointer]
+                  - text: Send to Parents
+  - region "Notifications (F8)":
+    - list
+```

@@ -54,6 +54,7 @@ import { Elements, PaymentElement, ElementsConsumer, useStripe, useElements } fr
 import { loadStripe } from '@stripe/stripe-js'
 
 import { Textarea } from '../../../components/ui/textarea'
+import { FeeManagementDialog } from '../../../components/fee-management-dialog'
 
 
 // Inject x-api-key header for app-internal fetches when token is available
@@ -330,6 +331,8 @@ export default function PaymentDetailPage() {
   const [communicationHistory, setCommunicationHistory] = useState<CommunicationRecord[]>([])
   const [leagueFees, setLeagueFees] = useState<LeagueFeeData[]>([])
   const [leagueFeesDialogOpen, setLeagueFeesDialogOpen] = useState(false)
+  const [leagueFeeManagementOpen, setLeagueFeeManagementOpen] = useState(false)
+  const [tournamentFeeManagementOpen, setTournamentFeeManagementOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [commHistoryLoading, setCommHistoryLoading] = useState(false)
@@ -2036,10 +2039,7 @@ Please process these payments at your earliest convenience. Thank you for your a
                         ? 'text-orange-600'
                         : 'text-green-600'
                     }`}>
-                      {paymentProgress && paymentProgress.remainingAmount === 0
-                        ? 'Fully Paid'
-                        : 'Amount Remaining'
-                      }
+                      Money Owed
                     </div>
                   </div>
 
@@ -3002,33 +3002,27 @@ Please process these payments at your earliest convenience. Thank you for your a
                     </h4>
                     <Badge variant="outline" className="text-orange-600 border-orange-300">Admin</Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Create league fees and season settings
+                  <p className="text-xs text-gray-600 mb-3">
+                    Create and manage fees for parents
                   </p>
-                  <Button asChild variant="outline" size="sm" className="w-full border-orange-300 text-orange-700 hover:bg-orange-100">
-                    <Link href="/admin/seasons">
-                      <Shield className="mr-2 h-3 w-3" />
-                      Create League Fees
-                    </Link>
+                  <Button 
+                    onClick={() => setLeagueFeeManagementOpen(true)}
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full border-orange-300 text-orange-700 hover:bg-orange-100"
+                  >
+                    <Receipt className="mr-2 h-3 w-3" />
+                    Create League Fee
                   </Button>
 
-		          <Button
-		            onClick={async (e) => {
-                  e.stopPropagation?.()
-                  try {
-                    toast({ title: 'Creating tournament fee…', description: 'Please wait a moment.' })
-                    await createTournamentFee()
-                  } catch (err: any) {
-                    console.error('Create tournament fee error:', err)
-                    toast({ title: 'Error creating tournament fee', description: err?.message || 'Please try again.', variant: 'destructive' })
-                  }
-                }}
-		            size="sm"
-		            className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white"
-		          >
-		            Create Tournament Fee
-		          </Button>
-
+                  <Button
+                    onClick={() => setTournamentFeeManagementOpen(true)}
+                    size="sm"
+                    className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    <Receipt className="mr-2 h-3 w-3" />
+                    Create Tournament Fee
+                  </Button>
                 </div>
 
                 {/* Communication */}
@@ -4429,6 +4423,22 @@ Please process these payments at your earliest convenience. Thank you for your a
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* League Fee Management Dialog */}
+      <FeeManagementDialog
+        open={leagueFeeManagementOpen}
+        onOpenChange={setLeagueFeeManagementOpen}
+        feeType="league"
+        currentParentId={payment?.parent?._id || payment?.parent?.id}
+      />
+
+      {/* Tournament Fee Management Dialog */}
+      <FeeManagementDialog
+        open={tournamentFeeManagementOpen}
+        onOpenChange={setTournamentFeeManagementOpen}
+        feeType="tournament"
+        currentParentId={payment?.parent?._id || payment?.parent?.id}
+      />
     </div>
   )
 }

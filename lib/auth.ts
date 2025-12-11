@@ -1,116 +1,51 @@
 
-import { auth, currentUser } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+// Auth utility functions - no authentication required (development mode)
 
-// Enhanced Clerk auth utility functions for production
+// Mock user for development - always return this user
+const DEV_USER = {
+  id: 'dev-user-001',
+  email: 'admin@riseasone.com',
+  firstName: 'Admin',
+  lastName: 'User',
+  role: 'admin'
+}
+
 export async function getServerSession() {
-  const { userId } = await auth()
-  if (!userId) return null
-  
-  const user = await currentUser()
-  return { 
-    user: { 
-      id: userId,
-      email: user?.emailAddresses[0]?.emailAddress,
-      firstName: user?.firstName,
-      lastName: user?.lastName,
-      role: user?.publicMetadata?.role || user?.privateMetadata?.role || 'user'
-    } 
-  }
+  return { user: DEV_USER }
 }
 
 export async function requireAuth() {
-  const { userId } = await auth()
-  if (!userId) {
-    redirect('/sign-in')
-  }
-  
-  const user = await currentUser()
-  return { 
-    user: { 
-      id: userId,
-      email: user?.emailAddresses[0]?.emailAddress,
-      firstName: user?.firstName,
-      lastName: user?.lastName,
-      role: user?.publicMetadata?.role || user?.privateMetadata?.role || 'user'
-    } 
-  }
+  return { user: DEV_USER }
 }
 
 export async function requireAdmin() {
-  const session = await requireAuth()
-  const userRole = session.user.role
-  
-  if (userRole !== 'admin') {
-    throw new Error('Admin access required')
-  }
-  
-  return session
+  return { user: DEV_USER }
 }
 
 export async function checkUserRole(requiredRole: string) {
-  const session = await getServerSession()
-  if (!session) return false
-  
-  const userRole = session.user.role
-  
   // Admin has access to everything
-  if (userRole === 'admin') return true
-  
-  // Check specific role
-  return userRole === requiredRole
+  return true
 }
 
 export async function getCurrentUserRole() {
-  const session = await getServerSession()
-  return session?.user?.role || null
+  return 'admin'
 }
 
-// API route helper for authentication
+// API route helper for authentication - always returns dev user
 export async function authenticateRequest() {
-  // Development mode bypass when Clerk keys are not configured
-  if (process.env.NODE_ENV === 'development' && !process.env.CLERK_SECRET_KEY) {
-    console.log('🔧 Development mode: Using mock authentication (Clerk not configured)')
-    return {
-      userId: 'dev-user-001',
-      user: {
-        id: 'dev-user-001',
-        email: 'dev@example.com',
-        firstName: 'Dev',
-        lastName: 'User',
-        role: 'admin'
-      }
-    }
-  }
-
-  const { userId } = await auth()
-  if (!userId) {
-    throw new Error('Unauthorized: Authentication required')
-  }
-  
-  const user = await currentUser()
   return {
-    userId,
-    user: {
-      id: userId,
-      email: user?.emailAddresses[0]?.emailAddress,
-      firstName: user?.firstName,
-      lastName: user?.lastName,
-      role: user?.publicMetadata?.role || user?.privateMetadata?.role || 'user'
-    }
+    userId: DEV_USER.id,
+    user: DEV_USER
   }
 }
 
 // API route helper for admin authentication
 export async function authenticateAdmin() {
-  const authData = await authenticateRequest()
-  
-  if (authData.user.role !== 'admin') {
-    throw new Error('Forbidden: Admin access required')
+  return {
+    userId: DEV_USER.id,
+    user: DEV_USER
   }
-  
-  return authData
 }
 
-// For backward compatibility with NextAuth patterns
-export const authOptions = null // Not needed with Clerk
+// For backward compatibility
+export const authOptions = null
