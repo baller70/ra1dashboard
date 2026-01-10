@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
+import { ConvexHttpClient } from 'convex/browser'
+import { api } from '../../../convex/_generated/api'
 import prisma from '../../../lib/prisma'
 import { 
   createErrorResponse, 
@@ -9,15 +11,20 @@ import {
   ApiErrors 
 } from '../../../lib/api-utils'
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const status = searchParams.get('status')
-    const program = searchParams.get('program') || undefined
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+// Convex client for fallback
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
+const convex = convexUrl ? new ConvexHttpClient(convexUrl) : null
 
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const search = searchParams.get('search')
+  const status = searchParams.get('status')
+  const program = searchParams.get('program') || undefined
+  const limit = parseInt(searchParams.get('limit') || '50')
+  const offset = parseInt(searchParams.get('offset') || '0')
+
+  // Try Prisma first, fallback to Convex
+  try {
     // Build where clause
     const where: any = {}
     
@@ -96,26 +103,69 @@ export async function GET(request: Request) {
         }
       }
     });
-  } catch (error) {
-    console.error('Parents fetch error:', error)
+  } catch (prismaError) {
+    console.log('Prisma failed, trying Convex fallback...', prismaError)
     
-    if (error instanceof Error && error.message.includes('database')) {
-      return NextResponse.json(
-        { 
-          error: 'Database connection failed', 
-          details: 'Unable to connect to the database. Please try again later.' 
-        },
-        { status: 503 }
-      )
-    }
+    // Fallback to Convex if Prisma fails (e.g., no local PostgreSQL)
+    if (convex) {
+      try {
+        const page = Math.floor(offset / limit) + 1
+        const result = await convex.query(api.parents.getParents, {
+          page,
+          limit,
+          search: search || undefined,
+          status: status || undefined
+        })
+        
+        const transformedParents = (result.parents || []).map((p: any) => ({
+          _id: p._id,
+          id: p._id,
+          name: p.name,
+          email: p.email,
+          childName: p.childName,
+          parentEmail: p.parentEmail,
+          phone: p.phone,
+          address: p.address,
+          emergencyContact: p.emergencyContact,
+          emergencyPhone: p.emergencyPhone,
+          emergencyEmail: p.emergencyEmail,
+          status: p.status,
+          contractStatus: p.contractStatus,
+          contractUrl: p.contractUrl,
+          stripeCustomerId: p.stripeCustomerId,
+          teamId: p.teamId,
+          team: p.team || null,
+          program: p.program,
+          notes: p.notes,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt
+        }))
 
-    if (isDatabaseError(error)) {
-      return createErrorResponse(ApiErrors.DATABASE_ERROR)
+        return NextResponse.json({
+          success: true,
+          data: {
+            parents: transformedParents,
+            pagination: {
+              total: result.total || transformedParents.length,
+              limit,
+              offset,
+              hasMore: (result.total || 0) > offset + limit
+            }
+          },
+          source: 'convex'
+        })
+      } catch (convexError) {
+        console.error('Convex fallback also failed:', convexError)
+      }
     }
-
+    
+    // Both failed
     return NextResponse.json(
-      { success: false, error: 'An unexpected error occurred' },
-      { status: 500 }
+      { 
+        error: 'Database connection failed', 
+        details: 'Unable to connect to any database. Please try again later.' 
+      },
+      { status: 503 }
     )
   }
 }
