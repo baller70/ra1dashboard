@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { VoiceChat } from './voice-chat'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -12,6 +13,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Voice Chat - Talk to Riley (RA1 Assistant) */}
+      <VoiceChat />
+      
       <header className="border-b bg-white">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
