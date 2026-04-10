@@ -158,3 +158,12 @@
   opacity: 0;
   transition: transform 300ms ease-in, opacity 300ms ease-in;
 }
+
+/* Kevin's Font Standards */
+h1, h2, h3, .font-russo {
+  font-family: var(--font-russo-one), 'Russo One', sans-serif !important;
+}
+
+body, p, span, div, li, td, th, label, input, textarea, button, .font-saira {
+  font-family: var(--font-saira), 'Saira', sans-serif;
+}

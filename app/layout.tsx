@@ -4,6 +4,7 @@ import { Saira, Audiowide } from 'next/font/google'
 import { Providers } from '../components/providers'
 import { ErrorBoundary } from '../components/error-boundary'
 import { ClientOnly } from '../components/client-only'
+import { VoiceChat } from '../components/voice-chat'
 
 // Force all pages to be dynamic - prevent static generation
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,7 @@ export default function RootLayout({
           >
             <Providers>
               {children}
+              <VoiceChat />
             </Providers>
           </ClientOnly>
         </ErrorBoundary>

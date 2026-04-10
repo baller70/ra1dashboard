@@ -23,53 +23,26 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = parseInt(searchParams.get('offset') || '0')
 
-  // Try Prisma first, fallback to Convex
+  // Use Convex directly
+  if (!convex) {
+    return NextResponse.json(
+      { error: 'Convex not configured', details: 'NEXT_PUBLIC_CONVEX_URL is missing' },
+      { status: 503 }
+    )
+  }
+
   try {
-    // Build where clause
-    const where: any = {}
+    const page = Math.floor(offset / limit) + 1
+    const result = await convex.query(api.parents.getParents, {
+      page,
+      limit,
+      search: search || undefined,
+      status: status || undefined
+    })
     
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { childName: { contains: search, mode: 'insensitive' } }
-      ]
-    }
-    
-    if (status && status !== 'all') {
-      where.status = status
-    }
-
-    if (program) {
-      if (program === 'yearly-program') {
-        where.OR = [
-          { program: 'yearly-program' },
-          { program: null },
-          { program: '' }
-        ]
-      } else {
-        where.program = program
-      }
-    }
-
-    // Fetch from PostgreSQL via Prisma
-    const [parents, total] = await Promise.all([
-      prisma.parents.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          teams: true
-        }
-      }),
-      prisma.parents.count({ where })
-    ])
-
-    // Transform to match expected format
-    const transformedParents = parents.map(p => ({
-      _id: p.id,
-      id: p.id,
+    const transformedParents = (result.parents || []).map((p: any) => ({
+      _id: p._id,
+      id: p._id,
       name: p.name,
       email: p.email,
       childName: p.childName,
@@ -84,11 +57,11 @@ export async function GET(request: Request) {
       contractUrl: p.contractUrl,
       stripeCustomerId: p.stripeCustomerId,
       teamId: p.teamId,
-      team: p.teams ? { _id: p.teams.id, id: p.teams.id, name: p.teams.name, color: p.teams.color } : null,
+      team: p.team || null,
       program: p.program,
       notes: p.notes,
-      createdAt: p.createdAt?.toISOString(),
-      updatedAt: p.updatedAt?.toISOString()
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt
     }))
 
     return NextResponse.json({
@@ -96,74 +69,19 @@ export async function GET(request: Request) {
       data: {
         parents: transformedParents,
         pagination: {
-          total,
+          total: result.pagination?.total || transformedParents.length,
           limit,
           offset,
-          hasMore: offset + limit < total
+          hasMore: (result.pagination?.total || 0) > offset + limit
         }
       }
-    });
-  } catch (prismaError) {
-    console.log('Prisma failed, trying Convex fallback...', prismaError)
-    
-    // Fallback to Convex if Prisma fails (e.g., no local PostgreSQL)
-    if (convex) {
-      try {
-        const page = Math.floor(offset / limit) + 1
-        const result = await convex.query(api.parents.getParents, {
-          page,
-          limit,
-          search: search || undefined,
-          status: status || undefined
-        })
-        
-        const transformedParents = (result.parents || []).map((p: any) => ({
-          _id: p._id,
-          id: p._id,
-          name: p.name,
-          email: p.email,
-          childName: p.childName,
-          parentEmail: p.parentEmail,
-          phone: p.phone,
-          address: p.address,
-          emergencyContact: p.emergencyContact,
-          emergencyPhone: p.emergencyPhone,
-          emergencyEmail: p.emergencyEmail,
-          status: p.status,
-          contractStatus: p.contractStatus,
-          contractUrl: p.contractUrl,
-          stripeCustomerId: p.stripeCustomerId,
-          teamId: p.teamId,
-          team: p.team || null,
-          program: p.program,
-          notes: p.notes,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt
-        }))
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            parents: transformedParents,
-            pagination: {
-              total: result.total || transformedParents.length,
-              limit,
-              offset,
-              hasMore: (result.total || 0) > offset + limit
-            }
-          },
-          source: 'convex'
-        })
-      } catch (convexError) {
-        console.error('Convex fallback also failed:', convexError)
-      }
-    }
-    
-    // Both failed
+    })
+  } catch (convexError) {
+    console.error('Convex query failed:', convexError)
     return NextResponse.json(
       { 
         error: 'Database connection failed', 
-        details: 'Unable to connect to any database. Please try again later.' 
+        details: convexError instanceof Error ? convexError.message : 'Unknown error'
       },
       { status: 503 }
     )

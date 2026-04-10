@@ -24,7 +24,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <a href="/payments" className="text-gray-600 hover:text-gray-900">Payments</a>
                 <a href="/communication" className="text-gray-600 hover:text-gray-900">Communication</a>
                 <a href="/contracts" className="text-gray-600 hover:text-gray-900">Contracts</a>
-                <a href="/assessments" className="text-gray-600 hover:text-gray-900">Assessment</a>
+                <a href="http://localhost:3021" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">Assessment ↗</a>
                 <a href="/settings" className="text-gray-600 hover:text-gray-900">Settings</a>
               </nav>
               {/* Mobile Menu Button */}
@@ -55,7 +55,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <a href="/payments" className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100">Payments</a>
               <a href="/communication" className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100">Communication</a>
               <a href="/contracts" className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100">Contracts</a>
-              <a href="/assessments" className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100">Assessment</a>
+              <a href="http://localhost:3021" target="_blank" rel="noopener noreferrer" className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100">Assessment ↗</a>
               <a href="/settings" className="block rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100">Settings</a>
             </nav>
           )}

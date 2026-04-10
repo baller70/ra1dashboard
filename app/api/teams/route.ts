@@ -1,64 +1,30 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import prisma from '../../../lib/prisma';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../../../convex/_generated/api';
 
-const createTeamSchema = z.object({
-  name: z.string().min(1, 'Team name is required'),
-  description: z.string().optional(),
-  color: z.string().optional(),
-});
-
-const updateTeamSchema = z.object({
-  name: z.string().min(1, 'Team name is required').optional(),
-  description: z.string().optional(),
-  color: z.string().optional(),
-  isActive: z.boolean().optional(),
-});
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+const convex = convexUrl ? new ConvexHttpClient(convexUrl) : null;
 
 export async function GET(request: NextRequest) {
+  if (!convex) {
+    return NextResponse.json({ error: 'Convex not configured' }, { status: 503 });
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const includeParents = searchParams.get('includeParents') === 'true';
+    const teams = await convex.query(api.teams.getTeams, {});
 
-    // Get teams from PostgreSQL
-    const teams = await prisma.teams.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
-      include: includeParents ? {
-        parents: {
-          where: { status: 'active' },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            status: true
-          }
-        }
-      } : undefined
-    });
-
-    // Transform to match expected format
-    const transformedTeams = teams.map(t => ({
-      _id: t.id,
-      id: t.id,
+    const transformedTeams = (teams || []).map((t: any) => ({
+      _id: t._id,
+      id: t._id,
       name: t.name,
       color: t.color,
       description: t.description,
-      isActive: t.isActive,
+      isActive: t.isActive !== false,
       order: t.order,
-      createdAt: t.createdAt?.toISOString(),
-      updatedAt: t.updatedAt?.toISOString(),
-      parents: includeParents ? (t.parents || []).map((p: any) => ({
-        _id: p.id,
-        id: p.id,
-        name: p.name,
-        email: p.email,
-        phone: p.phone,
-        status: p.status
-      })) : undefined
+      createdAt: t.createdAt || t._creationTime,
+      updatedAt: t.updatedAt
     }));
 
     return NextResponse.json({
@@ -67,136 +33,89 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching teams:', error);
-    const errMsg = (error instanceof Error && error.message) ? error.message : 'Unknown error';
     return NextResponse.json(
-      { success: false, error: `Failed to fetch teams: ${errMsg}` },
+      { success: false, error: 'Failed to fetch teams' },
       { status: 500 }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
+  if (!convex) {
+    return NextResponse.json({ error: 'Convex not configured' }, { status: 503 });
+  }
+
   try {
     const body = await request.json();
-    const { name, description, color } = createTeamSchema.parse(body);
+    const { name, description, color } = body;
 
-    // Create team in PostgreSQL
-    const team = await prisma.teams.create({
-      data: {
-        name,
-        description: description || null,
-        color: color || '#f97316',
-        isActive: true
-      }
+    if (!name) {
+      return NextResponse.json({ error: 'Team name is required' }, { status: 400 });
+    }
+
+    const teamId = await convex.mutation(api.teams.createTeam, {
+      name,
+      description: description || '',
+      color: color || '#f97316'
     });
 
     return NextResponse.json({ 
       success: true, 
-      teamId: team.id,
-      data: {
-        _id: team.id,
-        id: team.id,
-        name: team.name,
-        color: team.color,
-        description: team.description
-      }
+      teamId,
+      data: { _id: teamId, id: teamId, name, color }
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating team:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid data', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to create team' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create team' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
+  if (!convex) {
+    return NextResponse.json({ error: 'Convex not configured' }, { status: 503 });
+  }
+
   try {
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, name, description, color, isActive } = body;
     
     if (!id) {
-      return NextResponse.json(
-        { error: 'Team ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Team ID is required' }, { status: 400 });
     }
 
-    const validatedData = updateTeamSchema.parse(updateData);
-
-    // Update team in PostgreSQL
-    const updatedTeam = await prisma.teams.update({
-      where: { id },
-      data: {
-        name: validatedData.name,
-        description: validatedData.description,
-        color: validatedData.color,
-        isActive: validatedData.isActive
-      }
+    await convex.mutation(api.teams.updateTeam, {
+      id,
+      name,
+      description,
+      color,
+      isActive
     });
 
-    return NextResponse.json({
-      _id: updatedTeam.id,
-      id: updatedTeam.id,
-      name: updatedTeam.name,
-      color: updatedTeam.color,
-      description: updatedTeam.description,
-      isActive: updatedTeam.isActive
-    });
+    return NextResponse.json({ success: true, id, name, color, description, isActive });
   } catch (error) {
     console.error('Error updating team:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid data', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to update team' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update team' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!convex) {
+    return NextResponse.json({ error: 'Convex not configured' }, { status: 503 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'Team ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Team ID is required' }, { status: 400 });
     }
 
-    // Unassign all parents from this team first
-    await prisma.parents.updateMany({
-      where: { teamId: id },
-      data: { teamId: null }
-    });
-
-    // Delete the team
-    await prisma.teams.delete({
-      where: { id }
-    });
+    await convex.mutation(api.teams.deleteTeam, { id });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting team:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete team' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete team' }, { status: 500 });
   }
 }

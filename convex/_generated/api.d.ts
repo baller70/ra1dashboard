@@ -36,6 +36,7 @@ import type * as paymentInstallments from "../paymentInstallments.js";
 import type * as payment_plans from "../payment_plans.js";
 import type * as payments from "../payments.js";
 import type * as players from "../players.js";
+import type * as recurringReminders from "../recurringReminders.js";
 import type * as scheduledMessages from "../scheduledMessages.js";
 import type * as seasons from "../seasons.js";
 import type * as systemSettings from "../systemSettings.js";
@@ -43,6 +44,7 @@ import type * as teams from "../teams.js";
 import type * as templates from "../templates.js";
 import type * as totalCleanup from "../totalCleanup.js";
 import type * as totalDataPurge from "../totalDataPurge.js";
+import type * as tournamentFees from "../tournamentFees.js";
 import type * as users from "../users.js";
 
 /**
@@ -77,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   payment_plans: typeof payment_plans;
   payments: typeof payments;
   players: typeof players;
+  recurringReminders: typeof recurringReminders;
   scheduledMessages: typeof scheduledMessages;
   seasons: typeof seasons;
   systemSettings: typeof systemSettings;
@@ -84,6 +87,7 @@ declare const fullApi: ApiFromModules<{
   templates: typeof templates;
   totalCleanup: typeof totalCleanup;
   totalDataPurge: typeof totalDataPurge;
+  tournamentFees: typeof tournamentFees;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
